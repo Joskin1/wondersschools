@@ -2,11 +2,21 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\GalleryImageResource\Pages\ListGalleryImages;
+use App\Filament\Resources\GalleryImageResource\Pages\CreateGalleryImage;
+use App\Filament\Resources\GalleryImageResource\Pages\EditGalleryImage;
 use App\Filament\Resources\GalleryImageResource\Pages;
 use App\Filament\Resources\GalleryImageResource\RelationManagers;
 use App\Models\GalleryImage;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -19,18 +29,18 @@ class GalleryImageResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\FileUpload::make('image')
+        return $schema
+            ->components([
+                FileUpload::make('image')
                     ->image()
                     ->directory('gallery')
                     ->required(),
-                Forms\Components\TextInput::make('category')
+                TextInput::make('category')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('caption')
+                TextInput::make('caption')
                     ->maxLength(255),
             ]);
     }
@@ -39,12 +49,12 @@ class GalleryImageResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('image'),
-                Tables\Columns\TextColumn::make('category')
+                ImageColumn::make('image'),
+                TextColumn::make('category')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('caption')
+                TextColumn::make('caption')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -52,12 +62,12 @@ class GalleryImageResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -72,9 +82,9 @@ class GalleryImageResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListGalleryImages::route('/'),
-            'create' => Pages\CreateGalleryImage::route('/create'),
-            'edit' => Pages\EditGalleryImage::route('/{record}/edit'),
+            'index' => ListGalleryImages::route('/'),
+            'create' => CreateGalleryImage::route('/create'),
+            'edit' => EditGalleryImage::route('/{record}/edit'),
         ];
     }
 }

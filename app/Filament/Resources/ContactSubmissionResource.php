@@ -2,11 +2,21 @@
 
 namespace App\Filament\Resources;
 
+use Filament\Schemas\Schema;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Select;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use App\Filament\Resources\ContactSubmissionResource\Pages\ListContactSubmissions;
+use App\Filament\Resources\ContactSubmissionResource\Pages\CreateContactSubmission;
+use App\Filament\Resources\ContactSubmissionResource\Pages\EditContactSubmission;
 use App\Filament\Resources\ContactSubmissionResource\Pages;
 use App\Filament\Resources\ContactSubmissionResource\RelationManagers;
 use App\Models\ContactSubmission;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -19,21 +29,21 @@ class ContactSubmissionResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')
+        return $schema
+            ->components([
+                TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('email')
+                TextInput::make('email')
                     ->email()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\Textarea::make('message')
+                Textarea::make('message')
                     ->required()
                     ->columnSpanFull(),
-                Forms\Components\Select::make('status')
+                Select::make('status')
                     ->options([
                         'new' => 'New',
                         'read' => 'Read',
@@ -48,18 +58,18 @@ class ContactSubmissionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('email')
+                TextColumn::make('email')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('status')
+                TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'new' => 'danger',
                         'read' => 'warning',
                         'replied' => 'success',
                     }),
-                Tables\Columns\TextColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -67,12 +77,12 @@ class ContactSubmissionResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -87,9 +97,9 @@ class ContactSubmissionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListContactSubmissions::route('/'),
-            'create' => Pages\CreateContactSubmission::route('/create'),
-            'edit' => Pages\EditContactSubmission::route('/{record}/edit'),
+            'index' => ListContactSubmissions::route('/'),
+            'create' => CreateContactSubmission::route('/create'),
+            'edit' => EditContactSubmission::route('/{record}/edit'),
         ];
     }
 }

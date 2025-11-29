@@ -2,18 +2,18 @@
 
 namespace App\Filament\Pages;
 
+use Filament\Schemas\Schema;
 use App\Models\Setting;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Filament\Notifications\Notification;
 
 class Settings extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static string $view = 'filament.pages.settings';
+    protected string $view = 'filament.pages.settings';
 
     public ?array $data = [];
 
@@ -23,10 +23,10 @@ class Settings extends Page
         $this->form->fill($settings);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 TextInput::make('school_name')->required(),
                 TextInput::make('school_email')->email()->required(),
                 TextInput::make('school_phone')->tel()->required(),
