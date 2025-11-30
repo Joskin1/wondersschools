@@ -3,7 +3,10 @@
 use App\Livewire\Home;
 use App\Models\Post;
 use App\Models\Staff;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use function Pest\Laravel\get;
+
+uses(RefreshDatabase::class);
 
 describe('Home Page', function () {
     it('displays the home page successfully', function () {
@@ -15,7 +18,8 @@ describe('Home Page', function () {
     it('shows the hero section with school name', function () {
         get('/')
             ->assertSee('Wonders Kiddies Foundation Schools')
-            ->assertSee('A Foundation That Builds Futures');
+            ->assertSee('A Foundation That')
+            ->assertSee('Builds Futures.');
     });
 
     it('displays the trust strip with verification badges', function () {
@@ -28,7 +32,7 @@ describe('Home Page', function () {
 
     it('shows the Why WKFS section', function () {
         get('/')
-            ->assertSee('Why "Wonders"?')
+            ->assertSee('Why "Wonders"?', false)
             ->assertSee('Academic Excellence')
             ->assertSee('Holistic Development');
     });

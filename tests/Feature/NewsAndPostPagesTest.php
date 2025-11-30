@@ -3,7 +3,10 @@
 use App\Livewire\News;
 use App\Livewire\Post as PostView;
 use App\Models\Post;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use function Pest\Laravel\get;
+
+uses(RefreshDatabase::class);
 
 describe('News Page', function () {
     it('displays the news page successfully', function () {
@@ -14,7 +17,7 @@ describe('News Page', function () {
 
     it('shows the news page headline', function () {
         get('/news')
-            ->assertSee('News & Events')
+            ->assertSee('News & Events', false)
             ->assertSee('Stay updated with the latest happenings at WKFS');
     });
 
@@ -66,7 +69,7 @@ describe('Single Post Page', function () {
         $post = Post::factory()->create();
 
         // Act & Assert
-        get("/news/{$post->id}")
+        get("/news/{$post->slug}")
             ->assertOk()
             ->assertSeeLivewire(PostView::class);
     });
@@ -79,7 +82,7 @@ describe('Single Post Page', function () {
         ]);
 
         // Act & Assert
-        get("/news/{$post->id}")
+        get("/news/{$post->slug}")
             ->assertSee($post->title)
             ->assertSee($post->body);
     });
@@ -89,7 +92,7 @@ describe('Single Post Page', function () {
         $post = Post::factory()->create();
 
         // Act & Assert
-        get("/news/{$post->id}")
+        get("/news/{$post->slug}")
             ->assertSee($post->published_at->format('F d, Y'));
     });
 
@@ -98,7 +101,7 @@ describe('Single Post Page', function () {
         $post = Post::factory()->create();
 
         // Act & Assert
-        get("/news/{$post->id}")
+        get("/news/{$post->slug}")
             ->assertSee('Back to News');
     });
 

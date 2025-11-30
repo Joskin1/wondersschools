@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\GalleryImage;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 describe('GalleryImage Model', function () {
     it('creates a gallery image with valid data', function () {

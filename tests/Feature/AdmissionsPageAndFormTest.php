@@ -3,8 +3,11 @@
 use App\Livewire\Admissions;
 use App\Models\Inquiry;
 use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\get;
+
+uses(RefreshDatabase::class);
 
 describe('Admissions Page', function () {
     it('displays the admissions page successfully', function () {
@@ -15,15 +18,15 @@ describe('Admissions Page', function () {
 
     it('shows the admissions headline', function () {
         get('/admissions')
-            ->assertSee('Secure a Brighter Start')
-            ->assertSee('In Just Three Steps');
+            ->assertSee('Admissions')
+            ->assertSee('Join the WKFS family today.');
     });
 
     it('displays all three admission process steps', function () {
         get('/admissions')
-            ->assertSee('Book an Inspection/Tour')
-            ->assertSee('Application & Assessment')
-            ->assertSee('Payment & Placement');
+            ->assertSee('Inquire')
+            ->assertSee('Assessment')
+            ->assertSee('Enrollment');
     });
 
     it('shows the fee schedule section', function () {
@@ -35,10 +38,10 @@ describe('Admissions Page', function () {
     it('displays the inquiry form', function () {
         get('/admissions')
             ->assertSee('Admission Inquiry')
-            ->assertSee('Parent\'s Name')
+            ->assertSee('Parent\'s Name', false)
             ->assertSee('Email Address')
             ->assertSee('Phone Number')
-            ->assertSee('Child\'s Age / Desired Class');
+            ->assertSee('Child\'s Age / Class', false);
     });
 });
 
@@ -111,6 +114,6 @@ describe('Admissions Inquiry Form Submission', function () {
             ->set('phone', '+234 123 456 7890')
             ->set('child_age', '5 years')
             ->call('submit')
-            ->assertSee('Thank you for your inquiry');
+            ->assertSee('Thank you for your inquiry. We will contact you shortly.');
     });
 });

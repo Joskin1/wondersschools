@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\Staff;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 describe('Staff Model', function () {
     it('creates a staff member with valid data', function () {

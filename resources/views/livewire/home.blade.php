@@ -1,10 +1,31 @@
 <div>
     <!-- Hero Section -->
-    <div class="relative bg-dark-green text-white overflow-hidden">
-        <div class="absolute inset-0">
-            <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" alt="School Campus" class="w-full h-full object-cover opacity-20">
-            <div class="absolute inset-0 bg-gradient-to-r from-dark-green via-dark-green/90 to-transparent"></div>
+    <div class="relative bg-dark-green text-white overflow-hidden" x-data="{
+        images: {{ \App\Models\Setting::where('key', 'hero_images')->value('value') ?? '[]' }},
+        active: 0,
+        init() {
+            if (this.images.length > 1) {
+                setInterval(() => {
+                    this.active = (this.active + 1) % this.images.length;
+                }, 5000);
+            }
+        }
+    }">
+        <!-- Slider Images -->
+        <template x-for="(image, index) in images" :key="index">
+            <div class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+                 :class="{ 'opacity-100': active === index, 'opacity-0': active !== index }">
+                <img :src="'/storage/' + image" alt="School Campus" class="w-full h-full object-cover opacity-40">
+                <div class="absolute inset-0 bg-gradient-to-r from-dark-green via-dark-green/80 to-transparent"></div>
+            </div>
+        </template>
+        
+        <!-- Fallback if no images -->
+        <div class="absolute inset-0" x-show="images.length === 0">
+             <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" alt="School Campus" class="w-full h-full object-cover opacity-40">
+             <div class="absolute inset-0 bg-gradient-to-r from-dark-green via-dark-green/80 to-transparent"></div>
         </div>
+
         <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
             <div class="lg:w-2/3">
                 <span class="block text-lime-green font-bold tracking-wide uppercase text-sm mb-2">Welcome to Wonders Kiddies Foundation Schools</span>

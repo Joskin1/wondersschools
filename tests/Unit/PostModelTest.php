@@ -2,6 +2,9 @@
 
 use App\Models\Post;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 describe('Post Model', function () {
     it('creates a post with valid data', function () {

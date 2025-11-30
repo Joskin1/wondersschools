@@ -3,6 +3,9 @@
 use App\Models\Inquiry;
 use App\Models\ContactSubmission;
 use App\Models\Setting;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 describe('Inquiry Model', function () {
     it('creates an inquiry with valid data', function () {

@@ -10,6 +10,8 @@ use App\Models\Setting;
 use App\Models\Inquiry;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class DatabaseSeeder extends Seeder
 {
@@ -20,6 +22,46 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // 1. Setup Image Storage
+        $this->command->info('Setting up image storage...');
+        Storage::disk('public')->deleteDirectory('images');
+        Storage::disk('public')->makeDirectory('images');
+
+        $sourceDir = resource_path('images/seeds');
+        $destinationDir = storage_path('app/public/images');
+
+        if (!File::exists($sourceDir)) {
+            $this->command->error("Source directory not found: $sourceDir");
+            return;
+        }
+
+        // Helper function to copy and return path
+        $copyImage = function ($filename) use ($sourceDir, $destinationDir) {
+            if (File::exists("$sourceDir/$filename")) {
+                File::copy("$sourceDir/$filename", "$destinationDir/$filename");
+                return "images/$filename";
+            }
+            return null;
+        };
+
+        // Copy all assets
+        // Hero Images (User Provided)
+        $hero1 = $copyImage('hero-1.jpg');
+        $hero2 = $copyImage('hero-2.jpg');
+        $hero3 = $copyImage('hero-3.jpg');
+        
+        // Other User Provided Images
+        $staffGroup = $copyImage('staff-group.jpg');
+        $graduation = $copyImage('graduation.jpg');
+        $culturalDance = $copyImage('cultural-dance.jpg');
+
+        // Fallback/Generated Images (PNGs)
+        $whyWkfs = $copyImage('why-wkfs.png');
+        $academicsStem = $copyImage('academics-stem.png');
+        $aboutCampus = $copyImage('about-campus.png');
+        $headOfSchool = $copyImage('head-of-school.png');
+        $logo = $copyImage('logo.png');
+
         // Admin User
         User::factory()->create([
             'name' => 'Admin User',
@@ -32,14 +74,14 @@ class DatabaseSeeder extends Seeder
             'name' => 'Mrs. Jane Doe',
             'role' => 'Head of School',
             'bio' => 'Mrs. Doe has over 20 years of experience in early childhood education. She is passionate about creating a nurturing environment for all children.',
-            'image' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+            'image' => $headOfSchool,
         ]);
 
         Staff::factory()->create([
             'name' => 'Mr. John Smith',
             'role' => 'Head of Academics',
             'bio' => 'Mr. Smith ensures our curriculum meets international standards and challenges every student to reach their full potential.',
-            'image' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+            'image' => $staffGroup, // Using staff group photo
         ]);
 
         Staff::factory(4)->create();
@@ -49,29 +91,39 @@ class DatabaseSeeder extends Seeder
             'title' => 'Welcome to the New Academic Session',
             'body' => 'We are thrilled to welcome all our students back to school! This term promises to be full of exciting learning opportunities and events.',
             'published_at' => now()->subDays(2),
-            'image' => 'https://images.unsplash.com/photo-1509062522246-3755977927d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1600&q=80',
+            'image' => $hero1,
+            'is_featured' => true,
         ]);
 
         Post::factory()->create([
-            'title' => 'Sports Day 2025 Announced',
-            'body' => 'Get ready for our annual Sports Day! Join us for a day of fun, competition, and school spirit. Parents are welcome to attend.',
+            'title' => 'Cultural Day Celebrations',
+            'body' => 'Our students showcased the rich cultural heritage of Nigeria through dance, music, and fashion. It was a colorful and memorable event.',
             'published_at' => now()->subDays(5),
-            'image' => 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-1.2.1&auto=format&fit=crop&w=1600&q=80',
+            'image' => $culturalDance,
+            'is_featured' => true,
         ]);
 
         Post::factory()->create([
-            'title' => 'Science Fair Winners',
-            'body' => 'Congratulations to all the participants of this year\'s Science Fair. The creativity and innovation shown by our students were truly impressive.',
+            'title' => 'Graduation Ceremony 2024',
+            'body' => 'Congratulations to our graduating class! We are so proud of your achievements and wish you the best in your future endeavors.',
             'published_at' => now()->subDays(10),
-            'image' => 'https://images.unsplash.com/photo-1564325724739-bae0bd08762c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1600&q=80',
+            'image' => $graduation,
+            'is_featured' => true,
         ]);
 
         Post::factory(5)->create();
 
         // Gallery
-        $categories = ['Sports Day', 'Graduation', 'Field Trips', 'Classroom Activities', 'Art Exhibition'];
+        $categories = ['Sports Day', 'Graduation', 'Field Trips', 'Classroom Activities', 'Art Exhibition', 'Cultural Day'];
+        
+        // Seed specific gallery images
+        GalleryImage::factory()->create(['category' => 'Cultural Day', 'image' => $culturalDance, 'caption' => 'Cultural Dance Performance']);
+        GalleryImage::factory()->create(['category' => 'Graduation', 'image' => $graduation, 'caption' => 'Class of 2024']);
+        GalleryImage::factory()->create(['category' => 'Classroom Activities', 'image' => $hero2, 'caption' => 'Learning in Action']);
+        GalleryImage::factory()->create(['category' => 'Classroom Activities', 'image' => $hero3, 'caption' => 'Student Engagement']);
+        
         foreach ($categories as $category) {
-            GalleryImage::factory(3)->create(['category' => $category]);
+            GalleryImage::factory(2)->create(['category' => $category]);
         }
 
         // Inquiries & Contact Submissions
@@ -88,6 +140,8 @@ class DatabaseSeeder extends Seeder
             'facebook_link' => 'https://facebook.com',
             'instagram_link' => 'https://instagram.com',
             'twitter_link' => 'https://twitter.com',
+            'site_logo' => $logo,
+            'hero_images' => json_encode([$hero1, $hero2, $hero3]),
         ];
 
         foreach ($settings as $key => $value) {

@@ -18,8 +18,8 @@ class GalleryImageFactory extends Factory
     {
         return [
             'image' => 'https://placehold.co/600x400', // Placeholder image
-            'category' => $this->faker->randomElement(['Sports', 'Graduation', 'Classroom', 'Events']),
-            'caption' => $this->faker->sentence,
+            'category' => fake()->randomElement(['Sports', 'Graduation', 'Classroom', 'Events']),
+            'caption' => fake()->sentence(),
         ];
     }
 }

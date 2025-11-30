@@ -1,7 +1,10 @@
 <?php
 
 use App\Livewire\Academics;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use function Pest\Laravel\get;
+
+uses(RefreshDatabase::class);
 
 describe('Academics Page', function () {
     it('displays the academics page successfully', function () {

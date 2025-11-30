@@ -2,7 +2,10 @@
 
 use App\Livewire\About;
 use App\Models\Staff;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use function Pest\Laravel\get;
+
+uses(RefreshDatabase::class);
 
 describe('About Us Page', function () {
     it('displays the about page successfully', function () {

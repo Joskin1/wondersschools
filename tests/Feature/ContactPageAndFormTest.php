@@ -3,8 +3,11 @@
 use App\Livewire\Contact;
 use App\Models\ContactSubmission;
 use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\get;
+
+uses(RefreshDatabase::class);
 
 describe('Contact Page', function () {
     it('displays the contact page successfully', function () {
@@ -16,7 +19,7 @@ describe('Contact Page', function () {
     it('shows the contact page headline', function () {
         get('/contact-us')
             ->assertSee('Contact Us')
-            ->assertSee('We\'d love to hear from you');
+            ->assertSee('We\'d love to hear from you', false);
     });
 
     it('displays school contact information', function () {
@@ -109,6 +112,6 @@ describe('Contact Form Submission', function () {
             ->set('email', 'jane@example.com')
             ->set('message', 'Test message')
             ->call('submit')
-            ->assertSee('Thank you for your message');
+            ->assertSee('Thank you for contacting us. We will get back to you soon.', false);
     });
 });

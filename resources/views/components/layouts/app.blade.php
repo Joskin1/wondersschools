@@ -20,8 +20,12 @@
                 <div class="flex justify-between h-20 items-center">
                     <!-- Logo -->
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="{{ route('home') }}" class="font-bold text-2xl tracking-wider">
-                            WKFS
+                        <a href="{{ route('home') }}">
+                            @if(\App\Models\Setting::where('key', 'site_logo')->exists())
+                                <img src="{{ Storage::url(\App\Models\Setting::where('key', 'site_logo')->value('value')) }}" alt="WKFS Logo" class="h-12 w-auto">
+                            @else
+                                <span class="font-bold text-2xl tracking-wider">WKFS</span>
+                            @endif
                         </a>
                     </div>
 
@@ -73,7 +77,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <!-- About -->
                     <div>
-                        <h3 class="text-xl font-bold mb-4 text-lime-green">WKFS</h3>
+                        <div class="mb-4">
+                             @if(\App\Models\Setting::where('key', 'site_logo')->exists())
+                                <img src="{{ Storage::url(\App\Models\Setting::where('key', 'site_logo')->value('value')) }}" alt="WKFS Logo" class="h-8 w-auto">
+                            @else
+                                <h3 class="text-xl font-bold text-lime-green">WKFS</h3>
+                            @endif
+                        </div>
                         <p class="text-gray-400 text-sm leading-relaxed">
                             Wonders Kiddies Foundation Schools is dedicated to providing a nurturing and stimulating environment for children to learn and grow.
                         </p>

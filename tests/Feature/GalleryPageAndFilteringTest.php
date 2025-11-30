@@ -3,7 +3,10 @@
 use App\Livewire\Gallery;
 use App\Models\GalleryImage;
 use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use function Pest\Laravel\get;
+
+uses(RefreshDatabase::class);
 
 describe('Gallery Page', function () {
     it('displays the gallery page successfully', function () {

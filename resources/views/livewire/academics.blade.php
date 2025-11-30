@@ -81,7 +81,7 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-lg font-bold text-gray-900">Literacy & Communication</h3>
+                        <h3 class="text-lg font-bold text-gray-900">Literacy &amp; Communication</h3>
                         <p class="mt-2 text-base text-gray-600">
                             We emphasize reading for comprehension and creative writing. Students learn not just <em>what</em> to read, but <em>how</em> to analyze, articulate, and present their ideas confidently.
                         </p>
@@ -98,7 +98,7 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-lg font-bold text-gray-900">Numeracy & Logic</h3>
+                        <h3 class="text-lg font-bold text-gray-900">Numeracy &amp; Logic</h3>
                         <p class="mt-2 text-base text-gray-600">
                             Moving beyond rote arithmetic, we use hands-on, conceptual learning to build strong mathematical reasoning. Our students learn to apply logic to real-world problems.
                         </p>
@@ -132,7 +132,7 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <h3 class="text-lg font-bold text-gray-900">Character & Ethics</h3>
+                        <h3 class="text-lg font-bold text-gray-900">Character &amp; Ethics</h3>
                         <p class="mt-2 text-base text-gray-600">
                             Robust training in core values, empathy, leadership, and responsibility, ensuring your child grows into a well-rounded and compassionate individual.
                         </p>

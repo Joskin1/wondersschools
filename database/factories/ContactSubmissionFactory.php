@@ -20,7 +20,7 @@ class ContactSubmissionFactory extends Factory
             'name' => $this->faker->name,
             'email' => $this->faker->safeEmail,
             'message' => $this->faker->paragraph,
-            'status' => $this->faker->randomElement(['new', 'read', 'replied']),
+            'status' => 'new',
         ];
     }
 }

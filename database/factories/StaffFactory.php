@@ -17,11 +17,11 @@ class StaffFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->name,
-            'role' => $this->faker->jobTitle,
-            'bio' => $this->faker->paragraph,
+            'name' => fake()->name(),
+            'role' => fake()->jobTitle,
+            'bio' => fake()->paragraph,
             'image' => null,
-            'order' => $this->faker->numberBetween(0, 10),
+            'order' => fake()->numberBetween(0, 10),
         ];
     }
 }

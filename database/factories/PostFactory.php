@@ -16,14 +16,14 @@ class PostFactory extends Factory
      */
     public function definition(): array
     {
-        $title = $this->faker->sentence;
+        $title = fake()->sentence();
         return [
             'title' => $title,
             'slug' => \Illuminate\Support\Str::slug($title),
-            'body' => $this->faker->paragraphs(3, true),
+            'body' => fake()->paragraphs(3, true),
             'image' => 'https://placehold.co/600x400', // Placeholder image
-            'published_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
-            'is_featured' => $this->faker->boolean(20),
+            'published_at' => fake()->dateTimeBetween('-1 year', 'now'),
+            'is_featured' => fake()->boolean(20),
         ];
     }
 }

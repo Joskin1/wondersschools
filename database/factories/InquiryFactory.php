@@ -22,7 +22,7 @@ class InquiryFactory extends Factory
             'phone' => $this->faker->phoneNumber,
             'child_age' => $this->faker->randomElement(['2 years', '3 years', '5 years', '7 years']),
             'message' => $this->faker->sentence,
-            'status' => $this->faker->randomElement(['pending', 'reviewed', 'contacted']),
+            'status' => 'pending',
         ];
     }
 }
