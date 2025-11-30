@@ -22,3 +22,9 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Documentation files
+TEST.md
+PRD.md
+NEWPRD.md
+IMAGE.md
