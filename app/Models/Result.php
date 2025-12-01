@@ -5,24 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Score extends Model
+class Result extends Model
 {
     use HasFactory;
-    protected $fillable = ['student_id', 'subject_id', 'assessment_type_id', 'score', 'academic_session_id', 'term_id'];
+    protected $fillable = [
+        'student_id',
+        'academic_session_id',
+        'term_id',
+        'classroom_id',
+        'total_score',
+        'average_score',
+        'position',
+        'grade',
+        'teacher_remark',
+        'principal_remark',
+    ];
 
     public function student()
     {
         return $this->belongsTo(Student::class);
-    }
-
-    public function subject()
-    {
-        return $this->belongsTo(Subject::class);
-    }
-
-    public function assessmentType()
-    {
-        return $this->belongsTo(AssessmentType::class);
     }
 
     public function academicSession()
@@ -33,5 +34,10 @@ class Score extends Model
     public function term()
     {
         return $this->belongsTo(Term::class);
+    }
+
+    public function classroom()
+    {
+        return $this->belongsTo(Classroom::class);
     }
 }

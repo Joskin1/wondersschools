@@ -147,5 +147,9 @@ class DatabaseSeeder extends Seeder
         foreach ($settings as $key => $value) {
             \App\Models\Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
+
+        // Seed Scoring System Data
+        $this->command->info('Seeding scoring system data...');
+        $this->call(ScoringSystemSeeder::class);
     }
 }

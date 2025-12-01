@@ -18,8 +18,8 @@ class StudentsTable
                     ->searchable(),
                 TextColumn::make('last_name')
                     ->searchable(),
-                TextColumn::make('classroom_id')
-                    ->numeric()
+                TextColumn::make('classroom.name')
+                    ->label('Classroom')
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()

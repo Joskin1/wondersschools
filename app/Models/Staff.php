@@ -15,5 +15,16 @@ class Staff extends Model
         'bio',
         'image',
         'order',
+        'user_id',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function classrooms()
+    {
+        return $this->hasMany(Classroom::class);
+    }
 }
