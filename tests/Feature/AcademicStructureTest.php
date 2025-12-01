@@ -204,4 +204,73 @@ class AcademicStructureTest extends TestCase
             'score' => 15,
         ]);
     }
+    public function test_term_resource_pages_load()
+    {
+        $user = User::factory()->create();
+        $session = \App\Models\AcademicSession::factory()->create();
+        $term = \App\Models\Term::factory()->create(['academic_session_id' => $session->id]);
+
+        Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\TermResource\Pages\ListTerms::class)
+            ->assertSuccessful();
+
+        Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\TermResource\Pages\CreateTerm::class)
+            ->assertSuccessful();
+
+        Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\TermResource\Pages\EditTerm::class, [
+                'record' => $term->getRouteKey(),
+            ])
+            ->assertSuccessful();
+    }
+
+    public function test_academic_session_resource_pages_load()
+    {
+        $user = User::factory()->create();
+        $session = \App\Models\AcademicSession::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\AcademicSessionResource\Pages\ListAcademicSessions::class)
+            ->assertSuccessful();
+
+        Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\AcademicSessionResource\Pages\CreateAcademicSession::class)
+            ->assertSuccessful();
+
+        Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\AcademicSessionResource\Pages\EditAcademicSession::class, [
+                'record' => $session->getRouteKey(),
+            ])
+            ->assertSuccessful();
+    }
+
+    public function test_result_resource_pages_load()
+    {
+        $user = User::factory()->create();
+        $session = \App\Models\AcademicSession::factory()->create();
+        $term = \App\Models\Term::factory()->create(['academic_session_id' => $session->id]);
+        $classroom = \App\Models\Classroom::factory()->create();
+        $student = Student::factory()->create(['classroom_id' => $classroom->id]);
+        $result = \App\Models\Result::factory()->create([
+            'student_id' => $student->id,
+            'academic_session_id' => $session->id,
+            'term_id' => $term->id,
+            'classroom_id' => $classroom->id,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\ResultResource\Pages\ListResults::class)
+            ->assertSuccessful();
+
+        Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\ResultResource\Pages\CreateResult::class)
+            ->assertSuccessful();
+
+        Livewire::actingAs($user)
+            ->test(\App\Filament\Resources\ResultResource\Pages\EditResult::class, [
+                'record' => $result->getRouteKey(),
+            ])
+            ->assertSuccessful();
+    }
 }
