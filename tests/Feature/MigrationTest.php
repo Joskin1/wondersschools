@@ -23,7 +23,7 @@ test('migration validates sequence', function () {
 
     // Valid: First -> Second
     $service->migrateTerm($term2->id);
-    expect(SystemSetting::where('key', 'current_term_id')->value('value'))
+    expect(SystemSetting::getInt('current_term_id'))
         ->toBe($term2->id);
 
     // Invalid: Second -> First
@@ -43,10 +43,10 @@ test('migration increments session on third to first', function () {
 
     $service->migrateTerm($term1->id);
 
-    $newSessionId = SystemSetting::where('key', 'current_session_id')->value('value');
+    $newSessionId = SystemSetting::getInt('current_session_id');
     $newSession = AcademicSession::find($newSessionId);
 
     expect($newSession->name)->toBe('2032/2033');
-    expect(SystemSetting::where('key', 'current_term_id')->value('value'))
+    expect(SystemSetting::getInt('current_term_id'))
         ->toBe($term1->id);
 });

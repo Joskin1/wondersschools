@@ -1,20 +1,15 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\Classroom;
 use App\Models\Staff;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
-class StudentPolicyTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    public function test_teacher_can_view_students_in_assigned_classroom()
-    {
+describe('Student Policy', function () {
+    it('allows teacher to view students in assigned classroom', function () {
         // Create teacher user
         $teacherUser = User::factory()->create();
         $staff = Staff::factory()->create(['user_id' => $teacherUser->id]);
@@ -26,11 +21,10 @@ class StudentPolicyTest extends TestCase
         $student = Student::factory()->create(['classroom_id' => $classroom->id]);
 
         // Assert teacher can view student
-        $this->assertTrue($teacherUser->can('view', $student));
-    }
+        expect($teacherUser->can('view', $student))->toBeTrue();
+    });
 
-    public function test_teacher_cannot_view_students_in_other_classrooms()
-    {
+    it('prevents teacher from viewing students in other classrooms', function () {
         // Create teacher user
         $teacherUser = User::factory()->create();
         $staff = Staff::factory()->create(['user_id' => $teacherUser->id]);
@@ -45,11 +39,10 @@ class StudentPolicyTest extends TestCase
         $student = Student::factory()->create(['classroom_id' => $otherClassroom->id]);
 
         // Assert teacher cannot view student
-        $this->assertFalse($teacherUser->can('view', $student));
-    }
+        expect($teacherUser->can('view', $student))->toBeFalse();
+    });
 
-    public function test_admin_can_view_all_students()
-    {
+    it('allows admin to view all students', function () {
         // Create admin user (no staff record)
         $adminUser = User::factory()->create();
         
@@ -58,11 +51,10 @@ class StudentPolicyTest extends TestCase
         $student = Student::factory()->create(['classroom_id' => $classroom->id]);
 
         // Assert admin can view student
-        $this->assertTrue($adminUser->can('view', $student));
-    }
+        expect($adminUser->can('view', $student))->toBeTrue();
+    });
 
-    public function test_teacher_can_update_students_in_assigned_classroom()
-    {
+    it('allows teacher to update students in assigned classroom', function () {
         // Create teacher user
         $teacherUser = User::factory()->create();
         $staff = Staff::factory()->create(['user_id' => $teacherUser->id]);
@@ -74,11 +66,10 @@ class StudentPolicyTest extends TestCase
         $student = Student::factory()->create(['classroom_id' => $classroom->id]);
 
         // Assert teacher can update student
-        $this->assertTrue($teacherUser->can('update', $student));
-    }
+        expect($teacherUser->can('update', $student))->toBeTrue();
+    });
 
-    public function test_teacher_cannot_update_students_in_other_classrooms()
-    {
+    it('prevents teacher from updating students in other classrooms', function () {
         // Create teacher user
         $teacherUser = User::factory()->create();
         $staff = Staff::factory()->create(['user_id' => $teacherUser->id]);
@@ -93,11 +84,10 @@ class StudentPolicyTest extends TestCase
         $student = Student::factory()->create(['classroom_id' => $otherClassroom->id]);
 
         // Assert teacher cannot update student
-        $this->assertFalse($teacherUser->can('update', $student));
-    }
+        expect($teacherUser->can('update', $student))->toBeFalse();
+    });
 
-    public function test_teacher_cannot_delete_students()
-    {
+    it('prevents teacher from deleting students', function () {
         // Create teacher user
         $teacherUser = User::factory()->create();
         $staff = Staff::factory()->create(['user_id' => $teacherUser->id]);
@@ -109,11 +99,10 @@ class StudentPolicyTest extends TestCase
         $student = Student::factory()->create(['classroom_id' => $classroom->id]);
 
         // Assert teacher cannot delete student
-        $this->assertFalse($teacherUser->can('delete', $student));
-    }
+        expect($teacherUser->can('delete', $student))->toBeFalse();
+    });
 
-    public function test_admin_can_delete_students()
-    {
+    it('allows admin to delete students', function () {
         // Create admin user (no staff record)
         $adminUser = User::factory()->create();
         
@@ -122,6 +111,6 @@ class StudentPolicyTest extends TestCase
         $student = Student::factory()->create(['classroom_id' => $classroom->id]);
 
         // Assert admin can delete student
-        $this->assertTrue($adminUser->can('delete', $student));
-    }
-}
+        expect($adminUser->can('delete', $student))->toBeTrue();
+    });
+});

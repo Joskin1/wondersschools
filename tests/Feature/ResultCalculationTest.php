@@ -1,7 +1,5 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\AcademicSession;
 use App\Models\Classroom;
 use App\Models\Result;
@@ -10,14 +8,11 @@ use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Term;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
-class ResultCalculationTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    public function test_result_is_calculated_when_score_is_created()
-    {
+describe('Result Calculation', function () {
+    it('calculates result when score is created', function () {
         $session = AcademicSession::factory()->create();
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
         $classroom = Classroom::factory()->create();
@@ -46,10 +41,9 @@ class ResultCalculationTest extends TestCase
             'grade' => 'A',
             'position' => 1,
         ]);
-    }
+    });
 
-    public function test_result_is_updated_when_score_is_updated()
-    {
+    it('updates result when score is updated', function () {
         $session = AcademicSession::factory()->create();
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
         $classroom = Classroom::factory()->create();
@@ -76,10 +70,9 @@ class ResultCalculationTest extends TestCase
             'average_score' => 90,
             'grade' => 'A+',
         ]);
-    }
+    });
 
-    public function test_result_calculates_average_correctly_with_multiple_subjects()
-    {
+    it('calculates average correctly with multiple subjects', function () {
         $session = AcademicSession::factory()->create();
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
         $classroom = Classroom::factory()->create();
@@ -114,10 +107,9 @@ class ResultCalculationTest extends TestCase
             'average_score' => 70, // 140 / 2
             'grade' => 'B',
         ]);
-    }
+    });
 
-    public function test_position_is_calculated_correctly()
-    {
+    it('calculates position correctly', function () {
         $session = AcademicSession::factory()->create();
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
         $classroom = Classroom::factory()->create();
@@ -158,10 +150,9 @@ class ResultCalculationTest extends TestCase
             'student_id' => $student1->id,
             'position' => 2,
         ]);
-    }
+    });
 
-    public function test_position_recalculates_when_scores_change()
-    {
+    it('recalculates position when scores change', function () {
         $session = AcademicSession::factory()->create();
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
         $classroom = Classroom::factory()->create();
@@ -192,14 +183,14 @@ class ResultCalculationTest extends TestCase
         ]);
 
         // Verify initial positions
-        $this->assertEquals(2, Result::where('student_id', $student1->id)->first()->position);
-        $this->assertEquals(1, Result::where('student_id', $student2->id)->first()->position);
+        expect(Result::where('student_id', $student1->id)->first()->position)->toBe(2);
+        expect(Result::where('student_id', $student2->id)->first()->position)->toBe(1);
 
         // Update Student 2 score to 70 (now lower than Student 1)
         $score2->update(['ca_score' => 20, 'exam_score' => 50]);
 
         // Verify new positions
-        $this->assertEquals(1, Result::where('student_id', $student1->id)->first()->position);
-        $this->assertEquals(2, Result::where('student_id', $student2->id)->first()->position);
-    }
-}
+        expect(Result::where('student_id', $student1->id)->first()->position)->toBe(1);
+        expect(Result::where('student_id', $student2->id)->first()->position)->toBe(2);
+    });
+});

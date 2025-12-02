@@ -1,22 +1,17 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\Student;
 use App\Models\Result;
 use App\Models\AcademicSession;
 use App\Models\Term;
 use App\Models\Classroom;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Livewire\Livewire;
 
-class StudentPortalTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    public function test_student_can_view_their_results()
-    {
+describe('Student Portal', function () {
+    it('allows student to view their results', function () {
         $classroom = Classroom::factory()->create();
         $student = Student::factory()->create([
             'admission_number' => 'TEST001',
@@ -39,10 +34,9 @@ class StudentPortalTest extends TestCase
             ->assertSuccessful()
             ->assertSee($session->name)
             ->assertSee($term->name);
-    }
+    });
 
-    public function test_student_cannot_view_other_students_results()
-    {
+    it('prevents student from viewing other students results', function () {
         $classroom = Classroom::factory()->create();
         $student1 = Student::factory()->create(['classroom_id' => $classroom->id]);
         $student2 = Student::factory()->create(['classroom_id' => $classroom->id]);
@@ -61,10 +55,9 @@ class StudentPortalTest extends TestCase
             ->test(\App\Filament\Student\Pages\ViewResult::class)
             ->assertSuccessful()
             ->assertDontSee($result2->total_score);
-    }
+    });
 
-    public function test_student_can_login_with_admission_number()
-    {
+    it('allows student to login with admission number', function () {
         $classroom = Classroom::factory()->create();
         $student = Student::factory()->create([
             'admission_number' => 'STD/2024/001',
@@ -81,5 +74,5 @@ class StudentPortalTest extends TestCase
             ->assertHasNoFormErrors();
 
         $this->assertAuthenticatedAs($student, 'student');
-    }
-}
+    });
+});

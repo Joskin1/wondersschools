@@ -1,7 +1,5 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\AcademicSession;
 use App\Models\Classroom;
 use App\Models\Result;
@@ -11,15 +9,12 @@ use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Livewire\Livewire;
 
-class AcademicStructureTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    public function test_can_create_academic_session()
-    {
+describe('Academic Structure', function () {
+    it('can create academic session', function () {
         $session = AcademicSession::create([
             'name' => '2024/2025',
             'start_date' => '2024-09-01',
@@ -31,10 +26,9 @@ class AcademicStructureTest extends TestCase
             'name' => '2024/2025',
             'is_current' => true,
         ]);
-    }
+    });
 
-    public function test_can_create_term_with_session()
-    {
+    it('can create term with session', function () {
         $session = AcademicSession::factory()->create(['is_current' => true]);
         
         $term = Term::create([
@@ -51,22 +45,20 @@ class AcademicStructureTest extends TestCase
             'is_current' => true,
         ]);
 
-        $this->assertInstanceOf(AcademicSession::class, $term->academicSession);
-    }
+        expect($term->academicSession)->toBeInstanceOf(AcademicSession::class);
+    });
 
-    public function test_academic_session_has_terms_relationship()
-    {
+    it('has terms relationship on academic session', function () {
         $session = AcademicSession::factory()->create();
         $term1 = Term::factory()->create(['academic_session_id' => $session->id]);
         $term2 = Term::factory()->create(['academic_session_id' => $session->id]);
 
-        $this->assertCount(2, $session->terms);
-        $this->assertTrue($session->terms->contains($term1));
-        $this->assertTrue($session->terms->contains($term2));
-    }
+        expect($session->terms)->toHaveCount(2);
+        expect($session->terms->contains($term1))->toBeTrue();
+        expect($session->terms->contains($term2))->toBeTrue();
+    });
 
-    public function test_score_belongs_to_session_and_term()
-    {
+    it('has score belongs to session and term', function () {
         $session = AcademicSession::factory()->create();
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
         $student = Student::factory()->create();
@@ -83,14 +75,13 @@ class AcademicStructureTest extends TestCase
             'exam_score' => 0,
         ]);
 
-        $this->assertInstanceOf(AcademicSession::class, $score->academicSession);
-        $this->assertInstanceOf(Term::class, $score->term);
-        $this->assertEquals($session->id, $score->academic_session_id);
-        $this->assertEquals($term->id, $score->term_id);
-    }
+        expect($score->academicSession)->toBeInstanceOf(AcademicSession::class);
+        expect($score->term)->toBeInstanceOf(Term::class);
+        expect($score->academic_session_id)->toBe($session->id);
+        expect($score->term_id)->toBe($term->id);
+    });
 
-    public function test_can_create_result()
-    {
+    it('can create result', function () {
         $session = AcademicSession::factory()->create();
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
         $classroom = Classroom::factory()->create();
@@ -116,10 +107,9 @@ class AcademicStructureTest extends TestCase
             'position' => 1,
             'grade' => 'A',
         ]);
-    }
+    });
 
-    public function test_result_has_all_relationships()
-    {
+    it('has all relationships on result', function () {
         $session = AcademicSession::factory()->create();
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
         $classroom = Classroom::factory()->create();
@@ -134,14 +124,13 @@ class AcademicStructureTest extends TestCase
             'average_score' => 83.5,
         ]);
 
-        $this->assertInstanceOf(Student::class, $result->student);
-        $this->assertInstanceOf(AcademicSession::class, $result->academicSession);
-        $this->assertInstanceOf(Term::class, $result->term);
-        $this->assertInstanceOf(Classroom::class, $result->classroom);
-    }
+        expect($result->student)->toBeInstanceOf(Student::class);
+        expect($result->academicSession)->toBeInstanceOf(AcademicSession::class);
+        expect($result->term)->toBeInstanceOf(Term::class);
+        expect($result->classroom)->toBeInstanceOf(Classroom::class);
+    });
 
-    public function test_student_has_results_relationship()
-    {
+    it('has results relationship on student', function () {
         $student = Student::factory()->create();
         $session = AcademicSession::factory()->create();
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
@@ -165,13 +154,12 @@ class AcademicStructureTest extends TestCase
             'average_score' => 93.33,
         ]);
 
-        $this->assertCount(2, $student->results);
-        $this->assertTrue($student->results->contains($result1));
-        $this->assertTrue($student->results->contains($result2));
-    }
+        expect($student->results)->toHaveCount(2);
+        expect($student->results->contains($result1))->toBeTrue();
+        expect($student->results->contains($result2))->toBeTrue();
+    });
 
-    public function test_bulk_score_input_requires_session_and_term()
-    {
+    it('requires session and term for bulk score input', function () {
         $user = User::factory()->create();
         $session = AcademicSession::factory()->create(['is_current' => true]);
         $term = Term::factory()->create(['academic_session_id' => $session->id, 'is_current' => true]);
@@ -205,9 +193,9 @@ class AcademicStructureTest extends TestCase
             'term_id' => $term->id,
             'ca_score' => 15,
         ]);
-    }
-    public function test_term_resource_pages_load()
-    {
+    });
+
+    it('loads term resource pages', function () {
         $user = User::factory()->create();
         $session = \App\Models\AcademicSession::factory()->create();
         $term = \App\Models\Term::factory()->create(['academic_session_id' => $session->id]);
@@ -225,10 +213,9 @@ class AcademicStructureTest extends TestCase
                 'record' => $term->getRouteKey(),
             ])
             ->assertSuccessful();
-    }
+    });
 
-    public function test_academic_session_resource_pages_load()
-    {
+    it('loads academic session resource pages', function () {
         $user = User::factory()->create();
         $session = \App\Models\AcademicSession::factory()->create();
 
@@ -245,10 +232,9 @@ class AcademicStructureTest extends TestCase
                 'record' => $session->getRouteKey(),
             ])
             ->assertSuccessful();
-    }
+    });
 
-    public function test_result_resource_pages_load()
-    {
+    it('loads result resource pages', function () {
         $user = User::factory()->create();
         $session = \App\Models\AcademicSession::factory()->create();
         $term = \App\Models\Term::factory()->create(['academic_session_id' => $session->id]);
@@ -274,5 +260,5 @@ class AcademicStructureTest extends TestCase
                 'record' => $result->getRouteKey(),
             ])
             ->assertSuccessful();
-    }
-}
+    });
+});

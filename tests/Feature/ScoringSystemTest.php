@@ -1,24 +1,19 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\AssessmentType;
 use App\Models\Score;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Livewire\Livewire;
 use App\Filament\Resources\AssessmentTypeResource;
 use App\Filament\Resources\ScoreResource;
 
-class ScoringSystemTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    public function test_can_create_evaluation_setting()
-    {
+describe('Scoring System', function () {
+    it('can create evaluation setting', function () {
         $user = User::factory()->create();
         $session = \App\Models\AcademicSession::factory()->create();
 
@@ -37,10 +32,9 @@ class ScoringSystemTest extends TestCase
             'name' => 'CA',
             'max_score' => 40,
         ]);
-    }
+    });
 
-    public function test_cannot_exceed_100_total_max_score_per_session()
-    {
+    it('prevents exceeding 100 total max score per session', function () {
         $user = User::factory()->create();
         $session = \App\Models\AcademicSession::factory()->create();
         
@@ -59,10 +53,9 @@ class ScoringSystemTest extends TestCase
             ])
             ->call('create')
             ->assertHasFormErrors(['max_score']);
-    }
+    });
 
-    public function test_can_create_score()
-    {
+    it('can create score', function () {
         $user = User::factory()->create();
         $session = \App\Models\AcademicSession::factory()->create(['is_current' => true]);
         $term = \App\Models\Term::factory()->create(['academic_session_id' => $session->id, 'is_current' => true]);
@@ -93,10 +86,9 @@ class ScoringSystemTest extends TestCase
             'exam_score' => 50,
             'total_score' => 80,
         ]);
-    }
+    });
 
-    public function test_score_cannot_exceed_max_score()
-    {
+    it('prevents score from exceeding max score', function () {
         $user = User::factory()->create();
         $session = \App\Models\AcademicSession::factory()->create(['is_current' => true]);
         $student = Student::factory()->create();
@@ -114,10 +106,9 @@ class ScoringSystemTest extends TestCase
             ])
             ->call('create')
             ->assertHasFormErrors(['ca_score']);
-    }
+    });
 
-    public function test_can_assign_staff_as_class_teacher()
-    {
+    it('can assign staff as class teacher', function () {
         $user = User::factory()->create();
         $staff = \App\Models\Staff::factory()->create();
         
@@ -134,49 +125,44 @@ class ScoringSystemTest extends TestCase
             'name' => 'Year 1',
             'staff_id' => $staff->id,
         ]);
-    }
+    });
 
-    public function test_classroom_has_teacher_relationship()
-    {
+    it('has teacher relationship on classroom', function () {
         $staff = \App\Models\Staff::factory()->create();
         $classroom = \App\Models\Classroom::factory()->create(['staff_id' => $staff->id]);
 
-        $this->assertInstanceOf(\App\Models\Staff::class, $classroom->teacher);
-        $this->assertEquals($staff->id, $classroom->teacher->id);
-    }
+        expect($classroom->teacher)->toBeInstanceOf(\App\Models\Staff::class);
+        expect($classroom->teacher->id)->toBe($staff->id);
+    });
 
-    public function test_staff_has_classrooms_relationship()
-    {
+    it('has classrooms relationship on staff', function () {
         $staff = \App\Models\Staff::factory()->create();
         $classroom1 = \App\Models\Classroom::factory()->create(['staff_id' => $staff->id]);
         $classroom2 = \App\Models\Classroom::factory()->create(['staff_id' => $staff->id]);
 
-        $this->assertCount(2, $staff->classrooms);
-        $this->assertTrue($staff->classrooms->contains($classroom1));
-        $this->assertTrue($staff->classrooms->contains($classroom2));
-    }
+        expect($staff->classrooms)->toHaveCount(2);
+        expect($staff->classrooms->contains($classroom1))->toBeTrue();
+        expect($staff->classrooms->contains($classroom2))->toBeTrue();
+    });
 
-    public function test_student_full_name_accessor()
-    {
+    it('has full name accessor on student', function () {
         $student = Student::factory()->create([
             'first_name' => 'John',
             'last_name' => 'Doe',
         ]);
 
-        $this->assertEquals('John Doe', $student->full_name);
-    }
+        expect($student->full_name)->toBe('John Doe');
+    });
 
-    public function test_bulk_score_input_page_loads()
-    {
+    it('loads bulk score input page', function () {
         $user = User::factory()->create();
 
         Livewire::actingAs($user)
             ->test(ScoreResource\Pages\BulkScoreInput::class)
             ->assertSuccessful();
-    }
+    });
 
-    public function test_bulk_score_input_saves_scores()
-    {
+    it('saves scores via bulk score input', function () {
         $user = User::factory()->create();
         $session = \App\Models\AcademicSession::factory()->create(['is_current' => true]);
         $term = \App\Models\Term::factory()->create(['academic_session_id' => $session->id, 'is_current' => true]);
@@ -224,5 +210,5 @@ class ScoringSystemTest extends TestCase
             'exam_score' => 55,
             'total_score' => 90,
         ]);
-    }
-}
+    });
+});

@@ -1,20 +1,15 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\Classroom;
 use App\Models\Staff;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
-class TeacherAccessTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    public function test_teacher_can_only_see_assigned_classrooms()
-    {
+describe('Teacher Access', function () {
+    it('allows teacher to only see assigned classrooms', function () {
         $user = User::factory()->create();
         $teacher = Staff::factory()->create(['user_id' => $user->id, 'role' => 'teacher']);
         
@@ -26,12 +21,11 @@ class TeacherAccessTest extends TestCase
 
         $this->actingAs($user);
 
-        $this->assertTrue(Classroom::where('id', $class1->id)->exists());
-        $this->assertFalse(Classroom::where('id', $class2->id)->exists());
-    }
+        expect(Classroom::where('id', $class1->id)->exists())->toBeTrue();
+        expect(Classroom::where('id', $class2->id)->exists())->toBeFalse();
+    });
 
-    public function test_teacher_can_only_see_students_in_assigned_classrooms()
-    {
+    it('allows teacher to only see students in assigned classrooms', function () {
         $user = User::factory()->create();
         $teacher = Staff::factory()->create(['user_id' => $user->id, 'role' => 'teacher']);
         
@@ -46,7 +40,7 @@ class TeacherAccessTest extends TestCase
 
         $this->actingAs($user);
 
-        $this->assertTrue(Student::where('id', $student1->id)->exists());
-        $this->assertFalse(Student::where('id', $student2->id)->exists());
-    }
-}
+        expect(Student::where('id', $student1->id)->exists())->toBeTrue();
+        expect(Student::where('id', $student2->id)->exists())->toBeFalse();
+    });
+});
