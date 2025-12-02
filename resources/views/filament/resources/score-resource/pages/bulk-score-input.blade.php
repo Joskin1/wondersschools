@@ -48,7 +48,7 @@
                         class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                     >
                         <option value="">Select a classroom</option>
-                        @foreach(\App\Models\Classroom::pluck('name', 'id') as $id => $name)
+                        @foreach($availableClassrooms as $id => $name)
                             <option value="{{ $id }}">{{ $name }}</option>
                         @endforeach
                     </select>

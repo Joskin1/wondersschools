@@ -3,12 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class Student extends Model
+class Student extends Authenticatable
 {
-    use HasFactory;
-    protected $fillable = ['first_name', 'last_name', 'classroom_id'];
+    use HasFactory, Notifiable;
+
+    protected $fillable = ['first_name', 'last_name', 'classroom_id', 'admission_number', 'password'];
+
+    protected $hidden = [
+        'password',
+    ];
 
     public function classroom()
     {
@@ -28,5 +34,23 @@ class Student extends Model
     public function results()
     {
         return $this->hasMany(Result::class);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     */
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+        ];
+    }
+
+    /**
+     * Get the name of the unique identifier for the user.
+     */
+    public function getAuthIdentifierName(): string
+    {
+        return 'admission_number';
     }
 }

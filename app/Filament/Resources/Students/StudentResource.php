@@ -47,4 +47,22 @@ class StudentResource extends Resource
             'edit' => EditStudent::route('/{record}/edit'),
         ];
     }
+
+    /**
+     * Apply query scoping for teachers to only see students in their classrooms.
+     */
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        $user = auth()->user();
+        
+        // If user has staff record with classrooms, filter students
+        if ($user && $user->staff && $user->staff->classrooms()->exists()) {
+            $classroomIds = $user->staff->classrooms()->pluck('classrooms.id');
+            $query->whereIn('classroom_id', $classroomIds);
+        }
+        
+        return $query;
+    }
 }

@@ -34,6 +34,7 @@ class BulkScoreInput extends Page
     public ?int $subjectId = null;
     public $students = [];
     public $assessmentTypes = [];
+    public $availableClassrooms = [];
     public $scores = [];
 
     public function mount(): void
@@ -41,7 +42,25 @@ class BulkScoreInput extends Page
         // Set defaults to current session and term
         $this->academicSessionId = \App\Models\AcademicSession::where('is_current', true)->first()?->id;
         $this->termId = \App\Models\Term::where('is_current', true)->first()?->id;
+        $this->loadAvailableClassrooms();
         $this->loadStudents();
+    }
+
+    /**
+     * Load classrooms available to the current user.
+     * Teachers can only see their assigned classrooms.
+     */
+    public function loadAvailableClassrooms(): void
+    {
+        $user = Auth::user();
+        
+        if ($user && $user->staff && $user->staff->classrooms()->exists()) {
+            // Teacher: only their assigned classrooms
+            $this->availableClassrooms = $user->staff->classrooms()->pluck('name', 'classrooms.id');
+        } else {
+            // Admin: all classrooms
+            $this->availableClassrooms = Classroom::pluck('name', 'id');
+        }
     }
 
     public function updatedClassroomId(): void
@@ -101,6 +120,19 @@ class BulkScoreInput extends Page
                 ->danger()
                 ->send();
             return;
+        }
+
+        // Authorization check: ensure teacher can only save scores for their assigned classrooms
+        $user = Auth::user();
+        if ($user && $user->staff && $user->staff->classrooms()->exists()) {
+            $classroomIds = $user->staff->classrooms()->pluck('classrooms.id');
+            if (!$classroomIds->contains($this->classroomId)) {
+                Notification::make()
+                    ->title('Unauthorized: You can only input scores for your assigned classrooms')
+                    ->danger()
+                    ->send();
+                return;
+            }
         }
 
         foreach ($this->scores as $studentId => $assessmentScores) {

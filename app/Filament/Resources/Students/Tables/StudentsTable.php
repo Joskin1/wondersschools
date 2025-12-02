@@ -18,6 +18,9 @@ class StudentsTable
                     ->searchable(),
                 TextColumn::make('last_name')
                     ->searchable(),
+                TextColumn::make('admission_number')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('classroom.name')
                     ->label('Classroom')
                     ->sortable(),
