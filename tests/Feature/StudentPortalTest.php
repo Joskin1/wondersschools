@@ -20,7 +20,7 @@ class StudentPortalTest extends TestCase
         $classroom = Classroom::factory()->create();
         $student = Student::factory()->create([
             'admission_number' => 'TEST001',
-            'password' => bcrypt('password'),
+            'password' => 'password',
             'classroom_id' => $classroom->id,
         ]);
 
@@ -68,7 +68,7 @@ class StudentPortalTest extends TestCase
         $classroom = Classroom::factory()->create();
         $student = Student::factory()->create([
             'admission_number' => 'STD/2024/001',
-            'password' => bcrypt('password'),
+            'password' => 'password',
             'classroom_id' => $classroom->id,
         ]);
 

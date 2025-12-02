@@ -35,7 +35,7 @@ class ClassroomResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\TeachersRelationManager::class,
         ];
     }
 

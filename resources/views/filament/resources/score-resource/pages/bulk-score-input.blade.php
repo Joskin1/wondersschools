@@ -90,14 +90,22 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-800">
                                         Student Name
                                     </th>
-                                    @foreach($assessmentTypes as $assessmentType)
+                                    @if(isset($evaluationSettings['CA']))
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                            {{ $assessmentType->name }}
+                                            CA
                                             <span class="block text-xs font-normal text-gray-400">
-                                                (Max: {{ $assessmentType->max_score }})
+                                                (Max: {{ $evaluationSettings['CA']['max_score'] }})
                                             </span>
                                         </th>
-                                    @endforeach
+                                    @endif
+                                    @if(isset($evaluationSettings['Exam']))
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Exam
+                                            <span class="block text-xs font-normal text-gray-400">
+                                                (Max: {{ $evaluationSettings['Exam']['max_score'] }})
+                                            </span>
+                                        </th>
+                                    @endif
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Total
                                     </th>
@@ -112,23 +120,43 @@
                                         @php
                                             $total = 0;
                                         @endphp
-                                        @foreach($assessmentTypes as $assessmentType)
+                                        
+                                        @if(isset($evaluationSettings['CA']))
                                             <td class="px-4 py-3 whitespace-nowrap">
                                                 <input
                                                     type="number"
-                                                    wire:model="scores.{{ $student->id }}.{{ $assessmentType->id }}"
+                                                    wire:model="scores.{{ $student->id }}.ca_score"
                                                     min="0"
-                                                    max="{{ $assessmentType->max_score }}"
+                                                    max="{{ $evaluationSettings['CA']['max_score'] }}"
                                                     step="0.01"
                                                     class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                                                     placeholder="0"
                                                 />
                                                 @php
-                                                    $scoreValue = $scores[$student->id][$assessmentType->id] ?? 0;
-                                                    $total += (float) $scoreValue;
+                                                    $caScore = $scores[$student->id]['ca_score'] ?? 0;
+                                                    $total += (float) $caScore;
                                                 @endphp
                                             </td>
-                                        @endforeach
+                                        @endif
+
+                                        @if(isset($evaluationSettings['Exam']))
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <input
+                                                    type="number"
+                                                    wire:model="scores.{{ $student->id }}.exam_score"
+                                                    min="0"
+                                                    max="{{ $evaluationSettings['Exam']['max_score'] }}"
+                                                    step="0.01"
+                                                    class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                                    placeholder="0"
+                                                />
+                                                @php
+                                                    $examScore = $scores[$student->id]['exam_score'] ?? 0;
+                                                    $total += (float) $examScore;
+                                                @endphp
+                                            </td>
+                                        @endif
+
                                         <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-gray-100">
                                             {{ number_format($total, 2) }}
                                         </td>

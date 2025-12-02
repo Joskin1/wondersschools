@@ -17,39 +17,45 @@ class ScoringSystemTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_can_create_assessment_type()
+    public function test_can_create_evaluation_setting()
     {
         $user = User::factory()->create();
+        $session = \App\Models\AcademicSession::factory()->create();
 
         Livewire::actingAs($user)
-            ->test(AssessmentTypeResource\Pages\CreateAssessmentType::class)
+            ->test(\App\Filament\Resources\EvaluationSettingResource\Pages\CreateEvaluationSetting::class)
             ->fillForm([
-                'name' => 'Test 1',
-                'max_score' => 20,
-                'is_active' => true,
+                'academic_session_id' => $session->id,
+                'name' => 'CA',
+                'max_score' => 40,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
-        $this->assertDatabaseHas('assessment_types', [
-            'name' => 'Test 1',
-            'max_score' => 20,
-            'is_active' => true,
+        $this->assertDatabaseHas('evaluation_settings', [
+            'academic_session_id' => $session->id,
+            'name' => 'CA',
+            'max_score' => 40,
         ]);
     }
 
-    public function test_cannot_exceed_100_total_max_score()
+    public function test_cannot_exceed_100_total_max_score_per_session()
     {
         $user = User::factory()->create();
+        $session = \App\Models\AcademicSession::factory()->create();
         
-        AssessmentType::create(['name' => 'Existing', 'max_score' => 80, 'is_active' => true]);
+        \App\Models\EvaluationSetting::create([
+            'academic_session_id' => $session->id,
+            'name' => 'CA', 
+            'max_score' => 40
+        ]);
 
         Livewire::actingAs($user)
-            ->test(AssessmentTypeResource\Pages\CreateAssessmentType::class)
+            ->test(\App\Filament\Resources\EvaluationSettingResource\Pages\CreateEvaluationSetting::class)
             ->fillForm([
-                'name' => 'New',
-                'max_score' => 30, // 80 + 30 = 110 > 100
-                'is_active' => true,
+                'academic_session_id' => $session->id,
+                'name' => 'Exam',
+                'max_score' => 70, // 40 + 70 = 110 > 100
             ])
             ->call('create')
             ->assertHasFormErrors(['max_score']);
@@ -62,7 +68,10 @@ class ScoringSystemTest extends TestCase
         $term = \App\Models\Term::factory()->create(['academic_session_id' => $session->id, 'is_current' => true]);
         $student = Student::factory()->create();
         $subject = Subject::factory()->create();
-        $assessmentType = AssessmentType::create(['name' => 'Test 1', 'max_score' => 20, 'is_active' => true]);
+        
+        // Create evaluation settings
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'Exam', 'max_score' => 60]);
 
         Livewire::actingAs($user)
             ->test(ScoreResource\Pages\CreateScore::class)
@@ -71,8 +80,8 @@ class ScoringSystemTest extends TestCase
                 'term_id' => $term->id,
                 'student_id' => $student->id,
                 'subject_id' => $subject->id,
-                'assessment_type_id' => $assessmentType->id,
-                'score' => 15,
+                'ca_score' => 30,
+                'exam_score' => 50,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
@@ -80,28 +89,31 @@ class ScoringSystemTest extends TestCase
         $this->assertDatabaseHas('scores', [
             'student_id' => $student->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType->id,
-            'score' => 15,
+            'ca_score' => 30,
+            'exam_score' => 50,
+            'total_score' => 80,
         ]);
     }
 
     public function test_score_cannot_exceed_max_score()
     {
         $user = User::factory()->create();
+        $session = \App\Models\AcademicSession::factory()->create(['is_current' => true]);
         $student = Student::factory()->create();
         $subject = Subject::factory()->create();
-        $assessmentType = AssessmentType::create(['name' => 'Test 1', 'max_score' => 20, 'is_active' => true]);
+        
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
 
         Livewire::actingAs($user)
             ->test(ScoreResource\Pages\CreateScore::class)
             ->fillForm([
+                'academic_session_id' => $session->id,
                 'student_id' => $student->id,
                 'subject_id' => $subject->id,
-                'assessment_type_id' => $assessmentType->id,
-                'score' => 25, // 25 > 20
+                'ca_score' => 45, // 45 > 40
             ])
             ->call('create')
-            ->assertHasFormErrors(['score']);
+            ->assertHasFormErrors(['ca_score']);
     }
 
     public function test_can_assign_staff_as_class_teacher()
@@ -173,8 +185,9 @@ class ScoringSystemTest extends TestCase
         $student1 = Student::factory()->create(['classroom_id' => $classroom->id]);
         $student2 = Student::factory()->create(['classroom_id' => $classroom->id]);
         $subject = Subject::factory()->create();
-        $assessmentType1 = AssessmentType::create(['name' => 'Test 1', 'max_score' => 20, 'is_active' => true]);
-        $assessmentType2 = AssessmentType::create(['name' => 'Exam', 'max_score' => 80, 'is_active' => true]);
+        
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'Exam', 'max_score' => 60]);
 
         Livewire::actingAs($user)
             ->test(ScoreResource\Pages\BulkScoreInput::class)
@@ -185,12 +198,12 @@ class ScoringSystemTest extends TestCase
             ->call('loadStudents')
             ->set('scores', [
                 $student1->id => [
-                    $assessmentType1->id => 15,
-                    $assessmentType2->id => 70,
+                    'ca_score' => 30,
+                    'exam_score' => 50,
                 ],
                 $student2->id => [
-                    $assessmentType1->id => 18,
-                    $assessmentType2->id => 75,
+                    'ca_score' => 35,
+                    'exam_score' => 55,
                 ],
             ])
             ->call('save')
@@ -199,15 +212,17 @@ class ScoringSystemTest extends TestCase
         $this->assertDatabaseHas('scores', [
             'student_id' => $student1->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType1->id,
-            'score' => 15,
+            'ca_score' => 30,
+            'exam_score' => 50,
+            'total_score' => 80,
         ]);
 
         $this->assertDatabaseHas('scores', [
             'student_id' => $student2->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType2->id,
-            'score' => 75,
+            'ca_score' => 35,
+            'exam_score' => 55,
+            'total_score' => 90,
         ]);
     }
 }

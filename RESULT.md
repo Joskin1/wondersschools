@@ -1,69 +1,192 @@
-That's a very clear implementation plan\! To create a powerful prompt for an AI to review your existing code and ensure the new features are correctly integrated, you should combine the **Implementation Plan** details with your new requirements, focusing on the **Teacher** and **Student** roles.
+You are to review the existing codebase for a Laravel + Filament school management system. Abort or refactor anything already done that contradicts the specification below. Delete unused code paths, redundant migrations, redundant tests, and any logic that does not align with the system’s functional rules. Where any part of the implementation is incomplete or missing, implement it correctly. After implementing, write proper feature and unit tests. All features must be stable, atomic, and database-driven.
 
-Here is a comprehensive prompt you can use. You will insert your existing code files (like models, panel configurations, policy files, etc.) into the designated section of the actual prompt when you use it.
+SYSTEM REQUIREMENTS
+1. Actors and Access
 
-## 📝 Comprehensive AI Code Review Prompt
+Admin Panel built with Filament
 
-````
-**Goal: Code Review & Integration for School Management System (Laravel, Tailwind, Filament 4)**
+Teacher Panel
 
-I am implementing a Student Portal and Class Teacher functionality based on the detailed plan below. I need you to act as a senior Laravel/Filament architect. Review the provided code snippets and ensure they correctly implement the system described, paying special attention to security, Filament architecture, and role separation.
+Student Panel
 
----
+Each role must see only relevant models and actions.
 
-### 1. Existing Implementation Plan (Review Context)
+2. Class, Teacher, Subject & Student Relations
 
-**Student Portal & Result Printing**
+Each Teacher is assigned to one or more Classes.
 
-* **Authentication Strategy (Student):** Separate Filament Panel (`/student`) using `admission_number` and `password`.
-* **Database Changes:** `students` table has `admission_number` (string, unique) and `password` (string). `Student` model implements `Authenticatable`.
-* **Authentication Config:** `auth.php` is configured with `student` guard and provider.
-* **Student Panel:** New panel created (`php artisan filament:panel student`) using the `student` guard.
-* **Result View:** `ViewResult` page for students to list, view, and print their Report Cards using CSS `@media print`.
+A Teacher can only see students belonging to the Classes assigned to them.
 
----
+A Teacher can only input results for subjects assigned to them for their assigned class(es).
 
-### 2. New Feature Requirements & Role Separation
+A Student belongs to a Class and is automatically scoped by session and term when results are viewed.
 
-**A. Class Teacher Functionality (New Focus)**
+Admin must be able to assign:
 
-1.  **Staff/Teacher Assignment:** An **Admin** must be able to assign a registered Staff/User as a **Class Teacher** to a specific `Class`. (e.g., A `User` record is linked to a `Class` record).
-2.  **Teacher Access & Scope:** A **Class Teacher** logging into the **Admin Filament Panel** (or a dedicated Teacher Panel, if applicable, but for now assume Admin Panel access with permissions) must only be able to:
-    * View a list of **Students** belonging *only* to their assigned class(es).
-    * View the detailed profile of those students.
-3.  **Score Upload/Scoring:** A **Class Teacher** must be able to:
-    * Input/Give **Scores** for students in their assigned class(es).
-    * The scoring must be based on the **Evaluation Methods** (e.g., 'Score Head') defined by the Admin (e.g., *Test 1*, *Exam*, *Homework*).
-4.  **Automatic Calculation:** The system must automatically perform all necessary calculations (e.g., total score, grade, position) when scores are submitted/updated.
+Classes → Teachers
 
-**B. Student Portal/Result (Confirmation)**
+Subjects → Teachers per Class
 
-1.  **Login:** Student login must strictly require `admission_number` and `password` and route to the `/student` panel.
-2.  **Result View:** Students must be able to view and print/download their automatically calculated results.
+Evaluation formula for each session
 
----
+3. Evaluation System (Score Composition)
 
-### 3. Task for AI
+The admin sets evaluation parameters per session, e.g.:
 
-1.  **Review & Validate:** Check the provided code snippets against all requirements (1, 2A, 2B).
-2.  **Identify Gaps/Errors:** Highlight any missing configurations, incorrect Filament logic, insecure data exposure, or incorrect model relationships.
-3.  **Provide Corrective/New Code:** For any identified gaps, provide the corrected or entirely new code blocks (e.g., the policy, the relationship in a model, the correct panel configuration, or the logic in a Filament Resource/Page) to achieve the required functionality.
-4.  **Focus Area:** Specifically, ensure the mechanism for linking a `User` (Staff/Teacher) to a `Class` and the **Policy** that restricts a teacher's view/edit scope to *only* their assigned students is robust and correctly implemented in Filament.
+continuous_assessment = 40
+exam = 60
+total = 100
 
----
 
-### 4. Code Snippets to Review
+These values must be stored in DB and dynamic.
 
-*[**IMPORTANT:** Replace this block with your actual code. If you cannot share all files, share the most relevant ones: `Student.php` model, `User.php` model (Staff/Teacher), the Teacher/Admin Panel configuration, the Student Resource/Policy, and any relevant database migration files.]*
+Teachers cannot exceed allotted score components.
 
-```php
-// Your existing Student.php model
-// Your existing User.php model
-// Your existing database migrations (students, classes, class_teacher_assignment, scores)
-// Your Filament StudentPanelProvider.php
-// Your Filament StudentResource.php
-// Your ClassPolicy.php or StudentPolicy.php (if any)
-````
+The system must validate:
 
-```
-```
+CA score ≤ continuous_assessment
+
+Exam score ≤ exam
+
+CA + Exam = total (100)
+
+Changing evaluation structure mid-session must not break existing results. Each evaluation setting must be versioned per session.
+
+4. Result Entry Rules
+
+Results are recorded per student, per subject, per term, per session.
+
+If a result for a student/subject/term already exists, teacher must update rather than create duplicates.
+
+Prevent accidental overwrites unless explicitly confirmed.
+
+5. Term and Session Migration Logic
+Definitions
+
+One Session = 3 terms:
+
+First Term
+
+Second Term
+
+Third Term
+
+Migration Rules
+
+System must track: current_session and current_term in a central config table.
+
+Only Admin can migrate.
+
+Migration UI must:
+
+Display current term & session
+
+Ask which term to migrate to
+
+Validate allowed transitions
+
+Allowed Transitions
+If current_term = First
+   allowed → Second
+   blocked → Third or First
+
+If current_term = Second
+   allowed → Third
+   blocked → First or Second
+
+If current_term = Third
+   allowed → First ONLY if session increments
+   session = session + 1
+
+
+If admin attempts illegal migration:
+
+Show error: “Migration to <term> not permitted. Complete terms sequentially.”
+
+When migrating from Third Term → First Term:
+
+Auto generate next session as current_session + 1
+
+Reset current term to First
+
+Carry-over class promotions handled separately (not mandatory here, just design for future extensibility)
+
+6. Tests Required
+
+Delete any existing test that contradicts these rules.
+
+Write tests for:
+
+Unit Tests
+
+Evaluation validation logic
+
+Allowed vs. blocked term migration
+
+Score summation and max limit
+
+Prevent duplicate result creation per student/subject/term/session
+
+Feature Tests
+
+Teacher cannot input scores for subjects not assigned to them
+
+Admin sets evaluation and it affects score forms dynamically
+
+Migration updates session/term correctly
+
+Session increment when migrating from Third → First
+
+7. Additional Robustness Rules
+
+Add these if missing:
+
+Every student result record must include:
+
+student_id
+
+subject_id
+
+teacher_id
+
+term
+
+session
+
+CA score
+
+Exam score
+
+Total score (computed)
+
+Evaluation version ID (foreign key)
+
+Denormalize computed totals only after validation.
+
+Introduce evaluation_settings table with session reference.
+
+8. Developer Constraints
+
+DO NOT hard-code any session, term, or score value.
+
+Everything must be DB-driven and modifiable by admin.
+
+Ensure Filament forms auto-adapt to evaluation settings.
+
+Apply policies to enforce role-based access.
+
+YOUR TASK
+
+Review existing implementation.
+
+Abort or modify any mismatched logic.
+
+Complete missing features.
+
+Delete redundant or conflicting tests.
+
+Implement new logic per specification.
+
+Write passing tests demonstrating correctness.
+
+Refactor for clarity, maintainability, and scalability.

@@ -23,33 +23,23 @@ class ResultService
         $scores = Score::where('student_id', $studentId)
             ->where('academic_session_id', $academicSessionId)
             ->where('term_id', $termId)
-            ->with(['subject', 'assessmentType'])
+            ->with(['subject'])
             ->get();
 
         if ($scores->isEmpty()) {
             return null;
         }
 
-        // Group scores by subject and calculate subject totals
-        $subjectTotals = [];
-        foreach ($scores as $score) {
-            $subjectId = $score->subject_id;
-            if (!isset($subjectTotals[$subjectId])) {
-                $subjectTotals[$subjectId] = 0;
-            }
-            $subjectTotals[$subjectId] += $score->score;
-        }
-
-        // Calculate total score and average
-        $totalScore = array_sum($subjectTotals);
-        $subjectCount = count($subjectTotals);
+        // Calculate total score across all subjects (each score already has total_score = ca_score + exam_score)
+        $totalScore = $scores->sum('total_score');
+        $subjectCount = $scores->count();
         $averageScore = $subjectCount > 0 ? $totalScore / $subjectCount : 0;
 
         // Calculate grade based on average
         $grade = $this->calculateGrade($averageScore);
 
         // Calculate position within classroom
-        $position = $this->calculatePosition($student->classroom_id, $academicSessionId, $termId, $totalScore);
+        $position = $this->calculatePosition($student->classroom_id, $academicSessionId, $termId, $averageScore);
 
         // Create or update result
         $result = Result::updateOrCreate(
@@ -60,7 +50,7 @@ class ResultService
             ],
             [
                 'classroom_id' => $student->classroom_id,
-                'total_score' => $totalScore,
+                'total_score' => round($totalScore, 2),
                 'average_score' => round($averageScore, 2),
                 'position' => $position,
                 'grade' => $grade,
@@ -93,15 +83,15 @@ class ResultService
     }
 
     /**
-     * Calculate position within classroom based on total score.
+     * Calculate position within classroom based on average score.
      */
-    protected function calculatePosition(int $classroomId, int $academicSessionId, int $termId, float $totalScore): int
+    protected function calculatePosition(int $classroomId, int $academicSessionId, int $termId, float $averageScore): int
     {
-        // Count how many students in the same classroom have a higher total score
+        // Count how many students in the same classroom have a higher average score
         $higherScoreCount = Result::where('classroom_id', $classroomId)
             ->where('academic_session_id', $academicSessionId)
             ->where('term_id', $termId)
-            ->where('total_score', '>', $totalScore)
+            ->where('average_score', '>', $averageScore)
             ->count();
 
         return $higherScoreCount + 1;
@@ -115,7 +105,7 @@ class ResultService
         $results = Result::where('classroom_id', $classroomId)
             ->where('academic_session_id', $academicSessionId)
             ->where('term_id', $termId)
-            ->orderBy('total_score', 'desc')
+            ->orderBy('average_score', 'desc')
             ->get();
 
         $position = 1;
@@ -123,7 +113,7 @@ class ResultService
         $sameScoreCount = 0;
 
         foreach ($results as $result) {
-            if ($previousScore !== null && $result->total_score < $previousScore) {
+            if ($previousScore !== null && $result->average_score < $previousScore) {
                 $position += $sameScoreCount;
                 $sameScoreCount = 1;
             } else {
@@ -131,7 +121,7 @@ class ResultService
             }
 
             $result->update(['position' => $position]);
-            $previousScore = $result->total_score;
+            $previousScore = $result->average_score;
         }
     }
 }

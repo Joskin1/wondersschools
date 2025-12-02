@@ -10,6 +10,11 @@ class Student extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new \App\Models\Scopes\TeacherScope);
+    }
+
     protected $fillable = ['first_name', 'last_name', 'classroom_id', 'admission_number', 'password'];
 
     protected $hidden = [

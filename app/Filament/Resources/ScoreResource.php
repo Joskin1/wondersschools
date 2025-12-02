@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ScoreResource\Pages;
 use App\Models\Score;
-use App\Models\AssessmentType;
+use App\Models\EvaluationSetting;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables\Table;
@@ -13,12 +13,15 @@ use Filament\Forms;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Illuminate\Support\Facades\Auth;
 
 class ScoreResource extends Resource
 {
     protected static ?string $model = Score::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+
+    protected static string | \UnitEnum | null $navigationGroup = 'Academic';
 
     public static function form(Schema $schema): Schema
     {
@@ -27,7 +30,8 @@ class ScoreResource extends Resource
                 Forms\Components\Select::make('academic_session_id')
                     ->relationship('academicSession', 'name')
                     ->required()
-                    ->default(fn () => \App\Models\AcademicSession::where('is_current', true)->first()?->id),
+                    ->default(fn () => \App\Models\AcademicSession::where('is_current', true)->first()?->id)
+                    ->live(),
                 Forms\Components\Select::make('term_id')
                     ->relationship('term', 'name')
                     ->required()
@@ -43,31 +47,58 @@ class ScoreResource extends Resource
                     ->required()
                     ->searchable()
                     ->preload(),
-                Forms\Components\Select::make('assessment_type_id')
-                    ->relationship('assessmentType', 'name')
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->live(),
-                Forms\Components\TextInput::make('score')
+                Forms\Components\Hidden::make('teacher_id')
+                    ->default(fn () => Auth::user()?->staff?->id),
+                Forms\Components\TextInput::make('ca_score')
+                    ->label(function ($get) {
+                        $sessionId = $get('academic_session_id');
+                        if ($sessionId) {
+                            $caSetting = EvaluationSetting::where('academic_session_id', $sessionId)
+                                ->where('name', 'CA')
+                                ->first();
+                            return 'CA Score (Max: ' . ($caSetting?->max_score ?? 40) . ')';
+                        }
+                        return 'CA Score';
+                    })
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->maxValue(function ($get) {
-                        $assessmentTypeId = $get('assessment_type_id');
-                        if ($assessmentTypeId) {
-                            $assessmentType = AssessmentType::find($assessmentTypeId);
-                            return $assessmentType ? $assessmentType->max_score : 100;
+                        $sessionId = $get('academic_session_id');
+                        if ($sessionId) {
+                            $caSetting = EvaluationSetting::where('academic_session_id', $sessionId)
+                                ->where('name', 'CA')
+                                ->first();
+                            return $caSetting?->max_score ?? 40;
                         }
-                        return 100;
+                        return 40;
                     })
+                    ->default(0),
+                Forms\Components\TextInput::make('exam_score')
                     ->label(function ($get) {
-                        $assessmentTypeId = $get('assessment_type_id');
-                        if ($assessmentTypeId) {
-                            $assessmentType = AssessmentType::find($assessmentTypeId);
-                            return 'Score (Max: ' . ($assessmentType ? $assessmentType->max_score : '?') . ')';
+                        $sessionId = $get('academic_session_id');
+                        if ($sessionId) {
+                            $examSetting = EvaluationSetting::where('academic_session_id', $sessionId)
+                                ->where('name', 'Exam')
+                                ->first();
+                            return 'Exam Score (Max: ' . ($examSetting?->max_score ?? 60) . ')';
                         }
-                        return 'Score';
-                    }),
+                        return 'Exam Score';
+                    })
+                    ->required()
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(function ($get) {
+                        $sessionId = $get('academic_session_id');
+                        if ($sessionId) {
+                            $examSetting = EvaluationSetting::where('academic_session_id', $sessionId)
+                                ->where('name', 'Exam')
+                                ->first();
+                            return $examSetting?->max_score ?? 60;
+                        }
+                        return 60;
+                    })
+                    ->default(0),
             ]);
     }
 
@@ -89,13 +120,23 @@ class ScoreResource extends Resource
                 Tables\Columns\TextColumn::make('subject.name')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('assessmentType.name')
-                    ->label('Assessment Type')
+                Tables\Columns\TextColumn::make('teacher.name')
+                    ->label('Teacher')
                     ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('score')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('ca_score')
+                    ->label('CA')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('exam_score')
+                    ->label('Exam')
+                    ->numeric()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('total_score')
+                    ->label('Total')
+                    ->numeric()
+                    ->sortable()
+                    ->weight('bold'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

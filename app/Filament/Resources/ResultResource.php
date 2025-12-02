@@ -28,16 +28,20 @@ class ResultResource extends Resource
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->first_name} {$record->last_name}")
                     ->required()
                     ->searchable(['first_name', 'last_name'])
-                    ->preload(),
+                    ->preload()
+                    ->disabledOn('edit'),
                 Forms\Components\Select::make('academic_session_id')
                     ->relationship('academicSession', 'name')
-                    ->required(),
+                    ->required()
+                    ->disabledOn('edit'),
                 Forms\Components\Select::make('term_id')
                     ->relationship('term', 'name')
-                    ->required(),
+                    ->required()
+                    ->disabledOn('edit'),
                 Forms\Components\Select::make('classroom_id')
                     ->relationship('classroom', 'name')
-                    ->required(),
+                    ->required()
+                    ->disabledOn('edit'),
                 Forms\Components\TextInput::make('total_score')
                     ->numeric()
                     ->readOnly(),
@@ -49,8 +53,10 @@ class ResultResource extends Resource
                     ->readOnly(),
                 Forms\Components\TextInput::make('grade')
                     ->readOnly(),
-                Forms\Components\Textarea::make('teacher_remark'),
-                Forms\Components\Textarea::make('principal_remark'),
+                Forms\Components\Textarea::make('teacher_remark')
+                    ->columnSpanFull(),
+                Forms\Components\Textarea::make('principal_remark')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -82,6 +88,12 @@ class ResultResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('grade')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('teacher_remark')
+                    ->limit(30)
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('principal_remark')
+                    ->limit(30)
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //

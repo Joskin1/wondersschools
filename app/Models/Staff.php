@@ -27,4 +27,10 @@ class Staff extends Model
     {
         return $this->hasMany(Classroom::class);
     }
+
+    public function subjects()
+    {
+        return $this->belongsToMany(Subject::class, 'classroom_subject_teacher', 'staff_id', 'subject_id')
+            ->withPivot('classroom_id');
+    }
 }

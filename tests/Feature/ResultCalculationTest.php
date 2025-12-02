@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicSession;
-use App\Models\AssessmentType;
 use App\Models\Classroom;
 use App\Models\Result;
 use App\Models\Score;
@@ -24,15 +23,17 @@ class ResultCalculationTest extends TestCase
         $classroom = Classroom::factory()->create();
         $student = Student::factory()->create(['classroom_id' => $classroom->id]);
         $subject = Subject::factory()->create();
-        $assessmentType = AssessmentType::factory()->create(['max_score' => 100]);
+        
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'Exam', 'max_score' => 60]);
 
         Score::create([
             'student_id' => $student->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType->id,
             'academic_session_id' => $session->id,
             'term_id' => $term->id,
-            'score' => 80,
+            'ca_score' => 30,
+            'exam_score' => 50,
         ]);
 
         $this->assertDatabaseHas('results', [
@@ -54,18 +55,20 @@ class ResultCalculationTest extends TestCase
         $classroom = Classroom::factory()->create();
         $student = Student::factory()->create(['classroom_id' => $classroom->id]);
         $subject = Subject::factory()->create();
-        $assessmentType = AssessmentType::factory()->create(['max_score' => 100]);
+        
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'Exam', 'max_score' => 60]);
 
         $score = Score::create([
             'student_id' => $student->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType->id,
             'academic_session_id' => $session->id,
             'term_id' => $term->id,
-            'score' => 50,
+            'ca_score' => 20,
+            'exam_score' => 30,
         ]);
 
-        $score->update(['score' => 90]);
+        $score->update(['ca_score' => 30, 'exam_score' => 60]);
 
         $this->assertDatabaseHas('results', [
             'student_id' => $student->id,
@@ -83,24 +86,26 @@ class ResultCalculationTest extends TestCase
         $student = Student::factory()->create(['classroom_id' => $classroom->id]);
         $subject1 = Subject::factory()->create();
         $subject2 = Subject::factory()->create();
-        $assessmentType = AssessmentType::factory()->create(['max_score' => 100]);
+        
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'Exam', 'max_score' => 60]);
 
         Score::create([
             'student_id' => $student->id,
             'subject_id' => $subject1->id,
-            'assessment_type_id' => $assessmentType->id,
             'academic_session_id' => $session->id,
             'term_id' => $term->id,
-            'score' => 80,
+            'ca_score' => 30,
+            'exam_score' => 50, // Total 80
         ]);
 
         Score::create([
             'student_id' => $student->id,
             'subject_id' => $subject2->id,
-            'assessment_type_id' => $assessmentType->id,
             'academic_session_id' => $session->id,
             'term_id' => $term->id,
-            'score' => 60,
+            'ca_score' => 20,
+            'exam_score' => 40, // Total 60
         ]);
 
         $this->assertDatabaseHas('results', [
@@ -119,26 +124,28 @@ class ResultCalculationTest extends TestCase
         $student1 = Student::factory()->create(['classroom_id' => $classroom->id]);
         $student2 = Student::factory()->create(['classroom_id' => $classroom->id]);
         $subject = Subject::factory()->create();
-        $assessmentType = AssessmentType::factory()->create(['max_score' => 100]);
+        
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'Exam', 'max_score' => 60]);
 
         // Student 1 scores 80
         Score::create([
             'student_id' => $student1->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType->id,
             'academic_session_id' => $session->id,
             'term_id' => $term->id,
-            'score' => 80,
+            'ca_score' => 30,
+            'exam_score' => 50,
         ]);
 
         // Student 2 scores 90
         Score::create([
             'student_id' => $student2->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType->id,
             'academic_session_id' => $session->id,
             'term_id' => $term->id,
-            'score' => 90,
+            'ca_score' => 35,
+            'exam_score' => 55,
         ]);
 
         // Student 2 should be 1st, Student 1 should be 2nd
@@ -161,25 +168,27 @@ class ResultCalculationTest extends TestCase
         $student1 = Student::factory()->create(['classroom_id' => $classroom->id]);
         $student2 = Student::factory()->create(['classroom_id' => $classroom->id]);
         $subject = Subject::factory()->create();
-        $assessmentType = AssessmentType::factory()->create(['max_score' => 100]);
+        
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'Exam', 'max_score' => 60]);
 
         // Initial: Student 1 = 80, Student 2 = 90
         Score::create([
             'student_id' => $student1->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType->id,
             'academic_session_id' => $session->id,
             'term_id' => $term->id,
-            'score' => 80,
+            'ca_score' => 30,
+            'exam_score' => 50,
         ]);
 
         $score2 = Score::create([
             'student_id' => $student2->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType->id,
             'academic_session_id' => $session->id,
             'term_id' => $term->id,
-            'score' => 90,
+            'ca_score' => 35,
+            'exam_score' => 55,
         ]);
 
         // Verify initial positions
@@ -187,7 +196,7 @@ class ResultCalculationTest extends TestCase
         $this->assertEquals(1, Result::where('student_id', $student2->id)->first()->position);
 
         // Update Student 2 score to 70 (now lower than Student 1)
-        $score2->update(['score' => 70]);
+        $score2->update(['ca_score' => 20, 'exam_score' => 50]);
 
         // Verify new positions
         $this->assertEquals(1, Result::where('student_id', $student1->id)->first()->position);

@@ -14,11 +14,6 @@ class ClassroomForm
             ->components([
                 TextInput::make('name')
                     ->required(),
-                Select::make('staff_id')
-                    ->relationship('teacher', 'name')
-                    ->label('Class Teacher')
-                    ->searchable()
-                    ->preload(),
             ]);
     }
 }

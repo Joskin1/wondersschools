@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ScoreResource\Pages;
 
 use App\Filament\Resources\ScoreResource;
-use App\Models\AssessmentType;
 use App\Models\Classroom;
 use App\Models\Score;
 use App\Models\Student;
@@ -33,7 +32,7 @@ class BulkScoreInput extends Page
     public ?int $classroomId = null;
     public ?int $subjectId = null;
     public $students = [];
-    public $assessmentTypes = [];
+    public $evaluationSettings = [];
     public $availableClassrooms = [];
     public $scores = [];
 
@@ -85,30 +84,31 @@ class BulkScoreInput extends Page
 
     public function loadStudents(): void
     {
-        if ($this->classroomId && $this->subjectId) {
+        if ($this->classroomId && $this->subjectId && $this->academicSessionId) {
             $this->students = Student::where('classroom_id', $this->classroomId)
                 ->orderBy('first_name')
                 ->orderBy('last_name')
                 ->get();
 
-            $this->assessmentTypes = AssessmentType::where('is_active', true)
-                ->orderBy('name')
-                ->get();
+            $this->evaluationSettings = \App\Models\EvaluationSetting::where('academic_session_id', $this->academicSessionId)
+                ->get()
+                ->keyBy('name')
+                ->toArray();
 
             // Load existing scores
             foreach ($this->students as $student) {
-                foreach ($this->assessmentTypes as $assessmentType) {
-                    $score = Score::where('student_id', $student->id)
-                        ->where('subject_id', $this->subjectId)
-                        ->where('assessment_type_id', $assessmentType->id)
-                        ->first();
+                $score = Score::where('student_id', $student->id)
+                    ->where('subject_id', $this->subjectId)
+                    ->where('academic_session_id', $this->academicSessionId)
+                    ->where('term_id', $this->termId)
+                    ->first();
 
-                    $this->scores[$student->id][$assessmentType->id] = $score?->score ?? null;
-                }
+                $this->scores[$student->id]['ca_score'] = $score?->ca_score;
+                $this->scores[$student->id]['exam_score'] = $score?->exam_score;
             }
         } else {
             $this->students = [];
-            $this->assessmentTypes = [];
+            $this->evaluationSettings = [];
         }
     }
 
@@ -135,32 +135,49 @@ class BulkScoreInput extends Page
             }
         }
 
-        foreach ($this->scores as $studentId => $assessmentScores) {
-            foreach ($assessmentScores as $assessmentTypeId => $scoreValue) {
-                if ($scoreValue !== null && $scoreValue !== '') {
-                    // Validate score against max_score
-                    $assessmentType = AssessmentType::find($assessmentTypeId);
-                    if ($scoreValue > $assessmentType->max_score) {
+        foreach ($this->scores as $studentId => $studentScores) {
+            $caScore = $studentScores['ca_score'] ?? null;
+            $examScore = $studentScores['exam_score'] ?? null;
+
+            if (($caScore !== null && $caScore !== '') || ($examScore !== null && $examScore !== '')) {
+                
+                // Validate CA Score
+                if (isset($this->evaluationSettings['CA'])) {
+                    $maxCa = $this->evaluationSettings['CA']['max_score'];
+                    if ($caScore > $maxCa) {
                         Notification::make()
-                            ->title("Score for student ID {$studentId} exceeds maximum for {$assessmentType->name}")
+                            ->title("CA Score for student ID {$studentId} exceeds maximum of {$maxCa}")
                             ->danger()
                             ->send();
                         return;
                     }
-
-                    Score::updateOrCreate(
-                        [
-                            'student_id' => $studentId,
-                            'subject_id' => $this->subjectId,
-                            'assessment_type_id' => $assessmentTypeId,
-                            'academic_session_id' => $this->academicSessionId,
-                            'term_id' => $this->termId,
-                        ],
-                        [
-                            'score' => $scoreValue,
-                        ]
-                    );
                 }
+
+                // Validate Exam Score
+                if (isset($this->evaluationSettings['Exam'])) {
+                    $maxExam = $this->evaluationSettings['Exam']['max_score'];
+                    if ($examScore > $maxExam) {
+                        Notification::make()
+                            ->title("Exam Score for student ID {$studentId} exceeds maximum of {$maxExam}")
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+                }
+
+                Score::updateOrCreate(
+                    [
+                        'student_id' => $studentId,
+                        'subject_id' => $this->subjectId,
+                        'academic_session_id' => $this->academicSessionId,
+                        'term_id' => $this->termId,
+                    ],
+                    [
+                        'ca_score' => $caScore,
+                        'exam_score' => $examScore,
+                        'teacher_id' => $user->staff ? $user->staff->id : null,
+                    ]
+                );
             }
         }
 

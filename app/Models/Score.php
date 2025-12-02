@@ -8,7 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 class Score extends Model
 {
     use HasFactory;
-    protected $fillable = ['student_id', 'subject_id', 'assessment_type_id', 'score', 'academic_session_id', 'term_id'];
+    
+    protected $fillable = [
+        'student_id',
+        'subject_id',
+        'teacher_id',
+        'academic_session_id',
+        'term_id',
+        'evaluation_setting_id',
+        'ca_score',
+        'exam_score',
+    ];
+
+    protected $appends = ['total_score'];
 
     public function student()
     {
@@ -20,9 +32,9 @@ class Score extends Model
         return $this->belongsTo(Subject::class);
     }
 
-    public function assessmentType()
+    public function teacher()
     {
-        return $this->belongsTo(AssessmentType::class);
+        return $this->belongsTo(Staff::class, 'teacher_id');
     }
 
     public function academicSession()
@@ -33,5 +45,18 @@ class Score extends Model
     public function term()
     {
         return $this->belongsTo(Term::class);
+    }
+
+    public function evaluationSetting()
+    {
+        return $this->belongsTo(EvaluationSetting::class);
+    }
+
+    /**
+     * Get the total score (CA + Exam)
+     */
+    public function getTotalScoreAttribute(): float
+    {
+        return $this->ca_score + $this->exam_score;
     }
 }

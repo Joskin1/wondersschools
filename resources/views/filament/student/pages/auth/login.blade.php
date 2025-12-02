@@ -1,10 +1,9 @@
 <x-filament-panels::page.simple>
-    <x-filament-panels::form wire:submit="authenticate">
+    <form wire:submit="authenticate" class="grid gap-y-8">
         {{ $this->form }}
 
-        <x-filament-panels::form.actions
-            :actions="$this->getCachedFormActions()"
-            :full-width="true"
-        />
-    </x-filament-panels::form>
+        <x-filament::button type="submit" class="w-full">
+            Sign in
+        </x-filament::button>
+    </form>
 </x-filament-panels::page.simple>

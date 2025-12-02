@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicSession;
-use App\Models\AssessmentType;
 use App\Models\Classroom;
 use App\Models\Result;
 use App\Models\Score;
@@ -72,15 +71,16 @@ class AcademicStructureTest extends TestCase
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
         $student = Student::factory()->create();
         $subject = Subject::factory()->create();
-        $assessmentType = AssessmentType::create(['name' => 'Test', 'max_score' => 20, 'is_active' => true]);
+        
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
 
         $score = Score::create([
             'student_id' => $student->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType->id,
             'academic_session_id' => $session->id,
             'term_id' => $term->id,
-            'score' => 15,
+            'ca_score' => 15,
+            'exam_score' => 0,
         ]);
 
         $this->assertInstanceOf(AcademicSession::class, $score->academicSession);
@@ -178,7 +178,9 @@ class AcademicStructureTest extends TestCase
         $classroom = Classroom::factory()->create();
         $student = Student::factory()->create(['classroom_id' => $classroom->id]);
         $subject = Subject::factory()->create();
-        $assessmentType = AssessmentType::create(['name' => 'Test', 'max_score' => 20, 'is_active' => true]);
+        
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
+        \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'Exam', 'max_score' => 60]);
 
         Livewire::actingAs($user)
             ->test(\App\Filament\Resources\ScoreResource\Pages\BulkScoreInput::class)
@@ -189,7 +191,8 @@ class AcademicStructureTest extends TestCase
             ->call('loadStudents')
             ->set('scores', [
                 $student->id => [
-                    $assessmentType->id => 15,
+                    'ca_score' => 15,
+                    'exam_score' => 0,
                 ],
             ])
             ->call('save')
@@ -198,10 +201,9 @@ class AcademicStructureTest extends TestCase
         $this->assertDatabaseHas('scores', [
             'student_id' => $student->id,
             'subject_id' => $subject->id,
-            'assessment_type_id' => $assessmentType->id,
             'academic_session_id' => $session->id,
             'term_id' => $term->id,
-            'score' => 15,
+            'ca_score' => 15,
         ]);
     }
     public function test_term_resource_pages_load()
