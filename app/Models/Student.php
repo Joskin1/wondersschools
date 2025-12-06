@@ -15,11 +15,21 @@ class Student extends Authenticatable
         static::addGlobalScope(new \App\Models\Scopes\TeacherScope);
     }
 
-    protected $fillable = ['first_name', 'last_name', 'classroom_id', 'admission_number', 'password'];
+    protected $fillable = ['first_name', 'last_name', 'classroom_id', 'admission_number', 'password', 'is_graduated'];
 
     protected $hidden = [
         'password',
     ];
+
+    public function scopeGraduated($query)
+    {
+        return $query->where('is_graduated', true);
+    }
+
+    public function scopeNotGraduated($query)
+    {
+        return $query->where('is_graduated', false);
+    }
 
     public function classroom()
     {
