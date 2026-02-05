@@ -46,6 +46,11 @@ class Student extends Authenticatable
         return "{$this->first_name} {$this->last_name}";
     }
 
+    public function getNameAttribute(): string
+    {
+        return $this->getFullNameAttribute();
+    }
+
     public function results()
     {
         return $this->hasMany(Result::class);

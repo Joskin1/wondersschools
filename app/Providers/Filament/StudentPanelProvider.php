@@ -34,7 +34,7 @@ class StudentPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Student/Resources'), for: 'App\Filament\Student\Resources')
             ->pages([
-                Dashboard::class,
+                \App\Filament\Student\Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Student/Widgets'), for: 'App\Filament\Student\Widgets')
             ->widgets([
