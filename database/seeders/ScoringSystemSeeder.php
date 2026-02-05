@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\AssessmentType;
+use App\Models\EvaluationSetting;
 use App\Models\Classroom;
 use App\Models\Score;
 use App\Models\Student;
@@ -78,17 +78,6 @@ class ScoringSystemSeeder extends Seeder
             Subject::create($subject);
         }
 
-        // Create assessment types (ensuring they sum to 100)
-        $assessmentTypes = [
-            ['name' => 'First Test', 'max_score' => 20, 'is_active' => true],
-            ['name' => 'Second Test', 'max_score' => 20, 'is_active' => true],
-            ['name' => 'Final Exam', 'max_score' => 60, 'is_active' => true],
-        ];
-
-        foreach ($assessmentTypes as $assessmentType) {
-            AssessmentType::create($assessmentType);
-        }
-
         // Create academic session and term
         $session = \App\Models\AcademicSession::create([
             'name' => '2024/2025',
@@ -103,6 +92,19 @@ class ScoringSystemSeeder extends Seeder
             'start_date' => now()->subMonths(3),
             'end_date' => now()->subMonths(1),
             'is_current' => true,
+        ]);
+
+        // Create evaluation settings (CA: 40, Exam: 60 = 100 total)
+        EvaluationSetting::create([
+            'academic_session_id' => $session->id,
+            'name' => 'Continuous Assessment',
+            'max_score' => 40,
+        ]);
+
+        EvaluationSetting::create([
+            'academic_session_id' => $session->id,
+            'name' => 'Examination',
+            'max_score' => 60,
         ]);
 
         // Create demo student with known credentials FIRST
@@ -137,25 +139,21 @@ class ScoringSystemSeeder extends Seeder
         // Create scores for all students
         $students = Student::all();
         $subjectIds = Subject::pluck('id')->toArray();
-        $assessmentTypeIds = AssessmentType::where('is_active', true)->pluck('id')->toArray();
 
         foreach ($students as $student) {
             foreach ($subjectIds as $subjectId) {
-                foreach ($assessmentTypeIds as $assessmentTypeId) {
-                    $assessmentType = AssessmentType::find($assessmentTypeId);
-                    // Generate random scores (70-100% of max score for variety)
-                    $minScore = (int) ($assessmentType->max_score * 0.7);
-                    $scoreValue = fake()->numberBetween($minScore, $assessmentType->max_score);
-                    
-                    Score::create([
-                        'student_id' => $student->id,
-                        'subject_id' => $subjectId,
-                        'assessment_type_id' => $assessmentTypeId,
-                        'academic_session_id' => $session->id,
-                        'term_id' => $term->id,
-                        'score' => $scoreValue,
-                    ]);
-                }
+                // Generate random scores (70-100% of max score for variety)
+                $caScore = fake()->numberBetween(28, 40); // 70-100% of 40
+                $examScore = fake()->numberBetween(42, 60); // 70-100% of 60
+                
+                Score::create([
+                    'student_id' => $student->id,
+                    'subject_id' => $subjectId,
+                    'academic_session_id' => $session->id,
+                    'term_id' => $term->id,
+                    'ca_score' => $caScore,
+                    'exam_score' => $examScore,
+                ]);
             }
         }
 
