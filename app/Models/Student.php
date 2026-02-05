@@ -60,12 +60,4 @@ class Student extends Authenticatable
             'password' => 'hashed',
         ];
     }
-
-    /**
-     * Get the name of the unique identifier for the user.
-     */
-    public function getAuthIdentifierName(): string
-    {
-        return 'admission_number';
-    }
 }

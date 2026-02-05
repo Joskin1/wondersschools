@@ -30,7 +30,7 @@ describe('Academic Structure', function () {
 
     it('can create term with session', function () {
         $session = AcademicSession::factory()->create(['is_current' => true]);
-        
+
         $term = Term::create([
             'name' => 'First Term',
             'academic_session_id' => $session->id,
@@ -63,7 +63,7 @@ describe('Academic Structure', function () {
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
         $student = Student::factory()->create();
         $subject = Subject::factory()->create();
-        
+
         \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
 
         $score = Score::create([
@@ -166,12 +166,12 @@ describe('Academic Structure', function () {
         $classroom = Classroom::factory()->create();
         $student = Student::factory()->create(['classroom_id' => $classroom->id]);
         $subject = Subject::factory()->create();
-        
+
         \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'CA', 'max_score' => 40]);
         \App\Models\EvaluationSetting::create(['academic_session_id' => $session->id, 'name' => 'Exam', 'max_score' => 60]);
 
         Livewire::actingAs($user)
-            ->test(\App\Filament\Resources\ScoreResource\Pages\BulkScoreInput::class)
+            ->test('App\\Filament\\Resources\\ScoreResource\\Pages\\BulkScoreInput')
             ->assertSet('academicSessionId', $session->id)
             ->assertSet('termId', $term->id)
             ->set('classroomId', $classroom->id)
@@ -248,7 +248,7 @@ describe('Academic Structure', function () {
         ]);
 
         Livewire::actingAs($user)
-            ->test(\App\Filament\Resources\ResultResource\Pages\ListResults::class)
+            ->test(\App\Filament\Resources\ResultResource\Pages\ListResult::class)
             ->assertSuccessful();
 
         Livewire::actingAs($user)

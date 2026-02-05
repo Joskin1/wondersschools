@@ -30,7 +30,9 @@ describe('Student Portal', function () {
         ]);
 
         Livewire::actingAs($student, 'student')
-            ->test(\App\Filament\Student\Pages\ViewResult::class)
+            ->test(\App\Filament\Student\Pages\ViewResult::class, [
+                'record' => $result->getRouteKey(),
+            ])
             ->assertSuccessful()
             ->assertSee($session->name)
             ->assertSee($term->name);
@@ -44,6 +46,13 @@ describe('Student Portal', function () {
         $session = AcademicSession::factory()->create();
         $term = Term::factory()->create(['academic_session_id' => $session->id]);
 
+        $result1 = Result::factory()->create([
+            'student_id' => $student1->id,
+            'academic_session_id' => $session->id,
+            'term_id' => $term->id,
+            'classroom_id' => $classroom->id,
+        ]);
+
         $result2 = Result::factory()->create([
             'student_id' => $student2->id,
             'academic_session_id' => $session->id,
@@ -52,7 +61,9 @@ describe('Student Portal', function () {
         ]);
 
         Livewire::actingAs($student1, 'student')
-            ->test(\App\Filament\Student\Pages\ViewResult::class)
+            ->test(\App\Filament\Student\Pages\ViewResult::class, [
+                'record' => $result1->getRouteKey(),
+            ])
             ->assertSuccessful()
             ->assertDontSee($result2->total_score);
     });

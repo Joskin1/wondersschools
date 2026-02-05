@@ -4,8 +4,11 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ResultResource\Pages;
 use App\Models\Result;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema; // Required for the new method signature
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -14,14 +17,16 @@ class ResultResource extends Resource
 {
     protected static ?string $model = Result::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    // Fixed: Type definition matches parent class requirements
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    
+    // protected static ?string $navigationGroup = 'Academic';
 
-    protected static ?string $navigationGroup = 'Academic';
-
-    public static function form(Form $form): Form
+    // Fixed: Updated signature to use Schema instead of Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([ // Changed from ->schema() to ->components()
                 Forms\Components\Select::make('student_id')
                     ->relationship('student', 'first_name')
                     ->required()
@@ -91,11 +96,11 @@ class ResultResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -110,9 +115,7 @@ class ResultResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListResults::route('/'),
-            'create' => Pages\CreateResult::route('/create'),
-            'edit' => Pages\EditResult::route('/{record}/edit'),
+            'index' => Pages\ManageResults::route('/'),
         ];
     }
 }
