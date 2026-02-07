@@ -23,9 +23,9 @@ class ScoreEntryPage extends Page implements HasTable
 {
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-pencil-square';
     
-    protected static string $view = 'filament.teacher.pages.score-entry-page';
+    protected string $view = 'filament.teacher.pages.score-entry-page';
     
     protected static ?string $navigationLabel = 'Score Entry';
     

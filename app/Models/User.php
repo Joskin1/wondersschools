@@ -139,7 +139,7 @@ class User extends Authenticatable
     /**
      * Check if teacher can access a specific subject
      */
-    public function canAccessSubject(Subject $subject, string $session): bool
+    public function canAccessSubject(int|Subject $subject, int|Classroom $classroom, string $session): bool
     {
         if ($this->isAdmin()) {
             return true;
@@ -149,9 +149,13 @@ class User extends Authenticatable
             return false;
         }
 
+        $subjectId = $subject instanceof Subject ? $subject->id : $subject;
+        $classroomId = $classroom instanceof Classroom ? $classroom->id : $classroom;
+
         return \Illuminate\Support\Facades\DB::table('classroom_subject_teacher')
             ->where('staff_id', $this->staff->id)
-            ->where('subject_id', $subject->id)
+            ->where('subject_id', $subjectId)
+            ->where('classroom_id', $classroomId)
             ->where('session', $session)
             ->exists();
     }
@@ -159,7 +163,7 @@ class User extends Authenticatable
     /**
      * Check if teacher can access a specific classroom
      */
-    public function canAccessClassroom(Classroom $classroom, string $session): bool
+    public function canAccessClassroom(int|Classroom $classroom, string $session): bool
     {
         if ($this->isAdmin()) {
             return true;
@@ -169,9 +173,11 @@ class User extends Authenticatable
             return false;
         }
 
+        $classroomId = $classroom instanceof Classroom ? $classroom->id : $classroom;
+
         return \Illuminate\Support\Facades\DB::table('classroom_subject_teacher')
             ->where('staff_id', $this->staff->id)
-            ->where('classroom_id', $classroom->id)
+            ->where('classroom_id', $classroomId)
             ->where('session', $session)
             ->exists();
     }
