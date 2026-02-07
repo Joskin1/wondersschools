@@ -23,5 +23,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Student::class, StudentPolicy::class);
+        
+        // Register observers
+        \App\Models\Score::observe(\App\Observers\ScoreObserver::class);
     }
 }
