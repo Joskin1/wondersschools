@@ -38,7 +38,7 @@ class ScoreEntryWorkflowTest extends TestCase
         $this->term = 1;
         
         $this->scoreHeader = ScoreHeader::factory()->create([
-            'classroom_id' => $this->classroom->id,
+            'school_class_id' => $this->classroom->id,
             'session' => $this->session,
             'term' => $this->term,
             'name' => 'CA1',

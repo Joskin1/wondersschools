@@ -19,10 +19,11 @@ class ScoreFactory extends Factory
         return [
             'student_id' => \App\Models\Student::factory(),
             'subject_id' => \App\Models\Subject::factory(),
-            'academic_session_id' => \App\Models\AcademicSession::factory(),
-            'term_id' => \App\Models\Term::factory(),
-            'ca_score' => $this->faker->numberBetween(0, 40),
-            'exam_score' => $this->faker->numberBetween(0, 60),
+            'classroom_id' => \App\Models\Classroom::factory(),
+            'score_header_id' => \App\Models\ScoreHeader::factory(),
+            'session' => '2024/2025',
+            'term' => 1,
+            'value' => $this->faker->numberBetween(0, 100),
         ];
     }
 }

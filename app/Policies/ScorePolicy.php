@@ -89,8 +89,27 @@ class ScorePolicy
      */
     public function delete(User|Student $user, Score $score): bool
     {
-        // Only admin users can delete scores
-        return $user instanceof User;
+        if (!($user instanceof User)) {
+            return false;
+        }
+
+        // Admins can delete any score
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        // Teachers can only delete scores for their assigned subjects/classrooms
+        if ($user->isTeacher()) {
+            $scoreService = app(ScoreService::class);
+            return $scoreService->validateTeacherAssignment(
+                $user,
+                $score->subject_id,
+                $score->classroom_id,
+                $score->session
+            );
+        }
+
+        return false;
     }
 
     /**

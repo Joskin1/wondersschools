@@ -26,6 +26,22 @@ return new class extends Migration
                 $table->decimal('value', 5, 2)->default(0)->after('term');
             }
             
+            // Drop old columns if they exist
+            if (Schema::hasColumn('scores', 'academic_session_id')) {
+                $table->dropForeign(['academic_session_id']);
+                $table->dropColumn('academic_session_id');
+            }
+            if (Schema::hasColumn('scores', 'term_id')) {
+                $table->dropForeign(['term_id']);
+                $table->dropColumn('term_id');
+            }
+            if (Schema::hasColumn('scores', 'ca_score')) {
+                $table->dropColumn('ca_score');
+            }
+            if (Schema::hasColumn('scores', 'exam_score')) {
+                $table->dropColumn('exam_score');
+            }
+            
             // Add unique constraint and indexes
             $table->unique(['student_id', 'subject_id', 'score_header_id', 'session', 'term'], 'unique_score');
             $table->index(['session', 'term']);
