@@ -18,8 +18,8 @@ class AuditLogService
         return AuditLog::create([
             'user_id' => $user->id,
             'action' => $action,
-            'model' => Score::class,
-            'model_id' => $score->id,
+            'auditable_type' => Score::class,
+            'auditable_id' => $score->id,
             'old_value' => $oldValue ? $this->prepareValueForLog($oldValue) : null,
             'new_value' => $this->prepareValueForLog($score),
             'ip_address' => request()->ip(),

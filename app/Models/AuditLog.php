@@ -12,8 +12,8 @@ class AuditLog extends Model
     protected $fillable = [
         'user_id',
         'action',
-        'model',
-        'model_id',
+        'auditable_type',
+        'auditable_id',
         'old_value',
         'new_value',
         'ip_address',
@@ -37,7 +37,7 @@ class AuditLog extends Model
      */
     public function auditable()
     {
-        return $this->morphTo('model');
+        return $this->morphTo();
     }
 
     /**
@@ -53,7 +53,7 @@ class AuditLog extends Model
      */
     public function scopeByModel($query, string $model)
     {
-        return $query->where('model', $model);
+        return $query->where('auditable_type', $model);
     }
 
     /**

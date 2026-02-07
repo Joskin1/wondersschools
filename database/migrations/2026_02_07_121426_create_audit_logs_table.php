@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('action'); // score_created, score_updated, score_deleted
-            $table->string('model'); // Model name (e.g., 'Score')
-            $table->unsignedBigInteger('model_id')->nullable();
+            $table->string('action'); // created, updated, deleted, restored
+            $table->string('auditable_type'); // Model class name
+            $table->unsignedBigInteger('auditable_id')->nullable();
             $table->json('old_value')->nullable(); // Previous value
             $table->json('new_value')->nullable(); // New value
             $table->string('ip_address', 45)->nullable();
@@ -24,7 +24,7 @@ return new class extends Migration
             
             // Indexes for performance
             $table->index(['user_id', 'created_at']);
-            $table->index(['model', 'model_id']);
+            $table->index(['auditable_type', 'auditable_id']);
             $table->index('action');
         });
     }
