@@ -8,13 +8,20 @@ use Illuminate\Database\Eloquent\Model;
 class Score extends Model
 {
     use HasFactory;
+    
     protected $fillable = [
         'student_id',
         'subject_id',
-        'academic_session_id',
-        'term_id',
-        'ca_score',
-        'exam_score',
+        'classroom_id',
+        'score_header_id',
+        'session',
+        'term',
+        'value',
+    ];
+
+    protected $casts = [
+        'value' => 'decimal:2',
+        'term' => 'integer',
     ];
 
     public function student()
@@ -27,13 +34,25 @@ class Score extends Model
         return $this->belongsTo(Subject::class);
     }
 
-    public function academicSession()
+    public function scoreHeader()
     {
-        return $this->belongsTo(AcademicSession::class);
+        return $this->belongsTo(ScoreHeader::class);
     }
 
-    public function term()
+    public function classroom()
     {
-        return $this->belongsTo(Term::class);
+        return $this->belongsTo(Classroom::class);
+    }
+
+    /**
+     * Get total score for a student in a subject across all headers
+     */
+    public static function getTotalScore(int $studentId, int $subjectId, string $session, int $term): float
+    {
+        return static::where('student_id', $studentId)
+            ->where('subject_id', $subjectId)
+            ->where('session', $session)
+            ->where('term', $term)
+            ->sum('value');
     }
 }

@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -47,8 +48,131 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Get the staff profile for this user
+     */
     public function staff()
     {
         return $this->hasOne(Staff::class);
+    }
+
+    /**
+     * Get teacher assignments (subjects and classrooms)
+     */
+    public function teacherAssignments()
+    {
+        return $this->hasManyThrough(
+            \Illuminate\Database\Eloquent\Relations\Pivot::class,
+            Staff::class,
+            'user_id',
+            'staff_id',
+            'id',
+            'id'
+        )->from('classroom_subject_teacher');
+    }
+
+    /**
+     * Check if user is an admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is a teacher
+     */
+    public function isTeacher(): bool
+    {
+        return $this->role === 'teacher';
+    }
+
+    /**
+     * Get assigned subjects for this teacher
+     */
+    public function assignedSubjects(?string $session = null)
+    {
+        if (!$this->isTeacher() || !$this->staff) {
+            return collect();
+        }
+
+        $query = \Illuminate\Support\Facades\DB::table('classroom_subject_teacher')
+            ->join('subjects', 'classroom_subject_teacher.subject_id', '=', 'subjects.id')
+            ->where('classroom_subject_teacher.staff_id', $this->staff->id)
+            ->select('subjects.*')
+            ->distinct();
+
+        if ($session) {
+            $query->where('classroom_subject_teacher.session', $session);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Get assigned classrooms for this teacher
+     */
+    public function assignedClassrooms(?string $session = null, ?int $subjectId = null)
+    {
+        if (!$this->isTeacher() || !$this->staff) {
+            return collect();
+        }
+
+        $query = \Illuminate\Support\Facades\DB::table('classroom_subject_teacher')
+            ->join('classrooms', 'classroom_subject_teacher.classroom_id', '=', 'classrooms.id')
+            ->where('classroom_subject_teacher.staff_id', $this->staff->id)
+            ->select('classrooms.*')
+            ->distinct();
+
+        if ($session) {
+            $query->where('classroom_subject_teacher.session', $session);
+        }
+
+        if ($subjectId) {
+            $query->where('classroom_subject_teacher.subject_id', $subjectId);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Check if teacher can access a specific subject
+     */
+    public function canAccessSubject(Subject $subject, string $session): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if (!$this->isTeacher() || !$this->staff) {
+            return false;
+        }
+
+        return \Illuminate\Support\Facades\DB::table('classroom_subject_teacher')
+            ->where('staff_id', $this->staff->id)
+            ->where('subject_id', $subject->id)
+            ->where('session', $session)
+            ->exists();
+    }
+
+    /**
+     * Check if teacher can access a specific classroom
+     */
+    public function canAccessClassroom(Classroom $classroom, string $session): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if (!$this->isTeacher() || !$this->staff) {
+            return false;
+        }
+
+        return \Illuminate\Support\Facades\DB::table('classroom_subject_teacher')
+            ->where('staff_id', $this->staff->id)
+            ->where('classroom_id', $classroom->id)
+            ->where('session', $session)
+            ->exists();
     }
 }
