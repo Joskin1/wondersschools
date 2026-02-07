@@ -23,7 +23,7 @@ class ScoreObserver
             $this->auditLogService->logScoreChange(
                 auth()->user(),
                 $score,
-                'score_created'
+                'created'
             );
         }
     }
@@ -37,7 +37,7 @@ class ScoreObserver
             $this->auditLogService->logScoreChange(
                 auth()->user(),
                 $score,
-                'score_updated',
+                'updated',
                 $score->getOriginal()
             );
         }
@@ -52,7 +52,7 @@ class ScoreObserver
             $this->auditLogService->logScoreChange(
                 auth()->user(),
                 $score,
-                'score_deleted',
+                'deleted',
                 $score->getOriginal()
             );
         }
@@ -67,7 +67,7 @@ class ScoreObserver
             $this->auditLogService->logScoreChange(
                 auth()->user(),
                 $score,
-                'score_restored'
+                'restored'
             );
         }
     }

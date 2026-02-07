@@ -264,15 +264,15 @@ class ScoreEntryWorkflowTest extends TestCase
 
         $this->actingAs($this->teacher);
 
-        // Try to create score for unassigned subject
-        $score = Score::factory()->make([
-            'student_id' => $student->id,
-            'subject_id' => $unassignedSubject->id,
-            'classroom_id' => $this->classroom->id,
-            'session' => $this->session,
-        ]);
-
-        // Verify policy denies access
-        $this->assertFalse($this->teacher->can('create', $score));
+        // Verify ScoreService validation fails for unassigned subject
+        $scoreService = app(\App\Services\ScoreService::class);
+        $isValid = $scoreService->validateTeacherAssignment(
+            $this->teacher,
+            $unassignedSubject->id,
+            $this->classroom->id,
+            $this->session
+        );
+        
+        $this->assertFalse($isValid);
     }
 }
