@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ViewResult extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    protected static $navigationIcon = 'heroicon-o-academic-cap';
     protected static string $view = 'filament.student.pages.view-result';
     protected static ?string $navigationLabel = 'My Results';
     protected static ?string $title = 'My Results';
