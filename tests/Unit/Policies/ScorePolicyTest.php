@@ -34,7 +34,7 @@ class ScorePolicyTest extends TestCase
         
         $this->admin = User::factory()->create(['role' => 'admin']);
         $this->teacher = User::factory()->create(['role' => 'teacher']);
-        $this->student = User::factory()->create(['role' => null]); // No role = student
+        $this->student = User::factory()->create(['role' => 'student']);
         
         $this->staff = Staff::factory()->create(['user_id' => $this->teacher->id]);
         

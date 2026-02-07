@@ -73,6 +73,33 @@ class TeacherAssignmentPolicy
     }
 
     /**
+     * Determine whether the user can delete any teacher assignments.
+     */
+    public function deleteAny(User $user): bool
+    {
+        // Only admins can bulk delete teacher assignments
+        return $user->isAdmin();
+    }
+
+    /**
+     * Determine whether the user can restore any teacher assignments.
+     */
+    public function restoreAny(User $user): bool
+    {
+        // Only admins can bulk restore teacher assignments
+        return $user->isAdmin();
+    }
+
+    /**
+     * Determine whether the user can force delete any teacher assignments.
+     */
+    public function forceDeleteAny(User $user): bool
+    {
+        // Only admins can bulk force delete teacher assignments
+        return $user->isAdmin();
+    }
+
+    /**
      * Determine whether the user can bulk assign teachers.
      */
     public function bulkAssign(User $user): bool
