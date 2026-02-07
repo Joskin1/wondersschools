@@ -64,7 +64,9 @@ class ScoreEntryWorkflowTest extends TestCase
         $student3 = Student::factory()->create();
 
         // Attach students to classroom
-        $this->classroom->students()->attach([$student1->id, $student2->id, $student3->id]);
+        $student1->update(['classroom_id' => $this->classroom->id]);
+        $student2->update(['classroom_id' => $this->classroom->id]);
+        $student3->update(['classroom_id' => $this->classroom->id]);
 
         // Teacher enters scores
         $scores = [
@@ -124,7 +126,7 @@ class ScoreEntryWorkflowTest extends TestCase
     public function teacher_can_update_existing_scores()
     {
         $student = Student::factory()->create();
-        $this->classroom->students()->attach($student->id);
+        $student->update(['classroom_id' => $this->classroom->id]);
 
         // Create initial score
         $score = Score::create([
@@ -150,7 +152,7 @@ class ScoreEntryWorkflowTest extends TestCase
     public function audit_log_is_created_when_score_is_entered()
     {
         $student = Student::factory()->create();
-        $this->classroom->students()->attach($student->id);
+        $student->update(['classroom_id' => $this->classroom->id]);
 
         $this->actingAs($this->teacher);
 
@@ -177,7 +179,7 @@ class ScoreEntryWorkflowTest extends TestCase
     public function audit_log_tracks_score_updates()
     {
         $student = Student::factory()->create();
-        $this->classroom->students()->attach($student->id);
+        $student->update(['classroom_id' => $this->classroom->id]);
 
         $this->actingAs($this->teacher);
 
@@ -225,8 +227,8 @@ class ScoreEntryWorkflowTest extends TestCase
         $student1 = Student::factory()->create();
         $student2 = Student::factory()->create();
 
-        $assignedClassroom->students()->attach($student1->id);
-        $unassignedClassroom->students()->attach($student2->id);
+        $student1->update(['classroom_id' => $assignedClassroom->id]);
+        $student2->update(['classroom_id' => $unassignedClassroom->id]);
 
         // Create scores for both classrooms
         $assignedScore = Score::factory()->create([
@@ -258,7 +260,7 @@ class ScoreEntryWorkflowTest extends TestCase
     {
         $unassignedSubject = Subject::factory()->create();
         $student = Student::factory()->create();
-        $this->classroom->students()->attach($student->id);
+        $student->update(['classroom_id' => $this->classroom->id]);
 
         $this->actingAs($this->teacher);
 

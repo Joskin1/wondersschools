@@ -100,7 +100,7 @@ class ScorePolicy
 
         // Teachers can only delete scores for their assigned subjects/classrooms
         if ($user->isTeacher()) {
-            $scoreService = app(ScoreService::class);
+            $scoreService = app(\App\Services\ScoreService::class);
             return $scoreService->validateTeacherAssignment(
                 $user,
                 $score->subject_id,
