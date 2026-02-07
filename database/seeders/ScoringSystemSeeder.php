@@ -136,24 +136,51 @@ class ScoringSystemSeeder extends Seeder
             }
         }
 
-        // Create scores for all students
+        // Create score headers for the session/term
+        $scoreHeaders = [];
+        $scoreHeaders[] = \App\Models\ScoreHeader::create([
+            'school_class_id' => $createdClassrooms[0]->id,
+            'session' => '2024/2025',
+            'term' => 1,
+            'name' => 'CA1',
+            'max_score' => 20,
+        ]);
+        $scoreHeaders[] = \App\Models\ScoreHeader::create([
+            'school_class_id' => $createdClassrooms[0]->id,
+            'session' => '2024/2025',
+            'term' => 1,
+            'name' => 'CA2',
+            'max_score' => 20,
+        ]);
+        $scoreHeaders[] = \App\Models\ScoreHeader::create([
+            'school_class_id' => $createdClassrooms[0]->id,
+            'session' => '2024/2025',
+            'term' => 1,
+            'name' => 'Exam',
+            'max_score' => 60,
+        ]);
+
+        // Create scores for all students using new schema
         $students = Student::all();
         $subjectIds = Subject::pluck('id')->toArray();
 
         foreach ($students as $student) {
             foreach ($subjectIds as $subjectId) {
-                // Generate random scores (70-100% of max score for variety)
-                $caScore = fake()->numberBetween(28, 40); // 70-100% of 40
-                $examScore = fake()->numberBetween(42, 60); // 70-100% of 60
-                
-                Score::create([
-                    'student_id' => $student->id,
-                    'subject_id' => $subjectId,
-                    'academic_session_id' => $session->id,
-                    'term_id' => $term->id,
-                    'ca_score' => $caScore,
-                    'exam_score' => $examScore,
-                ]);
+                // Create scores for each header
+                foreach ($scoreHeaders as $header) {
+                    $maxScore = $header->max_score;
+                    $value = fake()->numberBetween((int)($maxScore * 0.7), $maxScore);
+                    
+                    Score::create([
+                        'student_id' => $student->id,
+                        'subject_id' => $subjectId,
+                        'classroom_id' => $student->classroom_id,
+                        'score_header_id' => $header->id,
+                        'session' => '2024/2025',
+                        'term' => 1,
+                        'value' => $value,
+                    ]);
+                }
             }
         }
 

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ResultPrintPage extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-printer';
+    protected static $navigationIcon = 'heroicon-o-printer';
     protected static string $view = 'filament.student.pages.result-print';
     protected static ?string $title = 'Print Result';
     protected static bool $shouldRegisterNavigation = false;
