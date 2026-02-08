@@ -1,3 +1,5 @@
-<x-filament-panels::page>
-    {{-- Page content --}}
-</x-filament-panels::page>
+<div>
+    <x-filament-panels::page>
+        {{ $this->table }}
+    </x-filament-panels::page>
+</div>

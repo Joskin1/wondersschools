@@ -13,7 +13,8 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
-            // Add student-specific widgets here
+            \App\Filament\Student\Widgets\MyClassroomWidget::class,
+            \App\Filament\Student\Widgets\RecentScoresWidget::class,
         ];
     }
 }

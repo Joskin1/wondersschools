@@ -9,7 +9,7 @@ use App\Services\MigrationService;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Actions\Action;
@@ -73,10 +73,10 @@ class ManageTermMigration extends Page implements HasForms
             ->toArray();
     }
 
-    public function form(Form $form): Form
+    public function form(\Filament\Schemas\Schema $schema): \Filament\Schemas\Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Select::make('targetTermId')
                     ->label('Migrate to Term')
                     ->options($this->allowedTerms)

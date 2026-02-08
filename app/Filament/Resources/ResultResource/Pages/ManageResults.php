@@ -4,22 +4,16 @@ namespace App\Filament\Resources\ResultResource\Pages;
 
 use App\Filament\Resources\ResultResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRelatedRecords;
-use Filament\Tables\Table;
+use Filament\Resources\Pages\ListRecords;
 
-class ManageResults extends ManageRelatedRecords
+class ManageResults extends ListRecords
 {
     protected static string $resource = ResultResource::class;
 
-    protected static string $relationship = 'member';
-
-    protected static ?string $relatedResource = ResultResource::class;
-
-    public function table(Table $table): Table
+    protected function getHeaderActions(): array
     {
-        return $table
-            ->headerActions([
-                CreateAction::make(),
-            ]);
+        return [
+            CreateAction::make(),
+        ];
     }
 }

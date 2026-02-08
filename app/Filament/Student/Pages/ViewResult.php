@@ -10,10 +10,11 @@ use Illuminate\Support\Facades\Auth;
 
 class ViewResult extends Page
 {
-    protected static $navigationIcon = 'heroicon-o-academic-cap';
     protected static string $view = 'filament.student.pages.view-result';
     protected static ?string $navigationLabel = 'My Results';
-    protected static ?string $title = 'My Results';
+    protected static ?string $title = 'My Result';
+    
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-document-text';
 
     public ?Result $result = null;
     public ?string $session = null;
