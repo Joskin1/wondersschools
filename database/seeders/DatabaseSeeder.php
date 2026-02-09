@@ -62,12 +62,24 @@ class DatabaseSeeder extends Seeder
         $headOfSchool = $copyImage('head-of-school.png');
         $logo = $copyImage('logo.png');
 
-        // Admin User
+        // Admin User (Sudo)
         User::factory()->create([
             'name' => 'Admin User',
             'email' => 'joskin@example.com',
             'password' => bcrypt('joskin@example.com'),
+            'role' => 'sudo',
         ]);
+
+        // Create current academic session with terms
+        $this->command->info('Creating academic session and terms...');
+        $currentYear = now()->year;
+        $currentSession = \App\Models\Session::createWithTerms($currentYear);
+        
+        // Activate the session and first term
+        $currentSession->activate();
+        $currentSession->terms()->where('order', 1)->first()->update(['is_active' => true]);
+        
+        $this->command->info("Created session: {$currentSession->name} with First Term active");
 
         // Staff - Leadership
         Staff::factory()->create([
