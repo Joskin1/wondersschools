@@ -81,6 +81,16 @@ class DatabaseSeeder extends Seeder
         
         $this->command->info("Created session: {$currentSession->name} with First Term active");
 
+        // Lesson Notes Module
+        $this->command->info('Seeding lesson notes module...');
+        $this->call([
+            SubjectSeeder::class,
+            ClassroomSeeder::class,
+            TeacherSubjectAssignmentSeeder::class,
+            SubmissionWindowSeeder::class,
+            LessonNoteSeeder::class,
+        ]);
+
         // Staff - Leadership
         Staff::factory()->create([
             'name' => 'Mrs. Jane Doe',
