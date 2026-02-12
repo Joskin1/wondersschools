@@ -79,8 +79,9 @@ class LessonNoteResource extends Resource
                             Textarea::make('latestVersion.admin_comment')
                                 ->label('Admin Comment')
                                 ->rows(3)
-                                ->placeholder('Add feedback for the teacher...')
-                                ->helperText('This comment will be visible to the teacher'),
+                                ->disabled()
+                                ->visible(fn ($record) => $record->latestVersion?->admin_comment !== null)
+                                ->helperText('Feedback provided to the teacher'),
                         ]),
                     ]),
 

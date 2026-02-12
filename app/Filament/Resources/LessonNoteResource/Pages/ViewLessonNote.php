@@ -14,6 +14,21 @@ class ViewLessonNote extends ViewRecord
 {
     protected static string $resource = LessonNoteResource::class;
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Ensure latestVersion is loaded
+        $this->record->load('latestVersion');
+        
+        // Explicitly set the admin_comment in the form data
+        if ($this->record->latestVersion) {
+            $data['latestVersion'] = [
+                'admin_comment' => $this->record->latestVersion->admin_comment,
+            ];
+        }
+        
+        return $data;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
