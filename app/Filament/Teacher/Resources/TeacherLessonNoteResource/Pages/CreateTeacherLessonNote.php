@@ -7,6 +7,7 @@ use App\Jobs\ProcessLessonNoteUpload;
 use App\Models\LessonNote;
 use App\Models\Session;
 use App\Models\TeacherSubjectAssignment;
+use App\Models\ClassTeacherAssignment;
 use App\Services\LessonNoteCache;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -56,8 +57,14 @@ class CreateTeacherLessonNote extends CreateRecord
             $this->halt();
         }
 
-        // Validate teacher assignment
-        $isAssigned = TeacherSubjectAssignment::isAssigned(
+        // Validate teacher assignment - check class teacher first, then subject teacher
+        $isClassTeacher = ClassTeacherAssignment::isClassTeacher(
+            auth()->id(),
+            $data['classroom_id'],
+            $activeSession->id
+        );
+
+        $isSubjectTeacher = TeacherSubjectAssignment::isAssigned(
             auth()->id(),
             $data['subject_id'],
             $data['classroom_id'],
@@ -65,7 +72,7 @@ class CreateTeacherLessonNote extends CreateRecord
             $activeTerm->id
         );
 
-        if (!$isAssigned) {
+        if (!$isClassTeacher && !$isSubjectTeacher) {
             Notification::make()
                 ->title('Not Assigned')
                 ->body('You are not assigned to this subject/class combination.')

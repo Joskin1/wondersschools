@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\LessonNote;
 use App\Models\User;
 use App\Models\TeacherSubjectAssignment;
+use App\Models\ClassTeacherAssignment;
 use App\Services\LessonNoteCache;
 
 class LessonNotePolicy
@@ -29,9 +30,20 @@ class LessonNotePolicy
             return true;
         }
 
-        // Teachers can only view their own
+        // Teachers can view their own
         if ($user->role === 'teacher') {
-            return $lessonNote->teacher_id === $user->id;
+            if ($lessonNote->teacher_id === $user->id) {
+                return true;
+            }
+            
+            // Class teachers can view all notes in their class
+            if (ClassTeacherAssignment::isClassTeacher(
+                $user->id, 
+                $lessonNote->classroom_id, 
+                $lessonNote->session_id
+            )) {
+                return true;
+            }
         }
 
         return false;
@@ -100,6 +112,12 @@ class LessonNotePolicy
             return false;
         }
 
+        // Check if user is class teacher for this classroom
+        if (ClassTeacherAssignment::isClassTeacher($user->id, $classroomId, $sessionId)) {
+            return true;
+        }
+
+        // Check subject teacher assignment
         return TeacherSubjectAssignment::isAssigned(
             $user->id,
             $subjectId,
