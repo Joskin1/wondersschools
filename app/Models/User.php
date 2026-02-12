@@ -25,6 +25,8 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'role',
+        'is_active',
+        'registration_completed_at',
     ];
 
     /**
@@ -47,6 +49,8 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'registration_completed_at' => 'datetime',
         ];
     }
 
@@ -97,8 +101,83 @@ class User extends Authenticatable implements FilamentUser
     {
         return match ($panel->getId()) {
             'admin' => in_array($this->role, ['sudo', 'admin']),
-            'teacher' => $this->role === 'teacher',
+            'teacher' => $this->role === 'teacher' && $this->isActive(),
             default => false,
         };
+    }
+
+    /**
+     * Get the teacher profile for this user.
+     */
+    public function teacherProfile()
+    {
+        return $this->hasOne(TeacherProfile::class);
+    }
+
+    /**
+     * Get the registration tokens for this user.
+     */
+    public function registrationTokens()
+    {
+        return $this->hasMany(TeacherRegistrationToken::class);
+    }
+
+    /**
+     * Scope a query to only include active users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope a query to only include teachers.
+     */
+    public function scopeTeachers($query)
+    {
+        return $query->where('role', 'teacher');
+    }
+
+    /**
+     * Scope a query to only include active teachers.
+     */
+    public function scopeActiveTeachers($query)
+    {
+        return $query->teachers()->active();
+    }
+
+    /**
+     * Scope a query to only include teachers pending registration.
+     */
+    public function scopePendingRegistration($query)
+    {
+        return $query->teachers()
+            ->where('is_active', false)
+            ->whereNull('registration_completed_at');
+    }
+
+    /**
+     * Check if the user is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->is_active === true;
+    }
+
+    /**
+     * Check if the user has completed registration.
+     */
+    public function hasCompletedRegistration(): bool
+    {
+        return $this->registration_completed_at !== null;
+    }
+
+    /**
+     * Check if the user can be assigned to classes/subjects.
+     * Only active teachers who have completed registration can be assigned.
+     */
+    public function canBeAssigned(): bool
+    {
+        return $this->isTeacher() && $this->isActive() && $this->hasCompletedRegistration();
     }
 }

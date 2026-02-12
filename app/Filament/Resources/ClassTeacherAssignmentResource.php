@@ -34,10 +34,11 @@ class ClassTeacherAssignmentResource extends Resource
             ->components([
                 Select::make('teacher_id')
                     ->label('Teacher')
-                    ->options(User::where('role', 'teacher')->pluck('name', 'id'))
+                    ->options(User::activeTeachers()->pluck('name', 'id'))
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->helperText('Only active teachers who have completed registration are shown'),
 
                 Select::make('class_id')
                     ->label('Class')

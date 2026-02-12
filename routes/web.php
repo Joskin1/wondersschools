@@ -8,6 +8,7 @@ use App\Livewire\News;
 use App\Livewire\Post;
 use App\Livewire\Gallery;
 use App\Livewire\Contact;
+use App\Http\Controllers\TeacherRegistrationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', Home::class)->name('home');
@@ -18,3 +19,7 @@ Route::get('/news', News::class)->name('news');
 Route::get('/news/{post:slug}', Post::class)->name('post');
 Route::get('/gallery', Gallery::class)->name('gallery');
 Route::get('/contact-us', Contact::class)->name('contact');
+
+// Teacher Registration
+Route::get('/teacher/register/{token}', [TeacherRegistrationController::class, 'show'])
+    ->name('teacher.register');
