@@ -15,6 +15,11 @@ class Subject extends Model
         'name',
         'code',
         'description',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -41,5 +46,21 @@ class Subject extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(TeacherSubjectAssignment::class);
+    }
+
+    /**
+     * Get all classrooms this subject is assigned to.
+     */
+    public function classrooms(): BelongsToMany
+    {
+        return $this->belongsToMany(Classroom::class);
+    }
+
+    /**
+     * Scope to filter only active subjects.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }

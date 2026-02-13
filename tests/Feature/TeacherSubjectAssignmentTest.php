@@ -307,3 +307,96 @@ test('only active teachers can be assigned', function () {
     expect($activeTeachers->contains($this->teacher1))->toBeTrue()
         ->and($activeTeachers->contains($inactiveTeacher))->toBeFalse();
 });
+
+// ──────────────────────────────────────────────────────────────
+// Assignment Rules
+// ──────────────────────────────────────────────────────────────
+
+describe('Assignment Rules', function () {
+
+    it('allows a teacher to teach more than one subject', function () {
+        $assignment1 = TeacherSubjectAssignment::create([
+            'teacher_id' => $this->teacher1->id,
+            'subject_id' => $this->subject1->id,
+            'classroom_id' => $this->classroom1->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+        ]);
+
+        $assignment2 = TeacherSubjectAssignment::create([
+            'teacher_id' => $this->teacher1->id,
+            'subject_id' => $this->subject2->id,
+            'classroom_id' => $this->classroom1->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+        ]);
+
+        $teacherAssignments = TeacherSubjectAssignment::forTeacher($this->teacher1->id)->get();
+
+        expect($teacherAssignments)->toHaveCount(2)
+            ->and($assignment1->subject_id)->toBe($this->subject1->id)
+            ->and($assignment2->subject_id)->toBe($this->subject2->id);
+    });
+
+    it('allows a subject to be taught by different teachers in different classes', function () {
+        $assignment1 = TeacherSubjectAssignment::create([
+            'teacher_id' => $this->teacher1->id,
+            'subject_id' => $this->subject1->id,
+            'classroom_id' => $this->classroom1->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+        ]);
+
+        $assignment2 = TeacherSubjectAssignment::create([
+            'teacher_id' => $this->teacher2->id,
+            'subject_id' => $this->subject1->id,
+            'classroom_id' => $this->classroom2->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+        ]);
+
+        expect($assignment1->id)->not->toBe($assignment2->id)
+            ->and($assignment1->subject_id)->toBe($assignment2->subject_id)
+            ->and($assignment1->teacher_id)->not->toBe($assignment2->teacher_id)
+            ->and($assignment1->classroom_id)->not->toBe($assignment2->classroom_id);
+    });
+
+    it('prevents two teachers from teaching the same subject in the same class', function () {
+        TeacherSubjectAssignment::create([
+            'teacher_id' => $this->teacher1->id,
+            'subject_id' => $this->subject1->id,
+            'classroom_id' => $this->classroom1->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+        ]);
+
+        expect(fn () => TeacherSubjectAssignment::create([
+            'teacher_id' => $this->teacher2->id,
+            'subject_id' => $this->subject1->id,
+            'classroom_id' => $this->classroom1->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+        ]))->toThrow(\Illuminate\Database\QueryException::class);
+    });
+
+    it('allows a teacher to teach the same subject in multiple classes', function () {
+        $assignment1 = TeacherSubjectAssignment::create([
+            'teacher_id' => $this->teacher1->id,
+            'subject_id' => $this->subject1->id,
+            'classroom_id' => $this->classroom1->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+        ]);
+
+        $assignment2 = TeacherSubjectAssignment::create([
+            'teacher_id' => $this->teacher1->id,
+            'subject_id' => $this->subject1->id,
+            'classroom_id' => $this->classroom2->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+        ]);
+
+        expect($assignment1->id)->not->toBe($assignment2->id)
+            ->and($assignment1->classroom_id)->not->toBe($assignment2->classroom_id);
+    });
+});

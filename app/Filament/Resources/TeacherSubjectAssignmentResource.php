@@ -9,6 +9,7 @@ use App\Models\Subject;
 use App\Models\Classroom;
 use App\Models\Session;
 use App\Models\Term;
+use Closure;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
@@ -63,7 +64,41 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->options(Subject::orderBy('name')->pluck('name', 'id'))
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->rules([
+                        fn (\Filament\Schemas\Components\Utilities\Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                            $classroomId = $get('classroom_id');
+                            $sessionId = $get('session_id');
+                            $termId = $get('term_id');
+
+                            if (! $value || ! $classroomId || ! $sessionId || ! $termId) {
+                                return;
+                            }
+
+                            $existing = TeacherSubjectAssignment::where('subject_id', $value)
+                                ->where('classroom_id', $classroomId)
+                                ->where('session_id', $sessionId)
+                                ->where('term_id', $termId)
+                                ->with('teacher')
+                                ->first();
+
+                            if (! $existing) {
+                                return;
+                            }
+
+                            // When editing, ignore the current record
+                            $recordId = request()->route('record');
+                            if ($recordId && (int) $existing->id === (int) $recordId) {
+                                return;
+                            }
+
+                            $subjectName = Subject::find($value)?->name ?? 'This subject';
+                            $classroomName = Classroom::find($classroomId)?->name ?? 'this class';
+                            $teacherName = $existing->teacher?->name ?? 'another teacher';
+
+                            $fail("{$subjectName} is already assigned to {$teacherName} in {$classroomName} for the selected term.");
+                        },
+                    ]),
 
                 Select::make('session_id')
                     ->label('Academic Session')

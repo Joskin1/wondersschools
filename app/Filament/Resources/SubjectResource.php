@@ -2,10 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ClassroomResource\Pages;
-use App\Models\Classroom;
+use App\Filament\Resources\SubjectResource\Pages;
+use App\Models\Subject;
 use Filament\Schemas\Schema;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
@@ -16,17 +15,17 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 
-class ClassroomResource extends Resource
+class SubjectResource extends Resource
 {
-    protected static ?string $model = Classroom::class;
+    protected static ?string $model = Subject::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-building-library';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-book-open';
 
     protected static string | \UnitEnum | null $navigationGroup = 'Academic Management';
 
-    protected static ?string $navigationLabel = 'Classrooms';
+    protected static ?string $navigationLabel = 'Subjects';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {
@@ -35,29 +34,17 @@ class ClassroomResource extends Resource
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255)
-                    ->unique(ignoreRecord: true)
-                    ->placeholder('e.g., JSS1, SS2'),
+                    ->unique(ignoreRecord: true),
 
-                TextInput::make('class_order')
-                    ->label('Promotion Order')
-                    ->required()
-                    ->numeric()
-                    ->integer()
-                    ->minValue(1)
+                TextInput::make('code')
+                    ->maxLength(10)
                     ->unique(ignoreRecord: true)
-                    ->helperText('Lower number = lower academic level. Defines promotion path.'),
+                    ->helperText('Optional short code (e.g., MATH, ENG)'),
 
                 Toggle::make('is_active')
                     ->label('Active')
                     ->default(true)
-                    ->helperText('Inactive classrooms are hidden from new assignment dropdowns but preserved in historical records.'),
-
-                Select::make('subjects')
-                    ->relationship('subjects', 'name')
-                    ->multiple()
-                    ->searchable()
-                    ->preload()
-                    ->helperText('Select which subjects are offered in this classroom.'),
+                    ->helperText('Inactive subjects cannot be assigned to new classrooms.'),
             ]);
     }
 
@@ -70,8 +57,8 @@ class ClassroomResource extends Resource
                     ->sortable()
                     ->weight('bold'),
 
-                TextColumn::make('class_order')
-                    ->label('Order')
+                TextColumn::make('code')
+                    ->searchable()
                     ->sortable()
                     ->badge(),
 
@@ -80,23 +67,17 @@ class ClassroomResource extends Resource
                     ->boolean()
                     ->sortable(),
 
-                TextColumn::make('lesson_notes_count')
-                    ->counts('lessonNotes')
-                    ->label('Lesson Notes')
+                TextColumn::make('classrooms_count')
+                    ->counts('classrooms')
+                    ->label('Classes')
                     ->badge()
                     ->color('info'),
-
-                TextColumn::make('subjects_count')
-                    ->counts('subjects')
-                    ->label('Subjects')
-                    ->badge()
-                    ->color('success'),
 
                 TextColumn::make('assignments_count')
                     ->counts('assignments')
                     ->label('Teacher Assignments')
                     ->badge()
-                    ->color('warning'),
+                    ->color('success'),
 
                 TextColumn::make('created_at')
                     ->dateTime('M d, Y')
@@ -113,7 +94,7 @@ class ClassroomResource extends Resource
             ->bulkActions([
                 // No bulk actions — preserve data integrity
             ])
-            ->defaultSort('class_order', 'asc');
+            ->defaultSort('name', 'asc');
     }
 
     public static function getRelations(): array
@@ -126,9 +107,9 @@ class ClassroomResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListClassrooms::route('/'),
-            'create' => Pages\CreateClassroom::route('/create'),
-            'edit' => Pages\EditClassroom::route('/{record}/edit'),
+            'index' => Pages\ListSubjects::route('/'),
+            'create' => Pages\CreateSubject::route('/create'),
+            'edit' => Pages\EditSubject::route('/{record}/edit'),
         ];
     }
 
