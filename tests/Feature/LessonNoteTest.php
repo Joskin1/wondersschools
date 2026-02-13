@@ -329,19 +329,22 @@ describe('Duplicate Prevention', function () {
         expect($note1->id)->not->toBe($note2->id);
     });
 
-    it('allows different teachers to submit for the same subject/class/week', function () {
+    it('allows different teachers to submit for the same subject in different classes', function () {
         TeacherSubjectAssignment::create([
             'teacher_id' => $this->teacher2->id,
             'subject_id' => $this->subject->id,
-            'classroom_id' => $this->classroom->id,
+            'classroom_id' => $this->classroom2->id,
             'session_id' => $this->session->id,
             'term_id' => $this->term->id,
         ]);
 
-        $note1 = createNote(['teacher_id' => $this->teacher->id]);
-        $note2 = createNote(['teacher_id' => $this->teacher2->id]);
+        $note1 = createNote(['teacher_id' => $this->teacher->id, 'classroom_id' => $this->classroom->id]);
+        $note2 = createNote(['teacher_id' => $this->teacher2->id, 'classroom_id' => $this->classroom2->id]);
 
-        expect($note1->id)->not->toBe($note2->id);
+        expect($note1->id)->not->toBe($note2->id)
+            ->and($note1->subject_id)->toBe($note2->subject_id)
+            ->and($note1->classroom_id)->not->toBe($note2->classroom_id)
+            ->and($note1->teacher_id)->not->toBe($note2->teacher_id);
     });
 
 });
