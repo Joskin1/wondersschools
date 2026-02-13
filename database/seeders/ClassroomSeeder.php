@@ -12,29 +12,14 @@ class ClassroomSeeder extends Seeder
      */
     public function run(): void
     {
-        $classrooms = [];
-
-        // JSS (Junior Secondary School) 1-3
-        foreach (['JSS 1', 'JSS 2', 'JSS 3'] as $level) {
-            foreach (['A', 'B', 'C'] as $section) {
-                $classrooms[] = [
-                    'name' => "{$level}{$section}",
-                    'level' => $level,
-                    'section' => $section,
-                ];
-            }
-        }
-
-        // SS (Senior Secondary) 1-3
-        foreach (['SS 1', 'SS 2', 'SS 3'] as $level) {
-            foreach (['A', 'B', 'C'] as $section) {
-                $classrooms[] = [
-                    'name' => "{$level}{$section}",
-                    'level' => $level,
-                    'section' => $section,
-                ];
-            }
-        }
+        $classrooms = [
+            ['name' => 'JSS1', 'class_order' => 1, 'is_active' => true],
+            ['name' => 'JSS2', 'class_order' => 2, 'is_active' => true],
+            ['name' => 'JSS3', 'class_order' => 3, 'is_active' => true],
+            ['name' => 'SS1',  'class_order' => 4, 'is_active' => true],
+            ['name' => 'SS2',  'class_order' => 5, 'is_active' => true],
+            ['name' => 'SS3',  'class_order' => 6, 'is_active' => true],
+        ];
 
         foreach ($classrooms as $classroom) {
             Classroom::firstOrCreate(

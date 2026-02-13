@@ -145,7 +145,7 @@ class LessonNoteResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('classroom_id')
                     ->label('Classroom')
-                    ->options(Classroom::all()->pluck('name', 'id'))
+                    ->options(Classroom::ordered()->pluck('name', 'id'))
                     ->multiple(),
 
                 Tables\Filters\SelectFilter::make('subject_id')

@@ -135,16 +135,16 @@ test('form defaults to active session and term', function () {
 });
 
 test('classroom filter widget displays classrooms', function () {
-    $classroom1 = Classroom::factory()->create(['name' => 'JSS 1A']);
-    $classroom2 = Classroom::factory()->create(['name' => 'JSS 2B']);
+    $classroom1 = Classroom::factory()->create(['name' => 'SS1']);
+    $classroom2 = Classroom::factory()->create(['name' => 'SS2']);
 
     Livewire::test(TeacherSubjectAssignmentResource\Widgets\ClassroomFilterWidget::class)
-        ->assertSee('JSS 1A')
-        ->assertSee('JSS 2B');
+        ->assertSee('SS1')
+        ->assertSee('SS2');
 });
 
 test('classroom filter widget shows assignment counts', function () {
-    $classroom = Classroom::factory()->create(['name' => 'JSS 1A']);
+    $classroom = Classroom::factory()->create(['name' => 'SS1']);
 
     TeacherSubjectAssignment::create([
         'teacher_id' => $this->teacher->id,
@@ -159,8 +159,8 @@ test('classroom filter widget shows assignment counts', function () {
 });
 
 test('can filter assignments by classroom', function () {
-    $classroom1 = Classroom::factory()->create(['name' => 'JSS 1A']);
-    $classroom2 = Classroom::factory()->create(['name' => 'JSS 2B']);
+    $classroom1 = Classroom::factory()->create(['name' => 'SS1']);
+    $classroom2 = Classroom::factory()->create(['name' => 'SS2']);
 
     $assignment1 = TeacherSubjectAssignment::create([
         'teacher_id' => $this->teacher->id,
@@ -185,7 +185,7 @@ test('can filter assignments by classroom', function () {
 });
 
 test('can clear classroom filter', function () {
-    $classroom = Classroom::factory()->create(['name' => 'JSS 1A']);
+    $classroom = Classroom::factory()->create(['name' => 'SS1']);
 
     $assignment = TeacherSubjectAssignment::create([
         'teacher_id' => $this->teacher->id,

@@ -23,11 +23,11 @@ class ClassroomFilterWidget extends Widget
         $activeTerm = $activeSession?->activeTerm;
 
         if (!$activeSession || !$activeTerm) {
-            return Classroom::orderBy('name')->get();
+            return Classroom::active()->ordered()->get();
         }
 
         // Get classrooms with assignment counts
-        return Classroom::orderBy('name')
+        return Classroom::active()->ordered()
             ->withCount([
                 'assignments' => function ($query) use ($activeSession, $activeTerm) {
                     $query->where('session_id', $activeSession->id)

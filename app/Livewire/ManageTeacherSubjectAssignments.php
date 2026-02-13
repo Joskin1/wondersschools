@@ -91,7 +91,7 @@ class ManageTeacherSubjectAssignments extends Component
         $activeSession = Session::active()->first();
         $activeTerm = $activeSession?->activeTerm;
 
-        $classrooms = Classroom::orderBy('name')
+        $classrooms = Classroom::active()->ordered()
             ->withCount([
                 'assignments' => function ($query) use ($activeSession, $activeTerm) {
                     if ($activeSession && $activeTerm) {

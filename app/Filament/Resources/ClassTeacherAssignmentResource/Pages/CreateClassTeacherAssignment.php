@@ -5,7 +5,8 @@ namespace App\Filament\Resources\ClassTeacherAssignmentResource\Pages;
 use App\Filament\Resources\ClassTeacherAssignmentResource;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Database\QueryException;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 class CreateClassTeacherAssignment extends CreateRecord
 {
@@ -21,24 +22,29 @@ class CreateClassTeacherAssignment extends CreateRecord
         return 'Class teacher assigned successfully.';
     }
 
-    protected function onValidationError(\Illuminate\Validation\ValidationException $exception): void
+    protected function handleRecordCreation(array $data): Model
     {
-        // Check if it's a unique constraint violation
-        if ($exception->getPrevious() instanceof QueryException) {
-            $queryException = $exception->getPrevious();
-            
-            if (str_contains($queryException->getMessage(), 'unique_class_teacher_per_session')) {
+        try {
+            return static::getModel()::create($data);
+        } catch (UniqueConstraintViolationException $e) {
+            $message = $e->getMessage();
+
+            if (str_contains($message, 'unique_teacher_per_session')) {
+                Notification::make()
+                    ->title('Teacher Already Assigned')
+                    ->body('This teacher is already assigned as a class teacher for another class in the selected session.')
+                    ->danger()
+                    ->send();
+            } elseif (str_contains($message, 'unique_class_teacher_per_session')) {
                 Notification::make()
                     ->title('Duplicate Assignment')
                     ->body('This class already has a class teacher for the selected session.')
                     ->danger()
                     ->send();
-                
-                $this->halt();
             }
-        }
 
-        parent::onValidationError($exception);
+            $this->halt();
+        }
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array

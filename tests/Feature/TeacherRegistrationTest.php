@@ -53,7 +53,7 @@ describe('Teacher Registration System', function () {
             $tokenRecord = TeacherRegistrationToken::where('user_id', $teacher->id)->first();
 
             expect($tokenRecord)->not->toBeNull()
-                ->and($tokenRecord->expires_at->diffInDays(now()))->toBe(3)
+                ->and((int) round(abs($tokenRecord->expires_at->diffInDays(now()))))->toBe(3)
                 ->and($tokenRecord->used_at)->toBeNull();
         });
 

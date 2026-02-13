@@ -30,17 +30,21 @@ class ClassTeacherAssignmentSeeder extends Seeder
             return;
         }
 
-        // Assign class teachers to some classrooms
-        $assignedClassrooms = $classrooms->take(min(5, $classrooms->count()));
+        // Assign one class per teacher (a teacher can only manage one class per session)
+        $assignableCount = min($teachers->count(), $classrooms->count());
 
-        foreach ($assignedClassrooms as $index => $classroom) {
-            $teacher = $teachers->get($index % $teachers->count());
+        foreach ($classrooms->take($assignableCount) as $index => $classroom) {
+            $teacher = $teachers->get($index);
 
-            ClassTeacherAssignment::create([
-                'teacher_id' => $teacher->id,
-                'class_id' => $classroom->id,
-                'session_id' => $activeSession->id,
-            ]);
+            ClassTeacherAssignment::updateOrCreate(
+                [
+                    'class_id' => $classroom->id,
+                    'session_id' => $activeSession->id,
+                ],
+                [
+                    'teacher_id' => $teacher->id,
+                ]
+            );
 
             $this->command->info("Assigned {$teacher->name} as class teacher for {$classroom->name}");
         }

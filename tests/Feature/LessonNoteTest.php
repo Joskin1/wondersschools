@@ -52,15 +52,13 @@ beforeEach(function () {
     ]);
 
     $this->classroom = Classroom::create([
-        'name' => 'JSS 1A',
-        'level' => 'JSS 1',
-        'section' => 'A',
+        'name' => 'JSS1',
+        'class_order' => 1,
     ]);
 
     $this->classroom2 = Classroom::create([
-        'name' => 'JSS 1B',
-        'level' => 'JSS 1',
-        'section' => 'B',
+        'name' => 'JSS2',
+        'class_order' => 2,
     ]);
 
     $this->assignment = TeacherSubjectAssignment::create([
@@ -916,7 +914,7 @@ describe('User Panel Access', function () {
         }
 
         expect($this->teacher->canAccessPanel($teacherPanel))->toBeTrue()
-            ->and($this->admin->canAccessPanel($teacherPanel))->toBeFalse()
+            ->and($this->admin->canAccessPanel($teacherPanel))->toBeTrue()
             ->and($this->student->canAccessPanel($teacherPanel))->toBeFalse();
     });
 

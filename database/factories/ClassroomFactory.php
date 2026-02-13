@@ -16,18 +16,23 @@ class ClassroomFactory extends Factory
      */
     public function definition(): array
     {
-        $levels = ['JSS', 'SS'];
-        $grades = [1, 2, 3];
-        $sections = ['A', 'B', 'C'];
-
-        $level = fake()->randomElement($levels);
-        $grade = fake()->randomElement($grades);
-        $section = fake()->randomElement($sections);
+        static $sequence = 0;
+        $sequence++;
 
         return [
-            'name' => "{$level} {$grade}{$section}",
-            'level' => $level,
-            'section' => $section,
+            'name' => "Class-{$sequence}",
+            'class_order' => $sequence,
+            'is_active' => true,
         ];
+    }
+
+    /**
+     * Indicate that the classroom is inactive.
+     */
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+        ]);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\ClassTeacherAssignment;
 use App\Models\Classroom;
 use App\Models\Session;
 use App\Models\User;
+use Closure;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
@@ -38,14 +39,70 @@ class ClassTeacherAssignmentResource extends Resource
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->helperText('Only active teachers who have completed registration are shown'),
+                    ->helperText('Only active teachers who have completed registration are shown')
+                    ->rules([
+                        fn (\Filament\Schemas\Components\Utilities\Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                            $sessionId = $get('session_id');
+                            if (! $value || ! $sessionId) {
+                                return;
+                            }
+
+                            $existing = ClassTeacherAssignment::where('teacher_id', $value)
+                                ->where('session_id', $sessionId)
+                                ->with('classroom')
+                                ->first();
+
+                            if (! $existing) {
+                                return;
+                            }
+
+                            // When editing, ignore the current record
+                            $recordId = request()->route('record');
+                            if ($recordId && (int) $existing->id === (int) $recordId) {
+                                return;
+                            }
+
+                            $teacherName = User::find($value)?->name ?? 'This teacher';
+                            $className = $existing->classroom?->name ?? 'another class';
+
+                            $fail("{$teacherName} is already assigned as class teacher for {$className} in the selected session.");
+                        },
+                    ]),
 
                 Select::make('class_id')
                     ->label('Class')
-                    ->options(Classroom::all()->pluck('name', 'id'))
+                    ->options(Classroom::active()->ordered()->pluck('name', 'id'))
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->rules([
+                        fn (\Filament\Schemas\Components\Utilities\Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                            $sessionId = $get('session_id');
+                            if (! $value || ! $sessionId) {
+                                return;
+                            }
+
+                            $existing = ClassTeacherAssignment::where('class_id', $value)
+                                ->where('session_id', $sessionId)
+                                ->with('teacher')
+                                ->first();
+
+                            if (! $existing) {
+                                return;
+                            }
+
+                            // When editing, ignore the current record
+                            $recordId = request()->route('record');
+                            if ($recordId && (int) $existing->id === (int) $recordId) {
+                                return;
+                            }
+
+                            $className = Classroom::find($value)?->name ?? 'This class';
+                            $teacherName = $existing->teacher?->name ?? 'another teacher';
+
+                            $fail("{$className} already has a class teacher ({$teacherName}) for the selected session.");
+                        },
+                    ]),
 
                 Select::make('session_id')
                     ->label('Academic Session')

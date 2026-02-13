@@ -42,15 +42,13 @@ beforeEach(function () {
     ]);
 
     $this->classroomA = Classroom::create([
-        'name' => 'JSS 1A',
-        'level' => 'JSS 1',
-        'section' => 'A',
+        'name' => 'JSS1',
+        'class_order' => 1,
     ]);
 
     $this->classroomB = Classroom::create([
-        'name' => 'JSS 1B',
-        'level' => 'JSS 1',
-        'section' => 'B',
+        'name' => 'JSS2',
+        'class_order' => 2,
     ]);
 
     // Create submission window
@@ -97,7 +95,23 @@ describe('Database', function () {
         ]))->toThrow(\Illuminate\Database\QueryException::class);
     });
 
-    it('allows a teacher to be class teacher for multiple classes', function () {
+    it('enforces unique constraint - one class per teacher per session', function () {
+        ClassTeacherAssignment::create([
+            'teacher_id' => $this->classTeacher->id,
+            'class_id' => $this->classroomA->id,
+            'session_id' => $this->session->id,
+        ]);
+
+        expect(fn () => ClassTeacherAssignment::create([
+            'teacher_id' => $this->classTeacher->id,
+            'class_id' => $this->classroomB->id,
+            'session_id' => $this->session->id,
+        ]))->toThrow(\Illuminate\Database\QueryException::class);
+    });
+
+    it('allows a teacher to be class teacher in different sessions', function () {
+        $oldSession = Session::createWithTerms(2020);
+
         $assignment1 = ClassTeacherAssignment::create([
             'teacher_id' => $this->classTeacher->id,
             'class_id' => $this->classroomA->id,
@@ -107,7 +121,7 @@ describe('Database', function () {
         $assignment2 = ClassTeacherAssignment::create([
             'teacher_id' => $this->classTeacher->id,
             'class_id' => $this->classroomB->id,
-            'session_id' => $this->session->id,
+            'session_id' => $oldSession->id,
         ]);
 
         expect($assignment1->id)->not->toBe($assignment2->id);

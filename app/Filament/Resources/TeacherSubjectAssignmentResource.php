@@ -51,7 +51,7 @@ class TeacherSubjectAssignmentResource extends Resource
 
                 Select::make('classroom_id')
                     ->label('Class')
-                    ->options(Classroom::orderBy('name')->pluck('name', 'id'))
+                    ->options(Classroom::active()->ordered()->pluck('name', 'id'))
                     ->required()
                     ->searchable()
                     ->preload()
@@ -147,7 +147,7 @@ class TeacherSubjectAssignmentResource extends Resource
 
                 SelectFilter::make('classroom_id')
                     ->label('Class')
-                    ->options(Classroom::orderBy('name')->pluck('name', 'id'))
+                    ->options(Classroom::ordered()->pluck('name', 'id'))
                     ->searchable()
                     ->preload(),
 
