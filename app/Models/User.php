@@ -100,8 +100,9 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return match ($panel->getId()) {
+            'sudo' => $this->role === 'sudo',
             'admin' => in_array($this->role, ['sudo', 'admin']),
-            'teacher' => $this->role === 'teacher' && $this->isActive(),
+            'teacher' => in_array($this->role, ['sudo', 'admin', 'teacher']) && $this->isActive(),
             default => false,
         };
     }
@@ -161,7 +162,7 @@ class User extends Authenticatable implements FilamentUser
      */
     public function isActive(): bool
     {
-        return $this->is_active === true;
+        return (bool) $this->is_active;
     }
 
     /**
@@ -179,5 +180,21 @@ class User extends Authenticatable implements FilamentUser
     public function canBeAssigned(): bool
     {
         return $this->isTeacher() && $this->isActive() && $this->hasCompletedRegistration();
+    }
+
+    /**
+     * Determine if the user can impersonate another user.
+     */
+    public function canImpersonate(): bool
+    {
+        return $this->isSudo() || $this->isAdmin();
+    }
+
+    /**
+     * Determine if the user can be impersonated.
+     */
+    public function canBeImpersonated(): bool
+    {
+        return !$this->isSudo();
     }
 }
