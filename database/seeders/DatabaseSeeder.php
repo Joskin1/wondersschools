@@ -63,12 +63,9 @@ class DatabaseSeeder extends Seeder
         $logo = $copyImage('logo.png');
 
         // Admin User (Sudo)
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'joskin@example.com',
-            'password' => bcrypt('joskin@example.com'),
-            'role' => 'sudo',
-        ]);
+        $this->call(SudoUserSeeder::class);
+        // School Admin
+        $this->call(SchoolAdminSeeder::class);
 
         // Create current academic session with terms
         $this->command->info('Creating academic session and terms...');

@@ -35,6 +35,8 @@ class TeacherSubjectAssignmentSeeder extends Seeder
                     'name' => "Teacher {$i}",
                     'password' => bcrypt('password'),
                     'role' => 'teacher',
+                    'is_active' => true,
+                    'registration_completed_at' => now(),
                 ]
             );
         }
