@@ -48,7 +48,6 @@ class UserResource extends Resource
                     ->options([
                         'teacher' => 'Teacher',
                         'admin' => 'Admin',
-                        'sudo' => 'Sudo',
                     ])
                     ->required()
                     ->default('teacher'),
@@ -147,6 +146,8 @@ class UserResource extends Resource
                         }
                     }),
 
+                \STS\FilamentImpersonate\Actions\Impersonate::make()
+                    ->redirectTo('/teacher'),
                 EditAction::make(),
                 DeleteAction::make()
                     ->visible(fn (User $record) => !in_array($record->role, ['sudo'])),

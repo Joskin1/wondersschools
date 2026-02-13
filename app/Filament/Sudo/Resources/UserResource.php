@@ -11,7 +11,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
 
@@ -75,7 +74,8 @@ class UserResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                BadgeColumn::make('role')
+                TextColumn::make('role')
+                    ->badge()
                     ->colors([
                         'danger' => 'sudo',
                         'warning' => 'admin',
@@ -111,12 +111,18 @@ class UserResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                \STS\FilamentImpersonate\Actions\Impersonate::make()
+                    ->redirectTo(fn (User $record) => match ($record->role) {
+                        'admin' => '/admin',
+                        'teacher' => '/teacher',
+                        default => '/admin',
+                    }),
+                \Filament\Actions\EditAction::make(),
+                \Filament\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

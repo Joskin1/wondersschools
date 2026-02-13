@@ -167,6 +167,9 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->options(Term::orderBy('order')->get()->pluck('name', 'id')),
             ])
             ->actions([
+                \STS\FilamentImpersonate\Actions\Impersonate::make()
+                    ->impersonateRecord(fn ($record) => $record->teacher)
+                    ->redirectTo('/teacher'),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

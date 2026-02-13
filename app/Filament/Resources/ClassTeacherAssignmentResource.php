@@ -94,6 +94,9 @@ class ClassTeacherAssignmentResource extends Resource
                     ->searchable(),
             ])
             ->actions([
+                \STS\FilamentImpersonate\Actions\Impersonate::make()
+                    ->impersonateRecord(fn ($record) => $record->teacher)
+                    ->redirectTo('/teacher'),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
