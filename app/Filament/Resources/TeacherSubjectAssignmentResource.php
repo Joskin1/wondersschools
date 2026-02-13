@@ -175,15 +175,7 @@ class TeacherSubjectAssignmentResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc')
-            ->modifyQueryUsing(function (Builder $query) {
-                // Default to active session/term
-                $activeSession = Session::active()->first();
-                if ($activeSession && $activeSession->activeTerm) {
-                    $query->where('session_id', $activeSession->id)
-                          ->where('term_id', $activeSession->activeTerm->id);
-                }
-            });
+            ->defaultSort('created_at', 'desc');
     }
 
     public static function getRelations(): array

@@ -293,6 +293,20 @@ class LessonNoteResource extends Resource
         ];
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $pendingCount = static::getModel()::where('status', 'pending')->count();
+        
+        return $pendingCount > 0 ? (string) $pendingCount : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        $pendingCount = static::getModel()::where('status', 'pending')->count();
+        
+        return $pendingCount > 0 ? 'warning' : null;
+    }
+
     public static function canCreate(): bool
     {
         return false; // Teachers create via their own resource

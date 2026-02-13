@@ -58,12 +58,37 @@ class TeacherSubjectAssignment extends Model
         return $this->belongsTo(Term::class);
     }
 
+
     /**
      * Scope to get assignments for a specific teacher.
      */
     public function scopeForTeacher($query, int $teacherId)
     {
         return $query->where('teacher_id', $teacherId);
+    }
+
+    /**
+     * Scope to get assignments for a specific classroom.
+     */
+    public function scopeForClassroom($query, int $classroomId)
+    {
+        return $query->where('classroom_id', $classroomId);
+    }
+
+    /**
+     * Scope to get assignments for a specific session.
+     */
+    public function scopeForSession($query, int $sessionId)
+    {
+        return $query->where('session_id', $sessionId);
+    }
+
+    /**
+     * Scope to get assignments for a specific term.
+     */
+    public function scopeForTerm($query, int $termId)
+    {
+        return $query->where('term_id', $termId);
     }
 
     /**
