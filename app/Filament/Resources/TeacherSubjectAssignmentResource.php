@@ -174,33 +174,40 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('teacher_id')
-                    ->label('Teacher')
-                    ->options(User::activeTeachers()->pluck('name', 'id'))
-                    ->searchable()
-                    ->preload(),
-
                 SelectFilter::make('classroom_id')
                     ->label('Class')
                     ->options(Classroom::ordered()->pluck('name', 'id'))
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('All Classes'),
 
                 SelectFilter::make('subject_id')
                     ->label('Subject')
                     ->options(Subject::orderBy('name')->pluck('name', 'id'))
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('All Subjects'),
+
+                SelectFilter::make('teacher_id')
+                    ->label('Teacher')
+                    ->options(User::activeTeachers()->pluck('name', 'id'))
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('All Teachers'),
 
                 SelectFilter::make('session_id')
                     ->label('Session')
                     ->options(Session::orderBy('start_year', 'desc')->get()->pluck('name', 'id'))
-                    ->default(Session::active()->first()?->id),
+                    ->default(Session::active()->first()?->id)
+                    ->placeholder('All Sessions'),
 
                 SelectFilter::make('term_id')
                     ->label('Term')
-                    ->options(Term::orderBy('order')->get()->pluck('name', 'id')),
+                    ->options(Term::orderBy('order')->get()->pluck('name', 'id'))
+                    ->placeholder('All Terms'),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->persistFiltersInSession()
             ->actions([
                 \STS\FilamentImpersonate\Actions\Impersonate::make()
                     ->impersonateRecord(fn ($record) => $record->teacher)
