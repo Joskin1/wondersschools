@@ -23,6 +23,7 @@ class SudoPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
+            ->default()
             ->id('sudo')
             ->path('sudo')
             ->login()
@@ -41,6 +42,7 @@ class SudoPanelProvider extends PanelProvider
                 AccountWidget::class,
             ])
             ->middleware([
+                \App\Http\Middleware\CentralDomainOnly::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

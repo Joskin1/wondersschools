@@ -40,6 +40,7 @@ class TeacherPanelProvider extends PanelProvider
                 AccountWidget::class,
             ])
             ->middleware([
+                \App\Http\Middleware\IdentifyTenant::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
