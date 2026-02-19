@@ -8,6 +8,7 @@ use App\Livewire\News;
 use App\Livewire\Post;
 use App\Livewire\Gallery;
 use App\Livewire\Contact;
+use App\Livewire\RegisterStudent;
 use App\Http\Controllers\TeacherRegistrationController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,3 +24,7 @@ Route::get('/contact-us', Contact::class)->name('contact');
 // Teacher Registration
 Route::get('/teacher/register/{token}', [TeacherRegistrationController::class, 'show'])
     ->name('teacher.register');
+
+// Student Registration
+Route::get('/register/student/{slug}', RegisterStudent::class)
+    ->name('student.register');
