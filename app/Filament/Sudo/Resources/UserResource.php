@@ -13,6 +13,10 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 
 class UserResource extends Resource
 {
@@ -111,18 +115,12 @@ class UserResource extends Resource
                     ]),
             ])
             ->actions([
-                \STS\FilamentImpersonate\Actions\Impersonate::make()
-                    ->redirectTo(fn (User $record) => match ($record->role) {
-                        'admin' => '/admin',
-                        'teacher' => '/teacher',
-                        default => '/admin',
-                    }),
-                \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
