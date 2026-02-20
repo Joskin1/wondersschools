@@ -30,6 +30,15 @@ class UserResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    /**
+     * Exclude sudo users from tenant admin panel for security.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('role', '!=', 'sudo');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -100,7 +109,6 @@ class UserResource extends Resource
                     ->options([
                         'teacher' => 'Teacher',
                         'admin' => 'Admin',
-                        'sudo' => 'Sudo',
                     ]),
 
                 Tables\Filters\TernaryFilter::make('is_active')

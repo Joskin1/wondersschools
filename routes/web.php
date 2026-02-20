@@ -12,6 +12,14 @@ use App\Livewire\RegisterStudent;
 use App\Http\Controllers\TeacherRegistrationController;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Tenant Routes (resolved per school domain)
+|--------------------------------------------------------------------------
+| Tenant resolution now happens globally via the IdentifyTenant middleware
+| in the web middleware stack (bootstrap/app.php). All routes automatically
+| use the correct tenant database connection.
+*/
 Route::get('/', Home::class)->name('home');
 Route::get('/about-us', About::class)->name('about');
 Route::get('/academics', Academics::class)->name('academics');
@@ -28,3 +36,5 @@ Route::get('/teacher/register/{token}', [TeacherRegistrationController::class, '
 // Student Registration
 Route::get('/register/student/{slug}', RegisterStudent::class)
     ->name('student.register');
+
+

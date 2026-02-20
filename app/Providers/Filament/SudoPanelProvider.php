@@ -23,8 +23,10 @@ class SudoPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
+            ->default()
             ->id('sudo')
             ->path('sudo')
+            ->domain(env('SUDO_DOMAIN', 'admin.platform.com'))
             ->login()
             ->colors([
                 'primary' => Color::Red,
@@ -41,6 +43,7 @@ class SudoPanelProvider extends PanelProvider
                 AccountWidget::class,
             ])
             ->middleware([
+                \App\Http\Middleware\PreventAccessFromTenantDomains::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

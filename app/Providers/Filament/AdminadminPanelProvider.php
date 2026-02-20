@@ -26,7 +26,6 @@ class AdminadminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->default()
             ->id('admin')
             ->path('admin')
             ->login()
@@ -46,6 +45,8 @@ class AdminadminPanelProvider extends PanelProvider
                 FilamentInfoWidget::class,
             ])
             ->middleware([
+                \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
+                \App\Http\Middleware\CheckTenantStatus::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

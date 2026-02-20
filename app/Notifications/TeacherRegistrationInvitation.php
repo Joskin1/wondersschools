@@ -11,12 +11,25 @@ class TeacherRegistrationInvitation extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    private string $token;
+    private string $registrationUrl;
+
     /**
      * Create a new notification instance.
+     *
+     * Captures the tenant domain eagerly since this notification is queued
+     * and the tenant context would be lost when the job executes.
      */
-    public function __construct(
-        private string $token
-    ) {}
+    public function __construct(string $token)
+    {
+        $this->token = $token;
+
+        // Build the registration URL using the current request domain
+        // This must happen before queueing since tenant context is lost in the queue worker
+        $scheme = request()->getScheme();
+        $host = request()->getHost();
+        $this->registrationUrl = "{$scheme}://{$host}/teacher/register/{$token}";
+    }
 
     /**
      * Get the notification's delivery channels.
@@ -33,14 +46,12 @@ class TeacherRegistrationInvitation extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $url = route('teacher.register', ['token' => $this->token]);
-
         return (new MailMessage)
             ->subject('Complete Your Teacher Registration')
             ->greeting('Hello ' . $notifiable->name . ',')
             ->line('You have been invited to join our school as a teacher.')
             ->line('Please click the button below to complete your registration and set up your account.')
-            ->action('Complete Registration', $url)
+            ->action('Complete Registration', $this->registrationUrl)
             ->line('This link will expire in 3 days.')
             ->line('If you did not expect this invitation, please ignore this email.');
     }

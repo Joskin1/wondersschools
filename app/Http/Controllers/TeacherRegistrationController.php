@@ -19,7 +19,7 @@ class TeacherRegistrationController extends Controller
         $tokenRecord = TeacherRegistrationToken::validate($token);
 
         if (!$tokenRecord) {
-            return redirect()->route('login')
+            return redirect('/teacher/login')
                 ->with('error', 'Invalid or expired registration link. Please contact the administrator.');
         }
 
@@ -28,7 +28,7 @@ class TeacherRegistrationController extends Controller
 
         // Check if user has already completed registration
         if ($user->hasCompletedRegistration()) {
-            return redirect()->route('login')
+            return redirect('/teacher/login')
                 ->with('info', 'You have already completed registration. Please log in.');
         }
 

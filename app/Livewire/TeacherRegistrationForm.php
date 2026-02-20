@@ -78,11 +78,11 @@ class TeacherRegistrationForm extends Component
         // Check if user has already completed registration
         if ($this->user->hasCompletedRegistration()) {
             session()->flash('error', 'You have already completed registration.');
-            return redirect()->route('login');
+            return redirect('/teacher/login');
         }
 
         try {
-            DB::transaction(function () use ($tokenRecord) {
+            DB::connection('tenant')->transaction(function () use ($tokenRecord) {
                 // Create teacher profile
                 TeacherProfile::create([
                     'user_id' => $this->user->id,
@@ -94,7 +94,7 @@ class TeacherRegistrationForm extends Component
 
                 // Update user with password and activate account
                 $this->user->update([
-                    'password' => Hash::make($this->password),
+                    'password' => $this->password,
                     'is_active' => true,
                     'registration_completed_at' => now(),
                 ]);
