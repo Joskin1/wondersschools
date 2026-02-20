@@ -3,20 +3,39 @@
 namespace App\Models\Central;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Crypt;
+use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
+use Stancl\Tenancy\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Database\Concerns\HasDatabase;
+use Stancl\Tenancy\Database\Concerns\HasDomains;
 
-class School extends Model
+class School extends BaseTenant implements TenantWithDatabase
 {
-    use HasFactory;
+    use HasFactory, HasDatabase, HasDomains;
+
+    protected $table = 'schools';
 
     /**
      * Always use the central database connection.
      */
     protected $connection = 'central';
 
+    /**
+     * The custom columns that map to the tenant model.
+     */
+    public static function getCustomColumns(): array
+    {
+        return [
+            'id',
+            'name',
+            'database_name',
+            'database_username',
+            'database_password',
+            'status',
+        ];
+    }
+
     protected $fillable = [
+        'id',
         'name',
         'database_name',
         'database_username',
@@ -39,14 +58,6 @@ class School extends Model
         return [
             'database_password' => 'encrypted',
         ];
-    }
-
-    /**
-     * Get the domains associated with this school.
-     */
-    public function domains(): HasMany
-    {
-        return $this->hasMany(Domain::class);
     }
 
     /**
@@ -87,21 +98,5 @@ class School extends Model
     public function primaryDomain(): ?Domain
     {
         return $this->domains()->where('is_primary', true)->first();
-    }
-
-    /**
-     * Configure the tenant database connection for this school.
-     * This is used to dynamically switch the DB connection at runtime.
-     */
-    public function configureTenantConnection(): void
-    {
-        config([
-            'database.connections.tenant.database' => $this->database_name,
-            'database.connections.tenant.username' => $this->database_username,
-            'database.connections.tenant.password' => $this->database_password,
-        ]);
-
-        // Purge any existing tenant connection to force reconnect with new credentials
-        \Illuminate\Support\Facades\DB::purge('tenant');
     }
 }

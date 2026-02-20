@@ -35,7 +35,7 @@ class DomainResource extends Resource
     {
         return $schema
             ->components([
-                Select::make('school_id')
+                Select::make('tenant_id')
                     ->label('School')
                     ->options(School::pluck('name', 'id'))
                     ->required()
@@ -92,7 +92,7 @@ class DomainResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('school_id')
+                SelectFilter::make('tenant_id')
                     ->label('School')
                     ->options(School::pluck('name', 'id')),
             ])

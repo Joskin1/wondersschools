@@ -45,7 +45,8 @@ class AdminadminPanelProvider extends PanelProvider
                 FilamentInfoWidget::class,
             ])
             ->middleware([
-                \App\Http\Middleware\IdentifyTenant::class,
+                \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
+                \App\Http\Middleware\CheckTenantStatus::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

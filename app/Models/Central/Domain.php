@@ -3,10 +3,10 @@
 namespace App\Models\Central;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Stancl\Tenancy\Database\Models\Domain as BaseDomain;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Domain extends Model
+class Domain extends BaseDomain
 {
     use HasFactory;
 
@@ -16,8 +16,8 @@ class Domain extends Model
     protected $connection = 'central';
 
     protected $fillable = [
-        'school_id',
         'domain',
+        'tenant_id',
         'is_primary',
     ];
 
@@ -38,31 +38,6 @@ class Domain extends Model
      */
     public function school(): BelongsTo
     {
-        return $this->belongsTo(School::class);
-    }
-
-    /**
-     * Find a school by domain name.
-     * Uses caching to avoid repeated DB queries within the same request lifecycle.
-     */
-    public static function findSchoolByDomain(string $domain): ?School
-    {
-        // Cache within the request lifecycle using a static variable
-        static $cache = [];
-
-        if (isset($cache[$domain])) {
-            return $cache[$domain];
-        }
-
-        $domainRecord = static::with('school')
-            ->where('domain', $domain)
-            ->first();
-
-        if ($domainRecord && $domainRecord->school) {
-            $cache[$domain] = $domainRecord->school;
-            return $domainRecord->school;
-        }
-
-        return null;
+        return $this->belongsTo(School::class, 'tenant_id');
     }
 }

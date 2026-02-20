@@ -24,12 +24,15 @@
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="DB_DATABASE" value="/tmp/testing.sqlite"/>
+        <env name="DB_CONNECTION_CENTRAL" value="sqlite"/>
+        <env name="DB_CONNECTION_TENANT" value="sqlite"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="TENANCY_REDIS_BOOTSTRAPPER" value="false"/>
     </php>
 </phpunit>

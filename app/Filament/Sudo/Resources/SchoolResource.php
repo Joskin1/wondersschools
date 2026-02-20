@@ -3,7 +3,8 @@
 namespace App\Filament\Sudo\Resources;
 
 use App\Models\Central\School;
-use App\Services\TenantProvisioner;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
@@ -16,7 +17,6 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Actions\EditAction;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Hash;
 
 class SchoolResource extends Resource
 {
@@ -100,8 +100,7 @@ class SchoolResource extends Resource
                     ->modalDescription('Suspending this school will immediately block all access to its panel. Are you sure?')
                     ->visible(fn (School $record) => $record->isActive())
                     ->action(function (School $record) {
-                        $provisioner = app(TenantProvisioner::class);
-                        $provisioner->suspend($record);
+                        $record->update(['status' => 'suspended']);
                         Notification::make()
                             ->title('School Suspended')
                             ->body("'{$record->name}' has been suspended.")
@@ -116,8 +115,7 @@ class SchoolResource extends Resource
                     ->requiresConfirmation()
                     ->visible(fn (School $record) => $record->isSuspended())
                     ->action(function (School $record) {
-                        $provisioner = app(TenantProvisioner::class);
-                        $provisioner->activate($record);
+                        $record->update(['status' => 'active']);
                         Notification::make()
                             ->title('School Activated')
                             ->body("'{$record->name}' is now active.")
@@ -142,8 +140,10 @@ class SchoolResource extends Resource
                             ->label('Confirm Password'),
                     ])
                     ->action(function (School $record, array $data) {
-                        $provisioner = app(TenantProvisioner::class);
-                        $provisioner->resetAdminPassword($record, $data['new_password']);
+                        tenancy()->initialize($record);
+                        DB::table('users')->where('role', 'admin')->update(['password' => Hash::make($data['new_password'])]);
+                        tenancy()->end();
+                        
                         Notification::make()
                             ->title('Password Reset')
                             ->body("Admin password for '{$record->name}' has been reset.")
@@ -158,8 +158,10 @@ class SchoolResource extends Resource
                     ->requiresConfirmation()
                     ->modalDescription('This will permanently delete the school, its database, and all associated data. This action cannot be undone.')
                     ->action(function (School $record) {
-                        $provisioner = app(TenantProvisioner::class);
-                        $provisioner->delete($record);
+                        // Deleting the model will trigger Stancl's TenantDeleted event
+                        // This uses JobPipeline (DeleteDatabase, DeleteTenantDatabaseUser hooks)
+                        $record->delete();
+                        
                         Notification::make()
                             ->title('School Deleted')
                             ->body("'{$record->name}' and all its data have been permanently deleted.")

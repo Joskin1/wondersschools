@@ -1,85 +1,76 @@
 <?php
 
+declare(strict_types=1);
+
+use Stancl\Tenancy\Database\Models\Domain;
+use Stancl\Tenancy\Database\Models\Tenant;
+
 return [
-
-    /*
-    |--------------------------------------------------------------------------
-    | Central Domains
-    |--------------------------------------------------------------------------
-    |
-    | Domains that should NOT trigger tenant resolution. These are domains
-    | where the central/sudo panel is accessible. Requests to these domains
-    | will use the central database connection.
-    |
-    */
-
+    'tenant_model' => \App\Models\Central\School::class,
+    'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
+    'domain_model' => \App\Models\Central\Domain::class,
     'central_domains' => array_filter(array_map('trim', explode(',', env('CENTRAL_DOMAINS', 'wonders.test')))),
+    
+    'bootstrappers' => array_values(array_filter([
+        Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
+        Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
+        Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
+        Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
+        // Skip Redis bootstrapper when disabled (e.g. test env without Redis)
+        env('TENANCY_REDIS_BOOTSTRAPPER', true)
+            ? Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class
+            : null,
+    ])),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Tenant Database Prefix
-    |--------------------------------------------------------------------------
-    |
-    | When provisioning a new tenant, the database name will be prefixed
-    | with this value to avoid naming collisions.
-    |
-    */
+    'database' => [
+        'central_connection' => 'central',
+        'template_tenant_connection' => null,
+        'prefix' => env('TENANT_DB_PREFIX', 'tenant_'),
+        'suffix' => '',
+        'managers' => [
+            'sqlite' => Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager::class,
+            'mysql' => App\TenantDatabaseManagers\PrivilegedMySQLDatabaseManager::class,
+            'pgsql' => Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager::class,
+        ],
+    ],
 
-    'database_prefix' => env('TENANT_DB_PREFIX', 'tenant_'),
+    'cache' => [
+        'tag_base' => 'tenant',
+    ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Tenant Database Host
-    |--------------------------------------------------------------------------
-    |
-    | The MySQL host used for creating tenant databases. This should be the
-    | same host where the central database resides, or a dedicated DB server.
-    |
-    */
+    'filesystem' => [
+        'suffix_base' => 'tenant',
+        'disks' => [
+            'local',
+            'public',
+        ],
+        'root_override' => [
+            'local' => '%storage_path%/app/',
+            'public' => '%storage_path%/app/public/',
+        ],
+    ],
 
-    'database_host' => env('TENANT_DB_HOST', env('DB_HOST', '127.0.0.1')),
+    'redis' => [
+        'prefix_base' => 'tenant',
+        'prefixed_connections' => [
+            'default',
+        ],
+    ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Tenant Database Port
-    |--------------------------------------------------------------------------
-    */
+    'features' => [
+        Stancl\Tenancy\Features\UserImpersonation::class,
+        Stancl\Tenancy\Features\TelescopeTags::class,
+        Stancl\Tenancy\Features\UniversalRoutes::class,
+        Stancl\Tenancy\Features\TenantConfig::class,
+        Stancl\Tenancy\Features\CrossDomainRedirect::class,
+        Stancl\Tenancy\Features\ViteBundler::class,
+    ],
 
-    'database_port' => env('TENANT_DB_PORT', env('DB_PORT', '3306')),
+    'routes' => [
+        'include' => [],
+    ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Provisioner
-    |--------------------------------------------------------------------------
-    |
-    | The MySQL credentials used to CREATE databases and users for tenants.
-    | This user must have GRANT privileges.
-    |
-    */
-
-    'admin_username' => env('TENANT_ADMIN_USERNAME', env('DB_USERNAME', 'root')),
-    'admin_password' => env('TENANT_ADMIN_PASSWORD', env('DB_PASSWORD', '')),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Migration Paths
-    |--------------------------------------------------------------------------
-    */
-
-    'central_migration_path' => database_path('migrations/central'),
-    'tenant_migration_path' => database_path('migrations/tenant'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Default Tenant Admin
-    |--------------------------------------------------------------------------
-    |
-    | When provisioning a new school, a default admin user is created
-    | with these credentials. The password should be changed after first login.
-    |
-    */
-
-    'default_admin_name' => env('TENANT_DEFAULT_ADMIN_NAME', 'School Admin'),
-    'default_admin_email' => env('TENANT_DEFAULT_ADMIN_EMAIL', 'admin@school.com'),
-
+    'seeder_parameters' => [
+        '--class' => 'DatabaseSeeder',
+    ],
 ];

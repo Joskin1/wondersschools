@@ -43,6 +43,47 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
+        /**
+         * Privileged connection for DDL operations (CREATE DATABASE, CREATE USER, DROP USER).
+         * Requires a MySQL user with global privileges (e.g. root).
+         * Used by PrivilegedMySQLDatabaseManager and tenant provisioning jobs.
+         */
+        'privileged' => [
+            'driver'    => 'mysql',
+            'host'      => env('DB_HOST', '127.0.0.1'),
+            'port'      => env('DB_PORT', '3306'),
+            'database'  => env('DB_DATABASE', 'db'),
+            'username'  => env('DB_PRIVILEGED_USERNAME', env('DB_USERNAME', 'root')),
+            'password'  => env('DB_PRIVILEGED_PASSWORD', env('DB_PASSWORD', '')),
+            'charset'   => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix'    => '',
+            'strict'    => true,
+            'options'   => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
+        'central' => [
+            'driver' => env('DB_CONNECTION') === 'sqlite' ? 'sqlite' : 'mysql',
+            'url' => env('DB_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'laravel'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
@@ -51,55 +92,6 @@ return [
             'database' => env('DB_DATABASE', 'laravel'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
-
-        /*
-        |----------------------------------------------------------------------
-        | Central Database Connection (for schools, domains, SaaS tables)
-        |----------------------------------------------------------------------
-        */
-        'central' => [
-            'driver' => 'mysql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
-
-        /*
-        |----------------------------------------------------------------------
-        | Tenant Database Connection (dynamically configured per request)
-        |----------------------------------------------------------------------
-        */
-        'tenant' => [
-            'driver' => 'mysql',
-            'host' => env('TENANT_DB_HOST', env('DB_HOST', '127.0.0.1')),
-            'port' => env('TENANT_DB_PORT', env('DB_PORT', '3306')),
-            'database' => null,
-            'username' => null,
-            'password' => null,
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),

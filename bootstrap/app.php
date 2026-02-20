@@ -14,24 +14,20 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Register middleware aliases for use in panel providers and routes
         $middleware->alias([
-            'identify.tenant' => \App\Http\Middleware\IdentifyTenant::class,
-            'central.only' => \App\Http\Middleware\CentralDomainOnly::class,
             'tenant.logging' => \App\Http\Middleware\TenantAwareLogging::class,
         ]);
 
         // Global middleware: tenant resolution + logging on all web requests
-        // IdentifyTenant MUST be in the global stack so it runs on Filament panel routes too
         $middleware->web(append: [
-            \App\Http\Middleware\IdentifyTenant::class,
+            \App\Http\Middleware\InitializeTenancyByDomainOrSkipCentral::class,
+            \App\Http\Middleware\CheckTenantStatus::class,
             \App\Http\Middleware\TenantAwareLogging::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Custom error responses for tenant resolution failures
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, Request $request) {
-            if ($e->getMessage() === 'School Not Found') {
-                return response()->view('errors.tenant-not-found', [], 404);
-            }
+        $exceptions->render(function (\Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByDomainException $e, Request $request) {
+            return response()->view('errors.tenant-not-found', [], 404);
         });
 
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, Request $request) {
