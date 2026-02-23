@@ -28,6 +28,8 @@ class TeacherPanelProvider extends PanelProvider
             ->id('teacher')
             ->path('teacher')
             ->login()
+            ->passwordReset()
+            ->profile()
             ->colors([
                 'primary' => $this->resolvePrimaryColor(),
             ])

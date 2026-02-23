@@ -26,6 +26,8 @@ class SudoPanelProvider extends PanelProvider
             ->id('sudo')
             ->path('sudo')
             ->login()
+            ->passwordReset()
+            ->profile()
             ->colors([
                 'primary' => Color::Red,
             ])

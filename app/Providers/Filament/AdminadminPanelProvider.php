@@ -30,6 +30,8 @@ class AdminadminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->passwordReset()
+            ->profile()
             ->databaseNotifications()
             ->colors([
                 'primary' => $this->resolvePrimaryColor(),
