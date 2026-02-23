@@ -14,6 +14,7 @@ use Filament\Actions;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 
 class SchoolResource extends Resource
 {
@@ -36,6 +37,8 @@ class SchoolResource extends Resource
                         ->maxLength(100)
                         ->alphaDash()
                         ->unique(table: 'tenants', column: 'id', ignoreRecord: true)
+                        ->rules([Rule::notIn(['sudo', 'admin', 'teacher', 'api', 'livewire'])])
+                        ->validationMessages(['not_in' => 'This slug is reserved and cannot be used.'])
                         ->disabledOn('edit'),
 
                     TextInput::make('name')
