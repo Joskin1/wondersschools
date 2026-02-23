@@ -20,7 +20,7 @@ class TeacherSubjectAssignmentSeeder extends Seeder
         $activeSession = Session::active()->first();
         
         if (!$activeSession || !$activeSession->activeTerm) {
-            $this->command->error('No active session or term found. Please run SessionSeeder first.');
+            $this->command?->error('No active session or term found. Please run SessionSeeder first.');
             return;
         }
 
@@ -46,7 +46,7 @@ class TeacherSubjectAssignmentSeeder extends Seeder
         $classrooms = Classroom::limit(6)->get();
 
         if ($subjects->isEmpty() || $classrooms->isEmpty()) {
-            $this->command->error('No subjects or classrooms found. Please run SubjectSeeder and ClassroomSeeder first.');
+            $this->command?->error('No subjects or classrooms found. Please run SubjectSeeder and ClassroomSeeder first.');
             return;
         }
 
@@ -58,18 +58,30 @@ class TeacherSubjectAssignmentSeeder extends Seeder
 
             foreach ($teacherSubjects as $subject) {
                 foreach ($teacherClassrooms as $classroom) {
-                    TeacherSubjectAssignment::firstOrCreate([
-                        'teacher_id' => $teacher->id,
-                        'subject_id' => $subject->id,
+                    // Each (subject, classroom, session, term) may only be assigned
+                    // to one teacher (unique_subject_per_class constraint).
+                    // Skip if already claimed by a teacher assigned earlier.
+                    $alreadyAssigned = TeacherSubjectAssignment::where([
+                        'subject_id'   => $subject->id,
                         'classroom_id' => $classroom->id,
-                        'session_id' => $activeSession->id,
-                        'term_id' => $activeTerm->id,
-                    ]);
-                    $assignmentCount++;
+                        'session_id'   => $activeSession->id,
+                        'term_id'      => $activeTerm->id,
+                    ])->exists();
+
+                    if (!$alreadyAssigned) {
+                        TeacherSubjectAssignment::create([
+                            'teacher_id'   => $teacher->id,
+                            'subject_id'   => $subject->id,
+                            'classroom_id' => $classroom->id,
+                            'session_id'   => $activeSession->id,
+                            'term_id'      => $activeTerm->id,
+                        ]);
+                        $assignmentCount++;
+                    }
                 }
             }
         }
 
-        $this->command->info("Created {$assignmentCount} teacher-subject-classroom assignments!");
+        $this->command?->info("Created {$assignmentCount} teacher-subject-classroom assignments!");
     }
 }

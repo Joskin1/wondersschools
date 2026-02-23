@@ -25,10 +25,10 @@ class SchoolAdminSeeder extends Seeder
             ]
         );
 
-        $this->command->info('School Admin created/updated successfully!');
-        $this->command->info('Email: admin@wonders.test');
-        $this->command->info('Password: password');
-        $this->command->info('Role: admin');
-        $this->command->info('Access: http://wonders.test/admin');
+        $this->command?->info('School Admin created/updated successfully!');
+        $this->command?->info('Email: admin@wonders.test');
+        $this->command?->info('Password: password');
+        $this->command?->info('Role: admin');
+        $this->command?->info('Access: http://wonders.test/admin');
     }
 }

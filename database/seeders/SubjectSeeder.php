@@ -40,6 +40,6 @@ class SubjectSeeder extends Seeder
             );
         }
 
-        $this->command->info('Subjects seeded successfully!');
+        $this->command?->info('Subjects seeded successfully!');
     }
 }

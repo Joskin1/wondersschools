@@ -28,6 +28,6 @@ class ClassroomSeeder extends Seeder
             );
         }
 
-        $this->command->info('Classrooms seeded successfully!');
+        $this->command?->info('Classrooms seeded successfully!');
     }
 }

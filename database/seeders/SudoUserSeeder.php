@@ -25,10 +25,10 @@ class SudoUserSeeder extends Seeder
             ]
         );
 
-        $this->command->info('Sudo user created/updated successfully!');
-        $this->command->info('Email: joskinjoseph1@gmail.com');
-        $this->command->info('Password: password');
-        $this->command->info('Role: sudo');
-        $this->command->info('Access: http://wonders.test/sudo');
+        $this->command?->info('Sudo user created/updated successfully!');
+        $this->command?->info('Email: joskinjoseph1@gmail.com');
+        $this->command?->info('Password: password');
+        $this->command?->info('Role: sudo');
+        $this->command?->info('Access: http://wonders.test/sudo');
     }
 }

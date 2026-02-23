@@ -18,7 +18,7 @@ class ClassTeacherAssignmentSeeder extends Seeder
         $activeSession = Session::active()->first();
         
         if (!$activeSession) {
-            $this->command->warn('No active session found. Skipping class teacher assignments.');
+            $this->command?->warn('No active session found. Skipping class teacher assignments.');
             return;
         }
 
@@ -26,7 +26,7 @@ class ClassTeacherAssignmentSeeder extends Seeder
         $classrooms = Classroom::all();
 
         if ($teachers->isEmpty() || $classrooms->isEmpty()) {
-            $this->command->warn('No teachers or classrooms found. Skipping class teacher assignments.');
+            $this->command?->warn('No teachers or classrooms found. Skipping class teacher assignments.');
             return;
         }
 
@@ -46,7 +46,7 @@ class ClassTeacherAssignmentSeeder extends Seeder
                 ]
             );
 
-            $this->command->info("Assigned {$teacher->name} as class teacher for {$classroom->name}");
+            $this->command?->info("Assigned {$teacher->name} as class teacher for {$classroom->name}");
         }
     }
 }

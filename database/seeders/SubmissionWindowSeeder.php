@@ -18,7 +18,7 @@ class SubmissionWindowSeeder extends Seeder
         $activeSession = Session::active()->first();
         
         if (!$activeSession || !$activeSession->activeTerm) {
-            $this->command->error('No active session or term found. Please run SessionSeeder first.');
+            $this->command?->error('No active session or term found. Please run SessionSeeder first.');
             return;
         }
 
@@ -52,7 +52,7 @@ class SubmissionWindowSeeder extends Seeder
             $windowsCreated++;
         }
 
-        $this->command->info("Created {$windowsCreated} submission windows for {$activeSession->name} - {$activeTerm->name}!");
-        $this->command->info("Weeks 1-2 are currently open for submissions.");
+        $this->command?->info("Created {$windowsCreated} submission windows for {$activeSession->name} - {$activeTerm->name}!");
+        $this->command?->info("Weeks 1-2 are currently open for submissions.");
     }
 }

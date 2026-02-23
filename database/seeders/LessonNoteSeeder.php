@@ -18,7 +18,7 @@ class LessonNoteSeeder extends Seeder
         $activeSession = Session::active()->first();
 
         if (!$activeSession || !$activeSession->activeTerm) {
-            $this->command->error('No active session or term found. Run DatabaseSeeder first.');
+            $this->command?->error('No active session or term found. Run DatabaseSeeder first.');
             return;
         }
 
@@ -30,7 +30,7 @@ class LessonNoteSeeder extends Seeder
             ->get();
 
         if ($assignments->isEmpty()) {
-            $this->command->error('No teacher assignments found. Run TeacherSubjectAssignmentSeeder first.');
+            $this->command?->error('No teacher assignments found. Run TeacherSubjectAssignmentSeeder first.');
             return;
         }
 
@@ -154,6 +154,6 @@ class LessonNoteSeeder extends Seeder
             }
         }
 
-        $this->command->info("Created {$notesCreated} lesson notes with {$versionsCreated} versions.");
+        $this->command?->info("Created {$notesCreated} lesson notes with {$versionsCreated} versions.");
     }
 }
