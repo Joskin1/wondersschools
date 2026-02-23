@@ -3,7 +3,7 @@
     <div class="bg-dark-green py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">News & Events</h1>
-            <p class="mt-4 text-xl text-lime-green">Stay updated with the latest happenings at {{ $site->get('school_name', config('app.name')) }}.</p>
+            <p class="mt-4 text-xl text-lime-green">Stay updated with the latest happenings at WKFS.</p>
         </div>
     </div>
 
@@ -32,7 +32,7 @@
                             </div>
                             <div class="mt-6 flex items-center">
                                 <div class="flex-shrink-0">
-                                    <span class="sr-only">{{ $site->get('school_name', config('app.name')) }}</span>
+                                    <span class="sr-only">WKFS</span>
                                 </div>
                                 <div class="ml-3">
                                     <div class="flex space-x-1 text-sm text-gray-500">

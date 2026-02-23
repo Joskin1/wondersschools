@@ -2,8 +2,8 @@
     <!-- Header -->
     <div class="bg-dark-green py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">{{ $site->get('admissions_heading', 'Admissions') }}</h1>
-            <p class="mt-4 text-xl text-lime-green">{{ $site->get('admissions_tagline') }}</p>
+            <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">Admissions</h1>
+            <p class="mt-4 text-xl text-lime-green">Join the WKFS family today.</p>
         </div>
     </div>
 
@@ -13,21 +13,37 @@
             <div class="lg:text-center mb-12">
                 <h2 class="text-3xl font-extrabold text-gray-900">Admission Process</h2>
                 <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
-                    {{ $site->get('admissions_intro', 'We have made our admission process simple and transparent.') }}
+                    We have made our admission process simple and transparent.
                 </p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                @foreach($site->get('admissions_steps', []) as $step)
                 <div class="relative">
                     <div class="flex items-center justify-center h-16 w-16 rounded-full bg-lime-green text-dark-green text-2xl font-bold mx-auto mb-4">
-                        {{ $loop->iteration }}
+                        1
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $step['title'] }}</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Inquire</h3>
                     <p class="text-gray-500">
-                        {{ $step['description'] }}
+                        Fill out the inquiry form below or visit the school to pick up an application form.
                     </p>
                 </div>
-                @endforeach
+                <div class="relative">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-lime-green text-dark-green text-2xl font-bold mx-auto mb-4">
+                        2
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Assessment</h3>
+                    <p class="text-gray-500">
+                        Schedule a brief assessment for your child to help us understand their needs and placement.
+                    </p>
+                </div>
+                <div class="relative">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-lime-green text-dark-green text-2xl font-bold mx-auto mb-4">
+                        3
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Enrollment</h3>
+                    <p class="text-gray-500">
+                        Complete the registration process and welcome to the WKFS family!
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -37,10 +53,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-3xl font-extrabold text-gray-900 mb-8">School Fees</h2>
             <p class="text-xl text-gray-500 mb-8">
-                {{ $site->get('fees_intro', 'Our fee structure is competitive and offers great value for the quality of education we provide.') }}
+                Our fee structure is competitive and offers great value for the quality of education we provide.
             </p>
-            @if($site->get('fee_schedule_link'))
-                <a href="{{ $site->get('fee_schedule_link') }}" target="_blank" class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-dark-green hover:bg-opacity-90">
+            @if(\App\Models\Setting::where('key', 'fee_schedule_link')->value('value'))
+                <a href="{{ \App\Models\Setting::where('key', 'fee_schedule_link')->value('value') }}" target="_blank" class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-dark-green hover:bg-opacity-90">
                     Download Fee Schedule (PDF)
                 </a>
             @else

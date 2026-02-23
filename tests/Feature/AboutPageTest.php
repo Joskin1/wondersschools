@@ -7,8 +7,6 @@ use function Pest\Laravel\get;
 
 uses(RefreshDatabase::class);
 
-beforeEach(fn () => seedFrontendSettings());
-
 describe('About Us Page', function () {
     it('displays the about page successfully', function () {
         get('/about-us')

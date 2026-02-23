@@ -9,8 +9,6 @@ use function Pest\Laravel\get;
 
 uses(RefreshDatabase::class);
 
-beforeEach(fn () => seedFrontendSettings());
-
 describe('Contact Page', function () {
     it('displays the contact page successfully', function () {
         get('/contact-us')

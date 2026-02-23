@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Models\Inquiry;
-use App\Services\FrontendContentService;
 use Filament\Notifications\Notification;
 use Livewire\Component;
 
@@ -47,8 +46,6 @@ class Admissions extends Component
 
     public function render()
     {
-        return view('livewire.admissions', [
-            'site' => app(FrontendContentService::class),
-        ]);
+        return view('livewire.admissions');
     }
 }

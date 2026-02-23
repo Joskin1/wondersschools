@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Models\GalleryImage;
-use App\Services\FrontendContentService;
 use Livewire\Component;
 
 class Gallery extends Component
@@ -26,7 +25,6 @@ class Gallery extends Component
         return view('livewire.gallery', [
             'images' => $query->latest()->get(),
             'categories' => GalleryImage::distinct()->pluck('category'),
-            'site' => app(FrontendContentService::class),
         ]);
     }
 }

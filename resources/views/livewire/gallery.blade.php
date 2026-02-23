@@ -3,7 +3,7 @@
     <div class="bg-dark-green py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">Gallery</h1>
-            <p class="mt-4 text-xl text-lime-green">Moments captured at {{ $site->get('school_name', config('app.name')) }}.</p>
+            <p class="mt-4 text-xl text-lime-green">Moments captured at WKFS.</p>
         </div>
     </div>
 
