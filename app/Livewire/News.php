@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Post;
+use App\Services\FrontendContentService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -16,6 +17,7 @@ class News extends Component
             'posts' => Post::where('published_at', '<=', now())
                 ->orderBy('published_at', 'desc')
                 ->paginate(9),
+            'site' => app(FrontendContentService::class),
         ]);
     }
 }

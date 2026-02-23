@@ -27,7 +27,7 @@
                                 </svg>
                             </div>
                             <div class="ml-3 text-base text-gray-500">
-                                <p>{{ \App\Models\Setting::where('key', 'school_address')->value('value') ?? '123 School Lane, City, Country' }}</p>
+                                <p>{{ $site->get('school_address', '123 School Lane, City, Country') }}</p>
                             </div>
                         </div>
 
@@ -38,7 +38,7 @@
                                 </svg>
                             </div>
                             <div class="ml-3 text-base text-gray-500">
-                                <p>{{ \App\Models\Setting::where('key', 'school_phone')->value('value') ?? '+123 456 7890' }}</p>
+                                <p>{{ $site->get('school_phone', '+123 456 7890') }}</p>
                             </div>
                         </div>
 
@@ -49,14 +49,16 @@
                                 </svg>
                             </div>
                             <div class="ml-3 text-base text-gray-500">
-                                <p>{{ \App\Models\Setting::where('key', 'school_email')->value('value') ?? 'info@wkfs.com' }}</p>
+                                <p>{{ $site->get('school_email', 'info@wkfs.com') }}</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Map -->
                     <div class="mt-8 h-64 bg-gray-200 rounded-lg overflow-hidden">
-                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3963.952912260219!2d3.375295414770757!3d6.527638695278928!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b8b2ae68280c1%3A0xdc9e87a367c3d9cb!2sLagos!5e0!3m2!1sen!2sng!4v1622212345678!5m2!1sen!2sng" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                        @if($site->get('maps_embed_url'))
+                        <iframe src="{{ $site->get('maps_embed_url') }}" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                        @endif
                     </div>
                 </div>
 

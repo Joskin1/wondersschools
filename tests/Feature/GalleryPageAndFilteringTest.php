@@ -8,6 +8,8 @@ use function Pest\Laravel\get;
 
 uses(RefreshDatabase::class);
 
+beforeEach(fn () => seedFrontendSettings());
+
 describe('Gallery Page', function () {
     it('displays the gallery page successfully', function () {
         get('/gallery')
@@ -18,7 +20,7 @@ describe('Gallery Page', function () {
     it('shows the gallery page headline', function () {
         get('/gallery')
             ->assertSee('Gallery')
-            ->assertSee('Moments captured at WKFS');
+            ->assertSee('Moments captured at Wonders Kiddies Foundation Schools');
     });
 
     it('displays all gallery images', function () {

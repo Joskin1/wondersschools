@@ -2,8 +2,8 @@
     <!-- Header -->
     <div class="bg-dark-green py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">We Build Foundations That Last.</h1>
-            <p class="mt-4 text-xl text-lime-green">Wonders Kiddies Foundation Schools</p>
+            <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">{{ $site->get('about_heading', 'About Us') }}</h1>
+            <p class="mt-4 text-xl text-lime-green">{{ $site->get('about_tagline', $site->get('school_name', config('app.name'))) }}</p>
         </div>
     </div>
 
@@ -11,9 +11,7 @@
     <div class="py-16 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="prose prose-lg mx-auto text-gray-500">
-                <p>
-                    Wonders Kiddies Foundation Schools (WKFS) is dedicated to providing a high-quality, nurturing, and secure educational environment. Our approach is simple: we focus on the <strong>whole child</strong>—intellectually, emotionally, and morally—to ensure they thrive in every aspect of life. We believe a strong foundation in the early years is the rarest, most valuable asset a parent can provide.
-                </p>
+                <p>{{ $site->get('about_description') }}</p>
             </div>
         </div>
     </div>
@@ -26,7 +24,7 @@
                 <div class="bg-white p-8 rounded-xl shadow-md border-l-4 border-lime-green">
                     <h3 class="text-2xl font-bold text-gray-900 mb-4">Our Mission</h3>
                     <p class="text-gray-600 text-lg leading-relaxed">
-                        To deliver secure, well-planned education that fosters creativity, academic mastery, and strong character development.
+                        {{ $site->get('mission_statement') }}
                     </p>
                 </div>
 
@@ -34,7 +32,7 @@
                 <div class="bg-white p-8 rounded-xl shadow-md border-l-4 border-light-blue">
                     <h3 class="text-2xl font-bold text-gray-900 mb-4">Our Vision</h3>
                     <p class="text-gray-600 text-lg leading-relaxed">
-                        To be the most trusted educational brand known for foundational excellence, transparency, and dependable long-term student success.
+                        {{ $site->get('vision_statement') }}
                     </p>
                 </div>
             </div>
@@ -43,26 +41,15 @@
             <div class="mt-16">
                 <h3 class="text-3xl font-extrabold text-center text-gray-900 mb-10">Our Core Values</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @foreach($site->get('core_values', []) as $value)
                     <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition text-center">
-                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">1</div>
-                        <h4 class="text-lg font-bold text-gray-900">Integrity of Instruction</h4>
+                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">{{ $loop->iteration }}</div>
+                        <h4 class="text-lg font-bold text-gray-900">{{ $value['title'] }}</h4>
+                        @if(!empty($value['description']))
+                        <p class="mt-2 text-sm text-gray-500">{{ $value['description'] }}</p>
+                        @endif
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition text-center">
-                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">2</div>
-                        <h4 class="text-lg font-bold text-gray-900">Student-Centric Nurturing</h4>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition text-center">
-                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">3</div>
-                        <h4 class="text-lg font-bold text-gray-900">Strategic Curriculum Delivery</h4>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition text-center">
-                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">4</div>
-                        <h4 class="text-lg font-bold text-gray-900">Transparent Parent Partnership</h4>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition text-center">
-                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">5</div>
-                        <h4 class="text-lg font-bold text-gray-900">Long-term Value Creation</h4>
-                    </div>
+                    @endforeach
                 </div>
             </div>
         </div>

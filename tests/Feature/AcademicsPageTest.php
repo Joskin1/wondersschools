@@ -6,6 +6,8 @@ use function Pest\Laravel\get;
 
 uses(RefreshDatabase::class);
 
+beforeEach(fn () => seedFrontendSettings());
+
 describe('Academics Page', function () {
     it('displays the academics page successfully', function () {
         get('/academics')

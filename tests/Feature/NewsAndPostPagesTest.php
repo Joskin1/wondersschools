@@ -8,6 +8,8 @@ use function Pest\Laravel\get;
 
 uses(RefreshDatabase::class);
 
+beforeEach(fn () => seedFrontendSettings());
+
 describe('News Page', function () {
     it('displays the news page successfully', function () {
         get('/news')
@@ -18,7 +20,7 @@ describe('News Page', function () {
     it('shows the news page headline', function () {
         get('/news')
             ->assertSee('News & Events', false)
-            ->assertSee('Stay updated with the latest happenings at WKFS');
+            ->assertSee('Stay updated with the latest happenings at Wonders Kiddies Foundation Schools');
     });
 
     it('displays published news posts', function () {

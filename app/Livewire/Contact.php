@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\ContactSubmission;
+use App\Services\FrontendContentService;
 use Filament\Notifications\Notification;
 use Livewire\Component;
 
@@ -40,6 +41,8 @@ class Contact extends Component
 
     public function render()
     {
-        return view('livewire.contact');
+        return view('livewire.contact', [
+            'site' => app(FrontendContentService::class),
+        ]);
     }
 }

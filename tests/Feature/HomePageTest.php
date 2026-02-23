@@ -8,6 +8,8 @@ use function Pest\Laravel\get;
 
 uses(RefreshDatabase::class);
 
+beforeEach(fn () => seedFrontendSettings());
+
 describe('Home Page', function () {
     it('displays the home page successfully', function () {
         get('/')
@@ -32,7 +34,7 @@ describe('Home Page', function () {
 
     it('shows the Why WKFS section', function () {
         get('/')
-            ->assertSee('Why "Wonders"?', false)
+            ->assertSee('Why "Wonders"?')
             ->assertSee('Academic Excellence')
             ->assertSee('Holistic Development');
     });
