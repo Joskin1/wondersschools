@@ -7,6 +7,7 @@ use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
+use Filament\Actions;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -117,12 +118,12 @@ class UserResource extends Resource
                         'teacher' => '/teacher',
                         default => '/admin',
                     }),
-                \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make(),
+                Actions\EditAction::make(),
+                Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make(),
+                Actions\BulkActionGroup::make([
+                    Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -131,9 +132,9 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => \App\Filament\Sudo\Resources\UserResource\Pages\ListUsers::route('/'),
-            'create' => \App\Filament\Sudo\Resources\UserResource\Pages\CreateUser::route('/create'),
-            'edit' => \App\Filament\Sudo\Resources\UserResource\Pages\EditUser::route('/{record}/edit'),
+            'index'  => UserResource\Pages\ListUsers::route('/'),
+            'create' => UserResource\Pages\CreateUser::route('/create'),
+            'edit'   => UserResource\Pages\EditUser::route('/{record}/edit'),
         ];
     }
 

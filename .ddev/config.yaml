@@ -5,7 +5,22 @@ php_version: "8.4"
 webserver_type: nginx-fpm
 xdebug_enabled: false
 additional_hostnames: []
-additional_fqdns: []
+additional_fqdns:
+  - alpha.wonders.test
+  - dare.wonders.test
+  - gamma.wonders.test
+  - joooos.wonders.test
+  - man.wonders.test
+  - mike.wonders.test
+  - slug.wonders.test
+  - slugg.wonders.test
+  - sos.wonders.test
+  - soso.wonders.test
+  - start.wonders.test
+  - sudo.wonders.test
+  - top-school.wonders.test
+  - woman.wonders.test
+  - yo.wonders.test
 database:
     type: mysql
     version: "8.0"

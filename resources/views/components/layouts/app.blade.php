@@ -3,13 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Wonders Kiddies Foundation Schools' }}</title>
+    <title>{{ $title ?? config('app.name', 'Wonders Kiddies Foundation Schools') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <style>
         [x-cloak] { display: none !important; }
+        /* TIMS-style: per-tenant primary color set by ConfigBootstrapper */
+        :root { --color-tenant-primary: {{ config('app.tenant_primary_color', '#16a34a') }}; }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-900 bg-white">

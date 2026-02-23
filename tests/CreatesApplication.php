@@ -16,6 +16,13 @@ trait CreatesApplication
 
         $app->make(Kernel::class)->bootstrap();
 
+        // Register tenant migration path so migrate:fresh picks it up.
+        // All domain-level tables live in database/migrations/tenant/;
+        // landlord migrations (with $connection='landlord') stay in database/migrations/.
+        if ($app->environment('testing')) {
+            $app->make('migrator')->path(database_path('migrations/tenant'));
+        }
+
         return $app;
     }
 }

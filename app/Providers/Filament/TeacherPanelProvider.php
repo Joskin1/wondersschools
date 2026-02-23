@@ -17,6 +17,8 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 class TeacherPanelProvider extends PanelProvider
 {
@@ -27,7 +29,7 @@ class TeacherPanelProvider extends PanelProvider
             ->path('teacher')
             ->login()
             ->colors([
-                'primary' => Color::Blue,
+                'primary' => $this->resolvePrimaryColor(),
             ])
             ->databaseNotifications()
             ->discoverResources(in: app_path('Filament/Teacher/Resources'), for: 'App\\Filament\\Teacher\\Resources')
@@ -40,6 +42,8 @@ class TeacherPanelProvider extends PanelProvider
                 AccountWidget::class,
             ])
             ->middleware([
+                InitializeTenancyByDomain::class,
+                PreventAccessFromCentralDomains::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
@@ -53,5 +57,32 @@ class TeacherPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+    }
+
+    /**
+     * TIMS-pattern: resolve the tenant's brand color from the landlord DB
+     * using the request host — before tenancy is initialized.
+     *
+     * Falls back to Amber if no tenant or no color is set.
+     */
+    private function resolvePrimaryColor(): array|string
+    {
+        try {
+            $host = request()?->getHost();
+            if (! $host) {
+                return Color::Amber;
+            }
+
+            $domain = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
+                ->where('domain', $host)
+                ->with('tenant')
+                ->first();
+
+            $hex = $domain?->tenant?->primary_color;
+
+            return $hex ? Color::hex($hex) : Color::Amber;
+        } catch (\Throwable) {
+            return Color::Amber;
+        }
     }
 }
