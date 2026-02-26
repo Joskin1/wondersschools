@@ -13,6 +13,7 @@ additional_fqdns:
   - man.wonders.test
   - mike.wonders.test
   - new.wonders.test
+  - school.wonders.test
   - slug.wonders.test
   - slugg.wonders.test
   - sos.wonders.test
