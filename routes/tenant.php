@@ -40,3 +40,9 @@ Route::get('/teacher/register/{token}', [TeacherRegistrationController::class, '
 // Student Registration
 Route::get('/register/student/{slug}', RegisterStudent::class)
     ->name('student.register');
+
+// Student Result PDF Download (auth-protected)
+Route::get('/student/result-pdf', [\App\Http\Controllers\ResultPdfController::class, 'download'])
+    ->middleware('auth')
+    ->name('student.result-pdf');
+

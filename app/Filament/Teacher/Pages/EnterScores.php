@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Pages;
 
+use App\Jobs\CalculateTermResults;
 use App\Models\ClassScoreStructure;
 use App\Models\ClassTeacherAssignment;
 use App\Models\Classroom;
@@ -10,8 +11,10 @@ use App\Models\Session;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Models\Subject;
+use App\Models\SubjectResult;
 use App\Models\TeacherSubjectAssignment;
 use App\Models\Term;
+use App\Models\TermResult;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
@@ -184,6 +187,21 @@ class EnterScores extends Page
             return;
         }
 
+        // ── Guard: block edits if term results are finalized (PRD §8) ────────
+        $isFinalized = TermResult::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->where('is_finalized', true)
+            ->exists();
+
+        if ($isFinalized) {
+            Notification::make()
+                ->title('Results for this term have been finalized. Scores cannot be edited.')
+                ->danger()
+                ->send();
+            return;
+        }
+
         // ── Server-side re-authorization (never trust frontend state) ─────────
         if (! $this->canEnterScoresFor($user, $this->subject_id, $this->classroom_id, $this->session_id, $this->term_id)) {
             Notification::make()->title('Unauthorised: you cannot enter scores for this subject/class.')->danger()->send();
@@ -248,6 +266,27 @@ class EnterScores extends Page
                 }
             }
         });
+
+        // ── Invalidate stale computed results (PRD §8) ──────────────────────
+        SubjectResult::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->delete();
+
+        TermResult::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->delete();
+
+        // Re-dispatch calculation if structure is locked
+        $structure = ClassScoreStructure::where('class_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->first();
+
+        if ($structure?->locked) {
+            CalculateTermResults::dispatch($this->classroom_id, $this->session_id, $this->term_id);
+        }
 
         Notification::make()->title('Scores saved successfully.')->success()->send();
     }

@@ -104,6 +104,7 @@ class User extends Authenticatable implements FilamentUser
             'sudo' => $this->role === 'sudo',
             'admin' => in_array($this->role, ['sudo', 'admin']),
             'teacher' => in_array($this->role, ['sudo', 'admin', 'teacher']) && $this->isActive(),
+            'student' => $this->role === 'student' && $this->isActive(),
             default => false,
         };
     }
@@ -114,6 +115,14 @@ class User extends Authenticatable implements FilamentUser
     public function teacherProfile()
     {
         return $this->hasOne(TeacherProfile::class);
+    }
+
+    /**
+     * Get the linked student record for this user.
+     */
+    public function student()
+    {
+        return $this->hasOne(Student::class);
     }
 
     /**

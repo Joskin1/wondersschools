@@ -4,6 +4,8 @@ namespace App\Filament\Pages;
 
 use Filament\Schemas\Schema;
 use App\Models\Setting;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Pages\Page;
@@ -27,11 +29,27 @@ class Settings extends Page
     {
         return $schema
             ->components([
-                TextInput::make('school_name')->required(),
-                TextInput::make('school_email')->email()->required(),
-                TextInput::make('school_phone')->tel()->required(),
-                Textarea::make('school_address')->required(),
-                TextInput::make('fee_schedule_link')->url(),
+                Section::make('School Information')
+                    ->schema([
+                        TextInput::make('school_name')->required(),
+                        TextInput::make('school_motto'),
+                        TextInput::make('school_email')->email()->required(),
+                        TextInput::make('school_phone')->tel()->required(),
+                        TextInput::make('school_website')->url(),
+                        Textarea::make('school_address')->required(),
+                    ])
+                    ->columns(2),
+
+                Section::make('Branding')
+                    ->schema([
+                        FileUpload::make('school_logo')
+                            ->image()
+                            ->directory('logos')
+                            ->disk('public')
+                            ->maxSize(512)
+                            ->helperText('Max 512 KB. Used on report cards.'),
+                        TextInput::make('fee_schedule_link')->url(),
+                    ]),
             ])
             ->statePath('data');
     }

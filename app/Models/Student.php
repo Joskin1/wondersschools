@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +20,7 @@ class Student extends Model
      * @var array<string>
      */
     protected $fillable = [
+        'user_id',
         'full_name',
         'registration_slug',
         'registration_token',
@@ -39,6 +41,14 @@ class Student extends Model
     }
 
     /**
+     * Get the user account linked to this student.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
      * Get the student's profile.
      */
     public function profile(): HasOne
@@ -52,6 +62,22 @@ class Student extends Model
     public function enrollments(): HasMany
     {
         return $this->hasMany(StudentEnrollment::class);
+    }
+
+    /**
+     * Get all subject-level results for this student.
+     */
+    public function subjectResults(): HasMany
+    {
+        return $this->hasMany(SubjectResult::class);
+    }
+
+    /**
+     * Get all term-level results for this student.
+     */
+    public function termResults(): HasMany
+    {
+        return $this->hasMany(TermResult::class);
     }
 
     /**

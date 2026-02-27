@@ -1137,3 +1137,328 @@ describe('EnterScores Livewire page', function () {
     });
 
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. ResultCalculationService — Grade Resolution
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ResultCalculationService — grade resolution', function () {
+
+    it('resolves grade A for score >= 70', function () {
+        $service = new \App\Services\ResultCalculationService();
+        $result = $service->resolveGrade(85);
+
+        expect($result['grade'])->toBe('A')
+            ->and($result['remark'])->toBe('Excellent');
+    });
+
+    it('resolves grade B for score 60-69', function () {
+        $service = new \App\Services\ResultCalculationService();
+        $result = $service->resolveGrade(65);
+
+        expect($result['grade'])->toBe('B')
+            ->and($result['remark'])->toBe('Very Good');
+    });
+
+    it('resolves grade C for score 50-59', function () {
+        $service = new \App\Services\ResultCalculationService();
+        $result = $service->resolveGrade(55);
+
+        expect($result['grade'])->toBe('C')
+            ->and($result['remark'])->toBe('Good');
+    });
+
+    it('resolves grade F for score < 40', function () {
+        $service = new \App\Services\ResultCalculationService();
+        $result = $service->resolveGrade(25);
+
+        expect($result['grade'])->toBe('F')
+            ->and($result['remark'])->toBe('Fail');
+    });
+
+    it('resolves grade at exact boundaries', function () {
+        $service = new \App\Services\ResultCalculationService();
+
+        expect($service->resolveGrade(70)['grade'])->toBe('A')
+            ->and($service->resolveGrade(69)['grade'])->toBe('B')
+            ->and($service->resolveGrade(50)['grade'])->toBe('C')
+            ->and($service->resolveGrade(45)['grade'])->toBe('D')
+            ->and($service->resolveGrade(40)['grade'])->toBe('E')
+            ->and($service->resolveGrade(39)['grade'])->toBe('F')
+            ->and($service->resolveGrade(0)['grade'])->toBe('F')
+            ->and($service->resolveGrade(100)['grade'])->toBe('A');
+    });
+
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. ResultCalculationService — Competition Ranking
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ResultCalculationService — competition ranking', function () {
+
+    it('assigns standard competition ranking (1, 2, 2, 4)', function () {
+        $service = new \App\Services\ResultCalculationService();
+
+        $items = collect([
+            ['name' => 'Alice', 'total' => 95],
+            ['name' => 'Bob',   'total' => 90],
+            ['name' => 'Carol', 'total' => 90],
+            ['name' => 'Dave',  'total' => 85],
+        ]);
+
+        $ranked = $service->competitionRank($items, 'total');
+
+        expect($ranked->firstWhere('name', 'Alice')['position'])->toBe(1)
+            ->and($ranked->firstWhere('name', 'Bob')['position'])->toBe(2)
+            ->and($ranked->firstWhere('name', 'Carol')['position'])->toBe(2)
+            ->and($ranked->firstWhere('name', 'Dave')['position'])->toBe(4);
+    });
+
+    it('handles all students with the same score', function () {
+        $service = new \App\Services\ResultCalculationService();
+
+        $items = collect([
+            ['name' => 'A', 'total' => 70],
+            ['name' => 'B', 'total' => 70],
+            ['name' => 'C', 'total' => 70],
+        ]);
+
+        $ranked = $service->competitionRank($items, 'total');
+
+        $ranked->each(fn ($item) => expect($item['position'])->toBe(1));
+    });
+
+    it('handles single student', function () {
+        $service = new \App\Services\ResultCalculationService();
+
+        $items = collect([['name' => 'Solo', 'total' => 50]]);
+        $ranked = $service->competitionRank($items, 'total');
+
+        expect($ranked->first()['position'])->toBe(1);
+    });
+
+    it('handles empty collection gracefully', function () {
+        $service = new \App\Services\ResultCalculationService();
+
+        $ranked = $service->competitionRank(collect(), 'total');
+        expect($ranked)->toBeEmpty();
+    });
+
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. ResultCalculationService — Full Pipeline Integration
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ResultCalculationService — full pipeline', function () {
+
+    beforeEach(function () {
+        $ctx             = makeAcademicContext();
+        $this->session   = $ctx['session'];
+        $this->term      = $ctx['term'];
+        $this->classroom = $ctx['classroom'];
+        $this->math      = $ctx['math'];
+        $this->english   = $ctx['english'];
+
+        $users          = makeUsers();
+        $this->teacher  = $users['teacher'];
+
+        $heads            = makeScoreHeads();
+        $this->classwork  = $heads['classwork'];
+        $this->exam       = $heads['exam'];
+
+        // Create and LOCK the structure (required for calculation)
+        $this->structure = makeStructure($this->classroom, $this->session, $this->term, [$this->classwork, $this->exam]);
+        $this->structure->update(['locked' => true]);
+
+        // Enroll 3 students
+        $this->alice = makeEnrolledStudent($this->classroom, $this->session);
+        $this->bob   = Student::create(['full_name' => 'Bob Smith', 'status' => 'active']);
+        StudentEnrollment::create(['student_id' => $this->bob->id, 'classroom_id' => $this->classroom->id, 'session_id' => $this->session->id]);
+        $this->carol = Student::create(['full_name' => 'Carol White', 'status' => 'active']);
+        StudentEnrollment::create(['student_id' => $this->carol->id, 'classroom_id' => $this->classroom->id, 'session_id' => $this->session->id]);
+
+        $this->service = new \App\Services\ResultCalculationService();
+    });
+
+    it('refuses to calculate if structure is not locked', function () {
+        $this->structure->update(['locked' => false]);
+
+        expect(fn () => $this->service->calculateForClass(
+            $this->classroom->id, $this->session->id, $this->term->id
+        ))->toThrow(\RuntimeException::class, 'not locked');
+    });
+
+    it('calculates subject totals correctly from raw scores', function () {
+        // Alice: Classwork 8, Exam 60 = 68
+        Score::create(['student_id' => $this->alice->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $this->math->id, 'score_head_id' => $this->classwork->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => 8]);
+        Score::create(['student_id' => $this->alice->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $this->math->id, 'score_head_id' => $this->exam->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => 60]);
+
+        $this->service->calculateForClass($this->classroom->id, $this->session->id, $this->term->id);
+
+        $result = \App\Models\SubjectResult::where('student_id', $this->alice->id)
+            ->where('subject_id', $this->math->id)
+            ->first();
+
+        expect($result)->not->toBeNull()
+            ->and((float) $result->total)->toBe(68.0)
+            ->and($result->grade)->toBe('B')
+            ->and($result->remark)->toBe('Very Good');
+    });
+
+    it('assigns competition-style subject positions', function () {
+        // Math: Alice 90, Bob 90, Carol 70 → positions: 1, 1, 3
+        $scores = [
+            [$this->alice, 10, 80], // total=90
+            [$this->bob,   10, 80], // total=90
+            [$this->carol,  5, 65], // total=70
+        ];
+
+        foreach ($scores as [$student, $cw, $ex]) {
+            Score::create(['student_id' => $student->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $this->math->id, 'score_head_id' => $this->classwork->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => $cw]);
+            Score::create(['student_id' => $student->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $this->math->id, 'score_head_id' => $this->exam->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => $ex]);
+        }
+
+        $this->service->calculateForClass($this->classroom->id, $this->session->id, $this->term->id);
+
+        $alicePos = \App\Models\SubjectResult::where('student_id', $this->alice->id)->where('subject_id', $this->math->id)->first()->position;
+        $bobPos   = \App\Models\SubjectResult::where('student_id', $this->bob->id)->where('subject_id', $this->math->id)->first()->position;
+        $carolPos = \App\Models\SubjectResult::where('student_id', $this->carol->id)->where('subject_id', $this->math->id)->first()->position;
+
+        expect($alicePos)->toBe(1)
+            ->and($bobPos)->toBe(1)
+            ->and($carolPos)->toBe(3);
+    });
+
+    it('calculates overall grand total and average correctly', function () {
+        // Alice: Math CW=8 Exam=60(=68), English CW=9 Exam=70(=79)
+        Score::create(['student_id' => $this->alice->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $this->math->id, 'score_head_id' => $this->classwork->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => 8]);
+        Score::create(['student_id' => $this->alice->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $this->math->id, 'score_head_id' => $this->exam->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => 60]);
+        Score::create(['student_id' => $this->alice->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $this->english->id, 'score_head_id' => $this->classwork->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => 9]);
+        Score::create(['student_id' => $this->alice->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $this->english->id, 'score_head_id' => $this->exam->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => 70]);
+
+        $this->service->calculateForClass($this->classroom->id, $this->session->id, $this->term->id);
+
+        $result = \App\Models\TermResult::where('student_id', $this->alice->id)->first();
+
+        // grand_total = 68 + 79 = 147; average = 147 / 2 = 73.50
+        expect($result)->not->toBeNull()
+            ->and((float) $result->grand_total)->toBe(147.0)
+            ->and((float) $result->average)->toBe(73.5)
+            ->and($result->grade)->toBe('A')
+            ->and($result->subjects_count)->toBe(2);
+    });
+
+    it('assigns competition-style overall positions', function () {
+        // Alice 2 subjects, Bob 2 subjects (different totals)
+        $data = [
+            [$this->alice, $this->math, 10, 80],    // math total=90
+            [$this->alice, $this->english, 8, 70],   // eng total=78  → grand_total=168
+            [$this->bob,   $this->math, 5, 40],      // math total=45
+            [$this->bob,   $this->english, 3, 30],   // eng total=33  → grand_total=78
+        ];
+
+        foreach ($data as [$student, $subject, $cw, $ex]) {
+            Score::create(['student_id' => $student->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $subject->id, 'score_head_id' => $this->classwork->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => $cw]);
+            Score::create(['student_id' => $student->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $subject->id, 'score_head_id' => $this->exam->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => $ex]);
+        }
+
+        $this->service->calculateForClass($this->classroom->id, $this->session->id, $this->term->id);
+
+        $alicePos = \App\Models\TermResult::where('student_id', $this->alice->id)->first()->overall_position;
+        $bobPos   = \App\Models\TermResult::where('student_id', $this->bob->id)->first()->overall_position;
+
+        expect($alicePos)->toBe(1)
+            ->and($bobPos)->toBe(2);
+    });
+
+    it('produces deterministic results on re-run (idempotent)', function () {
+        Score::create(['student_id' => $this->alice->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $this->math->id, 'score_head_id' => $this->classwork->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => 7]);
+        Score::create(['student_id' => $this->alice->id, 'classroom_id' => $this->classroom->id, 'subject_id' => $this->math->id, 'score_head_id' => $this->exam->id, 'session_id' => $this->session->id, 'term_id' => $this->term->id, 'teacher_id' => $this->teacher->id, 'score' => 55]);
+
+        // Run twice
+        $this->service->calculateForClass($this->classroom->id, $this->session->id, $this->term->id);
+        $this->service->calculateForClass($this->classroom->id, $this->session->id, $this->term->id);
+
+        expect(\App\Models\SubjectResult::where('student_id', $this->alice->id)->count())->toBe(1)
+            ->and(\App\Models\TermResult::where('student_id', $this->alice->id)->count())->toBe(1);
+    });
+
+    it('handles students with no scores gracefully', function () {
+        // No scores entered for anyone — should produce no results
+        $this->service->calculateForClass($this->classroom->id, $this->session->id, $this->term->id);
+
+        expect(\App\Models\SubjectResult::count())->toBe(0)
+            ->and(\App\Models\TermResult::count())->toBe(0);
+    });
+
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 12. Data Integrity — Finalization Guard
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Data integrity — finalization guard', function () {
+
+    beforeEach(function () {
+        $ctx             = makeAcademicContext();
+        $this->session   = $ctx['session'];
+        $this->term      = $ctx['term'];
+        $this->classroom = $ctx['classroom'];
+        $this->math      = $ctx['math'];
+
+        $users          = makeUsers();
+        $this->teacher  = $users['teacher'];
+
+        $heads            = makeScoreHeads();
+        $this->classwork  = $heads['classwork'];
+
+        $this->structure = makeStructure($this->classroom, $this->session, $this->term, [$this->classwork]);
+        $this->structure->update(['locked' => true]);
+
+        $this->enrolledStudent = makeEnrolledStudent($this->classroom, $this->session);
+
+        TeacherSubjectAssignment::create([
+            'teacher_id'   => $this->teacher->id,
+            'subject_id'   => $this->math->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id'   => $this->session->id,
+            'term_id'      => $this->term->id,
+        ]);
+
+        // Create a finalized term result
+        \App\Models\TermResult::create([
+            'student_id'       => $this->enrolledStudent->id,
+            'classroom_id'     => $this->classroom->id,
+            'session_id'       => $this->session->id,
+            'term_id'          => $this->term->id,
+            'subjects_count'   => 1,
+            'grand_total'      => 8,
+            'average'          => 8,
+            'grade'            => 'F',
+            'remark'           => 'Fail',
+            'overall_position' => 1,
+            'is_finalized'     => true,
+        ]);
+    });
+
+    it('blocks score editing when term result is finalized', function () {
+        $this->actingAs($this->teacher);
+
+        $sid = $this->enrolledStudent->id;
+        $cid = $this->classwork->id;
+
+        Livewire::test(EnterScores::class)
+            ->set('session_id', $this->session->id)
+            ->set('term_id', $this->term->id)
+            ->set('classroom_id', $this->classroom->id)
+            ->set('subject_id', $this->math->id)
+            ->set("scores.{$sid}.{$cid}", '8')
+            ->call('saveScores');
+
+        // No score should have been saved
+        expect(Score::count())->toBe(0);
+    });
+
+});
