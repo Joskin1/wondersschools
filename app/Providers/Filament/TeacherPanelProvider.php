@@ -6,6 +6,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -27,6 +28,7 @@ class TeacherPanelProvider extends PanelProvider
         return $panel
             ->id('teacher')
             ->path('teacher')
+            ->brandName(fn () => $this->resolveTenantName())
             ->login()
             ->passwordReset()
             ->profile()
@@ -42,6 +44,12 @@ class TeacherPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Teacher/Widgets'), for: 'App\\Filament\\Teacher\\Widgets')
             ->widgets([
                 AccountWidget::class,
+            ])
+            ->navigationItems([
+                NavigationItem::make('Visit School Website')
+                    ->url(fn () => request()->getSchemeAndHttpHost(), shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->sort(PHP_INT_MAX),
             ])
             ->middleware([
                 InitializeTenancyByDomain::class,
@@ -59,6 +67,25 @@ class TeacherPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+    }
+
+    private function resolveTenantName(): string
+    {
+        try {
+            $host = request()?->getHost();
+            if (! $host) {
+                return config('app.name');
+            }
+
+            $domain = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
+                ->where('domain', $host)
+                ->with('tenant')
+                ->first();
+
+            return $domain?->tenant?->name ?? config('app.name');
+        } catch (\Throwable) {
+            return config('app.name');
+        }
     }
 
     /**

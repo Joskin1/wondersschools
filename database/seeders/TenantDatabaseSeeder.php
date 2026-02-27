@@ -26,6 +26,9 @@ class TenantDatabaseSeeder extends Seeder
         // ── Settings (always idempotent) ─────────────────────────────────────
         $this->seedSettings($name);
 
+        // ── Frontend content (always idempotent) ─────────────────────────────
+        $this->call(TenantFrontendContentSeeder::class);
+
         // ── School admin user ────────────────────────────────────────────────
         $this->call(SchoolAdminSeeder::class);
 

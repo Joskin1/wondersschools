@@ -31,8 +31,10 @@ describe('Home Page', function () {
     });
 
     it('shows the Why WKFS section', function () {
+        // Text goes through Blade {{ }} so quotes are HTML-encoded;
+        // assertSee without $escaped=false handles this automatically.
         get('/')
-            ->assertSee('Why "Wonders"?', false)
+            ->assertSee('Why "Wonders"?')
             ->assertSee('Academic Excellence')
             ->assertSee('Holistic Development');
     });

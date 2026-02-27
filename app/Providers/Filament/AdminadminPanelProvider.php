@@ -6,6 +6,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -29,6 +30,7 @@ class AdminadminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->brandName(fn () => $this->resolveTenantName())
             ->login()
             ->passwordReset()
             ->profile()
@@ -47,6 +49,12 @@ class AdminadminPanelProvider extends PanelProvider
                 AccountWidget::class,
                 FilamentInfoWidget::class,
             ])
+            ->navigationItems([
+                NavigationItem::make('Visit School Website')
+                    ->url(fn () => request()->getSchemeAndHttpHost(), shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->sort(PHP_INT_MAX),
+            ])
             ->middleware([
                 InitializeTenancyByDomain::class,
                 PreventAccessFromCentralDomains::class,
@@ -63,6 +71,29 @@ class AdminadminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+    }
+
+    /**
+     * Resolve the tenant's display name from the landlord DB using the
+     * request host — runs before tenancy middleware initialises.
+     */
+    private function resolveTenantName(): string
+    {
+        try {
+            $host = request()?->getHost();
+            if (! $host) {
+                return config('app.name');
+            }
+
+            $domain = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
+                ->where('domain', $host)
+                ->with('tenant')
+                ->first();
+
+            return $domain?->tenant?->name ?? config('app.name');
+        } catch (\Throwable) {
+            return config('app.name');
+        }
     }
 
     /**

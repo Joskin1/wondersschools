@@ -24,6 +24,12 @@ class LessonNoteSeeder extends Seeder
 
         $activeTerm = $activeSession->activeTerm;
 
+        // Idempotency guard — skip if already seeded
+        if (LessonNote::count() > 0) {
+            $this->command?->info('Lesson notes already seeded. Skipping.');
+            return;
+        }
+
         $assignments = TeacherSubjectAssignment::where('session_id', $activeSession->id)
             ->where('term_id', $activeTerm->id)
             ->with(['teacher', 'subject', 'classroom'])
@@ -56,15 +62,22 @@ class LessonNoteSeeder extends Seeder
                         default => 'pending',
                     };
 
-                    $lessonNote = LessonNote::create([
-                        'teacher_id' => $assignment->teacher_id,
-                        'subject_id' => $assignment->subject_id,
-                        'classroom_id' => $assignment->classroom_id,
-                        'session_id' => $activeSession->id,
-                        'term_id' => $activeTerm->id,
-                        'week_number' => $week,
-                        'status' => $status,
-                    ]);
+                    $lessonNote = LessonNote::firstOrCreate(
+                        [
+                            'teacher_id'   => $assignment->teacher_id,
+                            'subject_id'   => $assignment->subject_id,
+                            'classroom_id' => $assignment->classroom_id,
+                            'session_id'   => $activeSession->id,
+                            'term_id'      => $activeTerm->id,
+                            'week_number'  => $week,
+                        ],
+                        ['status' => $status]
+                    );
+
+                    // Skip version creation if the note already existed
+                    if (! $lessonNote->wasRecentlyCreated) {
+                        continue;
+                    }
 
                     $fileHash = hash('sha256', "{$assignment->teacher_id}-{$assignment->subject_id}-{$assignment->classroom_id}-week{$week}");
                     $extension = collect(['pdf', 'docx'])->random();
