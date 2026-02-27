@@ -8,15 +8,42 @@
         h2 { color: #1f2937; }
         .credentials { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 20px 0; }
         .credentials p { margin: 4px 0; }
-        .btn { display: inline-block; background: #f59e0b; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 16px; }
+        .btn { 
+            display: inline-block; 
+            background: {{ config('app.tenant_primary_color', '#16a34a') }}; 
+            color: #fff; 
+            padding: 12px 24px; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            margin-top: 16px; 
+        }
         .footer { margin-top: 32px; font-size: 12px; color: #9ca3af; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Welcome to Wonders!</h2>
+
+        {{-- Logo --}}
+        <div style="margin-bottom: 20px;">
+            @if(\App\Services\FrontendLibrary::get('site_logo'))
+                <img 
+                    src="{{ Storage::url(\App\Services\FrontendLibrary::get('site_logo')) }}" 
+                    alt="{{ \App\Services\FrontendLibrary::get('site_name', 'School') }} Logo" 
+                    style="height:60px;"
+                >
+            @else
+                <h2>{{ \App\Services\FrontendLibrary::get('site_name', 'School') }}</h2>
+            @endif
+        </div>
+
         <p>Hi {{ $user->name }},</p>
-        <p>Your school admin account has been created. Use the credentials below to log in and manage your school.</p>
+
+        <p>
+            Your administrator account has been created for 
+            <strong>{{ \App\Services\FrontendLibrary::get('site_name', 'your school') }}</strong>.
+            Use the credentials below to log in.
+        </p>
 
         <div class="credentials">
             <p><strong>Login URL:</strong> <a href="{{ $loginUrl }}">{{ $loginUrl }}</a></p>
@@ -24,13 +51,21 @@
             <p><strong>Password:</strong> {{ $password }}</p>
         </div>
 
-        <a href="{{ $loginUrl }}" class="btn">Log in to your school panel</a>
+        <a href="{{ $loginUrl }}" class="btn">
+            Log in to {{ \App\Services\FrontendLibrary::get('site_name', 'your school') }}
+        </a>
 
-        <p style="margin-top: 24px;">Please change your password after your first login.</p>
+        <p style="margin-top: 24px;">
+            Please change your password immediately after your first login.
+        </p>
 
         <div class="footer">
-            <p>This email was sent by the Wonders platform. If you did not expect this, please contact your system administrator.</p>
+            <p>
+                © {{ date('Y') }} {{ \App\Services\FrontendLibrary::get('site_name', 'School') }}.
+                {{ \App\Services\FrontendLibrary::get('school_email', 'Contact your administrator if needed.') }}
+            </p>
         </div>
+
     </div>
 </body>
 </html>
