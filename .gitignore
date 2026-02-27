@@ -23,12 +23,6 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
-# Documentation files
-TEST.md
-PRD.md
-NEWPRD.md
-IMAGE.md
-CLASSTEACHERASSIGNMENT.md
-TEACHERREGISTRATION.md
-CLASSROOM.md
-SUBJECT.md
+# PRD / planning documents — keep README.md tracked
+/*.md
+!/README.md

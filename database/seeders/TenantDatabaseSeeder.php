@@ -50,6 +50,9 @@ class TenantDatabaseSeeder extends Seeder
             LessonNoteSeeder::class,
         ]);
 
+        // ── Results module — score heads (always idempotent) ─────────────────
+        $this->call(ScoreHeadSeeder::class);
+
         // ── Staff (only when table is empty) ─────────────────────────────────
         if (Staff::count() === 0) {
             $this->command?->info('Seeding staff...');
