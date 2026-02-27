@@ -263,7 +263,7 @@
             <td class="label">Gender</td>
             <td class="value">{{ ucfirst($student['gender'] ?? '-') }}</td>
             <td class="label">Average</td>
-            <td class="value">{{ $termRes['average'] ?? '-' }}%</td>
+            <td class="value">{{ isset($termRes['average']) ? (float) $termRes['average'] : '-' }}%</td>
         </tr>
         <tr>
             <td class="label">Date of Birth</td>
@@ -295,9 +295,9 @@
                 <tr>
                     <td>{{ $row['subject'] }}</td>
                     @foreach (($data['score_heads'] ?? []) as $sh)
-                        <td>{{ $row['scores'][$sh['id']] ?? '-' }}</td>
+                        <td>{{ isset($row['scores'][$sh['id']]) ? (float) $row['scores'][$sh['id']] : '-' }}</td>
                     @endforeach
-                    <td class="total-col">{{ $row['total'] }}</td>
+                    <td class="total-col">{{ (float) $row['total'] }}</td>
                     <td class="{{ $row['grade'] === 'A' ? 'grade-a' : ($row['grade'] === 'B' ? 'grade-b' : ($row['grade'] === 'F' ? 'grade-f' : 'grade-c')) }}">
                         {{ $row['grade'] }}
                     </td>
@@ -317,11 +317,11 @@
             <td class="label">Total Obtainable Marks</td>
             <td class="value">{{ $data['total_obtainable'] ?? '-' }}</td>
             <td class="label">Grand Total</td>
-            <td class="value">{{ $termRes['grand_total'] ?? '-' }}</td>
+            <td class="value">{{ isset($termRes['grand_total']) ? (float) $termRes['grand_total'] : '-' }}</td>
         </tr>
         <tr>
             <td class="label">Average</td>
-            <td class="value">{{ $termRes['average'] ?? '-' }}%</td>
+            <td class="value">{{ isset($termRes['average']) ? (float) $termRes['average'] : '-' }}%</td>
             <td class="label">Overall Grade</td>
             <td class="value">{{ $termRes['grade'] ?? '-' }}</td>
         </tr>

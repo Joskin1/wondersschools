@@ -347,7 +347,7 @@
             {{-- Hero Stats --}}
             <div class="sr-hero">
                 <div class="sr-stat-card avg-card">
-                    <div class="stat-value">{{ number_format($tr['average'], 1) }}%</div>
+                    <div class="stat-value">{{ (float) $tr['average'] }}%</div>
                     <div class="stat-label">Average</div>
                 </div>
                 <div class="sr-stat-card grade-card">
@@ -404,9 +404,9 @@
                             <tr>
                                 <td>{{ $row['subject'] }}</td>
                                 @foreach ($resultData['score_heads'] as $sh)
-                                    <td>{{ $row['scores'][$sh['id']] ?? '–' }}</td>
+                                    <td>{{ isset($row['scores'][$sh['id']]) ? (float) $row['scores'][$sh['id']] : '–' }}</td>
                                 @endforeach
-                                <td class="total-cell">{{ number_format($row['total'], 1) }}</td>
+                                <td class="total-cell">{{ (float) $row['total'] }}</td>
                                 <td>
                                     <span class="grade-badge grade-{{ $row['grade'] }}">{{ $row['grade'] }}</span>
                                 </td>
@@ -429,7 +429,7 @@
                     </div>
                     <div class="sr-summary-item">
                         <div class="summary-label">Average</div>
-                        <div class="summary-value">{{ number_format($tr['average'], 1) }}%</div>
+                        <div class="summary-value">{{ (float) $tr['average'] }}%</div>
                     </div>
                     <div class="sr-summary-item">
                         <div class="summary-label">Overall Grade</div>
