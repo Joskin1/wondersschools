@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-3xl mx-auto">
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-gray-900">Student Registration</h1>
@@ -147,7 +147,10 @@
                     <!-- Submit Button - More prominent -->
                     <div class="mt-10 pt-6 border-t border-gray-200">
                         <button type="submit"
-                                class="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-offset-2 transform transition hover:scale-[1.02] active:scale-[0.98]">
+                                style="background-color: var(--color-tenant-primary); min-width: 100%; transition: all 0.2s;"
+                                onmouseover="this.style.opacity='0.9'"
+                                onmouseout="this.style.opacity='1'"
+                                class="flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-base font-bold text-white focus:outline-none focus:ring-4 focus:ring-offset-2 transform hover:scale-[1.02] active:scale-[0.98]">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
