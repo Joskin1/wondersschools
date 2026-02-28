@@ -26,6 +26,10 @@ class Student extends Model
         'registration_token',
         'registration_expires_at',
         'status',
+        'registration_completed_at',
+        'is_portal_active',
+        'activated_at',
+        'activated_by',
     ];
 
     /**
@@ -36,7 +40,10 @@ class Student extends Model
     protected function casts(): array
     {
         return [
-            'registration_expires_at' => 'datetime',
+            'registration_expires_at'  => 'datetime',
+            'registration_completed_at' => 'datetime',
+            'is_portal_active'         => 'boolean',
+            'activated_at'             => 'datetime',
         ];
     }
 
@@ -182,6 +189,9 @@ class Student extends Model
     /**
      * Complete the student registration.
      *
+     * Saves profile data, marks registration as completed, and clears the
+     * registration link. Does NOT activate the portal — admin must do that.
+     *
      * @param array $profileData
      * @return void
      */
@@ -192,12 +202,56 @@ class Student extends Model
             ['student_id' => $this->id],
             $profileData
         );
-        
-        // Update status to active
-        $this->update(['status' => 'active']);
-        
-        // Clear registration link
+
+        // Mark registration as completed (but not yet activated)
+        $this->update([
+            'registration_completed_at' => now(),
+        ]);
+
+        // Clear registration link (prevent reuse)
         $this->clearRegistrationLink();
+    }
+
+    /**
+     * Activate student portal access.
+     *
+     * Sets is_portal_active on the student and is_active on the linked User.
+     */
+    public function activatePortal(int $activatedBy): void
+    {
+        $this->update([
+            'status'           => 'active',
+            'is_portal_active' => true,
+            'activated_at'     => now(),
+            'activated_by'     => $activatedBy,
+        ]);
+
+        // Also activate the linked user account
+        if ($this->user) {
+            $this->user->update(['is_active' => true]);
+        }
+    }
+
+    /**
+     * Deactivate student portal access.
+     */
+    public function deactivatePortal(): void
+    {
+        $this->update([
+            'is_portal_active' => false,
+        ]);
+
+        if ($this->user) {
+            $this->user->update(['is_active' => false]);
+        }
+    }
+
+    /**
+     * Check if registration form has been completed.
+     */
+    public function isRegistrationCompleted(): bool
+    {
+        return $this->registration_completed_at !== null;
     }
 
     /**

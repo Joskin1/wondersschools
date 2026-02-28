@@ -14,7 +14,11 @@
                         </svg>
                     </div>
                     <h2 class="mt-6 text-3xl font-bold text-gray-900">Registration Completed!</h2>
-                    <p class="mt-3 text-lg text-gray-600">Your account has been activated successfully.</p>
+                    <p class="mt-3 text-lg text-gray-600">Your details have been submitted successfully.</p>
+                    <div class="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                        <p class="text-amber-800 font-medium">⏳ Awaiting school approval</p>
+                        <p class="mt-1 text-sm text-amber-600">The school will review your registration and activate your portal access. You will be notified when your account is ready.</p>
+                    </div>
                     <p class="mt-6 text-sm text-gray-500">You can now close this window.</p>
                 </div>
             </div>
@@ -113,6 +117,28 @@
                                                class="block w-full px-4 py-3 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition">
                                         @error('parent_email') <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span> @enderror
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Credentials -->
+                        <div class="pt-6 mt-6 border-t border-gray-200">
+                            <h4 class="text-xl font-bold text-gray-900 mb-2">Create Your Login Password</h4>
+                            <p class="text-sm text-gray-500 mb-6">This password will be used to access your student portal after the school activates your account.</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Password *</label>
+                                    <input type="password" id="password" wire:model="password" required
+                                           class="block w-full px-4 py-3 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition"
+                                           placeholder="Min 8 chars, letters & numbers">
+                                    @error('password') <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label for="password_confirmation" class="block text-sm font-semibold text-gray-700 mb-2">Confirm Password *</label>
+                                    <input type="password" id="password_confirmation" wire:model="password_confirmation" required
+                                           class="block w-full px-4 py-3 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition">
                                 </div>
                             </div>
                         </div>

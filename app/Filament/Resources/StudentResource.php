@@ -13,7 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Actions\ViewAction;
 use Filament\Actions\Action;
@@ -68,15 +68,42 @@ class StudentResource extends Resource
                     ->sortable()
                     ->weight('bold'),
 
-                BadgeColumn::make('status')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'active',
-                    ])
-                    ->sortable(),
+                TextColumn::make('registration_status')
+                    ->label('Registration')
+                    ->badge()
+                    ->getStateUsing(function (Student $record): string {
+                        if ($record->is_portal_active) {
+                            return 'Active';
+                        }
+                        if ($record->isRegistrationCompleted()) {
+                            return 'Awaiting Activation';
+                        }
+                        return 'Pending';
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'Active' => 'success',
+                        'Awaiting Activation' => 'warning',
+                        'Pending' => 'gray',
+                    })
+                    ->icon(fn (string $state): string => match ($state) {
+                        'Active' => 'heroicon-o-check-circle',
+                        'Awaiting Activation' => 'heroicon-o-clock',
+                        'Pending' => 'heroicon-o-ellipsis-horizontal-circle',
+                    }),
+
+                ToggleColumn::make('is_portal_active')
+                    ->label('Portal')
+                    ->disabled(fn (Student $record): bool => ! $record->isRegistrationCompleted())
+                    ->afterStateUpdated(function (Student $record, bool $state) {
+                        if ($state) {
+                            $record->activatePortal(auth()->id());
+                        } else {
+                            $record->deactivatePortal();
+                        }
+                    }),
 
                 TextColumn::make('enrollments.classroom.name')
-                    ->label('Current Classroom')
+                    ->label('Classroom')
                     ->searchable()
                     ->sortable()
                     ->default('—'),
@@ -92,7 +119,8 @@ class StudentResource extends Resource
                     ->dateTime('M d, Y H:i')
                     ->sortable()
                     ->placeholder('—')
-                    ->color(fn ($record) => $record->hasExpiredRegistration() ? 'danger' : 'warning'),
+                    ->color(fn ($record) => $record->hasExpiredRegistration() ? 'danger' : 'warning')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
                     ->dateTime('M d, Y')

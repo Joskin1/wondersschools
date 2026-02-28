@@ -3,8 +3,11 @@
 namespace App\Livewire;
 
 use App\Models\Student;
+use App\Models\User;
 use Livewire\Component;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class RegisterStudent extends Component
 {
@@ -24,6 +27,8 @@ class RegisterStudent extends Component
     public string $parent_name = '';
     public string $parent_phone = '';
     public string $parent_email = '';
+    public string $password = '';
+    public string $password_confirmation = '';
 
     public function mount(string $slug)
     {
@@ -73,6 +78,8 @@ class RegisterStudent extends Component
             'parent_name' => $this->parent_name,
             'parent_phone' => $this->parent_phone,
             'parent_email' => $this->parent_email,
+            'password' => $this->password,
+            'password_confirmation' => $this->password_confirmation,
         ], [
             'date_of_birth' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
@@ -81,9 +88,26 @@ class RegisterStudent extends Component
             'parent_name' => 'required|string|max:255',
             'parent_phone' => 'required|string|max:20',
             'parent_email' => 'nullable|email|max:255',
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ])->validate();
 
-        // Complete registration
+        // Create User account for the student (inactive until admin activates)
+        $email = $validated['parent_email']
+            ?? strtolower(str_replace(' ', '.', $this->student->full_name)) . '@student.local';
+
+        $user = User::create([
+            'name'      => $this->student->full_name,
+            'email'     => $email,
+            'password'  => Hash::make($validated['password']),
+            'role'      => 'student',
+            'is_active' => false,
+        ]);
+
+        // Link user to student
+        $this->student->update(['user_id' => $user->id]);
+
+        // Complete registration (sets registration_completed_at, clears token)
+        unset($validated['password'], $validated['password_confirmation']);
         $this->student->completeRegistration($validated);
 
         // Mark as completed
