@@ -26,14 +26,14 @@
 
         {{-- Logo --}}
         <div style="margin-bottom: 20px;">
-            @if(\App\Services\FrontendLibrary::get('site_logo'))
+            @if(\App\Services\FrontendLibrary::getSetting('school_logo'))
                 <img 
-                    src="{{ Storage::url(\App\Services\FrontendLibrary::get('site_logo')) }}" 
-                    alt="{{ \App\Services\FrontendLibrary::get('site_name', 'School') }} Logo" 
+                    src="{{ Storage::url(\App\Services\FrontendLibrary::getSetting('school_logo')) }}" 
+                    alt="{{ \App\Services\FrontendLibrary::getSetting('school_name', 'School') }} Logo" 
                     style="height:60px;"
                 >
             @else
-                <h2>{{ \App\Services\FrontendLibrary::get('site_name', 'School') }}</h2>
+                <h2>{{ \App\Services\FrontendLibrary::getSetting('school_name', 'School') }}</h2>
             @endif
         </div>
 
@@ -41,7 +41,7 @@
 
         <p>
             Your administrator account has been created for 
-            <strong>{{ \App\Services\FrontendLibrary::get('site_name', 'your school') }}</strong>.
+            <strong>{{ \App\Services\FrontendLibrary::getSetting('school_name', 'your school') }}</strong>.
             Use the credentials below to log in.
         </p>
 
@@ -52,7 +52,7 @@
         </div>
 
         <a href="{{ $loginUrl }}" class="btn">
-            Log in to {{ \App\Services\FrontendLibrary::get('site_name', 'your school') }}
+            Log in to {{ \App\Services\FrontendLibrary::getSetting('school_name', 'your school') }}
         </a>
 
         <p style="margin-top: 24px;">
@@ -61,8 +61,8 @@
 
         <div class="footer">
             <p>
-                © {{ date('Y') }} {{ \App\Services\FrontendLibrary::get('site_name', 'School') }}.
-                {{ \App\Services\FrontendLibrary::get('school_email', 'Contact your administrator if needed.') }}
+                © {{ date('Y') }} {{ \App\Services\FrontendLibrary::getSetting('school_name', 'School') }}.
+                {{ \App\Services\FrontendLibrary::getSetting('school_email', 'Contact your administrator if needed.') }}
             </p>
         </div>
 
