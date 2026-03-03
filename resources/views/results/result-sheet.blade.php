@@ -281,10 +281,17 @@
         <thead>
             <tr>
                 <th style="text-align:left;min-width:120px;">Subject</th>
-                @foreach (($data['score_heads'] ?? []) as $sh)
-                    <th>{{ $sh['name'] }}</th>
-                @endforeach
-                <th>Total</th>
+                @if ($data['is_cumulative'] ?? false)
+                    <th>1st Term</th>
+                    <th>2nd Term</th>
+                    <th>3rd Term</th>
+                    <th>Average</th>
+                @else
+                    @foreach (($data['score_heads'] ?? []) as $sh)
+                        <th>{{ $sh['name'] }}</th>
+                    @endforeach
+                    <th>Total</th>
+                @endif
                 <th>Grade</th>
                 <th>Pos</th>
                 <th>Remark</th>
@@ -294,10 +301,17 @@
             @foreach (($data['subjects'] ?? []) as $row)
                 <tr>
                     <td>{{ $row['subject'] }}</td>
-                    @foreach (($data['score_heads'] ?? []) as $sh)
-                        <td>{{ isset($row['scores'][$sh['id']]) ? (float) $row['scores'][$sh['id']] : '-' }}</td>
-                    @endforeach
-                    <td class="total-col">{{ (float) $row['total'] }}</td>
+                    @if ($data['is_cumulative'] ?? false)
+                        <td>{{ (float) $row['term1'] }}</td>
+                        <td>{{ (float) $row['term2'] }}</td>
+                        <td>{{ (float) $row['term3_raw'] }}</td>
+                        <td class="total-col">{{ (float) $row['average'] }}</td>
+                    @else
+                        @foreach (($data['score_heads'] ?? []) as $sh)
+                            <td>{{ isset($row['scores'][$sh['id']]) ? (float) $row['scores'][$sh['id']] : '-' }}</td>
+                        @endforeach
+                        <td class="total-col">{{ (float) $row['total'] }}</td>
+                    @endif
                     <td class="{{ $row['grade'] === 'A' ? 'grade-a' : ($row['grade'] === 'B' ? 'grade-b' : ($row['grade'] === 'F' ? 'grade-f' : 'grade-c')) }}">
                         {{ $row['grade'] }}
                     </td>

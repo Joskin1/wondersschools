@@ -390,10 +390,17 @@
                     <thead>
                         <tr>
                             <th style="min-width:140px;">Subject</th>
-                            @foreach ($resultData['score_heads'] as $sh)
-                                <th>{{ $sh['name'] }}</th>
-                            @endforeach
-                            <th>Total</th>
+                            @if ($resultData['is_cumulative'] ?? false)
+                                <th>1st Term</th>
+                                <th>2nd Term</th>
+                                <th>3rd Term</th>
+                                <th>Average</th>
+                            @else
+                                @foreach ($resultData['score_heads'] as $sh)
+                                    <th>{{ $sh['name'] }}</th>
+                                @endforeach
+                                <th>Total</th>
+                            @endif
                             <th>Grade</th>
                             <th>Pos</th>
                             <th style="text-align:left;">Remark</th>
@@ -403,10 +410,17 @@
                         @foreach ($resultData['subjects'] as $row)
                             <tr>
                                 <td>{{ $row['subject'] }}</td>
-                                @foreach ($resultData['score_heads'] as $sh)
-                                    <td>{{ isset($row['scores'][$sh['id']]) ? (float) $row['scores'][$sh['id']] : '–' }}</td>
-                                @endforeach
-                                <td class="total-cell">{{ (float) $row['total'] }}</td>
+                                @if ($resultData['is_cumulative'] ?? false)
+                                    <td>{{ (float) $row['term1'] }}</td>
+                                    <td>{{ (float) $row['term2'] }}</td>
+                                    <td>{{ (float) $row['term3_raw'] }}</td>
+                                    <td class="total-cell">{{ (float) $row['average'] }}</td>
+                                @else
+                                    @foreach ($resultData['score_heads'] as $sh)
+                                        <td>{{ isset($row['scores'][$sh['id']]) ? (float) $row['scores'][$sh['id']] : '–' }}</td>
+                                    @endforeach
+                                    <td class="total-cell">{{ (float) $row['total'] }}</td>
+                                @endif
                                 <td>
                                     <span class="grade-badge grade-{{ $row['grade'] }}">{{ $row['grade'] }}</span>
                                 </td>

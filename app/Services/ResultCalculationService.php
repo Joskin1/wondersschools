@@ -6,6 +6,7 @@ use App\Models\ClassScoreStructure;
 use App\Models\Score;
 use App\Models\StudentEnrollment;
 use App\Models\SubjectResult;
+use App\Models\Term;
 use App\Models\TermResult;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -18,9 +19,13 @@ class ResultCalculationService
      * Orchestrates:  subject totals → grades → subject positions →
      *                overall totals → overall grades → overall positions.
      *
+     * For Third Term (order=3), subject totals become cumulative averages
+     * of all three terms: round((t1 + t2 + t3) / 3, 2).
+     *
      * Everything runs inside one DB transaction for atomicity.
      *
      * @throws \RuntimeException if the score structure is not locked.
+     * @throws \RuntimeException if prior term results are missing (term 3 only).
      */
     public function calculateForClass(int $classroomId, int $sessionId, int $termId): void
     {
@@ -36,9 +41,43 @@ class ResultCalculationService
             );
         }
 
-        DB::transaction(function () use ($classroomId, $sessionId, $termId) {
+        // ── Determine if this is a third-term (cumulative) calculation ────────
+        $term = Term::find($termId);
+        $isThirdTerm = $term && $term->order === 3;
+
+        // ── Guard: prior terms must be calculated for third term ──────────────
+        if ($isThirdTerm) {
+            $termIds = $this->resolveTermIds($sessionId);
+
+            if (! $termIds) {
+                throw new \RuntimeException(
+                    'Cannot calculate cumulative results: could not resolve all three term IDs for this session.'
+                );
+            }
+
+            // Check that SubjectResult rows exist for terms 1 & 2
+            foreach ([$termIds[1], $termIds[2]] as $priorTermId) {
+                $priorExists = SubjectResult::where('classroom_id', $classroomId)
+                    ->where('session_id', $sessionId)
+                    ->where('term_id', $priorTermId)
+                    ->exists();
+
+                if (! $priorExists) {
+                    $priorTerm = Term::find($priorTermId);
+                    throw new \RuntimeException(
+                        "Cannot calculate Third Term results: {$priorTerm->name} results have not been calculated yet. Please calculate them first."
+                    );
+                }
+            }
+        }
+
+        DB::transaction(function () use ($classroomId, $sessionId, $termId, $isThirdTerm) {
             // Step 1 + 2: Compute subject totals, grades, remarks
-            $this->computeSubjectResults($classroomId, $sessionId, $termId);
+            if ($isThirdTerm) {
+                $this->computeCumulativeSubjectResults($classroomId, $sessionId, $termId);
+            } else {
+                $this->computeSubjectResults($classroomId, $sessionId, $termId);
+            }
 
             // Step 3: Subject positions (per subject, competition ranking)
             $this->computeSubjectPositions($classroomId, $sessionId, $termId);
@@ -49,6 +88,25 @@ class ResultCalculationService
             // Step 5: Overall positions (competition ranking)
             $this->computeOverallPositions($classroomId, $sessionId, $termId);
         });
+    }
+
+    /**
+     * Resolve the three term IDs for a given session, keyed by order (1, 2, 3).
+     *
+     * @return array<int, int>|null  [1 => term_id, 2 => term_id, 3 => term_id] or null
+     */
+    public function resolveTermIds(int $sessionId): ?array
+    {
+        $terms = Term::where('session_id', $sessionId)
+            ->orderBy('order')
+            ->pluck('id', 'order')
+            ->toArray();
+
+        if (count($terms) !== 3 || ! isset($terms[1], $terms[2], $terms[3])) {
+            return null;
+        }
+
+        return $terms;
     }
 
     /**
@@ -114,7 +172,7 @@ class ResultCalculationService
     // ─── Private pipeline steps ──────────────────────────────────────────────
 
     /**
-     * Step 1+2: Compute and persist subject totals + grades.
+     * Step 1+2: Compute and persist subject totals + grades (Term 1 & 2 — standalone).
      */
     private function computeSubjectResults(int $classroomId, int $sessionId, int $termId): void
     {
@@ -150,6 +208,79 @@ class ResultCalculationService
                 [
                     'classroom_id' => $classroomId,
                     'total'        => $total,
+                    'grade'        => $grading['grade'],
+                    'remark'       => $grading['remark'],
+                ]
+            );
+        }
+    }
+
+    /**
+     * Step 1+2 (Third Term): Compute cumulative subject averages across all 3 terms.
+     *
+     * For each student×subject:
+     *   average = round((term1_total + term2_total + term3_raw_total) / 3, 2)
+     *
+     * Missing prior-term scores are treated as 0.
+     */
+    private function computeCumulativeSubjectResults(int $classroomId, int $sessionId, int $termId): void
+    {
+        $enrolledStudentIds = StudentEnrollment::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->pluck('student_id');
+
+        if ($enrolledStudentIds->isEmpty()) {
+            return;
+        }
+
+        $termIds = $this->resolveTermIds($sessionId);
+
+        // ── Get Term 1 & 2 subject results (already computed) ────────────────
+        $priorResults = SubjectResult::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->whereIn('term_id', [$termIds[1], $termIds[2]])
+            ->whereIn('student_id', $enrolledStudentIds)
+            ->get()
+            ->groupBy(fn ($r) => $r->student_id . '-' . $r->subject_id . '-' . $r->term_id);
+
+        // ── Get Term 3 raw score aggregates ──────────────────────────────────
+        $term3Aggregates = Score::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->whereIn('student_id', $enrolledStudentIds)
+            ->groupBy('student_id', 'subject_id')
+            ->selectRaw('student_id, subject_id, SUM(score) as subject_total')
+            ->get();
+
+        foreach ($term3Aggregates as $row) {
+            $term3Raw = round((float) $row->subject_total, 2);
+
+            // Look up Term 1 & 2 totals (default to 0 if missing)
+            $key1 = $row->student_id . '-' . $row->subject_id . '-' . $termIds[1];
+            $key2 = $row->student_id . '-' . $row->subject_id . '-' . $termIds[2];
+
+            $term1Total = $priorResults->has($key1)
+                ? (float) $priorResults[$key1]->first()->total
+                : 0.0;
+
+            $term2Total = $priorResults->has($key2)
+                ? (float) $priorResults[$key2]->first()->total
+                : 0.0;
+
+            // Cumulative average
+            $average = round(($term1Total + $term2Total + $term3Raw) / 3, 2);
+            $grading = $this->resolveGrade($average);
+
+            SubjectResult::updateOrCreate(
+                [
+                    'student_id' => $row->student_id,
+                    'subject_id' => $row->subject_id,
+                    'session_id' => $sessionId,
+                    'term_id'    => $termId,
+                ],
+                [
+                    'classroom_id' => $classroomId,
+                    'total'        => $average,
                     'grade'        => $grading['grade'],
                     'remark'       => $grading['remark'],
                 ]
