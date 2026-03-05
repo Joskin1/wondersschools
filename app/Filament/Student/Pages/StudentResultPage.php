@@ -135,22 +135,20 @@ class StudentResultPage extends Page
         // ── Detect third term (cumulative) ───────────────────────────────────
         $isCumulative = $term->order === 3;
 
-        // ── Get score heads (dynamic columns) — used for non-cumulative ──────
-        $scoreHeads = [];
-        if (! $isCumulative) {
-            $structure = ClassScoreStructure::where('class_id', $classroomId)
-                ->where('session_id', $this->session_id)
-                ->where('term_id', $this->term_id)
-                ->first();
+        // ── Get score heads (dynamic columns) — always loaded ────────────────
+        $structure = ClassScoreStructure::where('class_id', $classroomId)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->first();
 
-            if ($structure) {
-                $scoreHeads = ClassScoreStructureItem::where('class_score_structure_id', $structure->id)
-                    ->join('score_heads', 'score_heads.id', '=', 'class_score_structure_items.score_head_id')
-                    ->select('score_heads.id', 'score_heads.name')
-                    ->orderBy('score_heads.id')
-                    ->get()
-                    ->toArray();
-            }
+        $scoreHeads = [];
+        if ($structure) {
+            $scoreHeads = ClassScoreStructureItem::where('class_score_structure_id', $structure->id)
+                ->join('score_heads', 'score_heads.id', '=', 'class_score_structure_items.score_head_id')
+                ->select('score_heads.id', 'score_heads.name')
+                ->orderBy('score_heads.id')
+                ->get()
+                ->toArray();
         }
 
         // ── Get subject results ──────────────────────────────────────────────
@@ -160,10 +158,17 @@ class StudentResultPage extends Page
             ->with('subject')
             ->get();
 
+        // ── Pre-fetch all term 3 scores in one query (avoid N+1) ─────────────
+        $allScores = Score::where('student_id', $student->id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->get()
+            ->groupBy('subject_id');
+
         $subjectRows = [];
 
         if ($isCumulative) {
-            // ── Cumulative path: fetch term 1 & 2 totals for each subject ────
+            // ── Cumulative path: score heads + cross-term totals ─────────────
             $service = app(ResultCalculationService::class);
             $termIds = $service->resolveTermIds($this->session_id);
 
@@ -180,29 +185,30 @@ class StudentResultPage extends Page
                 }
             }
 
-            // Also fetch term 3 raw totals (SUM of score heads)
-            $term3RawScores = Score::where('student_id', $student->id)
-                ->where('classroom_id', $classroomId)
-                ->where('session_id', $this->session_id)
-                ->where('term_id', $this->term_id)
-                ->groupBy('subject_id')
-                ->selectRaw('subject_id, SUM(score) as subject_total')
-                ->pluck('subject_total', 'subject_id');
-
             foreach ($subjectResults as $sr) {
                 $subjectId = $sr->subject_id;
                 $t1 = $priorResults[$subjectId][$termIds[1] ?? 0] ?? 0;
                 $t2 = $priorResults[$subjectId][$termIds[2] ?? 0] ?? 0;
-                $t3Raw = isset($term3RawScores[$subjectId])
-                    ? round((float) $term3RawScores[$subjectId], 2)
-                    : 0;
+
+                // Per-score-head breakdown for term 3
+                $scores = [];
+                $t3Raw = 0;
+                $subjectScores = $allScores->get($subjectId, collect());
+                foreach ($scoreHeads as $sh) {
+                    $s = $subjectScores->firstWhere('score_head_id', $sh['id']);
+                    $val = $s ? $s->score : 0;
+                    $scores[$sh['id']] = $val;
+                    $t3Raw += (float) $val;
+                }
+                $t3Raw = round($t3Raw, 2);
 
                 $subjectRows[] = [
                     'subject'   => $sr->subject->name ?? 'Unknown',
+                    'scores'    => $scores,
+                    'term3_raw' => $t3Raw,
                     'term1'     => $t1,
                     'term2'     => $t2,
-                    'term3_raw' => $t3Raw,
-                    'average'   => (float) $sr->total, // SubjectResult.total holds the cumulative average
+                    'average'   => (float) $sr->total,
                     'grade'     => $sr->grade,
                     'position'  => $sr->position,
                     'remark'    => $sr->remark,
@@ -211,28 +217,21 @@ class StudentResultPage extends Page
         } else {
             // ── Standalone path (Term 1 & 2): existing logic ─────────────────
             foreach ($subjectResults as $sr) {
-                $row = [
+                $scores = [];
+                $subjectScores = $allScores->get($sr->subject_id, collect());
+                foreach ($scoreHeads as $sh) {
+                    $s = $subjectScores->firstWhere('score_head_id', $sh['id']);
+                    $scores[$sh['id']] = $s ? $s->score : '-';
+                }
+
+                $subjectRows[] = [
                     'subject'  => $sr->subject->name ?? 'Unknown',
                     'total'    => $sr->total,
                     'grade'    => $sr->grade,
                     'position' => $sr->position,
                     'remark'   => $sr->remark,
-                    'scores'   => [],
+                    'scores'   => $scores,
                 ];
-
-                // Fetch individual scores per score head
-                foreach ($scoreHeads as $sh) {
-                    $score = Score::where('student_id', $student->id)
-                        ->where('subject_id', $sr->subject_id)
-                        ->where('score_head_id', $sh['id'])
-                        ->where('session_id', $this->session_id)
-                        ->where('term_id', $this->term_id)
-                        ->first();
-
-                    $row['scores'][$sh['id']] = $score ? $score->score : '-';
-                }
-
-                $subjectRows[] = $row;
             }
         }
 
