@@ -100,6 +100,13 @@ class User extends Authenticatable implements FilamentUser
      */
     public function canAccessPanel(Panel $panel): bool
     {
+        // Allow impersonated users to access the admin panel so the
+        // "Leave Impersonation" banner remains reachable even if the
+        // impersonated user would normally be denied.
+        if (app(\Lab404\Impersonate\Services\ImpersonateManager::class)->isImpersonating()) {
+            return true;
+        }
+
         return match ($panel->getId()) {
             'sudo' => $this->role === 'sudo',
             'admin' => in_array($this->role, ['sudo', 'admin']),
@@ -205,6 +212,6 @@ class User extends Authenticatable implements FilamentUser
      */
     public function canBeImpersonated(): bool
     {
-        return !$this->isSudo();
+        return !$this->isSudo() && $this->isActive();
     }
 }
