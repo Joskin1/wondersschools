@@ -27,7 +27,7 @@
                 
                 <!-- Step 1 -->
                 <div>
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-primary text-dark-green text-2xl font-bold mx-auto mb-6">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-accent text-dark-green text-2xl font-bold mx-auto mb-6">
                         1
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">
@@ -40,7 +40,7 @@
 
                 <!-- Step 2 -->
                 <div>
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-primary text-dark-green text-2xl font-bold mx-auto mb-6">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-accent text-dark-green text-2xl font-bold mx-auto mb-6">
                         2
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">
@@ -53,7 +53,7 @@
 
                 <!-- Step 3 -->
                 <div>
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-primary text-dark-green text-2xl font-bold mx-auto mb-6">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-accent text-dark-green text-2xl font-bold mx-auto mb-6">
                         3
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">

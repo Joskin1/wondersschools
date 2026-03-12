@@ -17,11 +17,20 @@
             --color-tenant-accent: {{ config('app.tenant_accent_color', '#f59e0b') }};
         }
         /* Utility classes for tenant branding */
+        .text-tenant-primary { color: var(--color-tenant-primary); }
         .text-tenant-accent { color: var(--color-tenant-accent); }
         .hover\:text-tenant-accent:hover { color: var(--color-tenant-accent); }
+        .hover\:text-tenant-primary:hover { color: var(--color-tenant-primary); }
         .bg-tenant-primary { background-color: var(--color-tenant-primary); }
         .bg-tenant-secondary { background-color: var(--color-tenant-secondary); }
+        .bg-tenant-accent { background-color: var(--color-tenant-accent); }
+        .bg-tenant-accent\/20 { background-color: color-mix(in srgb, var(--color-tenant-accent) 20%, transparent); }
         .border-tenant-accent { border-color: var(--color-tenant-accent); }
+        .border-tenant-primary { border-color: var(--color-tenant-primary); }
+        .border-tenant-accent\/20 { border-color: color-mix(in srgb, var(--color-tenant-accent) 20%, transparent); }
+        .border-tenant-accent\/30 { border-color: color-mix(in srgb, var(--color-tenant-accent) 30%, transparent); }
+        .focus\:border-tenant-accent:focus { border-color: var(--color-tenant-accent); }
+        .focus\:ring-tenant-accent:focus { --tw-ring-color: var(--color-tenant-accent); }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-900 bg-white">

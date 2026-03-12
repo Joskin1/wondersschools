@@ -36,7 +36,7 @@
                     {{ \App\Services\FrontendLibrary::get('hero_description', "We don't just teach children; we cultivate thinkers, leaders, and compassionate citizens in a secure, nurturing environment.") }}
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="{{ route('academics') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-bold rounded-md text-dark-green bg-tenant-primary hover:bg-opacity-90 transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    <a href="{{ route('academics') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-bold rounded-md text-dark-green bg-tenant-accent hover:bg-opacity-90 transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                         {{ \App\Services\FrontendLibrary::get('hero_cta_primary', 'Explore Our Curriculum') }}
                         <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                     </a>
@@ -49,7 +49,7 @@
     </div>
 
     <!-- Trust Strip -->
-    <div class="bg-tenant-primary py-6">
+    <div class="bg-tenant-accent py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center md:text-left">
                 <div class="flex items-center justify-center md:justify-start space-x-2">
@@ -83,7 +83,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Card 1 -->
                 <div class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border-b-4 border-tenant-accent">
-                    <div class="w-14 h-14 bg-tenant-primary/20 rounded-full flex items-center justify-center mb-6 text-dark-green">
+                    <div class="w-14 h-14 bg-tenant-accent/20 rounded-full flex items-center justify-center mb-6 text-dark-green">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">{{ \App\Services\FrontendLibrary::get('bento_1_title', 'Academic Excellence') }}</h3>
@@ -159,7 +159,7 @@
                     <div class="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 border border-gray-100">
                         <div class="relative h-48 overflow-hidden">
                             <img src="{{ Str::startsWith($post->image, 'http') ? $post->image : Storage::url($post->image) }}" alt="{{ $post->title }}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500">
-                            <div class="absolute top-4 left-4 bg-tenant-primary text-dark-green text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                            <div class="absolute top-4 left-4 bg-tenant-accent text-dark-green text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                                 News
                             </div>
                         </div>
@@ -230,7 +230,7 @@
                 {{ \App\Services\FrontendLibrary::get('cta_heading', 'Ready for the WKFS Foundation?') }}
             </h2>
             <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <a href="{{ route('admissions') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-md text-dark-green bg-tenant-primary hover:bg-opacity-90 transition duration-300 shadow-lg">
+                <a href="{{ route('admissions') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-md text-dark-green bg-tenant-accent hover:bg-opacity-90 transition duration-300 shadow-lg">
                     {{ \App\Services\FrontendLibrary::get('cta_enrol', 'Enrol Now') }}
                 </a>
                 <a href="{{ route('contact') }}" class="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-lg font-bold rounded-md text-white hover:bg-white hover:text-dark-green transition duration-300">

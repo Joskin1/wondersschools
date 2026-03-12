@@ -12,11 +12,11 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Filter -->
             <div class="flex justify-center space-x-4 mb-12 flex-wrap">
-                <button wire:click="setCategory('all')" class="px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 {{ $category === 'all' ? 'bg-tenant-primary text-dark-green' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                <button wire:click="setCategory('all')" class="px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 {{ $category === 'all' ? 'bg-tenant-accent text-dark-green' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                     All
                 </button>
                 @foreach($categories as $cat)
-                    <button wire:click="setCategory('{{ $cat }}')" class="px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 {{ $category === $cat ? 'bg-tenant-primary text-dark-green' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    <button wire:click="setCategory('{{ $cat }}')" class="px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 {{ $category === $cat ? 'bg-tenant-accent text-dark-green' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                         {{ ucfirst($cat) }}
                     </button>
                 @endforeach
