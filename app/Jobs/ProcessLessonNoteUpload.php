@@ -142,6 +142,14 @@ class ProcessLessonNoteUpload implements ShouldQueue
                 'status' => 'pending',
             ]);
 
+            // Generate thumbnail for PDF files
+            if ($mimeType === 'application/pdf') {
+                $thumbnailPath = $this->generateThumbnail($permanentPath);
+                if ($thumbnailPath) {
+                    $version->update(['thumbnail_path' => $thumbnailPath]);
+                }
+            }
+
             // Clean up temp file from public disk
             $sourceDisk->delete($this->filePath);
 

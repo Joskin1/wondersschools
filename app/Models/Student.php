@@ -189,8 +189,8 @@ class Student extends Model
     /**
      * Complete the student registration.
      *
-     * Saves profile data, marks registration as completed, and clears the
-     * registration link. Does NOT activate the portal — admin must do that.
+     * Saves profile data, marks registration as completed, activates the
+     * student, and clears the registration link.
      *
      * @param array $profileData
      * @return void
@@ -203,8 +203,9 @@ class Student extends Model
             $profileData
         );
 
-        // Mark registration as completed (but not yet activated)
+        // Mark registration as completed and activate the student
         $this->update([
+            'status' => 'active',
             'registration_completed_at' => now(),
         ]);
 

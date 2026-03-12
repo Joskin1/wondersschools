@@ -54,7 +54,7 @@ test('admin can view teacher subject assignment list page', function () {
 });
 
 test('admin can create teacher subject assignment', function () {
-    $subject = Subject::factory()->create();
+    $subject = Subject::factory()->create(['name' => 'English Language']);
     
     Livewire::test(TeacherSubjectAssignmentResource\Pages\CreateTeacherSubjectAssignment::class)
         ->fillForm([

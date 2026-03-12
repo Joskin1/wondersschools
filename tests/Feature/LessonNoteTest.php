@@ -696,12 +696,13 @@ describe('Queued Jobs', function () {
     });
 
     it('ProcessLessonNoteUpload dispatches notification and audit jobs', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
         Queue::fake([NotifyAdminOfNewSubmission::class, LogLessonNoteAction::class]);
 
         $note = createNote();
 
-        Storage::disk('lesson_notes')->put('test/file.pdf', 'fake pdf content');
+        Storage::disk('public')->put('test/file.pdf', '%PDF-1.4 fake pdf content');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/file.pdf', 'file.pdf', $this->teacher->id);
         $job->handle();
@@ -731,7 +732,7 @@ describe('Notifications', function () {
         expect($data['title'])->toBe('New Lesson Note Submitted')
             ->and($data['body'])->toContain($this->teacher->name)
             ->and($data['body'])->toContain('Mathematics')
-            ->and($data['body'])->toContain('JSS 1A')
+            ->and($data['body'])->toContain('JSS1')
             ->and($data['body'])->toContain('Week 1')
             ->and($data['lesson_note_id'])->toBe($note->id);
     });
@@ -930,12 +931,13 @@ describe('User Panel Access', function () {
 describe('File Validation', function () {
 
     it('rejects files exceeding 10MB', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
 
         $bigContent = str_repeat('x', 11 * 1024 * 1024);
-        Storage::disk('lesson_notes')->put('test/big.pdf', $bigContent);
+        Storage::disk('public')->put('test/big.pdf', $bigContent);
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/big.pdf', 'big.pdf', $this->teacher->id);
 
@@ -943,6 +945,7 @@ describe('File Validation', function () {
     });
 
     it('rejects missing files', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
@@ -1115,11 +1118,12 @@ describe('Signed URL Generation', function () {
 describe('File Security', function () {
 
     it('performs virus scan on upload', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
         Queue::fake();
 
         $note = createNote();
-        Storage::disk('lesson_notes')->put('test/clean.pdf', 'fake pdf content');
+        Storage::disk('public')->put('test/clean.pdf', '%PDF-1.4 fake pdf content');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/clean.pdf', 'clean.pdf', $this->teacher->id);
         $job->handle();
@@ -1129,10 +1133,11 @@ describe('File Security', function () {
     });
 
     it('rejects files that fail virus scan', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
-        Storage::disk('lesson_notes')->put('test/infected.pdf', 'EICAR-STANDARD-ANTIVIRUS-TEST-FILE');
+        Storage::disk('public')->put('test/infected.pdf', 'EICAR-STANDARD-ANTIVIRUS-TEST-FILE');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/infected.pdf', 'infected.pdf', $this->teacher->id);
 
@@ -1141,10 +1146,11 @@ describe('File Security', function () {
     });
 
     it('validates MIME type for PDF files', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
-        Storage::disk('lesson_notes')->put('test/document.pdf', '%PDF-1.4 fake pdf');
+        Storage::disk('public')->put('test/document.pdf', '%PDF-1.4 fake pdf');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/document.pdf', 'document.pdf', $this->teacher->id);
         $job->handle();
@@ -1153,10 +1159,11 @@ describe('File Security', function () {
     });
 
     it('validates MIME type for DOC files', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
-        Storage::disk('lesson_notes')->put('test/document.doc', 'fake doc content');
+        Storage::disk('public')->put('test/document.doc', 'fake doc content');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/document.doc', 'document.doc', $this->teacher->id);
         $job->handle();
@@ -1168,10 +1175,11 @@ describe('File Security', function () {
     });
 
     it('rejects executable files', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
-        Storage::disk('lesson_notes')->put('test/malicious.exe', 'MZ fake exe');
+        Storage::disk('public')->put('test/malicious.exe', 'MZ fake exe');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/malicious.exe', 'malicious.exe', $this->teacher->id);
 
@@ -1180,10 +1188,11 @@ describe('File Security', function () {
     });
 
     it('rejects files with invalid extensions', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
-        Storage::disk('lesson_notes')->put('test/script.php', '<?php echo "hack"; ?>');
+        Storage::disk('public')->put('test/script.php', '<?php echo "hack"; ?>');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/script.php', 'script.php', $this->teacher->id);
 
@@ -1192,11 +1201,12 @@ describe('File Security', function () {
     });
 
     it('validates file hash matches uploaded content', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
-        $content = 'authentic pdf content';
-        Storage::disk('lesson_notes')->put('test/file.pdf', $content);
+        $content = '%PDF-1.4 authentic pdf content';
+        Storage::disk('public')->put('test/file.pdf', $content);
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/file.pdf', 'file.pdf', $this->teacher->id);
         $job->handle();
@@ -1206,17 +1216,18 @@ describe('File Security', function () {
     });
 
     it('detects duplicate files by hash', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
-        $content = 'duplicate content';
+        $content = '%PDF-1.4 duplicate content';
         
         $note1 = createNote(['week_number' => 1]);
-        Storage::disk('lesson_notes')->put('test/file1.pdf', $content);
+        Storage::disk('public')->put('test/file1.pdf', $content);
         $job1 = new ProcessLessonNoteUpload($note1->id, 'test/file1.pdf', 'file1.pdf', $this->teacher->id);
         $job1->handle();
 
         $note2 = createNote(['week_number' => 2]);
-        Storage::disk('lesson_notes')->put('test/file2.pdf', $content);
+        Storage::disk('public')->put('test/file2.pdf', $content);
         $job2 = new ProcessLessonNoteUpload($note2->id, 'test/file2.pdf', 'file2.pdf', $this->teacher->id);
         $job2->handle();
 
@@ -1640,16 +1651,22 @@ describe('Concurrent Operations', function () {
 
         $teachers = User::factory()->count(5)->create(['role' => 'teacher']);
 
-        foreach ($teachers as $teacher) {
+        foreach ($teachers as $index => $teacher) {
+            $subject = Subject::create([
+                'name' => "Subject {$index}",
+                'code' => "SUB{$index}",
+                'description' => "Test subject {$index}",
+            ]);
+
             TeacherSubjectAssignment::create([
                 'teacher_id' => $teacher->id,
-                'subject_id' => $this->subject->id,
+                'subject_id' => $subject->id,
                 'classroom_id' => $this->classroom->id,
                 'session_id' => $this->session->id,
                 'term_id' => $this->term->id,
             ]);
 
-            $note = createNote(['teacher_id' => $teacher->id]);
+            $note = createNote(['teacher_id' => $teacher->id, 'subject_id' => $subject->id]);
             Storage::disk('lesson_notes')->put("test/{$teacher->id}.pdf", 'content');
             
             ProcessLessonNoteUpload::dispatch($note->id, "test/{$teacher->id}.pdf", 'file.pdf', $teacher->id);
@@ -1719,10 +1736,11 @@ describe('Concurrent Operations', function () {
 describe('File Metadata', function () {
 
     it('extracts PDF metadata including page count', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
-        Storage::disk('lesson_notes')->put('test/document.pdf', '%PDF-1.4 fake pdf with metadata');
+        Storage::disk('public')->put('test/document.pdf', '%PDF-1.4 fake pdf with metadata');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/document.pdf', 'document.pdf', $this->teacher->id);
         $job->handle();
@@ -1734,10 +1752,11 @@ describe('File Metadata', function () {
     });
 
     it('extracts document author from metadata', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
-        Storage::disk('lesson_notes')->put('test/authored.pdf', '%PDF-1.4 /Author (John Doe)');
+        Storage::disk('public')->put('test/authored.pdf', '%PDF-1.4 /Author (John Doe)');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/authored.pdf', 'authored.pdf', $this->teacher->id);
         $job->handle();
@@ -1758,10 +1777,11 @@ describe('File Metadata', function () {
     });
 
     it('tracks file modification timestamps', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
 
         $note = createNote();
-        Storage::disk('lesson_notes')->put('test/file.pdf', 'content');
+        Storage::disk('public')->put('test/file.pdf', '%PDF-1.4 content');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/file.pdf', 'file.pdf', $this->teacher->id);
         $job->handle();
@@ -1780,11 +1800,12 @@ describe('File Metadata', function () {
     });
 
     it('generates thumbnails for PDF preview', function () {
+        Storage::fake('public');
         Storage::fake('lesson_notes');
         Storage::fake('thumbnails');
 
         $note = createNote();
-        Storage::disk('lesson_notes')->put('test/preview.pdf', '%PDF-1.4 content');
+        Storage::disk('public')->put('test/preview.pdf', '%PDF-1.4 content');
 
         $job = new ProcessLessonNoteUpload($note->id, 'test/preview.pdf', 'preview.pdf', $this->teacher->id);
         $job->handle();

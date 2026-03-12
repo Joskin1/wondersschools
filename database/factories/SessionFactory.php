@@ -19,7 +19,7 @@ class SessionFactory extends Factory
      */
     public function definition(): array
     {
-        $startYear = fake()->numberBetween(2020, 2026);
+        $startYear = fake()->unique()->numberBetween(2000, 2099);
         $endYear = $startYear + 1;
 
         return [

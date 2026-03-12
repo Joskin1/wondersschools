@@ -19,29 +19,29 @@ describe('Admissions Page', function () {
     it('shows the admissions headline', function () {
         get('/admissions')
             ->assertSee('Admissions')
-            ->assertSee('Join the WKFS family today.');
+            ->assertSee("Start your child\xE2\x80\x99s journey with excellence, character, and purpose at WKFS.", false);
     });
 
     it('displays all three admission process steps', function () {
         get('/admissions')
-            ->assertSee('Inquire')
-            ->assertSee('Assessment')
-            ->assertSee('Enrollment');
+            ->assertSee('Make an Inquiry')
+            ->assertSee('Child Assessment')
+            ->assertSee('Complete Enrollment');
     });
 
     it('shows the fee schedule section', function () {
         get('/admissions')
             ->assertSee('School Fees')
-            ->assertSee('competitive and offers great value');
+            ->assertSee('excellent value while maintaining high academic and developmental standards');
     });
 
     it('displays the inquiry form', function () {
         get('/admissions')
-            ->assertSee('Admission Inquiry')
-            ->assertSee('Parent\'s Name', false)
+            ->assertSee('Admission Inquiry Form')
+            ->assertSee("Parent's Full Name", false)
             ->assertSee('Email Address')
             ->assertSee('Phone Number')
-            ->assertSee('Child\'s Age / Class', false);
+            ->assertSee("Child\xE2\x80\x99s Age / Intended Class", false);
     });
 });
 

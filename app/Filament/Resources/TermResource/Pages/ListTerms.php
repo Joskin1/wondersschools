@@ -5,7 +5,7 @@ namespace App\Filament\Resources\TermResource\Pages;
 use App\Filament\Resources\TermResource;
 use App\Models\Term;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Resources\Components\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListTerms extends ListRecords
