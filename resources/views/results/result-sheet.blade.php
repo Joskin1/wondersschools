@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Result Sheet</title>
+    @php
+        $brandColor = $data['settings']['primary_color'] ?? config('app.tenant_primary_color', '#1a365d');
+    @endphp
     <style>
         /* ── Reset & Base ──────────────────────────────────────────────────── */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -20,7 +23,7 @@
             display: table;
             width: 100%;
             margin-bottom: 10px;
-            border-bottom: 3px double #1a365d;
+            border-bottom: 3px double {{ $brandColor }};
             padding-bottom: 10px;
         }
         .header-left, .header-center, .header-right {
@@ -35,7 +38,7 @@
         .school-name {
             font-size: 20px;
             font-weight: bold;
-            color: #1a365d;
+            color: {{ $brandColor }};
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -51,7 +54,7 @@
             margin-top: 4px;
         }
         .session-term-bar {
-            background: #1a365d;
+            background: {{ $brandColor }};
             color: #fff;
             text-align: center;
             padding: 5px 0;
@@ -87,7 +90,7 @@
             margin-bottom: 10px;
         }
         .result-table th {
-            background: #1a365d;
+            background: {{ $brandColor }};
             color: #fff;
             padding: 6px 5px;
             font-size: 10px;
@@ -127,7 +130,7 @@
             background: #f3f4f6;
             width: 30%;
         }
-        .summary-table .value { font-weight: bold; color: #1a365d; }
+        .summary-table .value { font-weight: bold; color: {{ $brandColor }}; }
 
         /* ── E. AFFECTIVE/PSYCHOMOTOR ──────────────────────────────────────── */
         .traits-table {
@@ -196,7 +199,7 @@
         .section-title {
             font-size: 11px;
             font-weight: bold;
-            color: #1a365d;
+            color: {{ $brandColor }};
             margin-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 0.3px;

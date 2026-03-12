@@ -5,7 +5,7 @@
             <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">
                 Admissions
             </h1>
-            <p class="mt-4 text-xl text-lime-green max-w-2xl mx-auto">
+            <p class="mt-4 text-xl text-tenant-accent max-w-2xl mx-auto">
                 Start your child’s journey with excellence, character, and purpose at WKFS.
             </p>
         </div>
@@ -27,7 +27,7 @@
                 
                 <!-- Step 1 -->
                 <div>
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-lime-green text-dark-green text-2xl font-bold mx-auto mb-6">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-primary text-dark-green text-2xl font-bold mx-auto mb-6">
                         1
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">
@@ -40,7 +40,7 @@
 
                 <!-- Step 2 -->
                 <div>
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-lime-green text-dark-green text-2xl font-bold mx-auto mb-6">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-primary text-dark-green text-2xl font-bold mx-auto mb-6">
                         2
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">
@@ -53,7 +53,7 @@
 
                 <!-- Step 3 -->
                 <div>
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-lime-green text-dark-green text-2xl font-bold mx-auto mb-6">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-primary text-dark-green text-2xl font-bold mx-auto mb-6">
                         3
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">
@@ -137,7 +137,7 @@
                         Parent's Full Name
                     </label>
                     <input type="text" wire:model="name"
-                           class="mt-1 py-3 px-4 block w-full shadow-sm border-gray-300 rounded-md focus:ring-lime-green focus:border-lime-green">
+                           class="mt-1 py-3 px-4 block w-full shadow-sm border-gray-300 rounded-md focus:ring-tenant-accent focus:border-tenant-accent">
                     @error('name') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                 </div>
 
@@ -146,7 +146,7 @@
                         Email Address
                     </label>
                     <input type="email" wire:model="email"
-                           class="mt-1 py-3 px-4 block w-full shadow-sm border-gray-300 rounded-md focus:ring-lime-green focus:border-lime-green">
+                           class="mt-1 py-3 px-4 block w-full shadow-sm border-gray-300 rounded-md focus:ring-tenant-accent focus:border-tenant-accent">
                     @error('email') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                 </div>
 
@@ -155,7 +155,7 @@
                         Phone Number
                     </label>
                     <input type="text" wire:model="phone"
-                           class="mt-1 py-3 px-4 block w-full shadow-sm border-gray-300 rounded-md focus:ring-lime-green focus:border-lime-green">
+                           class="mt-1 py-3 px-4 block w-full shadow-sm border-gray-300 rounded-md focus:ring-tenant-accent focus:border-tenant-accent">
                     @error('phone') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                 </div>
 
@@ -164,7 +164,7 @@
                         Child’s Age / Intended Class
                     </label>
                     <input type="text" wire:model="child_age"
-                           class="mt-1 py-3 px-4 block w-full shadow-sm border-gray-300 rounded-md focus:ring-lime-green focus:border-lime-green">
+                           class="mt-1 py-3 px-4 block w-full shadow-sm border-gray-300 rounded-md focus:ring-tenant-accent focus:border-tenant-accent">
                     @error('child_age') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                 </div>
 
@@ -173,7 +173,7 @@
                         Additional Information (Optional)
                     </label>
                     <textarea wire:model="message" rows="4"
-                              class="mt-1 py-3 px-4 block w-full shadow-sm border-gray-300 rounded-md focus:ring-lime-green focus:border-lime-green"></textarea>
+                              class="mt-1 py-3 px-4 block w-full shadow-sm border-gray-300 rounded-md focus:ring-tenant-accent focus:border-tenant-accent"></textarea>
                     @error('message') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                 </div>
 

@@ -5,7 +5,7 @@
             <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">
                 {{ \App\Services\FrontendLibrary::get('advantage_hero_title', 'The WKFS Advantage') }}
             </h1>
-            <p class="mt-4 text-xl text-lime-green">
+            <p class="mt-4 text-xl text-tenant-accent">
                 {{ \App\Services\FrontendLibrary::get('advantage_hero_subtitle', 'A Foundation That Outlasts Trends.') }}
             </p>
         </div>
@@ -40,7 +40,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                 <!-- EYFS -->
-                <div class="bg-white overflow-hidden shadow-lg rounded-xl border-t-4 border-lime-green">
+                <div class="bg-white overflow-hidden shadow-lg rounded-xl border-t-4 border-tenant-accent">
                     <div class="px-6 py-8">
                         <h3 class="text-2xl font-bold text-dark-green mb-4">
                             {{ \App\Services\FrontendLibrary::get('eyfs_title', 'Early Years Foundation Stage (EYFS)') }}

@@ -4,7 +4,9 @@ namespace App\Filament\Pages;
 
 use Filament\Schemas\Schema;
 use App\Models\Setting;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -41,15 +43,35 @@ class Settings extends Page
                     ->columns(2),
 
                 Section::make('Branding')
+                    ->description('Customize your school\'s visual identity across all pages.')
                     ->schema([
                         FileUpload::make('school_logo')
                             ->image()
                             ->directory('logos')
                             ->disk('public')
                             ->maxSize(512)
-                            ->helperText('Max 512 KB. Used on report cards.'),
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                            ->helperText('Max 512 KB. Used on report cards and navigation.'),
+                        ColorPicker::make('secondary_color')
+                            ->label('Secondary Color')
+                            ->helperText('Used for accents, links, and highlights.')
+                            ->nullable(),
+                        ColorPicker::make('accent_color')
+                            ->label('Accent Color')
+                            ->helperText('Used for hover states and badges.')
+                            ->nullable(),
+                        Select::make('layout_style')
+                            ->label('Layout Style')
+                            ->options([
+                                'standard' => 'Standard',
+                                'centered' => 'Centered',
+                                'compact'  => 'Compact',
+                            ])
+                            ->default('standard')
+                            ->helperText('Controls the overall page layout style.'),
                         TextInput::make('fee_schedule_link')->url(),
-                    ]),
+                    ])
+                    ->columns(2),
             ])
             ->statePath('data');
     }

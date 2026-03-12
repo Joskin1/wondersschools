@@ -5,7 +5,7 @@
             <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">
                 {{ \App\Services\FrontendLibrary::get('about_hero_title', 'We Build Foundations That Last.') }}
             </h1>
-            <p class="mt-4 text-xl text-lime-green">
+            <p class="mt-4 text-xl text-tenant-accent">
                 {{ \App\Services\FrontendLibrary::get('about_hero_subtitle', 'Wonders Kiddies Foundation Schools') }}
             </p>
         </div>
@@ -31,7 +31,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
 
                 <!-- Mission -->
-                <div class="bg-white p-8 rounded-xl shadow-md border-l-4 border-lime-green">
+                <div class="bg-white p-8 rounded-xl shadow-md border-l-4 border-tenant-accent">
                     <h3 class="text-2xl font-bold text-gray-900 mb-4">
                         {{ \App\Services\FrontendLibrary::get('about_mission_title', 'Our Mission') }}
                     </h3>
@@ -124,7 +124,7 @@
                 @forelse($staff as $member)
                     <div class="text-center group">
                         <div class="space-y-4">
-                            <div class="mx-auto h-40 w-40 rounded-full overflow-hidden border-4 border-lime-green shadow-lg transform group-hover:scale-105 transition duration-300">
+                            <div class="mx-auto h-40 w-40 rounded-full overflow-hidden border-4 border-tenant-accent shadow-lg transform group-hover:scale-105 transition duration-300">
                                 <img class="w-full h-full object-cover"
                                      src="{{ Str::startsWith($member->image, 'http') ? $member->image : Storage::url($member->image) }}"
                                      alt="{{ $member->name }}">

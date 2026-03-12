@@ -10,8 +10,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     <style>
         [x-cloak] { display: none !important; }
-        /* TIMS-style: per-tenant primary color set by ConfigBootstrapper */
-        :root { --color-tenant-primary: {{ config('app.tenant_primary_color', '#16a34a') }}; }
+        /* Per-tenant branding colors set by ConfigBootstrapper */
+        :root {
+            --color-tenant-primary: {{ config('app.tenant_primary_color', '#16a34a') }};
+            --color-tenant-secondary: {{ config('app.tenant_secondary_color', '#1e293b') }};
+            --color-tenant-accent: {{ config('app.tenant_accent_color', '#f59e0b') }};
+        }
+        /* Utility classes for tenant branding */
+        .text-tenant-accent { color: var(--color-tenant-accent); }
+        .hover\:text-tenant-accent:hover { color: var(--color-tenant-accent); }
+        .bg-tenant-primary { background-color: var(--color-tenant-primary); }
+        .bg-tenant-secondary { background-color: var(--color-tenant-secondary); }
+        .border-tenant-accent { border-color: var(--color-tenant-accent); }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-900 bg-white">
@@ -44,7 +54,7 @@
 
                     <!-- Mobile Menu Button -->
                     <div class="flex items-center md:hidden">
-                        <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-lime-green focus:outline-none transition duration-150 ease-in-out">
+                        <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-white focus:outline-none transition duration-150 ease-in-out">
                             <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                 <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                 <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -55,7 +65,7 @@
             </div>
 
             <!-- Mobile Menu -->
-            <div :class="{'block': open, 'hidden': ! open}" class="hidden md:hidden border-t border-lime-green/20" style="background-color: var(--color-tenant-primary);">
+            <div :class="{'block': open, 'hidden': ! open}" class="hidden md:hidden" style="background-color: var(--color-tenant-primary); border-top: 1px solid rgba(255,255,255,0.2);">
                 <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                     <x-mobile-nav-link href="{{ route('home') }}" :active="request()->routeIs('home')">Home</x-mobile-nav-link>
                     <x-mobile-nav-link href="{{ route('about') }}" :active="request()->routeIs('about')">About Us</x-mobile-nav-link>
@@ -83,7 +93,7 @@
                              @if(\App\Services\FrontendLibrary::getSetting('school_logo'))
                                 <img src="{{ Storage::url(\App\Services\FrontendLibrary::getSetting('school_logo')) }}" alt="{{ \App\Services\FrontendLibrary::getSetting('school_name', 'WKFS') }} Logo" class="h-8 w-auto">
                             @else
-                                <h3 class="text-xl font-bold text-lime-green">{{ \App\Services\FrontendLibrary::getSetting('school_name', 'WKFS') }}</h3>
+                                <h3 class="text-xl font-bold text-tenant-accent">{{ \App\Services\FrontendLibrary::getSetting('school_name', 'WKFS') }}</h3>
                             @endif
                         </div>
                         <p class="text-gray-400 text-sm leading-relaxed">
@@ -95,10 +105,10 @@
                     <div>
                         <h3 class="text-lg font-semibold mb-4 text-white">Quick Links</h3>
                         <ul class="space-y-2 text-sm text-gray-400">
-                            <li><a href="{{ route('about') }}" class="hover:text-lime-green transition">About Us</a></li>
-                            <li><a href="{{ route('admissions') }}" class="hover:text-lime-green transition">Admissions</a></li>
-                            <li><a href="{{ route('academics') }}" class="hover:text-lime-green transition">Academics</a></li>
-                            <li><a href="{{ route('contact') }}" class="hover:text-lime-green transition">Contact Us</a></li>
+                            <li><a href="{{ route('about') }}" class="hover:text-tenant-accent transition">About Us</a></li>
+                            <li><a href="{{ route('admissions') }}" class="hover:text-tenant-accent transition">Admissions</a></li>
+                            <li><a href="{{ route('academics') }}" class="hover:text-tenant-accent transition">Academics</a></li>
+                            <li><a href="{{ route('contact') }}" class="hover:text-tenant-accent transition">Contact Us</a></li>
                         </ul>
                     </div>
 
@@ -107,20 +117,20 @@
                         <h3 class="text-lg font-semibold mb-4 text-white">Contact Us</h3>
                         <ul class="space-y-2 text-sm text-gray-400">
                             <li class="flex items-start">
-                                <svg class="h-5 w-5 mr-2 text-lime-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="h-5 w-5 mr-2 text-tenant-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                                 <span>{{ \App\Services\FrontendLibrary::getSetting('school_address', '123 School Lane, City, Country') }}</span>
                             </li>
                             <li class="flex items-center">
-                                <svg class="h-5 w-5 mr-2 text-lime-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="h-5 w-5 mr-2 text-tenant-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
                                 <span>{{ \App\Services\FrontendLibrary::getSetting('school_phone', '+123 456 7890') }}</span>
                             </li>
                             <li class="flex items-center">
-                                <svg class="h-5 w-5 mr-2 text-lime-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="h-5 w-5 mr-2 text-tenant-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                 </svg>
                                 <span>{{ \App\Services\FrontendLibrary::getSetting('school_email', 'info@wkfs.com') }}</span>

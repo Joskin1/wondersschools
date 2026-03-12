@@ -28,15 +28,15 @@
 
         <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
             <div class="lg:w-2/3">
-                <span class="block text-lime-green font-bold tracking-wide uppercase text-sm mb-2">{{ \App\Services\FrontendLibrary::get('hero_tagline', 'Welcome to Wonders Kiddies Foundation Schools') }}</span>
+                <span class="block text-tenant-accent font-bold tracking-wide uppercase text-sm mb-2">{{ \App\Services\FrontendLibrary::get('hero_tagline', 'Welcome to Wonders Kiddies Foundation Schools') }}</span>
                 <h1 class="text-4xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-6">
-                    {{ \App\Services\FrontendLibrary::get('hero_heading', 'A Foundation That') }} <span class="text-lime-green">{{ \App\Services\FrontendLibrary::get('hero_heading_highlight', 'Builds Futures.') }}</span>
+                    {{ \App\Services\FrontendLibrary::get('hero_heading', 'A Foundation That') }} <span class="text-tenant-accent">{{ \App\Services\FrontendLibrary::get('hero_heading_highlight', 'Builds Futures.') }}</span>
                 </h1>
                 <p class="text-xl text-gray-200 mb-8 max-w-2xl leading-relaxed">
                     {{ \App\Services\FrontendLibrary::get('hero_description', "We don't just teach children; we cultivate thinkers, leaders, and compassionate citizens in a secure, nurturing environment.") }}
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="{{ route('academics') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-bold rounded-md text-dark-green bg-lime-green hover:bg-opacity-90 transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    <a href="{{ route('academics') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-bold rounded-md text-dark-green bg-tenant-primary hover:bg-opacity-90 transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                         {{ \App\Services\FrontendLibrary::get('hero_cta_primary', 'Explore Our Curriculum') }}
                         <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                     </a>
@@ -49,7 +49,7 @@
     </div>
 
     <!-- Trust Strip -->
-    <div class="bg-lime-green py-6">
+    <div class="bg-tenant-primary py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center md:text-left">
                 <div class="flex items-center justify-center md:justify-start space-x-2">
@@ -82,8 +82,8 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Card 1 -->
-                <div class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border-b-4 border-lime-green">
-                    <div class="w-14 h-14 bg-lime-green/20 rounded-full flex items-center justify-center mb-6 text-dark-green">
+                <div class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border-b-4 border-tenant-accent">
+                    <div class="w-14 h-14 bg-tenant-primary/20 rounded-full flex items-center justify-center mb-6 text-dark-green">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">{{ \App\Services\FrontendLibrary::get('bento_1_title', 'Academic Excellence') }}</h3>
@@ -122,19 +122,19 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                 <div>
-                    <div class="text-4xl md:text-5xl font-extrabold text-lime-green mb-2">{{ \App\Services\FrontendLibrary::get('stat_1_value', '15+') }}</div>
+                    <div class="text-4xl md:text-5xl font-extrabold text-tenant-accent mb-2">{{ \App\Services\FrontendLibrary::get('stat_1_value', '15+') }}</div>
                     <div class="text-white font-medium">{{ \App\Services\FrontendLibrary::get('stat_1_label', 'Years of Excellence') }}</div>
                 </div>
                 <div>
-                    <div class="text-4xl md:text-5xl font-extrabold text-lime-green mb-2">{{ \App\Services\FrontendLibrary::get('stat_2_value', '500+') }}</div>
+                    <div class="text-4xl md:text-5xl font-extrabold text-tenant-accent mb-2">{{ \App\Services\FrontendLibrary::get('stat_2_value', '500+') }}</div>
                     <div class="text-white font-medium">{{ \App\Services\FrontendLibrary::get('stat_2_label', 'Happy Students') }}</div>
                 </div>
                 <div>
-                    <div class="text-4xl md:text-5xl font-extrabold text-lime-green mb-2">{{ \App\Services\FrontendLibrary::get('stat_3_value', '50+') }}</div>
+                    <div class="text-4xl md:text-5xl font-extrabold text-tenant-accent mb-2">{{ \App\Services\FrontendLibrary::get('stat_3_value', '50+') }}</div>
                     <div class="text-white font-medium">{{ \App\Services\FrontendLibrary::get('stat_3_label', 'Expert Staff') }}</div>
                 </div>
                 <div>
-                    <div class="text-4xl md:text-5xl font-extrabold text-lime-green mb-2">{{ \App\Services\FrontendLibrary::get('stat_4_value', '100%') }}</div>
+                    <div class="text-4xl md:text-5xl font-extrabold text-tenant-accent mb-2">{{ \App\Services\FrontendLibrary::get('stat_4_value', '100%') }}</div>
                     <div class="text-white font-medium">{{ \App\Services\FrontendLibrary::get('stat_4_label', 'Parent Satisfaction') }}</div>
                 </div>
             </div>
@@ -149,7 +149,7 @@
                     <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">{{ \App\Services\FrontendLibrary::get('news_heading', 'More Than a Classroom') }}</h2>
                     <p class="text-xl text-gray-600">{{ \App\Services\FrontendLibrary::get('news_subheading', 'A Place Your Child Can Thrive.') }}</p>
                 </div>
-                <a href="{{ route('news') }}" class="hidden md:inline-flex items-center font-bold text-dark-green hover:text-lime-green transition">
+                <a href="{{ route('news') }}" class="hidden md:inline-flex items-center font-bold text-dark-green hover:text-tenant-accent transition">
                     View All News <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                 </a>
             </div>
@@ -159,7 +159,7 @@
                     <div class="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 border border-gray-100">
                         <div class="relative h-48 overflow-hidden">
                             <img src="{{ Str::startsWith($post->image, 'http') ? $post->image : Storage::url($post->image) }}" alt="{{ $post->title }}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500">
-                            <div class="absolute top-4 left-4 bg-lime-green text-dark-green text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                            <div class="absolute top-4 left-4 bg-tenant-primary text-dark-green text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                                 News
                             </div>
                         </div>
@@ -171,7 +171,7 @@
                             <p class="text-gray-600 line-clamp-3 mb-4">
                                 {{ Str::limit(strip_tags($post->body), 100) }}
                             </p>
-                            <a href="{{ route('post', $post) }}" class="inline-flex items-center text-dark-green font-semibold hover:text-lime-green transition">
+                            <a href="{{ route('post', $post) }}" class="inline-flex items-center text-dark-green font-semibold hover:text-tenant-accent transition">
                                 Read More <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             </a>
                         </div>
@@ -184,7 +184,7 @@
             </div>
 
             <div class="mt-8 text-center md:hidden">
-                <a href="{{ route('news') }}" class="inline-flex items-center font-bold text-dark-green hover:text-lime-green transition">
+                <a href="{{ route('news') }}" class="inline-flex items-center font-bold text-dark-green hover:text-tenant-accent transition">
                     View All News <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                 </a>
             </div>
@@ -205,7 +205,7 @@
                 @endphp
                 @forelse($staffMembers as $staff)
                     <div class="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition duration-300 flex flex-col items-center p-8 text-center">
-                        <div class="w-32 h-32 rounded-full overflow-hidden mb-6 border-4 border-lime-green/30">
+                        <div class="w-32 h-32 rounded-full overflow-hidden mb-6 border-4 border-tenant-accent/30">
                             <img src="{{ Str::startsWith($staff->image, 'http') ? $staff->image : Storage::url($staff->image) }}" alt="{{ $staff->name }}" class="w-full h-full object-cover">
                         </div>
                         <h3 class="text-xl font-bold text-gray-900">{{ $staff->name }}</h3>
@@ -230,7 +230,7 @@
                 {{ \App\Services\FrontendLibrary::get('cta_heading', 'Ready for the WKFS Foundation?') }}
             </h2>
             <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <a href="{{ route('admissions') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-md text-dark-green bg-lime-green hover:bg-opacity-90 transition duration-300 shadow-lg">
+                <a href="{{ route('admissions') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-md text-dark-green bg-tenant-primary hover:bg-opacity-90 transition duration-300 shadow-lg">
                     {{ \App\Services\FrontendLibrary::get('cta_enrol', 'Enrol Now') }}
                 </a>
                 <a href="{{ route('contact') }}" class="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-lg font-bold rounded-md text-white hover:bg-white hover:text-dark-green transition duration-300">

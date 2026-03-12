@@ -14,44 +14,53 @@
     <!-- Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    
+
+    @php
+        $primary = config('app.tenant_primary_color', '#667eea');
+        $secondary = config('app.tenant_secondary_color', '#764ba2');
+    @endphp
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, {{ $primary }} 0%, {{ $secondary }} 100%);
             min-height: 100vh;
         }
-        
+
         .glass-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
+
         .input-field {
             transition: all 0.3s ease;
         }
-        
+
         .input-field:focus {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 4px 12px color-mix(in srgb, {{ $primary }} 20%, transparent);
         }
-        
+
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, {{ $primary }} 0%, {{ $secondary }} 100%);
             transition: all 0.3s ease;
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 20px color-mix(in srgb, {{ $primary }} 40%, transparent);
         }
-        
+
         .progress-bar {
             height: 4px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(90deg, {{ $primary }} 0%, {{ $secondary }} 100%);
             transition: width 0.3s ease;
         }
+
+        .brand-accent-bg { background-color: color-mix(in srgb, {{ $primary }} 10%, white); }
+        .brand-accent-border { border-color: {{ $primary }}; }
+        .brand-accent-text { color: {{ $primary }}; }
+        .brand-muted-text { color: color-mix(in srgb, {{ $primary }} 70%, white); }
     </style>
 </head>
 <body class="antialiased">
@@ -60,21 +69,21 @@
             <!-- Header -->
             <div class="text-center mb-8">
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-lg mb-4">
-                    <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-8 h-8 brand-accent-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                 </div>
                 <h1 class="text-4xl font-bold text-white mb-2">Welcome to Our Team!</h1>
-                <p class="text-indigo-100 text-lg">Complete your profile to get started</p>
+                <p class="brand-muted-text text-lg">Complete your profile to get started</p>
             </div>
 
             <!-- Main Card -->
             <div class="glass-card rounded-2xl shadow-2xl p-8">
                 <!-- Welcome Message -->
-                <div class="mb-8 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-r-lg">
-                    <p class="text-indigo-900">
+                <div class="mb-8 p-4 brand-accent-bg border-l-4 brand-accent-border rounded-r-lg">
+                    <p style="color: color-mix(in srgb, {{ $primary }} 90%, black);">
                         <span class="font-semibold">Hello, {{ $user->name }}!</span><br>
-                        <span class="text-sm text-indigo-700">Please complete your profile to activate your teacher account.</span>
+                        <span class="text-sm" style="color: color-mix(in srgb, {{ $primary }} 70%, black);">Please complete your profile to activate your teacher account.</span>
                     </p>
                 </div>
 
@@ -94,7 +103,7 @@
 
             <!-- Footer -->
             <div class="text-center mt-6">
-                <p class="text-indigo-100 text-sm">
+                <p class="brand-muted-text text-sm">
                     Need help? Contact your administrator
                 </p>
             </div>
