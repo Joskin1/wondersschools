@@ -43,7 +43,9 @@ class StaffResource extends Resource
                     ->columnSpanFull(),
                 FileUpload::make('image')
                     ->image()
-                    ->directory('staff'),
+                    ->directory('staff')
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->maxSize(2048), // 2MB
                 TextInput::make('order')
                     ->numeric()
                     ->default(0),

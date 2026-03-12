@@ -52,7 +52,9 @@ class PostResource extends Resource
                     ->columnSpanFull(),
                 FileUpload::make('image')
                     ->image()
-                    ->directory('posts'),
+                    ->directory('posts')
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->maxSize(5120), // 5MB
                 DateTimePicker::make('published_at'),
                 Toggle::make('is_featured')
                     ->required(),
