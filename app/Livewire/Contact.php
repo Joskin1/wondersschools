@@ -3,11 +3,15 @@
 namespace App\Livewire;
 
 use App\Models\ContactSubmission;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
+use DanHarrin\LivewireRateLimiting\WithRateLimiting;
 use Filament\Notifications\Notification;
 use Livewire\Component;
 
 class Contact extends Component
 {
+    use WithRateLimiting;
+
     public $name;
     public $email;
     public $message;
@@ -20,6 +24,17 @@ class Contact extends Component
 
     public function submit()
     {
+        try {
+            $this->rateLimit(5); // 5 submissions per minute
+        } catch (TooManyRequestsException $exception) {
+            Notification::make()
+                ->title('Too many submissions. Please try again in ' . $exception->secondsUntilAvailable . ' seconds.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         $this->validate();
 
         ContactSubmission::create([

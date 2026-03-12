@@ -85,9 +85,10 @@ class SchoolResource extends Resource
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('School Name')
-                    ->sortable(query: fn (Builder $query, string $direction): Builder =>
-                        $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(`data`, '$.name')) {$direction}")
-                    )
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        $direction = in_array(strtolower($direction), ['asc', 'desc']) ? $direction : 'asc';
+                        return $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(`data`, '$.name')) {$direction}");
+                    })
                     ->searchable(query: fn (Builder $query, string $search): Builder =>
                         $query->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(`data`, '$.name')) LIKE ?", ["%{$search}%"])
                     ),
