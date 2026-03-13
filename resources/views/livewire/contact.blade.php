@@ -1,6 +1,6 @@
 <div>
     <!-- Header -->
-    <div class="bg-dark-green py-24">
+    <div class="bg-tenant-primary py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">Contact Us</h1>
             <p class="mt-4 text-xl text-tenant-accent">We'd love to hear from you.</p>
@@ -107,7 +107,7 @@
                         </div>
 
                         <div>
-                            <button type="submit" class="w-full inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-dark-green hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tenant-accent">
+                            <button type="submit" class="w-full inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-tenant-primary hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tenant-accent">
                                 Send Message
                             </button>
                         </div>

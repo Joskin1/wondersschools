@@ -25,12 +25,17 @@
         .bg-tenant-secondary { background-color: var(--color-tenant-secondary); }
         .bg-tenant-accent { background-color: var(--color-tenant-accent); }
         .bg-tenant-accent\/20 { background-color: color-mix(in srgb, var(--color-tenant-accent) 20%, transparent); }
+        .bg-tenant-primary\/20 { background-color: color-mix(in srgb, var(--color-tenant-primary) 20%, transparent); }
+        .hover\:bg-tenant-primary:hover { background-color: var(--color-tenant-primary); }
         .border-tenant-accent { border-color: var(--color-tenant-accent); }
         .border-tenant-primary { border-color: var(--color-tenant-primary); }
         .border-tenant-accent\/20 { border-color: color-mix(in srgb, var(--color-tenant-accent) 20%, transparent); }
         .border-tenant-accent\/30 { border-color: color-mix(in srgb, var(--color-tenant-accent) 30%, transparent); }
         .focus\:border-tenant-accent:focus { border-color: var(--color-tenant-accent); }
         .focus\:ring-tenant-accent:focus { --tw-ring-color: var(--color-tenant-accent); }
+        /* Gradient overlays using tenant primary */
+        .from-tenant-primary { --tw-gradient-from: var(--color-tenant-primary); }
+        .via-tenant-primary\/80 { --tw-gradient-stops: var(--tw-gradient-from), color-mix(in srgb, var(--color-tenant-primary) 80%, transparent), var(--tw-gradient-to, transparent); }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-900 bg-white">

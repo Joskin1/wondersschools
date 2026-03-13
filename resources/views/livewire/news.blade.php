@@ -1,6 +1,6 @@
 <div>
     <!-- Header -->
-    <div class="bg-dark-green py-24">
+    <div class="bg-tenant-primary py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">News & Events</h1>
             <p class="mt-4 text-xl text-tenant-accent">Stay updated with the latest happenings at WKFS.</p>

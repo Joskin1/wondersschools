@@ -21,7 +21,7 @@
             </div>
 
             <div class="mt-12 border-t border-gray-200 pt-8">
-                <a href="{{ route('news') }}" class="text-dark-green hover:text-tenant-accent font-medium">
+                <a href="{{ route('news') }}" class="text-tenant-primary hover:text-tenant-accent font-medium">
                     &larr; Back to News
                 </a>
             </div>

@@ -1,6 +1,6 @@
 <div>
     <!-- Header -->
-    <div class="bg-dark-green py-24">
+    <div class="bg-tenant-primary py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">
                 {{ \App\Services\FrontendLibrary::get('about_hero_title', 'We Build Foundations That Last.') }}
@@ -66,35 +66,35 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
                     <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition text-center">
-                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">1</div>
+                        <div class="w-12 h-12 bg-tenant-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">1</div>
                         <h4 class="text-lg font-bold text-gray-900">
                             {{ \App\Services\FrontendLibrary::get('core_value_1', 'Integrity of Instruction') }}
                         </h4>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition text-center">
-                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">2</div>
+                        <div class="w-12 h-12 bg-tenant-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">2</div>
                         <h4 class="text-lg font-bold text-gray-900">
                             {{ \App\Services\FrontendLibrary::get('core_value_2', 'Student-Centric Nurturing') }}
                         </h4>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition text-center">
-                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">3</div>
+                        <div class="w-12 h-12 bg-tenant-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">3</div>
                         <h4 class="text-lg font-bold text-gray-900">
                             {{ \App\Services\FrontendLibrary::get('core_value_3', 'Strategic Curriculum Delivery') }}
                         </h4>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition text-center">
-                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">4</div>
+                        <div class="w-12 h-12 bg-tenant-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">4</div>
                         <h4 class="text-lg font-bold text-gray-900">
                             {{ \App\Services\FrontendLibrary::get('core_value_4', 'Transparent Parent Partnership') }}
                         </h4>
                     </div>
 
                     <div class="bg-white p-6 rounded-lg shadow hover:shadow-md transition text-center">
-                        <div class="w-12 h-12 bg-dark-green text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">5</div>
+                        <div class="w-12 h-12 bg-tenant-primary text-white rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-xl">5</div>
                         <h4 class="text-lg font-bold text-gray-900">
                             {{ \App\Services\FrontendLibrary::get('core_value_5', 'Long-term Value Creation') }}
                         </h4>
@@ -132,7 +132,7 @@
                             <div class="space-y-2">
                                 <div class="text-lg leading-6 font-medium space-y-1">
                                     <h3 class="text-xl font-bold text-gray-900">{{ $member->name }}</h3>
-                                    <p class="text-dark-green font-medium">{{ $member->role }}</p>
+                                    <p class="text-tenant-primary font-medium">{{ $member->role }}</p>
                                 </div>
                                 <div class="text-sm text-gray-500 max-w-xs mx-auto">
                                     {{ Str::limit($member->bio, 150) }}

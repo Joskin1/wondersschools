@@ -1,6 +1,6 @@
 <div>
     <!-- Header -->
-    <div class="bg-dark-green py-24">
+    <div class="bg-tenant-primary py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">
                 Admissions
@@ -27,7 +27,7 @@
                 
                 <!-- Step 1 -->
                 <div>
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-accent text-dark-green text-2xl font-bold mx-auto mb-6">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-accent text-tenant-primary text-2xl font-bold mx-auto mb-6">
                         1
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">
@@ -40,7 +40,7 @@
 
                 <!-- Step 2 -->
                 <div>
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-accent text-dark-green text-2xl font-bold mx-auto mb-6">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-accent text-tenant-primary text-2xl font-bold mx-auto mb-6">
                         2
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">
@@ -53,7 +53,7 @@
 
                 <!-- Step 3 -->
                 <div>
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-accent text-dark-green text-2xl font-bold mx-auto mb-6">
+                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-tenant-accent text-tenant-primary text-2xl font-bold mx-auto mb-6">
                         3
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">
@@ -81,7 +81,7 @@
             @if(\App\Models\Setting::where('key', 'fee_schedule_link')->value('value'))
                 <a href="{{ \App\Models\Setting::where('key', 'fee_schedule_link')->value('value') }}" 
                    target="_blank" 
-                   class="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md text-white bg-dark-green hover:bg-opacity-90 transition">
+                   class="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-md text-white bg-tenant-primary hover:bg-opacity-90 transition">
                     Download Full Fee Schedule (PDF)
                 </a>
             @else
@@ -179,7 +179,7 @@
 
                 <div>
                     <button type="submit"
-                            class="w-full py-3 px-6 text-base font-medium rounded-md text-white bg-dark-green hover:bg-opacity-90 transition">
+                            class="w-full py-3 px-6 text-base font-medium rounded-md text-white bg-tenant-primary hover:bg-opacity-90 transition">
                         Submit Admission Inquiry
                     </button>
                 </div>

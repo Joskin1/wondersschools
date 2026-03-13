@@ -1,6 +1,6 @@
 <div>
     <!-- Header -->
-    <div class="bg-dark-green py-24">
+    <div class="bg-tenant-primary py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">
                 {{ \App\Services\FrontendLibrary::get('advantage_hero_title', 'The WKFS Advantage') }}
@@ -42,7 +42,7 @@
                 <!-- EYFS -->
                 <div class="bg-white overflow-hidden shadow-lg rounded-xl border-t-4 border-tenant-accent">
                     <div class="px-6 py-8">
-                        <h3 class="text-2xl font-bold text-dark-green mb-4">
+                        <h3 class="text-2xl font-bold text-tenant-primary mb-4">
                             {{ \App\Services\FrontendLibrary::get('eyfs_title', 'Early Years Foundation Stage (EYFS)') }}
                         </h3>
                         <div class="space-y-4">
@@ -69,7 +69,7 @@
                 <!-- Primary -->
                 <div class="bg-white overflow-hidden shadow-lg rounded-xl border-t-4 border-light-blue">
                     <div class="px-6 py-8">
-                        <h3 class="text-2xl font-bold text-dark-green mb-4">
+                        <h3 class="text-2xl font-bold text-tenant-primary mb-4">
                             {{ \App\Services\FrontendLibrary::get('primary_title', 'Primary School Programme') }}
                         </h3>
                         <div class="space-y-4">

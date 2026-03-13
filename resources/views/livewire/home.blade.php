@@ -1,6 +1,6 @@
 <div>
     <!-- Hero Section -->
-    <div class="relative bg-dark-green text-white overflow-hidden" x-data="{
+    <div class="relative bg-tenant-primary text-white overflow-hidden" x-data="{
         images: {!! \App\Services\FrontendLibrary::get('hero_images', '[]') !!},
         active: 0,
         init() {
@@ -16,14 +16,14 @@
             <div class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
                  :class="{ 'opacity-100': active === index, 'opacity-0': active !== index }">
                 <img :src="'/storage/' + image" alt="School Campus" class="w-full h-full object-cover opacity-40">
-                <div class="absolute inset-0 bg-gradient-to-r from-dark-green via-dark-green/80 to-transparent"></div>
+                <div class="absolute inset-0" style="background: linear-gradient(to right, var(--color-tenant-primary), color-mix(in srgb, var(--color-tenant-primary) 80%, transparent), transparent);"></div>
             </div>
         </template>
 
         <!-- Fallback if no images -->
         <div class="absolute inset-0" x-show="images.length === 0">
              <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" alt="School Campus" class="w-full h-full object-cover opacity-40">
-             <div class="absolute inset-0 bg-gradient-to-r from-dark-green via-dark-green/80 to-transparent"></div>
+             <div class="absolute inset-0" style="background: linear-gradient(to right, var(--color-tenant-primary), color-mix(in srgb, var(--color-tenant-primary) 80%, transparent), transparent);"></div>
         </div>
 
         <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
@@ -36,11 +36,11 @@
                     {{ \App\Services\FrontendLibrary::get('hero_description', "We don't just teach children; we cultivate thinkers, leaders, and compassionate citizens in a secure, nurturing environment.") }}
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="{{ route('academics') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-bold rounded-md text-dark-green bg-tenant-accent hover:bg-opacity-90 transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    <a href="{{ route('academics') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-bold rounded-md text-tenant-primary bg-tenant-accent hover:bg-opacity-90 transition duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                         {{ \App\Services\FrontendLibrary::get('hero_cta_primary', 'Explore Our Curriculum') }}
                         <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                     </a>
-                    <a href="{{ route('contact') }}" class="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-base font-bold rounded-md text-white hover:bg-white hover:text-dark-green transition duration-300">
+                    <a href="{{ route('contact') }}" class="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-base font-bold rounded-md text-white hover:bg-white hover:text-tenant-primary transition duration-300">
                         {{ \App\Services\FrontendLibrary::get('hero_cta_secondary', 'Book a Tour') }}
                     </a>
                 </div>
@@ -53,20 +53,20 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center md:text-left">
                 <div class="flex items-center justify-center md:justify-start space-x-2">
-                    <svg class="w-6 h-6 text-dark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="font-bold text-dark-green text-sm sm:text-base">{{ \App\Services\FrontendLibrary::get('trust_1', 'Verified Curriculum') }}</span>
+                    <svg class="w-6 h-6 text-tenant-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-bold text-tenant-primary text-sm sm:text-base">{{ \App\Services\FrontendLibrary::get('trust_1', 'Verified Curriculum') }}</span>
                 </div>
                 <div class="flex items-center justify-center md:justify-start space-x-2">
-                    <svg class="w-6 h-6 text-dark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <span class="font-bold text-dark-green text-sm sm:text-base">{{ \App\Services\FrontendLibrary::get('trust_2', 'Experienced Educators') }}</span>
+                    <svg class="w-6 h-6 text-tenant-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <span class="font-bold text-tenant-primary text-sm sm:text-base">{{ \App\Services\FrontendLibrary::get('trust_2', 'Experienced Educators') }}</span>
                 </div>
                 <div class="flex items-center justify-center md:justify-start space-x-2">
-                    <svg class="w-6 h-6 text-dark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                    <span class="font-bold text-dark-green text-sm sm:text-base">{{ \App\Services\FrontendLibrary::get('trust_3', 'Secure Campus') }}</span>
+                    <svg class="w-6 h-6 text-tenant-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    <span class="font-bold text-tenant-primary text-sm sm:text-base">{{ \App\Services\FrontendLibrary::get('trust_3', 'Secure Campus') }}</span>
                 </div>
                 <div class="flex items-center justify-center md:justify-start space-x-2">
-                    <svg class="w-6 h-6 text-dark-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                    <span class="font-bold text-dark-green text-sm sm:text-base">{{ \App\Services\FrontendLibrary::get('trust_4', 'Proven Results') }}</span>
+                    <svg class="w-6 h-6 text-tenant-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    <span class="font-bold text-tenant-primary text-sm sm:text-base">{{ \App\Services\FrontendLibrary::get('trust_4', 'Proven Results') }}</span>
                 </div>
             </div>
         </div>
@@ -83,7 +83,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Card 1 -->
                 <div class="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border-b-4 border-tenant-accent">
-                    <div class="w-14 h-14 bg-tenant-accent/20 rounded-full flex items-center justify-center mb-6 text-dark-green">
+                    <div class="w-14 h-14 bg-tenant-accent/20 rounded-full flex items-center justify-center mb-6 text-tenant-primary">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">{{ \App\Services\FrontendLibrary::get('bento_1_title', 'Academic Excellence') }}</h3>
@@ -118,7 +118,7 @@
     </div>
 
     <!-- Stats Section -->
-    <div class="bg-dark-green py-16">
+    <div class="bg-tenant-primary py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                 <div>
@@ -149,7 +149,7 @@
                     <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">{{ \App\Services\FrontendLibrary::get('news_heading', 'More Than a Classroom') }}</h2>
                     <p class="text-xl text-gray-600">{{ \App\Services\FrontendLibrary::get('news_subheading', 'A Place Your Child Can Thrive.') }}</p>
                 </div>
-                <a href="{{ route('news') }}" class="hidden md:inline-flex items-center font-bold text-dark-green hover:text-tenant-accent transition">
+                <a href="{{ route('news') }}" class="hidden md:inline-flex items-center font-bold text-tenant-primary hover:text-tenant-accent transition">
                     View All News <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                 </a>
             </div>
@@ -159,19 +159,19 @@
                     <div class="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 border border-gray-100">
                         <div class="relative h-48 overflow-hidden">
                             <img src="{{ Str::startsWith($post->image, 'http') ? $post->image : Storage::url($post->image) }}" alt="{{ $post->title }}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-500">
-                            <div class="absolute top-4 left-4 bg-tenant-accent text-dark-green text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                            <div class="absolute top-4 left-4 bg-tenant-accent text-tenant-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                                 News
                             </div>
                         </div>
                         <div class="p-6">
                             <div class="text-sm text-gray-500 mb-2">{{ $post->published_at->format('M d, Y') }}</div>
-                            <h3 class="text-xl font-bold text-gray-900 mb-3 group-hover:text-dark-green transition">
+                            <h3 class="text-xl font-bold text-gray-900 mb-3 group-hover:text-tenant-primary transition">
                                 <a href="{{ route('post', $post) }}">{{ $post->title }}</a>
                             </h3>
                             <p class="text-gray-600 line-clamp-3 mb-4">
                                 {{ Str::limit(strip_tags($post->body), 100) }}
                             </p>
-                            <a href="{{ route('post', $post) }}" class="inline-flex items-center text-dark-green font-semibold hover:text-tenant-accent transition">
+                            <a href="{{ route('post', $post) }}" class="inline-flex items-center text-tenant-primary font-semibold hover:text-tenant-accent transition">
                                 Read More <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             </a>
                         </div>
@@ -184,7 +184,7 @@
             </div>
 
             <div class="mt-8 text-center md:hidden">
-                <a href="{{ route('news') }}" class="inline-flex items-center font-bold text-dark-green hover:text-tenant-accent transition">
+                <a href="{{ route('news') }}" class="inline-flex items-center font-bold text-tenant-primary hover:text-tenant-accent transition">
                     View All News <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                 </a>
             </div>
@@ -209,7 +209,7 @@
                             <img src="{{ Str::startsWith($staff->image, 'http') ? $staff->image : Storage::url($staff->image) }}" alt="{{ $staff->name }}" class="w-full h-full object-cover">
                         </div>
                         <h3 class="text-xl font-bold text-gray-900">{{ $staff->name }}</h3>
-                        <p class="text-dark-green font-medium mb-4">{{ $staff->role }}</p>
+                        <p class="text-tenant-primary font-medium mb-4">{{ $staff->role }}</p>
                         <p class="text-gray-600 text-sm leading-relaxed">
                             {{ Str::limit($staff->bio, 120) }}
                         </p>
@@ -224,16 +224,16 @@
     </div>
 
     <!-- Final CTA Strip -->
-    <div class="bg-dark-green py-16">
+    <div class="bg-tenant-primary py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-3xl md:text-4xl font-extrabold text-white mb-8">
                 {{ \App\Services\FrontendLibrary::get('cta_heading', 'Ready for the WKFS Foundation?') }}
             </h2>
             <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <a href="{{ route('admissions') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-md text-dark-green bg-tenant-accent hover:bg-opacity-90 transition duration-300 shadow-lg">
+                <a href="{{ route('admissions') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-md text-tenant-primary bg-tenant-accent hover:bg-opacity-90 transition duration-300 shadow-lg">
                     {{ \App\Services\FrontendLibrary::get('cta_enrol', 'Enrol Now') }}
                 </a>
-                <a href="{{ route('contact') }}" class="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-lg font-bold rounded-md text-white hover:bg-white hover:text-dark-green transition duration-300">
+                <a href="{{ route('contact') }}" class="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-lg font-bold rounded-md text-white hover:bg-white hover:text-tenant-primary transition duration-300">
                     {{ \App\Services\FrontendLibrary::get('cta_tour', 'Book a Tour') }}
                 </a>
                 <a href="https://wa.me/{{ str_replace(['+', ' '], '', \App\Models\Setting::where('key', 'school_phone')->value('value') ?? '') }}" target="_blank" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-md text-white bg-green-600 hover:bg-green-700 transition duration-300">
