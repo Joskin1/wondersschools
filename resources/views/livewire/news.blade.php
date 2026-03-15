@@ -1,9 +1,10 @@
 <div>
     <!-- Header -->
-    <div class="bg-tenant-primary py-24">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl font-extrabold text-white sm:text-5xl lg:text-6xl">News & Events</h1>
-            <p class="mt-4 text-xl text-tenant-accent">Stay updated with the latest happenings at WKFS.</p>
+    <div class="relative overflow-hidden py-20" style="background: linear-gradient(135deg, color-mix(in srgb, var(--color-tenant-primary) 8%, white), color-mix(in srgb, var(--color-tenant-primary) 3%, white));">
+        <div class="absolute top-0 right-0 w-64 h-64 rounded-full opacity-[0.06] -translate-y-1/3 translate-x-1/4" style="background: var(--color-tenant-primary);"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
+            <h1 class="text-4xl font-extrabold text-gray-900 sm:text-5xl lg:text-6xl">News & Events</h1>
+            <p class="mt-4 text-xl font-medium text-tenant-primary">Stay updated with the latest happenings.</p>
         </div>
     </div>
 
