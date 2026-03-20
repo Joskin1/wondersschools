@@ -59,16 +59,18 @@ if [ -z "${APP_KEY:-}" ]; then
     php artisan key:generate --force --no-interaction
 fi
 
-log "Refreshing Laravel caches before boot"
-php artisan optimize:clear
 php artisan package:discover --ansi
-
 php artisan storage:link --force >/dev/null 2>&1 || true
 
+# Run migrations FIRST — cache/session tables live in SQLite
 if [ "${SKIP_MIGRATIONS:-false}" != "true" ]; then
     log "Running database migrations"
     php artisan migrate --force --no-interaction
 fi
+
+# Now safe to clear and rebuild caches (tables exist after migrate)
+log "Refreshing Laravel caches"
+php artisan optimize:clear || true
 
 if [ "${SKIP_OPTIMIZE:-false}" != "true" ]; then
     log "Caching Laravel configuration"
