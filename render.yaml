@@ -41,3 +41,5 @@ services:
         value: sync
       - key: FILESYSTEM_DISK
         value: local
+      - key: SEED_ON_DEPLOY
+        value: "true"

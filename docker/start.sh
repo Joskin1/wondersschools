@@ -68,6 +68,17 @@ if [ "${SKIP_MIGRATIONS:-false}" != "true" ]; then
     php artisan migrate --force --no-interaction
 fi
 
+# Auto-seed on first deploy (only if DB is empty and SEED_ON_DEPLOY is set)
+if [ "${SEED_ON_DEPLOY:-false}" = "true" ]; then
+    USER_COUNT=$(php artisan tinker --execute="echo \App\Models\User::count();" 2>/dev/null || echo "0")
+    if [ "${USER_COUNT}" = "0" ]; then
+        log "Empty database detected — running seeders"
+        php artisan db:seed --force --no-interaction
+    else
+        log "Database already has data — skipping seeders"
+    fi
+fi
+
 # Now safe to clear and rebuild caches (tables exist after migrate)
 log "Refreshing Laravel caches"
 php artisan optimize:clear || true
