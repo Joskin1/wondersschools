@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dependencies (installed during build)
+node_modules
+vendor
+
+# IDE & Editor
+.idea
+.vscode
+.fleet
+.nova
+.zed
+.phpactor.json
+
+# Environment (set via Docker env vars)
+.env
+.env.backup
+.env.production
+.env.docker
+
+# DDEV (local development only)
+.ddev
+
+# Documentation
+*.md
+!README.md
+
+# Tests
+tests
+phpunit.xml
+.phpunit.cache
+.phpunit.result.cache
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts (rebuilt in Docker)
+public/build
+public/hot
+public/storage
+
+# Storage keys
+storage/*.key
+
+# Claude config
+.claude

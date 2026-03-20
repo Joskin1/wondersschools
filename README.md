@@ -1,59 +1,89 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Wonders
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel 12 + Filament application with a Dockerized local test stack and a Render deployment blueprint.
 
-## About Laravel
+## Local Docker setup
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+This repo now supports a two-container local stack:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- `app`: Laravel + PHP-FPM + Nginx
+- `db`: MySQL 8.4 for local testing only
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Start everything:
 
-## Learning Laravel
+```bash
+docker compose up --build -d
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Open the app at `http://localhost:8080`.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Local MySQL is exposed on `127.0.0.1:33060` with:
 
-## Laravel Sponsors
+- database: `school_saas`
+- user: `laravel`
+- password: `secret`
+- root password: `root`
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Useful commands:
 
-### Premium Partners
+```bash
+docker compose logs -f app
+docker compose exec app php artisan migrate:status
+docker compose down
+docker compose down -v
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Notes:
 
-## Contributing
+- The app container runs migrations automatically on startup.
+- An `APP_KEY` is generated automatically for local Docker if one is not provided.
+- `docker compose down -v` deletes the MySQL test data volume.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Render deployment
 
-## Code of Conduct
+As of March 19, 2026, Render's free tier supports free web services and free Postgres databases. MySQL on Render requires running your own database service with a persistent disk, which is not the free path.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+This repo's `render.yaml` is therefore set up for:
 
-## Security Vulnerabilities
+- free Render web service
+- free Render Postgres database
+- Docker-based deploy using this repository's `Dockerfile`
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Deploy steps
 
-## License
+1. Push this repo to GitHub or GitLab.
+2. In Render, create a new Blueprint and point it at the repo.
+3. When prompted for `APP_KEY`, generate one locally:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan key:generate --show
+```
+
+4. Complete the Blueprint creation and deploy.
+
+The app container is already configured to:
+
+- listen on Render's dynamic `PORT`
+- use `RENDER_EXTERNAL_URL` automatically when `APP_URL` is not set
+- fail fast if `APP_KEY` is missing in Render
+
+### Render environment model
+
+The free Render blueprint uses:
+
+- `DB_CONNECTION=pgsql`
+- `DATABASE_URL` from the managed Render Postgres instance
+- `SESSION_DRIVER=database`
+- `CACHE_STORE=database`
+- `QUEUE_CONNECTION=sync`
+
+If you later upgrade to a paid Render setup and want MySQL there too, run MySQL as a separate Docker/private service with a persistent disk. Keep local Docker MySQL for testing either way.
+
+## Files added for deployment
+
+- `Dockerfile`
+- `docker-compose.yml`
+- `docker/start.sh`
+- `docker/nginx/default.conf.template`
+- `render.yaml`
+
