@@ -15,11 +15,12 @@ return [
      * The "central" domains — requests to these domains are handled by the
      * central application (sudo panel). Tenant routes are not registered here.
      */
-    'central_domains' => [
+    'central_domains' => array_filter([
         env('SUDO_DOMAIN', 'wonders.test'),
+        env('CLOUD_DOMAIN'),  // e.g. your-app.laravel.cloud
         '127.0.0.1',
         'localhost',
-    ],
+    ]),
 
     /**
      * Tenancy bootstrappers run on TenancyInitialized event (in order).
