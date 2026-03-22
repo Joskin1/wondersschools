@@ -37,3 +37,4 @@ SESSION.md
 STUDENT.md
 LESSON_NOTE.md
 .env.docker
+.env.cloud

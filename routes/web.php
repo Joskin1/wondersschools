@@ -12,6 +12,9 @@ use App\Livewire\RegisterStudent;
 use App\Http\Controllers\TeacherRegistrationController;
 use Illuminate\Support\Facades\Route;
 
+// Health check — no DB, no session, useful for Laravel Cloud health probes
+Route::get('/health', fn () => response()->json(['status' => 'ok', 'timestamp' => now()->toIso8601String()]));
+
 Route::get('/', Home::class)->name('home');
 Route::get('/about-us', About::class)->name('about');
 Route::get('/academics', Academics::class)->name('academics');
