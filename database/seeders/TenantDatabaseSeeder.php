@@ -183,7 +183,10 @@ class TenantDatabaseSeeder extends Seeder
         foreach ($featured as $attrs) {
             GalleryImage::firstOrCreate(
                 ['caption' => $attrs['caption']],
-                ['category' => $attrs['category']]
+                [
+                    'category' => $attrs['category'],
+                    'image'    => 'https://placehold.co/600x400',
+                ]
             );
         }
 
