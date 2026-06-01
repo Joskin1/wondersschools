@@ -91,6 +91,23 @@ class AcademicSessionResource extends Resource
                     ->falseLabel('Inactive only'),
             ])
             ->actions([
+                \Filament\Actions\Action::make('activate')
+                    ->label('Set Active')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Set Active Academic Session')
+                    ->modalDescription(fn (Session $record) => "Are you sure you want to set the session \"{$record->name}\" as the active academic session? All other sessions will be deactivated.")
+                    ->action(function (Session $record) {
+                        $record->activate();
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->success()
+                            ->title('Academic Session Activated')
+                            ->body("Academic session \"{$record->name}\" is now active.")
+                            ->send();
+                    })
+                    ->visible(fn (Session $record) => ! $record->is_active),
                 ViewAction::make(),
                 EditAction::make(),
             ])

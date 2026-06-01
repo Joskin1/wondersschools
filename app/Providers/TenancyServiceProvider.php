@@ -52,6 +52,26 @@ class TenancyServiceProvider extends ServiceProvider
         Event::listen(TenancyInitialized::class, BootstrapTenancy::class);
         Event::listen(TenancyEnded::class, RevertToCentralContext::class);
 
+        // Self-heal: ensure dynamic tenant storage/framework directories exist
+        Event::listen(TenancyInitialized::class, function (TenancyInitialized $event) {
+            $storagePath = storage_path();
+            
+            $dirs = [
+                $storagePath . '/framework/cache',
+                $storagePath . '/framework/sessions',
+                $storagePath . '/framework/views',
+                $storagePath . '/app/public',
+                $storagePath . '/app/private',
+                $storagePath . '/app/livewire-tmp',
+            ];
+
+            foreach ($dirs as $dir) {
+                if (! is_dir($dir)) {
+                    @mkdir($dir, 0775, true);
+                }
+            }
+        });
+
         // When a new school (tenant) is created via the Sudo panel:
         // Dispatch the single orchestrator job that handles the full pipeline:
         // create DB → migrate → seed → validate → activate → warm cache.

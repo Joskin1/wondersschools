@@ -102,6 +102,27 @@ class TermResource extends Resource
                     ->falseLabel('Inactive only'),
             ])
             ->actions([
+                \Filament\Actions\Action::make('activate')
+                    ->label('Activate')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Activate Term')
+                    ->modalDescription(fn (Term $record) => "Are you sure you want to activate \"{$record->name}\" for the session \"{$record->session->name}\"? All other terms will be deactivated, and this term's session will become the active session.")
+                    ->action(function (Term $record) {
+                        \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
+                            \App\Models\Term::query()->update(['is_active' => false]);
+                            $record->update(['is_active' => true]);
+                            $record->session->activate();
+                        });
+
+                        \Filament\Notifications\Notification::make()
+                            ->success()
+                            ->title('Term Activated')
+                            ->body("\"{$record->name}\" ({$record->session->name}) is now the active term.")
+                            ->send();
+                    })
+                    ->visible(fn (Term $record) => ! $record->is_active),
                 ViewAction::make(),
                 
                 Action::make('migrate')
