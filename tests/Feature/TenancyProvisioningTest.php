@@ -3,60 +3,72 @@
 /**
  * TenancyProvisioningTest
  *
- * Covers the core tenancy infrastructure introduced in the tenant3 branch:
+ * Covers the core tenancy infrastructure and Phase 2 enhancements:
  *
- *  1. Tenant model JSON data persistence (name / primary_color in data column)
- *  2. TenantCreated event → CreateDatabase → MigrateDatabase → SeedDatabase pipeline
+ *  1. Tenant model physical database columns (name, primary_color, status, last_provisioned_at)
+ *  2. TenantCreated event → ProvisionTenantJob single orchestrator pipeline
  *  3. TenantAdminAssignment stored on the landlord connection
- *  4. User email_verified_at mass-assignable (fixes GuardedProperty regression)
+ *  4. User email_verified_at mass-assignable
  *  5. ConfigBootstrapper per-tenant config injection + graceful fallbacks + revert
  *  6. TenantAdminCreated mailable structure
  *
  * Tests run against in-memory SQLite (default + landlord connections) via phpunit.xml.
- * Bus::fake() is used in every test that creates a Tenant so that CreateDatabase /
- * MigrateDatabase / SeedDatabase do not actually try to create a MySQL tenant database.
+ * Bus::fake() is used in every test that creates a Tenant so that the real provisioning job
+ * does not actually try to create a MySQL tenant database.
  */
 
-use App\Jobs\Tenancy\CreateDatabase;
-use App\Jobs\Tenancy\MigrateDatabase;
-use App\Jobs\Tenancy\SeedDatabase;
+use App\Jobs\Tenancy\ProvisionTenantJob;
 use App\Mail\TenantAdminCreated;
 use App\Models\Tenant;
 use App\Models\TenantAdminAssignment;
 use App\Models\User;
+use App\Enums\TenantStatus;
 use App\Tenancy\ConfigBootstrapper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. Tenant model — JSON data column persistence
+// 1. Tenant model — Physical columns and state machine
 // ─────────────────────────────────────────────────────────────────────────────
 
-it('stores tenant name and primary_color in the data JSON column, not real DB columns', function () {
+it('stores tenant name and primary_color in physical columns, not data JSON column', function () {
     Bus::fake();
 
     Tenant::create([
-        'id'            => 'json-school',
-        'name'          => 'JSON School',
+        'id'            => 'real-school',
+        'name'          => 'Real School',
         'primary_color' => '#e11d48',
     ]);
 
-    $fresh = Tenant::on('landlord')->find('json-school');
+    $fresh = Tenant::on('landlord')->find('real-school');
 
-    expect($fresh->name)->toBe('JSON School')
+    expect($fresh->name)->toBe('Real School')
         ->and($fresh->primary_color)->toBe('#e11d48');
 
-    // The raw row should have a data JSON column — not physical name/primary_color columns.
-    $row  = DB::connection('landlord')->table('tenants')->where('id', 'json-school')->first();
-    $data = json_decode($row->data ?? '{}', true);
+    // The raw row should have physical columns — not only the data JSON column.
+    $row = DB::connection('landlord')->table('tenants')->where('id', 'real-school')->first();
 
-    expect($data['name'])->toBe('JSON School')
-        ->and($data['primary_color'])->toBe('#e11d48')
-        ->and(property_exists($row, 'name'))->toBeFalse();
+    expect(property_exists($row, 'name'))->toBeTrue()
+        ->and(property_exists($row, 'primary_color'))->toBeTrue()
+        ->and($row->name)->toBe('Real School')
+        ->and($row->primary_color)->toBe('#e11d48');
+});
+
+it('initializes a tenant with a pending status and nullable last_provisioned_at', function () {
+    Bus::fake();
+
+    $tenant = Tenant::create([
+        'id'   => 'pending-school',
+        'name' => 'Pending School',
+    ]);
+
+    expect($tenant->status)->toBe(TenantStatus::Pending)
+        ->and($tenant->last_provisioned_at)->toBeNull();
 });
 
 it('returns null for primary_color when it was not set on the tenant', function () {
@@ -68,25 +80,23 @@ it('returns null for primary_color when it was not set on the tenant', function 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. TenantCreated event → job pipeline
+// 2. TenantCreated event → ProvisionTenantJob single orchestrator pipeline
 // ─────────────────────────────────────────────────────────────────────────────
 
-it('dispatches CreateDatabase, MigrateDatabase, and SeedDatabase when a tenant is created', function () {
+it('dispatches ProvisionTenantJob when a tenant is created', function () {
     Bus::fake();
 
     Tenant::create(['id' => 'pipeline-school', 'name' => 'Pipeline School']);
 
-    Bus::assertDispatched(CreateDatabase::class,  fn ($j) => $j->tenant->id === 'pipeline-school');
-    Bus::assertDispatched(MigrateDatabase::class, fn ($j) => $j->tenant->id === 'pipeline-school');
-    Bus::assertDispatched(SeedDatabase::class,    fn ($j) => $j->tenant->id === 'pipeline-school');
+    Bus::assertDispatched(ProvisionTenantJob::class, fn ($j) => $j->tenant->id === 'pipeline-school');
 });
 
-it('dispatches exactly one set of provisioning jobs per tenant', function () {
+it('dispatches exactly one ProvisionTenantJob per tenant', function () {
     Bus::fake();
 
     Tenant::create(['id' => 'one-school', 'name' => 'One School']);
 
-    // Creating an assignment record must not trigger a second round of DB jobs.
+    // Creating an assignment record must not trigger a second round of jobs.
     TenantAdminAssignment::create([
         'tenant_id' => 'one-school',
         'name'      => 'Admin',
@@ -94,9 +104,7 @@ it('dispatches exactly one set of provisioning jobs per tenant', function () {
         'role'      => 'admin',
     ]);
 
-    Bus::assertDispatchedTimes(CreateDatabase::class, 1);
-    Bus::assertDispatchedTimes(MigrateDatabase::class, 1);
-    Bus::assertDispatchedTimes(SeedDatabase::class, 1);
+    Bus::assertDispatchedTimes(ProvisionTenantJob::class, 1);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -172,7 +180,6 @@ it('allows email_verified_at to be mass-assigned on User', function () {
 });
 
 it('updateOrCreate with email_verified_at does not throw MassAssignmentException', function () {
-    // Mirrors exactly what ManageTenantAdmins::provisionAdmin() does inside the tenant DB.
     expect(fn () => User::updateOrCreate(
         ['email' => 'upsert@test.test'],
         [
@@ -252,7 +259,6 @@ it('ConfigBootstrapper does not set app.url when the tenant has no domain', func
 
     (new ConfigBootstrapper())->bootstrap($tenant->fresh(['domains']));
 
-    // No domain configured → app.url should remain unchanged
     expect(config('app.url'))->toBe($originalUrl);
 });
 
@@ -312,8 +318,6 @@ it('sends TenantAdminCreated to the correct recipient', function () {
 it('does not send TenantAdminCreated when no login URL is available', function () {
     Mail::fake();
 
-    // provisionAdmin() only sends the mail when a domain/loginUrl is present.
-    // When loginUrl is null the mail is never dispatched.
     $loginUrl = null;
 
     if ($loginUrl) {
@@ -323,3 +327,50 @@ it('does not send TenantAdminCreated when no login URL is available', function (
 
     Mail::assertNothingSent();
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. Orchestrator Job Failure & Connection Cleanup Tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+it('updates tenant status to failed and logs when the provisioning job encounters an exception', function () {
+    $tenant = Tenant::create(['id' => 'fail-school', 'name' => 'Failing School']);
+
+    $healthCheckMock = mock(App\Services\TenantHealthCheckService::class);
+    $healthCheckMock->shouldReceive('verifyProvisioning')->andThrow(new \RuntimeException('Mocked provisioning validation failure'));
+
+    $brandingMock = mock(App\Services\TenantBrandingService::class);
+
+    $job = new ProvisionTenantJob($tenant);
+
+    try {
+        $job->handle($healthCheckMock, $brandingMock);
+    } catch (\Throwable $e) {
+        expect($e->getMessage())->toBe('Mocked provisioning validation failure');
+    }
+
+    $tenant->refresh();
+    expect($tenant->status)->toBe(TenantStatus::Failed);
+
+    $log = \App\Models\TenantProvisionLog::where('tenant_id', 'fail-school')
+        ->where('event_type', 'provisioning')
+        ->where('status', 'failed')
+        ->first();
+
+    expect($log)->not->toBeNull()
+        ->and($log->message)->toContain('Mocked provisioning validation failure');
+});
+
+it('cleans up tenancy context and reverts to landlord on job failure', function () {
+    $tenant = Tenant::create(['id' => 'cleanup-school', 'name' => 'Cleanup School']);
+
+    // Initialize mock active tenancy context
+    tenancy()->initialize($tenant);
+    expect(tenancy()->initialized)->toBeTrue();
+
+    $job = new ProvisionTenantJob($tenant);
+    $job->failed(new \RuntimeException('Force context clean'));
+
+    // Verify tenancy was cleanly ended, reverting connection state
+    expect(tenancy()->initialized)->toBeFalse();
+});
+

@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers\Filament;
 
+use App\Services\TenantBrandingService;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -10,7 +13,6 @@ use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -26,17 +28,19 @@ class AdminadminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        $branding = app(TenantBrandingService::class)->resolve(request()?->getHost() ?? '');
+
         return $panel
             ->default()
             ->id('admin')
             ->path('admin')
-            ->brandName(fn () => $this->resolveTenantName())
+            ->brandName(fn () => $branding['name'])
             ->login()
             ->passwordReset()
             ->profile()
             ->databaseNotifications()
             ->colors([
-                'primary' => $this->resolvePrimaryColor(),
+                'primary' => $branding['color'],
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
@@ -71,56 +75,5 @@ class AdminadminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
-    }
-
-    /**
-     * Resolve the tenant's display name from the landlord DB using the
-     * request host — runs before tenancy middleware initialises.
-     */
-    private function resolveTenantName(): string
-    {
-        try {
-            $host = request()?->getHost();
-            if (! $host) {
-                return config('app.name');
-            }
-
-            $domain = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
-                ->where('domain', $host)
-                ->with('tenant')
-                ->first();
-
-            return $domain?->tenant?->name ?? config('app.name');
-        } catch (\Throwable) {
-            return config('app.name');
-        }
-    }
-
-    /**
-     * TIMS-pattern: resolve the tenant's brand color from the landlord DB
-     * using the request host — before tenancy is initialized.
-     *
-     * Queries only the landlord DB (no tenant DB switch needed).
-     * Falls back to Amber if no tenant or no color is set.
-     */
-    private function resolvePrimaryColor(): array|string
-    {
-        try {
-            $host = request()?->getHost();
-            if (! $host) {
-                return Color::Amber;
-            }
-
-            $domain = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
-                ->where('domain', $host)
-                ->with('tenant')
-                ->first();
-
-            $hex = $domain?->tenant?->primary_color;
-
-            return $hex ? Color::hex($hex) : Color::Amber;
-        } catch (\Throwable) {
-            return Color::Amber;
-        }
     }
 }

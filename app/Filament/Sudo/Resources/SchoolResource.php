@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Sudo\Resources;
 
+use App\Enums\TenantStatus;
 use App\Filament\Sudo\Resources\SchoolResource\Pages\ManageSchools;
 use App\Models\Tenant;
 use Filament\Forms\Components\ColorPicker;
@@ -13,7 +16,6 @@ use Filament\Schemas\Schema;
 use Filament\Actions;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 
 class SchoolResource extends Resource
@@ -36,22 +38,27 @@ class SchoolResource extends Resource
                         ->required()
                         ->maxLength(100)
                         ->alphaDash()
+                        ->regex('/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/')
                         ->unique(table: 'tenants', column: 'id', ignoreRecord: true)
-                        ->rules([Rule::notIn(['sudo', 'admin', 'teacher', 'api', 'livewire'])])
-                        ->validationMessages(['not_in' => 'This slug is reserved and cannot be used.'])
+                        ->rules([Rule::notIn(['sudo', 'admin', 'teacher', 'student', 'api', 'livewire', 'localhost'])])
+                        ->validationMessages([
+                            'not_in' => 'This slug is reserved and cannot be used.',
+                            'regex'  => 'Slug must contain only lowercase letters, numbers, and hyphens. Must start and end with a letter or number.',
+                        ])
                         ->disabledOn('edit'),
 
                     TextInput::make('name')
                         ->label('School Name')
                         ->required()
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->live(onBlur: true),
                 ]),
 
             Section::make('Branding')
                 ->schema([
                     ColorPicker::make('primary_color')
                         ->label('Primary Brand Color')
-                        ->helperText('Applied to admin and teacher Filament panels.')
+                        ->helperText('Applied to admin, teacher, and student Filament panels. Hex value stored (e.g. #f59e0b).')
                         ->nullable(),
                 ]),
 
@@ -65,7 +72,18 @@ class SchoolResource extends Resource
                                 ->helperText('e.g. royal-academy.wonders.test or royalacademy.edu.ng')
                                 ->required()
                                 ->maxLength(255)
-                                ->unique(table: 'domains', column: 'domain', ignoreRecord: true),
+                                ->regex('/^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/')
+                                ->unique(table: 'domains', column: 'domain', ignoreRecord: true)
+                                ->rules([Rule::notIn([
+                                    'localhost',
+                                    '127.0.0.1',
+                                    '0.0.0.0',
+                                    ...array_filter(explode(',', config('tenancy.central_domains', env('CENTRAL_DOMAINS', '')))),
+                                ])])
+                                ->validationMessages([
+                                    'not_in' => 'This domain is reserved and cannot be used.',
+                                    'regex'  => 'Must be a valid hostname (e.g. school.example.com).',
+                                ]),
                         ])
                         ->addActionLabel('Add Domain')
                         ->minItems(1)
@@ -85,13 +103,15 @@ class SchoolResource extends Resource
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('School Name')
-                    ->sortable(query: function (Builder $query, string $direction): Builder {
-                        $direction = in_array(strtolower($direction), ['asc', 'desc']) ? $direction : 'asc';
-                        return $query->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(`data`, '$.name')) {$direction}");
-                    })
-                    ->searchable(query: fn (Builder $query, string $search): Builder =>
-                        $query->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(`data`, '$.name')) LIKE ?", ["%{$search}%"])
-                    ),
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->formatStateUsing(fn (TenantStatus $state): string => $state->label())
+                    ->color(fn (TenantStatus $state): string => $state->color())
+                    ->sortable(),
 
                 Tables\Columns\ColorColumn::make('primary_color')
                     ->label('Color'),
@@ -100,6 +120,12 @@ class SchoolResource extends Resource
                     ->label('Domains')
                     ->badge()
                     ->separator(','),
+
+                Tables\Columns\TextColumn::make('last_provisioned_at')
+                    ->label('Provisioned At')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

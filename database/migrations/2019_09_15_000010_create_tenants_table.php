@@ -14,6 +14,8 @@ class CreateTenantsTable extends Migration
     {
         Schema::connection('landlord')->create('tenants', function (Blueprint $table) {
             $table->string('id')->primary();
+            $table->string('name')->index();
+            $table->string('primary_color', 7)->nullable()->index();
             $table->json('data')->nullable();
             $table->timestamps();
         });
