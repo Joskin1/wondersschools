@@ -46,3 +46,4 @@ Route::get('/student/result-pdf', [\App\Http\Controllers\ResultPdfController::cl
     ->middleware('auth')
     ->name('student.result-pdf');
 
+

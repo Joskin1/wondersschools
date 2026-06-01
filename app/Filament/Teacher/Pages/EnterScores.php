@@ -15,11 +15,11 @@ use App\Models\SubjectResult;
 use App\Models\TeacherSubjectAssignment;
 use App\Models\Term;
 use App\Models\TermResult;
+use App\Services\ResultCalculationService;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class EnterScores extends Page
 {
@@ -42,7 +42,7 @@ class EnterScores extends Page
 
     // ── Loaded state ──────────────────────────────────────────────────────────
 
-    /** @var array<int, array{id: int, full_name: string}> */
+    /** @var array<int, array{id: int, full_name: string, admission_number: string}> */
     public array $students   = [];
 
     /** @var array<int, array{id: int, name: string, effective_max: int}> */
@@ -141,7 +141,7 @@ class EnterScores extends Page
             ])
             ->toArray();
 
-        // ── Load enrolled students ────────────────────────────────────────────
+        // ── Load enrolled students with dynamic properties ────────────────────
         $enrolledIds = StudentEnrollment::where('classroom_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
             ->pluck('student_id');
@@ -150,7 +150,11 @@ class EnterScores extends Page
             ->active()
             ->orderBy('full_name')
             ->get()
-            ->map(fn ($s) => ['id' => $s->id, 'full_name' => $s->full_name])
+            ->map(fn ($s) => [
+                'id' => $s->id, 
+                'full_name' => $s->full_name,
+                'admission_number' => $s->admission_number ?? '—',
+            ])
             ->toArray();
 
         // ── Load existing scores into map ─────────────────────────────────────
@@ -178,16 +182,18 @@ class EnterScores extends Page
         $this->loaded = true;
     }
 
-    public function saveScores(): void
+    /**
+     * Context-aware spreadsheet real-time autosave
+     */
+    public function saveScore(int $studentId, int $scoreHeadId, $value): array
     {
         $user = Auth::user();
 
+        // ── Server-side guards ───────────────────────────────────────────────
         if (! $this->session_id || ! $this->term_id || ! $this->classroom_id || ! $this->subject_id) {
-            Notification::make()->title('Please select all filters before saving.')->warning()->send();
-            return;
+            return ['status' => 'error', 'message' => 'Missing session parameters.'];
         }
 
-        // ── Guard: block edits if term results are finalized (PRD §8) ────────
         $isFinalized = TermResult::where('classroom_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
             ->where('term_id', $this->term_id)
@@ -195,79 +201,62 @@ class EnterScores extends Page
             ->exists();
 
         if ($isFinalized) {
-            Notification::make()
-                ->title('Results for this term have been finalized. Scores cannot be edited.')
-                ->danger()
-                ->send();
-            return;
+            return ['status' => 'error', 'message' => 'Term results are finalized.'];
         }
 
-        // ── Server-side re-authorization (never trust frontend state) ─────────
         if (! $this->canEnterScoresFor($user, $this->subject_id, $this->classroom_id, $this->session_id, $this->term_id)) {
-            Notification::make()->title('Unauthorised: you cannot enter scores for this subject/class.')->danger()->send();
-            return;
+            return ['status' => 'error', 'message' => 'Unauthorized action.'];
         }
 
-        $validScoreHeadIds = collect($this->scoreHeads)->pluck('id')->toArray();
+        $sh = collect($this->scoreHeads)->firstWhere('id', $scoreHeadId);
+        if (! $sh) {
+            return ['status' => 'error', 'message' => 'Invalid score head.'];
+        }
 
-        // ── Validate all values ───────────────────────────────────────────────
-        foreach ($this->scores as $studentId => $studentScores) {
-            foreach ($studentScores as $scoreHeadId => $value) {
-                if ($value === '' || $value === null) {
-                    continue;
-                }
-
-                // Score head must belong to the class structure
-                if (! in_array($scoreHeadId, $validScoreHeadIds, true)) {
-                    throw ValidationException::withMessages(['scores' => 'Invalid score head submitted.']);
-                }
-
-                $sh = collect($this->scoreHeads)->firstWhere('id', $scoreHeadId);
-                $numericValue = (float) $value;
-
-                if ($numericValue < 0 || $numericValue > $sh['effective_max']) {
-                    throw ValidationException::withMessages([
-                        'scores' => "Score for \"{$sh['name']}\" must be between 0 and {$sh['effective_max']}.",
-                    ]);
-                }
+        if ($value !== '' && $value !== null) {
+            $numericValue = (float) $value;
+            if ($numericValue < 0 || $numericValue > $sh['effective_max']) {
+                return [
+                    'status' => 'error', 
+                    'message' => "exceeds maximum of {$sh['effective_max']}."
+                ];
             }
+        } else {
+            $numericValue = null;
         }
 
-        // ── Persist in a single transaction ──────────────────────────────────
-        DB::transaction(function () use ($user) {
-            foreach ($this->scores as $studentId => $studentScores) {
-                foreach ($studentScores as $scoreHeadId => $value) {
-                    if ($value === '' || $value === null) {
-                        // Remove existing score when cell is cleared
-                        Score::where([
-                            'student_id'    => $studentId,
-                            'subject_id'    => $this->subject_id,
-                            'score_head_id' => $scoreHeadId,
-                            'session_id'    => $this->session_id,
-                            'term_id'       => $this->term_id,
-                        ])->delete();
-                        continue;
-                    }
+        // ── Update local scores array state ──────────────────────────────────
+        $this->scores[$studentId][$scoreHeadId] = $value !== '' ? rtrim(rtrim((string) $value, '0'), '.') : '';
 
-                    Score::updateOrCreate(
-                        [
-                            'student_id'    => $studentId,
-                            'subject_id'    => $this->subject_id,
-                            'score_head_id' => $scoreHeadId,
-                            'session_id'    => $this->session_id,
-                            'term_id'       => $this->term_id,
-                        ],
-                        [
-                            'classroom_id' => $this->classroom_id,
-                            'teacher_id'   => $user->id,
-                            'score'        => (float) $value,
-                        ]
-                    );
-                }
+        // ── Persist to Database ──────────────────────────────────────────────
+        DB::transaction(function () use ($studentId, $scoreHeadId, $numericValue, $user) {
+            if ($numericValue === null) {
+                Score::where([
+                    'student_id'    => $studentId,
+                    'subject_id'    => $this->subject_id,
+                    'score_head_id' => $scoreHeadId,
+                    'session_id'    => $this->session_id,
+                    'term_id'       => $this->term_id,
+                ])->delete();
+            } else {
+                Score::updateOrCreate(
+                    [
+                        'student_id'    => $studentId,
+                        'subject_id'    => $this->subject_id,
+                        'score_head_id' => $scoreHeadId,
+                        'session_id'    => $this->session_id,
+                        'term_id'       => $this->term_id,
+                    ],
+                    [
+                        'classroom_id' => $this->classroom_id,
+                        'teacher_id'   => $user->id,
+                        'score'        => $numericValue,
+                    ]
+                );
             }
         });
 
-        // ── Invalidate stale computed results (PRD §8) ──────────────────────
+        // ── Invalidate computed result caches ────────────────────────────────
         SubjectResult::where('classroom_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
             ->where('term_id', $this->term_id)
@@ -278,7 +267,6 @@ class EnterScores extends Page
             ->where('term_id', $this->term_id)
             ->delete();
 
-        // Re-dispatch calculation if structure is locked
         $structure = ClassScoreStructure::where('class_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
             ->where('term_id', $this->term_id)
@@ -288,10 +276,73 @@ class EnterScores extends Page
             CalculateTermResults::dispatch($this->classroom_id, $this->session_id, $this->term_id);
         }
 
-        Notification::make()->title('Scores saved successfully.')->success()->send();
+        // Recalculate values for this student
+        $studentTotal = collect($this->scoreHeads)->sum(
+            fn($h) => (float) ($this->scores[$studentId][$h['id']] ?? 0)
+        );
+        $hasAny = collect($this->scoreHeads)->contains(
+            fn($h) => ($this->scores[$studentId][$h['id']] ?? '') !== ''
+        );
+
+        $gradeInfo = app(ResultCalculationService::class)->resolveGrade($studentTotal);
+
+        return [
+            'status'        => 'success',
+            'student_total' => $hasAny ? number_format($studentTotal, 1) : '—',
+            'student_grade' => $hasAny ? $gradeInfo['grade'] : '—',
+            'stats'         => $this->stats,
+        ];
     }
 
     // ── Computed properties ───────────────────────────────────────────────────
+
+    public function getStatsProperty(): array
+    {
+        if (! $this->loaded || empty($this->students) || empty($this->scoreHeads)) {
+            return [];
+        }
+
+        $maxTotal = collect($this->scoreHeads)->sum(fn($sh) => $sh['effective_max']);
+        $totalCells = count($this->students) * count($this->scoreHeads);
+        $filledCells = 0;
+        $totals = [];
+
+        foreach ($this->students as $student) {
+            $studentTotal = 0;
+            $hasAny = false;
+            foreach ($this->scoreHeads as $sh) {
+                $val = $this->scores[$student['id']][$sh['id']] ?? '';
+                if ($val !== '') {
+                    $filledCells++;
+                    $studentTotal += (float) $val;
+                    $hasAny = true;
+                }
+            }
+            if ($hasAny) {
+                $totals[] = $studentTotal;
+            }
+        }
+
+        $completionRate = $totalCells > 0 ? round(($filledCells / $totalCells) * 100) : 0;
+        $average = count($totals) > 0 ? round(array_sum($totals) / count($totals), 1) : 0;
+        $highest = count($totals) > 0 ? max($totals) : 0;
+        $lowest = count($totals) > 0 ? min($totals) : 0;
+
+        $passes = collect($totals)->filter(fn($t) => $t >= 40)->count();
+        $fails = count($totals) - $passes;
+        $passPercent = count($totals) > 0 ? round(($passes / count($totals)) * 100) : 0;
+
+        return [
+            'completion_rate' => $completionRate,
+            'average'         => $average,
+            'highest'         => $highest,
+            'lowest'          => $lowest,
+            'max_total'       => $maxTotal,
+            'pass_count'      => $passes,
+            'fail_count'      => $fails,
+            'pass_percent'    => $passPercent,
+        ];
+    }
 
     public function getSessionsProperty()
     {
@@ -336,7 +387,6 @@ class EnterScores extends Page
             return collect();
         }
 
-        // Class teacher → all subjects that have assignments in this class/term
         if (ClassTeacherAssignment::isClassTeacher($user->id, $this->classroom_id, $this->session_id)) {
             $subjectIds = TeacherSubjectAssignment::where('classroom_id', $this->classroom_id)
                 ->where('session_id', $this->session_id)
@@ -347,7 +397,6 @@ class EnterScores extends Page
             return Subject::whereIn('id', $subjectIds)->active()->orderBy('name')->get();
         }
 
-        // Subject teacher → only their assigned subjects for this class
         $subjectIds = TeacherSubjectAssignment::where('teacher_id',  $user->id)
             ->where('classroom_id', $this->classroom_id)
             ->where('session_id',   $this->session_id)

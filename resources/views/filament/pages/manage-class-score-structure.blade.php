@@ -1,164 +1,261 @@
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    slate: {
+                        250: '#e2e8f0',
+                        850: '#1b2330',
+                    }
+                }
+            }
+        }
+    }
+</script>
+
 <x-filament-panels::page>
-    <div class="space-y-5">
+    <div class="space-y-6">
 
-        {{-- ── Step 1: Filter ────────────────────────────────────────────────── --}}
-        <x-filament::section>
-            <x-slot name="heading">
-                <div class="flex items-center gap-2">
-                    <x-heroicon-o-funnel class="h-4 w-4 text-primary-500"/>
-                    Select Class & Term
-                </div>
-            </x-slot>
+        {{-- ── Step 1: Sleek Parameters Filters (Top Deck) ──────────────── --}}
+        <div class="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131b2e] p-6 shadow-sm">
+            <div class="relative flex flex-col gap-5">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
+                            {{-- Funnel / config icon --}}
+                            <svg style="width: 20px; height: 20px; color: #4f46e5;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-black text-slate-900 dark:text-white">Select Class &amp; Term</h2>
+                            <p class="text-xs text-slate-400 dark:text-gray-500">Configure parameters to load the active score head structure.</p>
+                        </div>
+                    </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Academic Session
-                    </label>
-                    <select wire:model.live="session_id"
-                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                        <option value="">— Select Session —</option>
-                        @foreach($this->sessions as $session)
-                            <option value="{{ $session->id }}" @selected($session_id == $session->id)>{{ $session->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Term
-                    </label>
-                    <select wire:model.live="term_id"
-                        @disabled(!$session_id)
-                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-40 disabled:cursor-not-allowed">
-                        <option value="">— Select Term —</option>
-                        @foreach($this->terms as $term)
-                            <option value="{{ $term->id }}" @selected($term_id == $term->id)>{{ $term->name }}</option>
-                        @endforeach
-                    </select>
+                    {{-- Loading status spinner --}}
+                    <div wire:loading wire:target="session_id,term_id,classroom_id" class="flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 font-bold animate-pulse">
+                        <svg class="animate-spin h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                        Loading structure...
+                    </div>
                 </div>
 
-                <div class="space-y-1">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Class
-                    </label>
-                    <select wire:model.live="classroom_id"
-                        @disabled(!$term_id)
-                        class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm shadow-sm transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-40 disabled:cursor-not-allowed">
-                        <option value="">— Select Class —</option>
-                        @foreach($this->classrooms as $classroom)
-                            <option value="{{ $classroom->id }}" @selected($classroom_id == $classroom->id)>{{ $classroom->name }}</option>
-                        @endforeach
-                    </select>
+                {{-- Select Dropdown Row --}}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    {{-- Session --}}
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            Academic Session
+                        </label>
+                        <select
+                            wire:model.live="session_id"
+                            class="w-full rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 px-3.5 py-2.5 text-sm transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                        >
+                            <option value="">— Select Session —</option>
+                            @foreach($this->sessions as $session)
+                                <option value="{{ $session->id }}">{{ $session->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Term --}}
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            Term
+                        </label>
+                        <select
+                            wire:model.live="term_id"
+                            @disabled(! $session_id)
+                            class="w-full rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 px-3.5 py-2.5 text-sm transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 dark:disabled:bg-gray-800/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <option value="">— Select Term —</option>
+                            @foreach($this->terms as $term)
+                                <option value="{{ $term->id }}">{{ $term->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Class --}}
+                    <div class="space-y-1.5">
+                        <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            Classroom
+                        </label>
+                        <select
+                            wire:model.live="classroom_id"
+                            @disabled(! $term_id)
+                            class="w-full rounded-xl border border-slate-250 dark:border-slate-800 bg-white dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 px-3.5 py-2.5 text-sm transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 dark:disabled:bg-gray-800/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <option value="">— Select Class —</option>
+                            @foreach($this->classrooms as $classroom)
+                                <option value="{{ $classroom->id }}">{{ $classroom->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
-        </x-filament::section>
+        </div>
 
         {{-- ── Step 2: Structure (only after class is chosen) ──────────────── --}}
-        @if($classroom_id && $term_id && $session_id)
+        @if($this->hasSelectedFilters)
 
             @php
-                $barColor = $totalScore === 100 ? 'bg-green-500' : ($totalScore > 100 ? 'bg-red-500' : 'bg-primary-500');
+                $barColor = $totalScore === 100 ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]' : ($totalScore > 100 ? 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.3)]' : 'bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.3)]');
                 $barWidth  = min($totalScore, 100);
             @endphp
 
-            <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0b0f19] shadow-sm overflow-hidden transition-all">
 
                 {{-- Card header --}}
-                <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-5 border-b border-slate-100 dark:border-slate-850 bg-slate-50/20 dark:bg-[#131b2e]/30">
                     <div class="flex items-center gap-3">
-                        <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">Score Structure</span>
+                        <span class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Score Structure</span>
 
                         @if($locked)
-                            <span class="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-900/30 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
-                                <x-heroicon-s-lock-closed class="h-3 w-3"/> Locked
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-950/50 px-3 py-1 text-xs font-black text-rose-700 dark:text-rose-450 border border-rose-100 dark:border-rose-900/30">
+                                <svg style="width: 12px; height: 12px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Locked
                             </span>
                         @else
-                            <span class="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-300">
-                                <x-heroicon-s-lock-open class="h-3 w-3"/> Editable
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1 text-xs font-black text-emerald-700 dark:text-emerald-400 border border-emerald-105 dark:border-emerald-900/30">
+                                <svg style="width: 12px; height: 12px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Editable
                             </span>
                         @endif
                     </div>
 
-                    <div class="flex items-baseline gap-1
-                        {{ $totalScore > 100 ? 'text-red-600 dark:text-red-400' : ($totalScore === 100 ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400') }}">
-                        <span class="text-2xl font-bold tabular-nums leading-none">{{ $totalScore }}</span>
-                        <span class="text-sm font-normal">/ 100</span>
+                    <div class="flex items-baseline gap-1 {{ $totalScore > 100 ? 'text-rose-500' : ($totalScore === 100 ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500') }}">
+                        <span class="text-3xl font-black tabular-nums leading-none">{{ $totalScore }}</span>
+                        <span class="text-xs font-bold uppercase tracking-wider">/ 100</span>
                     </div>
                 </div>
 
-                {{-- Progress bar --}}
-                <div class="h-1.5 w-full bg-gray-100 dark:bg-gray-800">
-                    <div class="h-full transition-all duration-300 {{ $barColor }}" style="width: {{ $barWidth }}%"></div>
+                {{-- Premium Progress bar --}}
+                <div class="h-2 w-full bg-slate-100 dark:bg-slate-850">
+                    <div class="h-full transition-all duration-500 ease-out {{ $barColor }}" style="width: {{ $barWidth }}%"></div>
                 </div>
 
-                <div class="p-5 space-y-4">
+                <div class="p-6 space-y-6">
+                    @php $selectedScoreHeadIds = $this->selectedScoreHeadIds; @endphp
+
+                    {{-- Score head assignment list --}}
+                    <div class="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-[#131b2e]/10 p-5 space-y-3.5">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <p class="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550">Assign Score Heads To This Class</p>
+                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500">{{ count($selectedScoreHeadIds) }} selected</span>
+                        </div>
+
+                        @if($this->scoreHeads->isEmpty())
+                            <p class="text-xs font-bold text-slate-400 dark:text-slate-500">
+                                No active score heads have been created yet. Create score heads first under Results → Score Heads.
+                            </p>
+                        @else
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                                @foreach($this->scoreHeads as $scoreHead)
+                                    @php $isSelected = in_array((int) $scoreHead->id, $selectedScoreHeadIds, true); @endphp
+                                    <label
+                                        class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 transition
+                                            {{ $isSelected
+                                                ? 'border-indigo-400 bg-indigo-50 text-slate-900 dark:border-indigo-700 dark:bg-indigo-950/30 dark:text-white'
+                                                : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300 dark:border-slate-800 dark:bg-[#0b0f19] dark:text-slate-200 dark:hover:border-indigo-800' }}
+                                            {{ $locked && ! auth()->user()?->isSudo() ? 'cursor-not-allowed opacity-60' : '' }}"
+                                    >
+                                        <span class="min-w-0">
+                                            <span class="block truncate text-sm font-extrabold">{{ $scoreHead->name }}</span>
+                                            <span class="block text-[10px] font-bold text-slate-400 dark:text-slate-500">Default: {{ $scoreHead->max_score }} pts</span>
+                                        </span>
+                                        <input
+                                            type="checkbox"
+                                            class="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                            wire:click="toggleScoreHead({{ $scoreHead->id }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="toggleScoreHead"
+                                            @checked($isSelected)
+                                            @disabled($locked && ! auth()->user()?->isSudo())
+                                        >
+                                    </label>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
 
                     {{-- Items table --}}
                     @if(empty($items))
-                        <div class="flex flex-col items-center justify-center py-10 text-center">
-                            <x-heroicon-o-squares-plus class="h-10 w-10 text-gray-300 dark:text-gray-600 mb-2"/>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">No score heads added yet</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Use the selector below to build this class's grading structure</p>
+                        <div class="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/10 dark:bg-[#131b2e]/10">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-105 dark:bg-[#131b2e] text-slate-400 mb-3.5">
+                                <svg style="width: 22px; height: 22px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                            </div>
+                            <p class="text-sm font-extrabold text-slate-805 dark:text-white">No score heads added yet</p>
+                            <p class="text-xs text-slate-400 dark:text-gray-500 mt-1 max-w-sm">Select one or more score heads above to build this class's grading weights.</p>
                         </div>
                     @else
-                        <div class="overflow-hidden rounded-lg border border-gray-100 dark:border-gray-800">
-                            <table class="w-full text-sm">
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0b0f19]">
+                            <table class="w-full text-sm border-collapse text-left">
                                 <thead>
-                                    <tr class="bg-gray-50 dark:bg-gray-800/60 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                        <th class="py-2.5 px-4 text-left font-semibold w-8">#</th>
-                                        <th class="py-2.5 px-4 text-left font-semibold">Score Head</th>
-                                        <th class="py-2.5 px-4 text-center font-semibold">Default</th>
-                                        <th class="py-2.5 px-4 text-center font-semibold">Override</th>
-                                        <th class="py-2.5 px-4 text-center font-semibold">Effective</th>
-                                        <th class="py-2.5 px-2 w-8"></th>
+                                    <tr class="bg-slate-50/50 dark:bg-[#131b2e]/50 text-xs font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 border-b border-slate-250 dark:border-slate-800 sticky top-0">
+                                        <th class="py-3 px-5 text-left font-black w-12">#</th>
+                                        <th class="py-3 px-5 text-left font-black">Score Head</th>
+                                        <th class="py-3 px-5 text-center font-black">Default Limit</th>
+                                        <th class="py-3 px-5 text-center font-black">Override (Brackets)</th>
+                                        <th class="py-3 px-5 text-center font-black">Effective Limit</th>
+                                        <th class="py-3 px-4 w-12"></th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-850">
                                     @foreach($items as $index => $item)
                                         @php $effective = (int)($item['max_score_override'] ?: $item['max_score']); @endphp
-                                        <tr class="group bg-white dark:bg-gray-900 hover:bg-gray-50/70 dark:hover:bg-gray-800/40 transition-colors">
+                                        <tr class="group hover:bg-slate-50/20 dark:hover:bg-[#131b2e]/10 transition-colors">
 
-                                            <td class="py-3 px-4 text-xs text-gray-400 dark:text-gray-600">{{ $index + 1 }}</td>
+                                            <td class="py-3.5 px-5 text-xs text-slate-400 dark:text-slate-650 font-bold">{{ $index + 1 }}</td>
 
-                                            <td class="py-3 px-4 font-medium text-gray-800 dark:text-gray-100">
+                                            <td class="py-3.5 px-5 font-extrabold text-slate-900 dark:text-white">
                                                 {{ $item['name'] }}
                                             </td>
 
-                                            <td class="py-3 px-4 text-center text-gray-500 dark:text-gray-400 tabular-nums">
-                                                {{ $item['max_score'] }}
+                                            <td class="py-3.5 px-5 text-center text-slate-500 dark:text-slate-400 font-bold tabular-nums">
+                                                {{ $item['max_score'] }} pts
                                             </td>
 
-                                            <td class="py-3 px-4 text-center">
+                                            {{-- Bracketed Override input matching spreadsheet --}}
+                                            <td class="py-3.5 px-5 text-center">
                                                 @if(! $locked || auth()->user()?->isSudo())
-                                                    <input
-                                                        type="number"
-                                                        wire:model.live="items.{{ $index }}.max_score_override"
-                                                        min="1"
-                                                        max="{{ $item['max_score'] }}"
-                                                        placeholder="{{ $item['max_score'] }}"
-                                                        class="w-16 text-center rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-2 py-1 text-xs focus:ring-2 focus:ring-primary-400 focus:border-primary-400 focus:outline-none transition"
-                                                    >
+                                                    <div class="flex items-center justify-center">
+                                                        <div class="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-lg border border-transparent bg-slate-800/40 hover:bg-slate-800/60 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+                                                            <span class="text-slate-500 font-extrabold text-sm select-none">[</span>
+                                                            <input
+                                                                type="number"
+                                                                wire:model.live="items.{{ $index }}.max_score_override"
+                                                                min="1"
+                                                                max="{{ $item['max_score'] }}"
+                                                                placeholder="{{ $item['max_score'] }}"
+                                                                class="w-12 text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0 text-xs font-black text-slate-800 dark:text-slate-100 placeholder-slate-600 focus:text-indigo-600 focus:dark:text-indigo-400"
+                                                            >
+                                                            <span class="text-slate-500 font-extrabold text-sm select-none">]</span>
+                                                        </div>
+                                                    </div>
                                                 @else
-                                                    <span class="text-xs text-gray-400 dark:text-gray-600">{{ $item['max_score_override'] ?? '—' }}</span>
+                                                    <span class="text-xs text-slate-500 dark:text-slate-600 font-bold">{{ $item['max_score_override'] ?? '—' }}</span>
                                                 @endif
                                             </td>
 
-                                            <td class="py-3 px-4 text-center">
-                                                <span class="inline-block font-bold tabular-nums px-2.5 py-0.5 rounded-full text-xs
-                                                    {{ $item['max_score_override'] ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' }}">
-                                                    {{ $effective }}
+                                            <td class="py-3.5 px-5 text-center">
+                                                <span class="inline-block font-extrabold tabular-nums px-3 py-1 rounded-lg text-xs
+                                                    {{ $item['max_score_override'] ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-100/30' : 'bg-slate-105 dark:bg-[#131b2e] text-slate-700 dark:text-slate-305' }}">
+                                                    {{ $effective }} pts
                                                 </span>
                                             </td>
 
-                                            <td class="py-3 px-2 text-center">
+                                            <td class="py-3.5 px-4 text-center">
                                                 @if(! $locked || auth()->user()?->isSudo())
                                                     <button
+                                                        type="button"
                                                         wire:click="removeItem({{ $index }})"
-                                                        class="opacity-0 group-hover:opacity-100 rounded-md p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                                        class="opacity-0 group-hover:opacity-100 rounded-lg p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
                                                         title="Remove {{ $item['name'] }}"
                                                     >
-                                                        <x-heroicon-o-x-mark class="h-4 w-4"/>
+                                                        <svg style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                                     </button>
                                                 @endif
                                             </td>
@@ -171,69 +268,46 @@
 
                     {{-- Validation banners --}}
                     @if($totalScore > 100)
-                        <div class="flex items-start gap-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">
-                            <x-heroicon-o-exclamation-circle class="mt-0.5 h-4 w-4 flex-shrink-0"/>
-                            <span>Total exceeds 100. Use overrides or remove a score head before saving.</span>
+                        <div class="flex items-start gap-3 rounded-xl border border-rose-200 dark:border-rose-900/30 bg-rose-50/50 dark:bg-rose-950/20 px-4.5 py-3.5 text-xs text-rose-700 dark:text-rose-400 font-bold">
+                            <svg style="width: 16px; height: 16px; margin-top: 2px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            <span>Total structure score exceeds 100 limits. Please adjust brackets overrides or remove a score head before saving.</span>
                         </div>
                     @elseif($totalScore > 0 && $totalScore < 100)
-                        <div class="flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
-                            <x-heroicon-o-information-circle class="mt-0.5 h-4 w-4 flex-shrink-0"/>
-                            <span>Total is {{ $totalScore }}/100. Add more score heads or adjust overrides to reach 100.</span>
-                        </div>
-                    @endif
-
-                    {{-- Add score head section --}}
-                    @if(! $locked || auth()->user()?->isSudo())
-                        <div class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50/60 dark:bg-gray-800/20 p-4 space-y-2">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Add Score Head</p>
-                            <div class="flex flex-wrap items-center gap-3">
-                                <select wire:model="selectedScoreHeadId"
-                                    class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
-                                    <option value="">— Choose a score head —</option>
-                                    @foreach($this->availableScoreHeads as $sh)
-                                        <option value="{{ $sh->id }}">{{ $sh->name }} (default: {{ $sh->max_score }} pts)</option>
-                                    @endforeach
-                                </select>
-                                <x-filament::button wire:click="addItem" wire:loading.attr="disabled" color="primary" size="sm" icon="heroicon-o-plus">
-                                    Add
-                                </x-filament::button>
-                            </div>
-                            @if($this->availableScoreHeads->isEmpty())
-                                <p class="text-xs text-gray-400 dark:text-gray-500">
-                                    All active score heads have been added. Create more in <strong>Results → Score Heads</strong>.
-                                </p>
-                            @endif
+                        <div class="flex items-start gap-3 rounded-xl border border-amber-200 dark:border-amber-900/30 bg-amber-50/50 dark:bg-amber-950/20 px-4.5 py-3.5 text-xs text-amber-700 dark:text-amber-400 font-bold">
+                            <svg style="width: 16px; height: 16px; margin-top: 2px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="12" x2="12" y2="16"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <span>Total score is currently {{ $totalScore }}/100. Add more score heads or adjust your brackets overrides to reach exactly 100.</span>
                         </div>
                     @endif
 
                     {{-- Action row --}}
-                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+                    <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-slate-850">
 
                         @if($structureId)
-                            <x-filament::button
+                            <button
+                                type="button"
                                 wire:click="toggleLock"
                                 wire:loading.attr="disabled"
-                                color="{{ $locked ? 'warning' : 'gray' }}"
-                                size="sm"
-                                icon="{{ $locked ? 'heroicon-o-lock-open' : 'heroicon-o-lock-closed' }}"
+                                class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-205 rounded-xl text-xs font-black transition"
                             >
-                                {{ $locked ? 'Unlock' : 'Lock Structure' }}
-                            </x-filament::button>
+                                <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                {{ $locked ? 'Unlock structure' : 'Lock Structure' }}
+                            </button>
                         @else
                             <div></div>
                         @endif
 
                         @if(! $locked || auth()->user()?->isSudo())
-                            <x-filament::button
+                            <button
+                                type="button"
                                 wire:click="saveStructure"
                                 wire:loading.attr="disabled"
-                                color="{{ $totalScore === 100 ? 'success' : 'primary' }}"
-                                icon="heroicon-o-check"
-                                :disabled="$totalScore > 100 || empty($items)"
+                                @disabled($totalScore !== 100 || empty($items))
+                                class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
+                                <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                 <span wire:loading.remove wire:target="saveStructure">Save Structure</span>
                                 <span wire:loading wire:target="saveStructure">Saving…</span>
-                            </x-filament::button>
+                            </button>
                         @endif
 
                     </div>
@@ -242,11 +316,22 @@
             </div>
 
         @else
-            {{-- Placeholder when filters incomplete --}}
-            <div class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/20 py-16 text-center">
-                <x-heroicon-o-academic-cap class="h-12 w-12 text-gray-300 dark:text-gray-600 mb-3"/>
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Select a session, term, and class above</p>
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">The grading structure for that combination will appear here</p>
+            {{-- Sleek illustration Empty State --}}
+            <div class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131b2e] py-24 px-6 text-center shadow-sm relative overflow-hidden">
+                <div class="absolute -right-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-500/5 blur-3xl"></div>
+                <div class="absolute -left-24 -top-24 h-48 w-48 rounded-full bg-sky-500/5 blur-3xl"></div>
+
+                <div class="relative flex flex-col items-center max-w-sm">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 mb-6 shadow-sm">
+                        {{-- Academic cap icon --}}
+                        <svg style="width: 32px; height: 32px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path></svg>
+                    </div>
+                    
+                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white">Begin Structure Setup</h3>
+                    <p class="mt-2 text-xs text-slate-450 dark:text-gray-400 leading-relaxed">
+                        To build or configure the active grading weights and score head structure for a class, please choose the session, term, and classroom parameters from the filters above.
+                    </p>
+                </div>
             </div>
         @endif
 

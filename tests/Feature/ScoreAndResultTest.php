@@ -61,9 +61,10 @@ function makeUsers(): array
 function makeScoreHeads(): array
 {
     $classwork = ScoreHead::create(['name' => 'Classwork', 'max_score' => 10, 'is_active' => true]);
+    $test      = ScoreHead::create(['name' => 'Test',      'max_score' => 10, 'is_active' => true]);
     $exam      = ScoreHead::create(['name' => 'Exam',      'max_score' => 80, 'is_active' => true]);
 
-    return compact('classwork', 'exam');
+    return compact('classwork', 'test', 'exam');
 }
 
 function makeStructure(Classroom $classroom, Session $session, Term $term, array $scoreHeads): ClassScoreStructure
@@ -72,7 +73,7 @@ function makeStructure(Classroom $classroom, Session $session, Term $term, array
         'class_id'    => $classroom->id,
         'session_id'  => $session->id,
         'term_id'     => $term->id,
-        'total_score' => 90,
+        'total_score' => collect($scoreHeads)->sum('max_score'),
         'locked'      => false,
     ]);
 
@@ -637,7 +638,7 @@ describe('ManageClassScoreStructure Livewire page', function () {
         $this->admin  = $users['admin'];
         $this->teacher = $users['teacher'];
 
-        ['classwork' => $this->classwork, 'exam' => $this->exam] = makeScoreHeads();
+        ['classwork' => $this->classwork, 'test' => $this->test, 'exam' => $this->exam] = makeScoreHeads();
     });
 
     it('is accessible by admin', function () {
@@ -669,8 +670,20 @@ describe('ManageClassScoreStructure Livewire page', function () {
             ->set('classroom_id', $this->classroom->id)
             ->set('session_id', 999)  // change session
             ->assertSet('term_id', null)
-            ->assertSet('classroom_id', null)
             ->assertSet('items', []);
+    });
+
+    it('reveals score head assignment controls after filters are selected', function () {
+        $this->actingAs($this->admin);
+
+        Livewire::test(ManageClassScoreStructure::class)
+            ->set('session_id', $this->session->id)
+            ->set('term_id', $this->term->id)
+            ->set('classroom_id', $this->classroom->id)
+            ->assertSee('Assign Score Heads To This Class')
+            ->assertSee('Classwork')
+            ->assertSee('Test')
+            ->assertSee('Exam');
     });
 
     it('loads empty structure when none exists for selected class', function () {
@@ -696,34 +709,32 @@ describe('ManageClassScoreStructure Livewire page', function () {
             ->assertCount('items', 2);
     });
 
-    it('adds a score head to the structure', function () {
+    it('selects a score head for the structure', function () {
         $this->actingAs($this->admin);
 
         Livewire::test(ManageClassScoreStructure::class)
             ->set('session_id', $this->session->id)
             ->set('term_id', $this->term->id)
             ->set('classroom_id', $this->classroom->id)
-            ->set('selectedScoreHeadId', $this->classwork->id)
-            ->call('addItem')
+            ->call('toggleScoreHead', $this->classwork->id)
             ->assertCount('items', 1)
             ->assertSet('totalScore', 10);
     });
 
-    it('prevents adding the same score head twice', function () {
+    it('unselects an already selected score head', function () {
         $this->actingAs($this->admin);
 
         Livewire::test(ManageClassScoreStructure::class)
             ->set('session_id', $this->session->id)
             ->set('term_id', $this->term->id)
             ->set('classroom_id', $this->classroom->id)
-            ->set('selectedScoreHeadId', $this->classwork->id)
-            ->call('addItem')
-            ->set('selectedScoreHeadId', $this->classwork->id)
-            ->call('addItem')
-            ->assertCount('items', 1);
+            ->call('toggleScoreHead', $this->classwork->id)
+            ->call('toggleScoreHead', $this->classwork->id)
+            ->assertCount('items', 0)
+            ->assertSet('totalScore', 0);
     });
 
-    it('rejects adding a score head that would push total above 100', function () {
+    it('allows selection above 100 so the admin can correct the structure before saving', function () {
         $huge = ScoreHead::create(['name' => 'Huge', 'max_score' => 99, 'is_active' => true]);
         $this->actingAs($this->admin);
 
@@ -731,12 +742,10 @@ describe('ManageClassScoreStructure Livewire page', function () {
             ->set('session_id', $this->session->id)
             ->set('term_id', $this->term->id)
             ->set('classroom_id', $this->classroom->id)
-            ->set('selectedScoreHeadId', $this->exam->id)   // 80
-            ->call('addItem')
-            ->set('selectedScoreHeadId', $huge->id)         // 80+99 = 179 → rejected
-            ->call('addItem')
-            ->assertCount('items', 1)
-            ->assertSet('totalScore', 80);
+            ->call('toggleScoreHead', $this->exam->id)
+            ->call('toggleScoreHead', $huge->id)
+            ->assertCount('items', 2)
+            ->assertSet('totalScore', 179);
     });
 
     it('removes a score head from the structure', function () {
@@ -746,28 +755,49 @@ describe('ManageClassScoreStructure Livewire page', function () {
             ->set('session_id', $this->session->id)
             ->set('term_id', $this->term->id)
             ->set('classroom_id', $this->classroom->id)
-            ->set('selectedScoreHeadId', $this->classwork->id)
-            ->call('addItem')
+            ->call('toggleScoreHead', $this->classwork->id)
             ->call('removeItem', 0)
             ->assertCount('items', 0)
             ->assertSet('totalScore', 0);
     });
 
-    it('saves structure to the database', function () {
+    it('does not save structure unless selected score heads total exactly 100', function () {
         $this->actingAs($this->admin);
 
         Livewire::test(ManageClassScoreStructure::class)
             ->set('session_id', $this->session->id)
             ->set('term_id', $this->term->id)
             ->set('classroom_id', $this->classroom->id)
-            ->set('selectedScoreHeadId', $this->classwork->id)
-            ->call('addItem')
+            ->call('toggleScoreHead', $this->classwork->id)
+            ->call('toggleScoreHead', $this->exam->id)
+            ->assertSet('totalScore', 90)
+            ->call('saveStructure');
+
+        $this->assertDatabaseMissing('class_score_structures', [
+            'class_id'   => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id'    => $this->term->id,
+        ]);
+    });
+
+    it('saves exactly 100 score structure to the database', function () {
+        $this->actingAs($this->admin);
+
+        Livewire::test(ManageClassScoreStructure::class)
+            ->set('session_id', $this->session->id)
+            ->set('term_id', $this->term->id)
+            ->set('classroom_id', $this->classroom->id)
+            ->call('toggleScoreHead', $this->classwork->id)
+            ->call('toggleScoreHead', $this->test->id)
+            ->call('toggleScoreHead', $this->exam->id)
+            ->assertSet('totalScore', 100)
             ->call('saveStructure');
 
         $this->assertDatabaseHas('class_score_structures', [
             'class_id'   => $this->classroom->id,
             'session_id' => $this->session->id,
             'term_id'    => $this->term->id,
+            'total_score' => 100,
         ]);
 
         $this->assertDatabaseHas('class_score_structure_items', [

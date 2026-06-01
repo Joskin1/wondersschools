@@ -119,33 +119,30 @@ class ManageClassScoreStructure extends Page
         $this->syncTotal();
     }
 
-    public function addItem(): void
+    public function toggleScoreHead(int $scoreHeadId): void
     {
         if ($this->locked && ! Auth::user()?->isSudo()) {
             Notification::make()->title('Structure is locked.')->warning()->send();
             return;
         }
 
-        if (! $this->selectedScoreHeadId) {
+        if (! $this->hasSelectedFilters) {
+            Notification::make()->title('Please select session, term, and class first.')->warning()->send();
             return;
         }
 
-        if (collect($this->items)->pluck('score_head_id')->contains($this->selectedScoreHeadId)) {
-            Notification::make()->title('That score head is already in the structure.')->warning()->send();
+        $existingIndex = collect($this->items)->search(
+            fn (array $item) => (int) $item['score_head_id'] === $scoreHeadId
+        );
+
+        if ($existingIndex !== false) {
+            $this->removeItem((int) $existingIndex);
             return;
         }
 
-        $scoreHead = ScoreHead::find($this->selectedScoreHeadId);
+        $scoreHead = ScoreHead::active()->find($scoreHeadId);
         if (! $scoreHead) {
-            return;
-        }
-
-        $newTotal = $this->totalScore + $scoreHead->max_score;
-        if ($newTotal > 100) {
-            Notification::make()
-                ->title("Adding \"{$scoreHead->name}\" would bring the total to {$newTotal} (max 100).")
-                ->danger()
-                ->send();
+            Notification::make()->title('Score head not found or inactive.')->warning()->send();
             return;
         }
 
@@ -156,8 +153,16 @@ class ManageClassScoreStructure extends Page
             'max_score_override' => null,
         ];
 
-        $this->selectedScoreHeadId = null;
         $this->syncTotal();
+    }
+
+    public function addItem(): void
+    {
+        // Backwards-compatible alias for tests or stale browser actions.
+        if (property_exists($this, 'selectedScoreHeadId') && $this->selectedScoreHeadId) {
+            $this->toggleScoreHead((int) $this->selectedScoreHeadId);
+            $this->selectedScoreHeadId = null;
+        }
     }
 
     public function removeItem(int $index): void
@@ -212,12 +217,23 @@ class ManageClassScoreStructure extends Page
 
         $total = $this->syncTotal();
 
-        if ($total > 100) {
+        if ($total !== 100) {
             Notification::make()
-                ->title("Total score ({$total}) exceeds 100. Adjust overrides or remove a score head.")
+                ->title("Total score must be exactly 100. Current total is {$total}.")
                 ->danger()
                 ->send();
             return;
+        }
+
+        foreach ($this->items as $item) {
+            $override = $item['max_score_override'];
+            if ($override !== null && ($override < 1 || $override > $item['max_score'])) {
+                Notification::make()
+                    ->title("Invalid override for \"{$item['name']}\". It must be between 1 and {$item['max_score']}.")
+                    ->danger()
+                    ->send();
+                return;
+            }
         }
 
         DB::transaction(function () use ($total) {
@@ -298,14 +314,30 @@ class ManageClassScoreStructure extends Page
         return Classroom::active()->ordered()->get();
     }
 
-    public function getAvailableScoreHeadsProperty()
+    public function getScoreHeadsProperty()
     {
-        $usedIds = collect($this->items)->pluck('score_head_id')->toArray();
+        $selectedIds = collect($this->items)->pluck('score_head_id')->all();
 
-        return ScoreHead::active()
-            ->when(! empty($usedIds), fn ($q) => $q->whereNotIn('id', $usedIds))
+        return ScoreHead::query()
+            ->where(function ($query) use ($selectedIds) {
+                $query->active();
+
+                if (! empty($selectedIds)) {
+                    $query->orWhereIn('id', $selectedIds);
+                }
+            })
             ->orderBy('name')
             ->get();
+    }
+
+    public function getHasSelectedFiltersProperty(): bool
+    {
+        return filled($this->session_id) && filled($this->term_id) && filled($this->classroom_id);
+    }
+
+    public function getSelectedScoreHeadIdsProperty()
+    {
+        return collect($this->items)->pluck('score_head_id')->map(fn ($id) => (int) $id)->all();
     }
 
     public static function canAccess(): bool
@@ -331,6 +363,5 @@ class ManageClassScoreStructure extends Page
         $this->locked             = false;
         $this->totalScore         = 0;
         $this->items              = [];
-        $this->selectedScoreHeadId = null;
     }
 }
