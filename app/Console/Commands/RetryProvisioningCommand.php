@@ -54,7 +54,9 @@ class RetryProvisioningCommand extends Command
             /** @var Tenant $tenant */
             $this->line('');
             $this->info("── {$tenant->id} ({$tenant->name}) ──");
-            $this->line("  Status: {$tenant->status?->label() ?? $tenant->getRawOriginal('status')}");
+
+            $statusLabel = $tenant->status?->label() ?? (is_string($tenant->getRawOriginal('status')) ? $tenant->getRawOriginal('status') : 'unknown');
+            $this->line("  Status: {$statusLabel}");
 
             // ── Diagnose mode ────────────────────────────────────────────
             if ($this->option('diagnose')) {
@@ -64,7 +66,8 @@ class RetryProvisioningCommand extends Command
 
             // ── Safety gate ──────────────────────────────────────────────
             if ($tenant->status !== TenantStatus::Failed) {
-                $this->warn("  Skipping: tenant is not in a 'failed' state (current: {$tenant->status?->label()}).");
+                $currentStatus = $tenant->status?->label() ?? 'unknown';
+                $this->warn("  Skipping: tenant is not in a 'failed' state (current: {$currentStatus}).");
                 continue;
             }
 
