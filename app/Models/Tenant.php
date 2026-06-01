@@ -21,6 +21,10 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     public $incrementing  = false;
     protected $keyType    = 'string';
 
+    protected $attributes = [
+        'status' => 'pending',
+    ];
+
     protected $fillable = [
         'id',
         'name',

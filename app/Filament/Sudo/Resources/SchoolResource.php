@@ -28,6 +28,19 @@ class SchoolResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
+        $centralDomains = config('tenancy.central_domains', env('CENTRAL_DOMAINS', ''));
+        if (is_string($centralDomains)) {
+            $centralDomains = array_filter(explode(',', $centralDomains));
+        } elseif (! is_array($centralDomains)) {
+            $centralDomains = [];
+        }
+
+        $reservedDomains = array_merge([
+            'localhost',
+            '127.0.0.1',
+            '0.0.0.0',
+        ], array_values(array_filter($centralDomains)));
+
         return $schema->components([
             Section::make('School Identity')
                 ->columns(2)
@@ -74,12 +87,7 @@ class SchoolResource extends Resource
                                 ->maxLength(255)
                                 ->regex('/^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/')
                                 ->unique(table: 'domains', column: 'domain', ignoreRecord: true)
-                                ->rules([Rule::notIn([
-                                    'localhost',
-                                    '127.0.0.1',
-                                    '0.0.0.0',
-                                    ...array_filter(explode(',', config('tenancy.central_domains', env('CENTRAL_DOMAINS', '')))),
-                                ])])
+                                ->rules([Rule::notIn($reservedDomains)])
                                 ->validationMessages([
                                     'not_in' => 'This domain is reserved and cannot be used.',
                                     'regex'  => 'Must be a valid hostname (e.g. school.example.com).',

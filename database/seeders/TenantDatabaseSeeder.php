@@ -156,7 +156,10 @@ class TenantDatabaseSeeder extends Seeder
         ];
 
         foreach ($articles as $article) {
-            Post::firstOrCreate(['title' => $article['title']], $article);
+            Post::firstOrCreate(
+                ['title' => $article['title']],
+                array_merge($article, ['slug' => \Illuminate\Support\Str::slug($article['title'])])
+            );
         }
 
         Post::factory(5)->create(['image' => null]);

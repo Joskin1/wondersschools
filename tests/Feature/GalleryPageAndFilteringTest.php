@@ -18,7 +18,7 @@ describe('Gallery Page', function () {
     it('shows the gallery page headline', function () {
         get('/gallery')
             ->assertSee('Gallery')
-            ->assertSee('Moments captured at WKFS');
+            ->assertSee('Moments captured at our school.');
     });
 
     it('displays all gallery images', function () {

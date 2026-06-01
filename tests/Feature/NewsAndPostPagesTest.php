@@ -18,7 +18,7 @@ describe('News Page', function () {
     it('shows the news page headline', function () {
         get('/news')
             ->assertSee('News & Events', false)
-            ->assertSee('Stay updated with the latest happenings at WKFS');
+            ->assertSee('Stay updated with the latest happenings.');
     });
 
     it('displays published news posts', function () {

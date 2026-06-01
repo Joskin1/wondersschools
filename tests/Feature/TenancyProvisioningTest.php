@@ -67,8 +67,8 @@ it('initializes a tenant with a pending status and nullable last_provisioned_at'
         'name' => 'Pending School',
     ]);
 
-    expect($tenant->status)->toBe(TenantStatus::Pending)
-        ->and($tenant->last_provisioned_at)->toBeNull();
+    expect($tenant->fresh()->status)->toBe(TenantStatus::Pending)
+        ->and($tenant->fresh()->last_provisioned_at)->toBeNull();
 });
 
 it('returns null for primary_color when it was not set on the tenant', function () {

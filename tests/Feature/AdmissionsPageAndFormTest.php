@@ -19,7 +19,7 @@ describe('Admissions Page', function () {
     it('shows the admissions headline', function () {
         get('/admissions')
             ->assertSee('Admissions')
-            ->assertSee("Start your child\xE2\x80\x99s journey with excellence, character, and purpose at WKFS.", false);
+            ->assertSee("Start your child\xE2\x80\x99s journey with excellence, character, and purpose.", false);
     });
 
     it('displays all three admission process steps', function () {
