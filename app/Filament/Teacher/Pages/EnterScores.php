@@ -284,7 +284,7 @@ class EnterScores extends Page
             fn($h) => ($this->scores[$studentId][$h['id']] ?? '') !== ''
         );
 
-        $gradeInfo = app(ResultCalculationService::class)->resolveGrade($studentTotal);
+        $gradeInfo = app(\App\Services\ResultCalculationService::class)->resolveGrade($studentTotal);
 
         return [
             'status'        => 'success',
@@ -364,6 +364,10 @@ class EnterScores extends Page
             return collect();
         }
 
+        if ($user->canManageAcademics()) {
+            return Classroom::active()->ordered()->get();
+        }
+
         $classTeacherIds = ClassTeacherAssignment::where('teacher_id', $user->id)
             ->where('session_id', $this->session_id)
             ->pluck('class_id')
@@ -387,7 +391,15 @@ class EnterScores extends Page
             return collect();
         }
 
-        if (ClassTeacherAssignment::isClassTeacher($user->id, $this->classroom_id, $this->session_id)) {
+        if ($user->canManageAcademics() || ClassTeacherAssignment::isClassTeacher($user->id, $this->classroom_id, $this->session_id)) {
+            $classroom = Classroom::find($this->classroom_id);
+            if ($classroom) {
+                $subjects = $classroom->subjects()->active()->orderBy('name')->get();
+                if ($subjects->isNotEmpty()) {
+                    return $subjects;
+                }
+            }
+
             $subjectIds = TeacherSubjectAssignment::where('classroom_id', $this->classroom_id)
                 ->where('session_id', $this->session_id)
                 ->where('term_id',    $this->term_id)

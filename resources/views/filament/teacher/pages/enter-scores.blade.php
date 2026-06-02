@@ -306,7 +306,7 @@
                                                 fn($sh) => (float) ($scores[$student['id']][$sh['id']] ?? 0)
                                             );
                                             $hasAny = collect($scoreHeads)->contains(fn($sh) => ($scores[$student['id']][$sh['id']] ?? '') !== '');
-                                            $gradeInfo = app(ResultCalculationService::class)->resolveGrade($studentTotal);
+                                            $gradeInfo = app(\App\Services\ResultCalculationService::class)->resolveGrade($studentTotal);
                                             $currentGrade = $hasAny ? $gradeInfo['grade'] : '—';
                                             
                                             // Avatar mapping hashing

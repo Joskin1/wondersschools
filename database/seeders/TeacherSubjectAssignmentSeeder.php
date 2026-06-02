@@ -51,6 +51,8 @@ class TeacherSubjectAssignmentSeeder extends Seeder
                             'session_id'   => $activeSession->id,
                             'term_id'      => $activeTerm->id,
                         ]);
+                        // Associate the subject with the classroom in the pivot table
+                        $classroom->subjects()->syncWithoutDetaching([$subject->id]);
                         $assignmentCount++;
                     }
                 }
