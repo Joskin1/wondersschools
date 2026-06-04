@@ -29,10 +29,11 @@ class TenantFrontendContentSeeder extends Seeder
             'hero_cta_secondary'    => 'Admissions Open',
 
             // ── Home: About / Introduction ───────────────────────────────────
-            'about_intro_welcome'  => "Welcome to Our School",
-            'about_intro_heading'  => 'Nurturing Young Minds for a Brighter Tomorrow',
-            'about_intro_text'     => 'We provide a private co-educational environment with a broad-based curriculum that develops the whole child — intellectually, emotionally, and morally.',
-            'about_intro_mission'  => 'To foster critical thinking, global readiness, and character development in every child.',
+            'about_intro_welcome'   => "Welcome to Our School",
+            'about_intro_heading'   => 'Nurturing Young Minds for a Brighter Tomorrow',
+            'about_intro_text'      => 'We provide a private co-educational environment with a broad-based curriculum that develops the whole child — intellectually, emotionally, and morally.',
+            'about_intro_mission'   => 'To foster critical thinking, global readiness, and character development in every child.',
+            'about_intro_read_more' => 'Read More',
 
             // ── Home: About Pillar Images ────────────────────────────────────
             'pillar_1_label' => 'Science Laboratory',
@@ -56,12 +57,16 @@ class TenantFrontendContentSeeder extends Seeder
 
             'feature_1_title'       => 'Effective Teaching',
             'feature_1_description' => 'Unique instructional methods powered by digital infrastructure for seamless online and offline learning.',
+            'feature_1_icon'        => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
             'feature_2_title'       => 'Arts & Creativity',
             'feature_2_description' => 'Bringing imagination to reality through creative arts, music, and expressive programs.',
+            'feature_2_icon'        => 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
             'feature_3_title'       => 'Practical Sciences',
             'feature_3_description' => 'Hands-on, experiment-driven science tracks matching theory with laboratory experience.',
+            'feature_3_icon'        => 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
             'feature_4_title'       => 'Coding & Tech',
             'feature_4_description' => 'Integrated IT training with computing skills embedded directly into the daily learning pattern.',
+            'feature_4_icon'        => 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
 
             // ── Legacy bento keys (kept for backward compat) ─────────────────
             'bento_1_title'       => 'Academic Excellence',
@@ -82,18 +87,24 @@ class TenantFrontendContentSeeder extends Seeder
             'stat_4_label' => 'Parent Satisfaction',
 
             // ── Home: News Section ───────────────────────────────────────────
-            'news_heading'    => 'School Life',
-            'news_subheading' => 'A Place Your Child Can Thrive.',
+            'news_heading'               => 'School Life',
+            'news_subheading'            => 'A Place Your Child Can Thrive.',
+            'news_view_all_label'        => 'View All',
+            'news_badge_label'           => 'News',
+            'news_read_more_label'       => 'Read More',
+            'news_empty_text'            => 'No news updates available at the moment.',
+            'news_view_all_mobile_label' => 'View All News',
 
             // ── Home: Leadership Section ─────────────────────────────────────
             'leadership_heading'    => 'Our Commitment',
             'leadership_subheading' => 'Experienced Hands, Nurturing Hearts.',
 
             // ── Home: Final CTA Strip ─────────────────────────────────────────
-            'cta_heading'   => 'Ready to Join Our Family?',
-            'cta_enrol'     => 'Enrol Now',
-            'cta_tour'      => 'Book a Tour',
-            'cta_whatsapp'  => 'Chat on WhatsApp',
+            'cta_heading'     => 'Ready to Join Our Family?',
+            'cta_description' => 'Give your child the foundation they deserve. Join our growing family today.',
+            'cta_enrol'       => 'Enrol Now',
+            'cta_tour'        => 'Book a Tour',
+            'cta_whatsapp'    => 'Chat on WhatsApp',
 
             // ── Portal URLs ──────────────────────────────────────────────────
             'student_portal_url'  => null,
@@ -168,6 +179,7 @@ class TenantFrontendContentSeeder extends Seeder
             'about_intro_heading'    => 'home.about',
             'about_intro_text'       => 'home.about',
             'about_intro_mission'    => 'home.about',
+            'about_intro_read_more'  => 'home.about',
             'pillar_1_label'         => 'home.pillars',
             'pillar_1_image'         => 'home.pillars',
             'pillar_2_label'         => 'home.pillars',
@@ -184,12 +196,16 @@ class TenantFrontendContentSeeder extends Seeder
             'why_us_subheading'      => 'home.features',
             'feature_1_title'        => 'home.features',
             'feature_1_description'  => 'home.features',
+            'feature_1_icon'         => 'home.features',
             'feature_2_title'        => 'home.features',
             'feature_2_description'  => 'home.features',
+            'feature_2_icon'         => 'home.features',
             'feature_3_title'        => 'home.features',
             'feature_3_description'  => 'home.features',
+            'feature_3_icon'         => 'home.features',
             'feature_4_title'        => 'home.features',
             'feature_4_description'  => 'home.features',
+            'feature_4_icon'         => 'home.features',
             'bento_1_title'          => 'home.why',
             'bento_1_description'    => 'home.why',
             'bento_2_title'          => 'home.why',
@@ -204,11 +220,17 @@ class TenantFrontendContentSeeder extends Seeder
             'stat_3_label'           => 'home.stats',
             'stat_4_value'           => 'home.stats',
             'stat_4_label'           => 'home.stats',
-            'news_heading'           => 'home.news',
-            'news_subheading'        => 'home.news',
+            'news_heading'               => 'home.news',
+            'news_subheading'            => 'home.news',
+            'news_view_all_label'        => 'home.news',
+            'news_badge_label'           => 'home.news',
+            'news_read_more_label'       => 'home.news',
+            'news_empty_text'            => 'home.news',
+            'news_view_all_mobile_label' => 'home.news',
             'leadership_heading'     => 'home.leadership',
             'leadership_subheading'  => 'home.leadership',
             'cta_heading'            => 'home.cta',
+            'cta_description'        => 'home.cta',
             'cta_enrol'              => 'home.cta',
             'cta_tour'               => 'home.cta',
             'cta_whatsapp'           => 'home.cta',

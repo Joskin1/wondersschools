@@ -93,7 +93,7 @@
                         </p>
                     </div>
                     <a href="{{ route('about') }}" class="inline-flex items-center px-6 py-3 text-sm font-bold rounded-lg text-white bg-tenant-primary hover:opacity-90 transition shadow-md">
-                        Read More
+                        {{ \App\Services\FrontendLibrary::get('about_intro_read_more', 'Read More') }}
                         <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                     </a>
                 </div>
@@ -138,16 +138,44 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 @php
                     $features = [
-                        ['icon' => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', 'title_key' => 'feature_1_title', 'title_default' => 'Effective Teaching', 'desc_key' => 'feature_1_description', 'desc_default' => 'Unique instructional methods powered by digital infrastructure for seamless online and offline learning.'],
-                        ['icon' => 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z', 'title_key' => 'feature_2_title', 'title_default' => 'Arts & Creativity', 'desc_key' => 'feature_2_description', 'desc_default' => 'Bringing imagination to reality through creative arts, music, and expressive programs.'],
-                        ['icon' => 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z', 'title_key' => 'feature_3_title', 'title_default' => 'Practical Sciences', 'desc_key' => 'feature_3_description', 'desc_default' => 'Hands-on, experiment-driven science tracks matching theory with laboratory experience.'],
-                        ['icon' => 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4', 'title_key' => 'feature_4_title', 'title_default' => 'Coding & Tech', 'desc_key' => 'feature_4_description', 'desc_default' => 'Integrated IT training with computing skills embedded directly into the daily learning pattern.'],
+                        [
+                            'icon_key' => 'feature_1_icon',
+                            'icon_default' => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+                            'title_key' => 'feature_1_title',
+                            'title_default' => 'Effective Teaching',
+                            'desc_key' => 'feature_1_description',
+                            'desc_default' => 'Unique instructional methods powered by digital infrastructure for seamless online and offline learning.'
+                        ],
+                        [
+                            'icon_key' => 'feature_2_icon',
+                            'icon_default' => 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
+                            'title_key' => 'feature_2_title',
+                            'title_default' => 'Arts & Creativity',
+                            'desc_key' => 'feature_2_description',
+                            'desc_default' => 'Bringing imagination to reality through creative arts, music, and expressive programs.'
+                        ],
+                        [
+                            'icon_key' => 'feature_3_icon',
+                            'icon_default' => 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
+                            'title_key' => 'feature_3_title',
+                            'title_default' => 'Practical Sciences',
+                            'desc_key' => 'feature_3_description',
+                            'desc_default' => 'Hands-on, experiment-driven science tracks matching theory with laboratory experience.'
+                        ],
+                        [
+                            'icon_key' => 'feature_4_icon',
+                            'icon_default' => 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
+                            'title_key' => 'feature_4_title',
+                            'title_default' => 'Coding & Tech',
+                            'desc_key' => 'feature_4_description',
+                            'desc_default' => 'Integrated IT training with computing skills embedded directly into the daily learning pattern.'
+                        ],
                     ];
                 @endphp
                 @foreach($features as $feature)
                     <div class="feature-card">
                         <div class="feature-card-icon">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $feature['icon'] }}"/></svg>
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ \App\Services\FrontendLibrary::get($feature['icon_key'], $feature['icon_default']) }}"/></svg>
                         </div>
                         <h3 class="text-lg font-bold text-gray-900 mb-3">{{ \App\Services\FrontendLibrary::get($feature['title_key'], $feature['title_default']) }}</h3>
                         <p class="text-gray-600 text-sm leading-relaxed">{{ \App\Services\FrontendLibrary::get($feature['desc_key'], $feature['desc_default']) }}</p>
@@ -178,7 +206,7 @@
                     <p class="text-lg text-gray-600">{{ \App\Services\FrontendLibrary::get('news_subheading', 'A Place Your Child Can Thrive.') }}</p>
                 </div>
                 <a href="{{ route('news') }}" class="hidden md:inline-flex items-center font-bold text-tenant-primary hover:underline text-sm transition">
-                    View All <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    {{ \App\Services\FrontendLibrary::get('news_view_all_label', 'View All') }} <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                 </a>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -186,23 +214,23 @@
                     <div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 border border-gray-100">
                         <div class="relative h-48 overflow-hidden">
                             <img src="{{ Str::startsWith($post->image, 'http') ? $post->image : Storage::url($post->image) }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-                            <div class="absolute top-4 left-4 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide" style="background: var(--color-tenant-accent); color: #1D2A44;">News</div>
+                            <div class="absolute top-4 left-4 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide" style="background: var(--color-tenant-accent); color: #1D2A44;">{{ \App\Services\FrontendLibrary::get('news_badge_label', 'News') }}</div>
                         </div>
                         <div class="p-6">
                             <div class="text-sm text-gray-400 mb-2">{{ $post->published_at->format('M d, Y') }}</div>
                             <h3 class="text-lg font-bold text-gray-900 mb-3 group-hover:text-tenant-primary transition"><a href="{{ route('post', $post) }}">{{ $post->title }}</a></h3>
                             <p class="text-gray-600 text-sm line-clamp-3 mb-4">{{ Str::limit(strip_tags($post->body), 100) }}</p>
-                            <a href="{{ route('post', $post) }}" class="inline-flex items-center text-sm text-tenant-primary font-semibold hover:underline">Read More <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></a>
+                            <a href="{{ route('post', $post) }}" class="inline-flex items-center text-sm text-tenant-primary font-semibold hover:underline">{{ \App\Services\FrontendLibrary::get('news_read_more_label', 'Read More') }} <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></a>
                         </div>
                     </div>
                 @empty
                     <div class="col-span-3 text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                        <p class="text-gray-400">No news updates available at the moment.</p>
+                        <p class="text-gray-400">{{ \App\Services\FrontendLibrary::get('news_empty_text', 'No news updates available at the moment.') }}</p>
                     </div>
                 @endforelse
             </div>
             <div class="mt-8 text-center md:hidden">
-                <a href="{{ route('news') }}" class="inline-flex items-center font-bold text-tenant-primary hover:underline text-sm">View All News <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a>
+                <a href="{{ route('news') }}" class="inline-flex items-center font-bold text-tenant-primary hover:underline text-sm">{{ \App\Services\FrontendLibrary::get('news_view_all_mobile_label', 'View All News') }} <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a>
             </div>
         </div>
     </section>
@@ -213,7 +241,7 @@
         <div class="absolute right-8 bottom-0 w-32 h-32 rounded-full opacity-[0.08]" style="background: var(--color-tenant-primary);"></div>
         <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
             <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">{{ \App\Services\FrontendLibrary::get('cta_heading', 'Ready to Join Our Family?') }}</h2>
-            <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">Give your child the foundation they deserve. Join our growing family today.</p>
+            <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">{{ \App\Services\FrontendLibrary::get('cta_description', 'Give your child the foundation they deserve. Join our growing family today.') }}</p>
             <div class="flex flex-col sm:flex-row justify-center gap-4">
                 <a href="{{ route('admissions') }}" class="inline-flex items-center justify-center px-8 py-4 text-lg font-bold rounded-lg text-white bg-tenant-primary hover:opacity-90 transition shadow-lg">
                     {{ \App\Services\FrontendLibrary::get('cta_enrol', 'Enrol Now') }}

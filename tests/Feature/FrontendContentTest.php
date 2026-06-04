@@ -157,27 +157,26 @@ describe('Home page dynamic content', function () {
         get('/')->assertSee('Shapes Champions.');
     });
 
-    it('shows default trust strip labels', function () {
+    it('shows default pillar labels', function () {
         get('/')
-            ->assertSee('Verified Curriculum')
-            ->assertSee('Experienced Educators')
-            ->assertSee('Secure Campus')
-            ->assertSee('Proven Results');
+            ->assertSee('Science Laboratory')
+            ->assertSee('Practical Work')
+            ->assertSee('Information Technology')
+            ->assertSee('Creative Arts');
     });
 
-    it('reflects updated trust strip label', function () {
+    it('reflects updated pillar label', function () {
         FrontendContent::create([
-            'key'   => 'trust_1',
-            'group' => 'home.trust',
-            'value' => 'Accredited Curriculum',
+            'key'   => 'pillar_1_label',
+            'group' => 'home.pillars',
+            'value' => 'Accredited Lab',
         ]);
 
-        get('/')->assertSee('Accredited Curriculum');
+        get('/')->assertSee('Accredited Lab');
     });
 
     it('shows default Why Us heading', function () {
-        // Blade {{ }} escapes quotes — assertSee with default $escaped=true handles this
-        get('/')->assertSee('Why "Wonders"?');
+        get('/')->assertSee('What We Do');
     });
 
     it('shows default stats labels', function () {
@@ -199,7 +198,7 @@ describe('Home page dynamic content', function () {
 
     it('shows default CTA buttons', function () {
         get('/')
-            ->assertSee('Explore Our Curriculum')
+            ->assertSee('Explore Our Campus')
             ->assertSee('Enrol Now')
             ->assertSee('Chat on WhatsApp');
     });

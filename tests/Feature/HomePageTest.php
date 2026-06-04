@@ -22,21 +22,19 @@ describe('Home Page', function () {
             ->assertSee('Builds Futures.');
     });
 
-    it('displays the trust strip with verification badges', function () {
+    it('displays the pillars of the school', function () {
         get('/')
-            ->assertSee('Verified Curriculum')
-            ->assertSee('Experienced Educators')
-            ->assertSee('Secure Campus')
-            ->assertSee('Proven Results');
+            ->assertSee('Science Laboratory')
+            ->assertSee('Practical Work')
+            ->assertSee('Information Technology')
+            ->assertSee('Creative Arts');
     });
 
-    it('shows the Why WKFS section', function () {
-        // Text goes through Blade {{ }} so quotes are HTML-encoded;
-        // assertSee without $escaped=false handles this automatically.
+    it('shows the What We Do section', function () {
         get('/')
-            ->assertSee('Why "Wonders"?')
-            ->assertSee('Academic Excellence')
-            ->assertSee('Holistic Development');
+            ->assertSee('What We Do')
+            ->assertSee('Effective Teaching')
+            ->assertSee('Arts & Creativity');
     });
 
     it('displays statistics section', function () {
@@ -58,22 +56,9 @@ describe('Home Page', function () {
         }
     });
 
-    it('displays leadership team members', function () {
-        // Arrange
-        $staff = Staff::factory()->count(3)->create();
-
-        // Act & Assert
-        $response = get('/');
-        
-        foreach ($staff as $member) {
-            $response->assertSee($member->name);
-            $response->assertSee($member->role);
-        }
-    });
-
     it('shows call to action buttons', function () {
         get('/')
-            ->assertSee('Explore Our Curriculum')
+            ->assertSee('Explore Our Campus')
             ->assertSee('Book a Tour')
             ->assertSee('Enrol Now');
     });
