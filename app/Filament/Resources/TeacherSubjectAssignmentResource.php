@@ -241,6 +241,9 @@ class TeacherSubjectAssignmentResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
+        if (! tenant()) {
+            return null;
+        }
         $activeSession = Session::active()->first();
         if (!$activeSession || !$activeSession->activeTerm) {
             return null;

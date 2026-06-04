@@ -71,9 +71,9 @@ class TenantBrandingService
      */
     public function warm(Tenant $tenant): void
     {
-        $domains = $tenant->relationLoaded('domains')
-            ? $tenant->domains
-            : $tenant->domains()->get();
+        $domains = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
+            ->where('tenant_id', $tenant->id)
+            ->get();
 
         $payload = [
             'name'  => $tenant->name ?? config('app.name'),
@@ -92,9 +92,9 @@ class TenantBrandingService
      */
     public function invalidate(Tenant $tenant): void
     {
-        $domains = $tenant->relationLoaded('domains')
-            ? $tenant->domains
-            : $tenant->domains()->get();
+        $domains = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
+            ->where('tenant_id', $tenant->id)
+            ->get();
 
         foreach ($domains as $domain) {
             Cache::forget("tenant_branding:{$domain->domain}");

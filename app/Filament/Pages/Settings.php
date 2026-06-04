@@ -24,6 +24,9 @@ class Settings extends Page
     public function mount(): void
     {
         $settings = Setting::all()->pluck('value', 'key')->toArray();
+        if (tenant()) {
+            $settings['primary_color'] = tenant()->primary_color;
+        }
         $this->form->fill($settings);
     }
 
@@ -52,6 +55,10 @@ class Settings extends Page
                             ->maxSize(512)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->helperText('Max 512 KB. Used on report cards and navigation.'),
+                        ColorPicker::make('primary_color')
+                            ->label('Primary Color')
+                            ->helperText('Used for main headers, buttons, and navigation.')
+                            ->nullable(),
                         ColorPicker::make('secondary_color')
                             ->label('Secondary Color')
                             ->helperText('Used for accents, links, and highlights.')
@@ -66,7 +73,7 @@ class Settings extends Page
                                 'standard' => 'Standard',
                                 'centered' => 'Centered',
                                 'compact'  => 'Compact',
-                            ])
+                             ])
                             ->default('standard')
                             ->helperText('Controls the overall page layout style.'),
                         TextInput::make('fee_schedule_link')->url(),
@@ -81,7 +88,13 @@ class Settings extends Page
         $data = $this->form->getState();
 
         foreach ($data as $key => $value) {
-            Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+            if ($key !== 'primary_color') {
+                Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+            }
+        }
+
+        if (tenant() && array_key_exists('primary_color', $data)) {
+            tenant()->update(['primary_color' => $data['primary_color']]);
         }
 
         Notification::make()

@@ -42,7 +42,7 @@
         {{-- ── Navigation ──────────────────────────────────────────── --}}
         <nav x-data="{ open: false, scrolled: false }"
              x-init="window.addEventListener('scroll', () => { scrolled = window.scrollY > 60 })"
-             :style="scrolled ? 'background-color: var(--color-tenant-primary); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1)' : 'background-color: transparent; box-shadow: none'"
+             :style="(scrolled || !{{ request()->routeIs('home') ? 'true' : 'false' }}) ? 'background-color: var(--color-tenant-primary); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1)' : 'background-color: transparent; box-shadow: none'"
              class="fixed top-0 left-0 right-0 z-50" style="transition: background-color 0.35s ease, box-shadow 0.35s ease;">
             <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-20 items-center">
@@ -121,7 +121,7 @@
         </nav>
 
         {{-- Page Content --}}
-        <main class="flex-grow">
+        <main class="flex-grow" style="padding-top: {{ request()->routeIs('home') ? '0' : '80px' }};">
             {{ $slot }}
         </main>
 

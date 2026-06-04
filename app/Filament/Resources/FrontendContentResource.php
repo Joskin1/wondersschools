@@ -71,6 +71,7 @@ class FrontendContentResource extends Resource
             ->components([
                 Select::make('key')
                     ->required()
+                    ->searchable()
                     ->options([
                         'hero_images' => 'Hero Images (JSON Slider Array)',
                         'hero_tagline' => 'Hero Tagline',
@@ -195,6 +196,7 @@ class FrontendContentResource extends Resource
                     ->unique(FrontendContent::class, 'key', ignoreRecord: true)
                     ->columnSpanFull()
                     ->disabled(fn ($record) => $record !== null)
+                    ->dehydrated()
                     ->live(onBlur: true)
                     ->afterStateUpdated(function (callable $set, $state) {
                         $groups = [
@@ -324,15 +326,14 @@ class FrontendContentResource extends Resource
                     ->disabled()
                     ->dehydrated(),
 
-
-                FileUpload::make('value')
+                FileUpload::make('value_image')
                     ->label('Value (Image)')
                     ->directory('frontend')
                     ->columnSpanFull()
                     ->visible($isImage)
                     ->dehydrated(fn ($state, $component) => $component->isVisible()),
 
-                Textarea::make('value')
+                Textarea::make('value_textarea')
                     ->label('Value (Long Text)')
                     ->rows(6)
                     ->columnSpanFull()
@@ -340,7 +341,7 @@ class FrontendContentResource extends Resource
                     ->visible($isTextarea)
                     ->dehydrated(fn ($state, $component) => $component->isVisible()),
 
-                TextInput::make('value')
+                TextInput::make('value_text')
                     ->label('Value (Short Text)')
                     ->columnSpanFull()
                     ->visible($isTextInput)

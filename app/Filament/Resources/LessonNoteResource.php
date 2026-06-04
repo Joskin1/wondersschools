@@ -295,6 +295,9 @@ class LessonNoteResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
+        if (! tenant()) {
+            return null;
+        }
         $pendingCount = static::getModel()::where('status', 'pending')->count();
         
         return $pendingCount > 0 ? (string) $pendingCount : null;
@@ -302,6 +305,9 @@ class LessonNoteResource extends Resource
 
     public static function getNavigationBadgeColor(): ?string
     {
+        if (! tenant()) {
+            return null;
+        }
         $pendingCount = static::getModel()::where('status', 'pending')->count();
         
         return $pendingCount > 0 ? 'warning' : null;

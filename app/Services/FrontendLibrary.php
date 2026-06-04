@@ -19,7 +19,11 @@ class FrontendLibrary
     public static function getSetting(string $key, $default = null)
     {
         try {
-            return Setting::where('key', $key)->value('value') ?? $default;
+            $value = Setting::where('key', $key)->value('value');
+            if ($value === null && $key === 'school_name') {
+                return config('app.name') ?? $default;
+            }
+            return $value ?? $default;
         } catch (\Throwable) {
             return $default;
         }
