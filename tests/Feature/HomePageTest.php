@@ -2,6 +2,7 @@
 
 use App\Livewire\Home;
 use App\Models\Post;
+use App\Models\Setting;
 use App\Models\Staff;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use function Pest\Laravel\get;
@@ -16,6 +17,8 @@ describe('Home Page', function () {
     });
 
     it('shows the hero section with school name', function () {
+        Setting::create(['key' => 'school_name', 'value' => 'Wonders Kiddies Foundation Schools']);
+
         get('/')
             ->assertSee('Wonders Kiddies Foundation Schools')
             ->assertSee('A Foundation That')

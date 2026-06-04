@@ -1023,9 +1023,8 @@ describe('EnterScores Livewire page', function () {
         $examId      = $this->exam->id;
 
         $component
-            ->set("scores.{$studentId}.{$classworkId}", '8')
-            ->set("scores.{$studentId}.{$examId}", '65')
-            ->call('saveScores');
+            ->call('saveScores', $studentId, $classworkId, '8')
+            ->call('saveScores', $studentId, $examId, '65');
 
         $this->assertDatabaseHas('scores', [
             'student_id'    => $studentId,
@@ -1053,8 +1052,8 @@ describe('EnterScores Livewire page', function () {
         $sid = $this->enrolledStudent->id;
         $cid = $this->classwork->id;
 
-        $component->set("scores.{$sid}.{$cid}", '5')->call('saveScores');
-        $component->set("scores.{$sid}.{$cid}", '9')->call('saveScores');
+        $component->call('saveScores', $sid, $cid, '5');
+        $component->call('saveScores', $sid, $cid, '9');
 
         expect(Score::where('student_id', $sid)->where('score_head_id', $cid)->count())->toBe(1)
             ->and((float) Score::where('student_id', $sid)->where('score_head_id', $cid)->value('score'))->toBe(9.0);
@@ -1073,11 +1072,11 @@ describe('EnterScores Livewire page', function () {
         $cid = $this->classwork->id;
 
         // Save a score first
-        $component->set("scores.{$sid}.{$cid}", '7')->call('saveScores');
+        $component->call('saveScores', $sid, $cid, '7');
         expect(Score::where('student_id', $sid)->where('score_head_id', $cid)->exists())->toBeTrue();
 
         // Clear the score
-        $component->set("scores.{$sid}.{$cid}", '')->call('saveScores');
+        $component->call('saveScores', $sid, $cid, '');
         expect(Score::where('student_id', $sid)->where('score_head_id', $cid)->exists())->toBeFalse();
     });
 
@@ -1094,7 +1093,7 @@ describe('EnterScores Livewire page', function () {
         $cid = $this->classwork->id; // max 10
 
         // Try to save 99 for a score head with max 10
-        $component->set("scores.{$sid}.{$cid}", '99')->call('saveScores');
+        $component->call('saveScores', $sid, $cid, '99');
 
         expect(Score::where('student_id', $sid)->where('score_head_id', $cid)->exists())->toBeFalse();
     });
@@ -1160,7 +1159,7 @@ describe('EnterScores Livewire page', function () {
         $sid = $this->enrolledStudent->id;
         $cid = $this->classwork->id;
 
-        $component->set("scores.{$sid}.{$cid}", '5')->call('saveScores');
+        $component->call('saveScores', $sid, $cid, '5');
 
         // saveScores re-checks authorization and aborts — no score saved
         expect(Score::where('subject_id', $this->english->id)->exists())->toBeFalse();
@@ -1484,8 +1483,7 @@ describe('Data integrity — finalization guard', function () {
             ->set('term_id', $this->term->id)
             ->set('classroom_id', $this->classroom->id)
             ->set('subject_id', $this->math->id)
-            ->set("scores.{$sid}.{$cid}", '8')
-            ->call('saveScores');
+            ->call('saveScores', $sid, $cid, '8');
 
         // No score should have been saved
         expect(Score::count())->toBe(0);

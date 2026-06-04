@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\FrontendContent;
+use App\Models\Setting;
 use App\Services\FrontendLibrary;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use function Pest\Laravel\get;
@@ -127,13 +128,15 @@ describe('FrontendContent model', function () {
 
 describe('Home page dynamic content', function () {
 
-    it('shows the default hero tagline when no database record exists', function () {
+    it('shows the tenant school name from settings', function () {
+        Setting::create(['key' => 'school_name', 'value' => 'Wonders Kiddies Foundation Schools']);
+
         get('/')->assertSee('Wonders Kiddies Foundation Schools');
     });
 
-    it('shows a custom hero tagline when stored in frontend_contents', function () {
+    it('shows a custom hero heading when stored in frontend_contents', function () {
         FrontendContent::create([
-            'key'   => 'hero_tagline',
+            'key'   => 'hero_heading',
             'group' => 'home.hero',
             'value' => 'Welcome to Sunrise Academy',
         ]);

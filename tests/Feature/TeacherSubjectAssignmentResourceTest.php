@@ -172,7 +172,7 @@ test('can filter assignments by classroom', function () {
 
     $assignment2 = TeacherSubjectAssignment::create([
         'teacher_id' => $this->teacher->id,
-        'subject_id' => Subject::factory()->create()->id,
+        'subject_id' => Subject::factory()->create(['name' => 'English Language'])->id,
         'classroom_id' => $classroom2->id,
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,

@@ -294,12 +294,12 @@ describe('Views use tenant branding classes', function () {
         expect($content)->toContain('text-tenant-accent');
     });
 
-    it('footer hover links use tenant-accent class', function () {
+    it('footer hover links use white hover class', function () {
         $response = get('/');
         $response->assertOk();
         $content = $response->getContent();
 
-        expect($content)->toContain('hover:text-tenant-accent');
+        expect($content)->toContain('hover:text-white');
     });
 });
 
