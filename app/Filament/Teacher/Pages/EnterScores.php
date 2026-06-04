@@ -294,6 +294,14 @@ class EnterScores extends Page
         ];
     }
 
+    /**
+     * Alias for Livewire tests expecting `saveScores`.
+     */
+    public function saveScores(int $studentId, int $scoreHeadId, $value): array
+    {
+        return $this->saveScore($studentId, $scoreHeadId, $value);
+    }
+
     // ── Computed properties ───────────────────────────────────────────────────
 
     public function getStatsProperty(): array

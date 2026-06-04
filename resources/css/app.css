@@ -1,3 +1,194 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+@layer components {
+    /* ── Navbar scroll transition ──────────────────────────────── */
+    .navbar-transparent {
+        background-color: transparent !important;
+        box-shadow: none !important;
+        transition: background-color 0.35s ease, box-shadow 0.35s ease;
+    }
+    .navbar-solid {
+        background-color: var(--color-tenant-primary) !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                    0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+        transition: background-color 0.35s ease, box-shadow 0.35s ease;
+    }
+
+    /* ── Hero carousel ────────────────────────────────────────── */
+    .hero-slide {
+        position: absolute;
+        inset: 0;
+        transition: opacity 1s ease-in-out;
+    }
+    .hero-slide-active {
+        opacity: 1;
+    }
+    .hero-slide-inactive {
+        opacity: 0;
+    }
+
+    .hero-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 9999px;
+        border: 2px solid rgba(255, 255, 255, 0.7);
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .hero-dot-active {
+        background: #fff;
+        border-color: #fff;
+        transform: scale(1.2);
+    }
+
+    .hero-chevron {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(4px);
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.3s ease;
+        z-index: 10;
+    }
+    .hero-chevron:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+    .hero-chevron-left {
+        left: 1rem;
+    }
+    .hero-chevron-right {
+        right: 1rem;
+    }
+
+    /* ── Feature cards ────────────────────────────────────────── */
+    .feature-card {
+        background: #fff;
+        border-radius: 0.75rem;
+        padding: 2rem 1.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08),
+                    0 1px 2px -1px rgba(0, 0, 0, 0.08);
+        transition: box-shadow 0.3s ease, transform 0.3s ease;
+        text-align: center;
+    }
+    .feature-card:hover {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12),
+                    0 8px 10px -6px rgba(0, 0, 0, 0.08);
+        transform: translateY(-4px);
+    }
+    .feature-card-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.25rem;
+        color: #fff;
+        background-color: var(--color-tenant-primary);
+    }
+
+    /* ── About pillar grid ────────────────────────────────────── */
+    .pillar-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        aspect-ratio: 4/3;
+    }
+    .pillar-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    .pillar-card:hover img {
+        transform: scale(1.08);
+    }
+    .pillar-card-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+        display: flex;
+        align-items: flex-end;
+        padding: 1rem;
+    }
+    .pillar-card-overlay span {
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* ── Portal buttons (nav) ─────────────────────────────────── */
+    .portal-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    .portal-btn-accent {
+        background-color: var(--color-tenant-accent);
+        color: #1D2A44;
+    }
+    .portal-btn-accent:hover {
+        filter: brightness(1.1);
+    }
+    .portal-btn-outline {
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        color: #fff;
+    }
+    .portal-btn-outline:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #fff;
+    }
+
+    /* ── Footer social icons ──────────────────────────────────── */
+    .social-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 9999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        transition: background 0.3s ease, transform 0.3s ease;
+    }
+    .social-icon:hover {
+        background: var(--color-tenant-accent);
+        color: #1D2A44;
+        transform: translateY(-2px);
+    }
+
+    /* ── Section fade-in animation ────────────────────────────── */
+    .fade-in-section {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .fade-in-section.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

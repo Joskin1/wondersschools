@@ -13,6 +13,7 @@ class GalleryImage extends Model
         'image',
         'category',
         'caption',
+        'is_hero_slider',
     ];
     //
 }

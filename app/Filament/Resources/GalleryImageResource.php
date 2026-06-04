@@ -7,6 +7,8 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
+use Filament\Forms\Components\Toggle;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -44,6 +46,9 @@ class GalleryImageResource extends Resource
                     ->maxLength(255),
                 TextInput::make('caption')
                     ->maxLength(255),
+                Toggle::make('is_hero_slider')
+                    ->label('Show in Hero Slider')
+                    ->default(false),
             ]);
     }
 
@@ -56,6 +61,8 @@ class GalleryImageResource extends Resource
                     ->searchable(),
                 TextColumn::make('caption')
                     ->searchable(),
+                ToggleColumn::make('is_hero_slider')
+                    ->label('Hero Slider'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

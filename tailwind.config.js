@@ -16,7 +16,10 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Inter', 'Montserrat', ...defaultTheme.fontFamily.sans],
+            },
+            maxWidth: {
+                '8xl': '1280px',
             },
             colors: {
                 'lime-green': '#D9EF60',
