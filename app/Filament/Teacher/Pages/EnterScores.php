@@ -174,7 +174,7 @@ class EnterScores extends Page
 
         foreach ($existingScores as $score) {
             if (isset($scoresMap[$score->student_id][$score->score_head_id])) {
-                $scoresMap[$score->student_id][$score->score_head_id] = rtrim(rtrim((string) $score->score, '0'), '.');
+                $scoresMap[$score->student_id][$score->score_head_id] = $score->score !== null ? (string)(float)$score->score : '';
             }
         }
 
@@ -226,7 +226,7 @@ class EnterScores extends Page
         }
 
         // ── Update local scores array state ──────────────────────────────────
-        $this->scores[$studentId][$scoreHeadId] = $value !== '' ? rtrim(rtrim((string) $value, '0'), '.') : '';
+        $this->scores[$studentId][$scoreHeadId] = $value !== '' ? (string)(float)$value : '';
 
         // ── Persist to Database ──────────────────────────────────────────────
         DB::transaction(function () use ($studentId, $scoreHeadId, $numericValue, $user) {

@@ -1040,6 +1040,48 @@ describe('EnterScores Livewire page', function () {
         ]);
     });
 
+    it('correctly saves and loads scores ending in zero without trimming them', function () {
+        $this->actingAs($this->teacher);
+
+        $component = Livewire::test(EnterScores::class)
+            ->set('session_id', $this->session->id)
+            ->set('term_id', $this->term->id)
+            ->set('classroom_id', $this->classroom->id)
+            ->set('subject_id', $this->math->id);
+
+        $studentId   = $this->enrolledStudent->id;
+        $classworkId = $this->classwork->id; // max 10
+        $examId      = $this->exam->id;      // max 80
+
+        // Save scores: 10 (ends in 0), 50 (ends in 0)
+        $component
+            ->call('saveScores', $studentId, $classworkId, '10')
+            ->call('saveScores', $studentId, $examId, '50');
+
+        // Verify database has exactly 10 and 50
+        $this->assertDatabaseHas('scores', [
+            'student_id'    => $studentId,
+            'subject_id'    => $this->math->id,
+            'score_head_id' => $classworkId,
+            'score'         => 10,
+        ]);
+        $this->assertDatabaseHas('scores', [
+            'student_id'    => $studentId,
+            'subject_id'    => $this->math->id,
+            'score_head_id' => $examId,
+            'score'         => 50,
+        ]);
+
+        // Verify the component state holds '10' and '50'
+        expect($component->get('scores')[$studentId][$classworkId])->toBe('10')
+            ->and($component->get('scores')[$studentId][$examId])->toBe('50');
+
+        // Reload the scores from database to ensure loading does not trim them
+        $component->call('loadScores');
+        expect($component->get('scores')[$studentId][$classworkId])->toBe('10')
+            ->and($component->get('scores')[$studentId][$examId])->toBe('50');
+    });
+
     it('updates an existing score instead of creating a duplicate', function () {
         $this->actingAs($this->teacher);
 
