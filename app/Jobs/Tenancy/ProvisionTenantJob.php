@@ -100,6 +100,11 @@ class ProvisionTenantJob implements ShouldQueue
             $this->seedDatabase();
             ProvisionLogger::log($tenantId, 'seeding', 'success');
 
+            // ── Step 3.5: Create public storage symlink ──────────────────
+            ProvisionLogger::log($tenantId, 'storage_link', 'started');
+            $this->createStorageLink();
+            ProvisionLogger::log($tenantId, 'storage_link', 'success');
+
             // ── Step 4: Validate provisioning ────────────────────────────
             ProvisionLogger::log($tenantId, 'validation', 'started');
 
@@ -201,6 +206,50 @@ class ProvisionTenantJob implements ShouldQueue
             }
         } catch (Throwable) {
             // Swallow connection cleanup errors to preserve the original exception report.
+        }
+    }
+
+    /**
+     * Create symbolic link from central public storage to tenant public directory.
+     * Idempotent: checks for existing links and handles directories.
+     */
+    private function createStorageLink(): void
+    {
+        $tenantId = $this->tenant->id;
+        $suffixBase = config('tenancy.filesystem.suffix_base', 'tenant');
+        $suffix = $suffixBase . $tenantId;
+
+        $target = storage_path("{$suffix}/app/public");
+        $link = storage_path("app/public/{$suffix}");
+
+        // Ensure target directory exists
+        if (! is_dir($target)) {
+            if (! mkdir($target, 0755, true) && ! is_dir($target)) {
+                throw new \RuntimeException("Failed to create tenant storage directory: {$target}");
+            }
+        }
+
+        // Ensure central public directory exists
+        if (! is_dir(storage_path('app/public'))) {
+            mkdir(storage_path('app/public'), 0755, true);
+        }
+
+        // Handle existing link/directory
+        if (file_exists($link) || is_link($link)) {
+            if (is_link($link)) {
+                $existingTarget = readlink($link);
+                if ($existingTarget === $target) {
+                    return;
+                }
+                unlink($link);
+            } else {
+                // Skip if it's already a real directory (to prevent data deletion)
+                return;
+            }
+        }
+
+        if (! symlink($target, $link)) {
+            throw new \RuntimeException("Failed to create symbolic link: {$link} -> {$target}");
         }
     }
 }

@@ -34,6 +34,11 @@ class ConfigBootstrapper implements TenancyBootstrapper
             \Illuminate\Support\Facades\URL::forceRootUrl("{$scheme}://{$domain}");
         }
 
+        // Override the public disk URL to route to the tenant-specific public directory.
+        $suffix = config('tenancy.filesystem.suffix_base', 'tenant') . $tenant->getTenantKey();
+        config(['filesystems.disks.public.url' => config('app.url') . '/storage/' . $suffix]);
+        \Illuminate\Support\Facades\Storage::forgetDisk('public');
+
         // The settings table may not exist yet during MigrateDatabase (the DB
         // was just created). Guard against missing table so the bootstrapper
         // never blocks the migration pipeline.
@@ -63,5 +68,9 @@ class ConfigBootstrapper implements TenancyBootstrapper
         config(['app.tenant_secondary_color' => null]);
         config(['app.tenant_accent_color'    => null]);
         config(['app.tenant_layout_style'    => null]);
+
+        // Revert the public disk URL back to landlord configuration.
+        config(['filesystems.disks.public.url' => env('APP_URL') . '/storage']);
+        \Illuminate\Support\Facades\Storage::forgetDisk('public');
     }
 }
