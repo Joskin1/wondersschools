@@ -103,7 +103,7 @@ class User extends Authenticatable implements FilamentUser
         // Allow impersonated users to access the admin panel so the
         // "Leave Impersonation" banner remains reachable even if the
         // impersonated user would normally be denied.
-        if (app(\Lab404\Impersonate\Services\ImpersonateManager::class)->isImpersonating()) {
+        if (\STS\FilamentImpersonate\Facades\Impersonation::isImpersonating()) {
             return true;
         }
 
