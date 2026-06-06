@@ -170,6 +170,10 @@ class StudentResource extends Resource
                     ->modalWidth('lg'),
                     
                 ViewAction::make(),
+                \STS\FilamentImpersonate\Actions\Impersonate::make()
+                    ->impersonateRecord(fn ($record) => $record->user)
+                    ->redirectTo('/student')
+                    ->visible(fn ($record) => $record->user !== null && $record->is_portal_active),
             ])
             ->bulkActions([
                 // No bulk actions for data integrity

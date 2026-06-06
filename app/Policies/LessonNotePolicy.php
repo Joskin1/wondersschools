@@ -10,14 +10,10 @@ use App\Services\LessonNoteCache;
 
 class LessonNotePolicy
 {
-    /**
-     * Determine if the user can view any lesson notes.
-     */
     public function viewAny(User $user): bool
     {
-        // Admins and sudo can view all
-        // Teachers can view their own
-        return in_array($user->role, ['admin', 'sudo', 'teacher']);
+        // Admins, sudo, teachers, and active student users can view
+        return in_array($user->role, ['admin', 'sudo', 'teacher', 'student']);
     }
 
     /**
@@ -44,6 +40,25 @@ class LessonNotePolicy
             )) {
                 return true;
             }
+        }
+
+        // Students can only view approved notes matching their classroom and enrolled subjects
+        if ($user->role === 'student') {
+            $student = $user->student;
+            if (! $student) {
+                return false;
+            }
+
+            $enrollment = $student->currentEnrollment();
+            if (! $enrollment) {
+                return false;
+            }
+
+            if ($lessonNote->classroom_id !== $enrollment->classroom_id || $lessonNote->status !== 'approved') {
+                return false;
+            }
+
+            return $enrollment->classroom->subjects()->where('subjects.id', $lessonNote->subject_id)->exists();
         }
 
         return false;
