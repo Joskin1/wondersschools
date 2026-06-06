@@ -1,7 +1,22 @@
 <x-filament-panels::page>
     <style>
         /* ── Design System ───────────────────────────────────────────────── */
-        .sr-page { max-width: 960px; margin: 0 auto; }
+        .sr-page {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 1.25rem;
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+        @media (max-width: 640px) {
+            .sr-page {
+                padding: 0 0.75rem;
+                width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
+            }
+        }
 
         /* Filter Card */
         .sr-filters {
@@ -155,9 +170,13 @@
             border: 1px solid #e5e7eb;
             border-top: none;
             border-radius: 0 0 12px 12px;
-            overflow: hidden;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             box-shadow: 0 1px 3px rgba(0,0,0,.06);
             margin-bottom: 1.5rem;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
         .dark .sr-table-wrap { background: #1f2937; border-color: #374151; }
 
@@ -291,10 +310,103 @@
             color: #9ca3af;
         }
 
+        /* Webkit custom scrollbar for clean premium scroll experience on mobile */
+        .sr-table-wrap::-webkit-scrollbar {
+            height: 6px;
+        }
+        .sr-table-wrap::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .dark .sr-table-wrap::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        .sr-table-wrap::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .dark .sr-table-wrap::-webkit-scrollbar-thumb {
+            background: #4b5563;
+        }
+        .sr-table-wrap::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .sr-table th, .sr-table td {
+            white-space: nowrap;
+        }
+        .sr-table th:first-child, .sr-table td:first-child {
+            white-space: normal;
+            min-width: 140px;
+        }
+
         @media (max-width: 768px) {
-            .sr-filters { grid-template-columns: 1fr; }
-            .sr-hero { grid-template-columns: repeat(2, 1fr); }
-            .sr-summary-footer { grid-template-columns: repeat(2, 1fr); }
+            .sr-filters { grid-template-columns: 1fr; gap: 0.75rem; }
+            .sr-hero { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+            .sr-summary-footer { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .sr-info-bar {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+                gap: 1rem;
+                padding: 1.25rem 1rem;
+            }
+            .sr-info-bar .info-left {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: 0.5rem;
+            }
+            .sr-download-btn {
+                justify-content: center;
+                width: 100%;
+            }
+            .sr-summary-footer {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .sr-hero {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            .sr-stat-card {
+                padding: 1rem;
+            }
+            .sr-stat-card .stat-value {
+                font-size: 1.5rem;
+            }
+            .sr-stat-card .stat-label {
+                font-size: 0.65rem;
+            }
+            .sr-summary-footer {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            .sr-summary-item {
+                text-align: left;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #e5e7eb;
+                padding-bottom: 0.5rem;
+            }
+            .dark .sr-summary-item {
+                border-color: #374151;
+            }
+            .sr-summary-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+            .sr-summary-item .summary-value {
+                margin-top: 0;
+                font-size: 0.95rem;
+            }
         }
     </style>
 
