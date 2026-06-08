@@ -35,7 +35,7 @@ class TeacherPanelProvider extends PanelProvider
             ->brandName(fn () => $branding['name'])
             ->login()
             ->passwordReset()
-            ->profile()
+            ->profile(\App\Filament\Pages\CustomProfile::class)
             ->colors([
                 'primary' => $branding['color'],
             ])

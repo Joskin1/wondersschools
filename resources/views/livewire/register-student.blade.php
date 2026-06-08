@@ -56,6 +56,30 @@
                     </div>
 
                     <div class="space-y-6">
+                        <!-- Profile Picture -->
+                        <div>
+                            <label for="profile_picture" class="block text-sm font-semibold text-gray-700 mb-2">Profile Picture (Optional)</label>
+                            <div class="mt-1 flex items-center">
+                                @if ($profile_picture)
+                                    <span class="inline-block h-16 w-16 overflow-hidden rounded-full bg-gray-100 mr-4">
+                                        <img src="{{ $profile_picture->temporaryUrl() }}" class="h-full w-full object-cover">
+                                    </span>
+                                @else
+                                    <span class="inline-block h-16 w-16 overflow-hidden rounded-full bg-gray-100 mr-4">
+                                        <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                    </span>
+                                @endif
+                                <label for="profile_picture" class="cursor-pointer rounded-md border border-gray-300 bg-white py-2 px-3 text-sm font-medium leading-4 text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                    <span>Upload picture</span>
+                                    <input id="profile_picture" wire:model="profile_picture" type="file" class="sr-only" accept="image/*">
+                                </label>
+                            </div>
+                            <div wire:loading wire:target="profile_picture" class="text-sm text-gray-500 mt-2">Uploading...</div>
+                            @error('profile_picture') <span class="text-red-600 text-sm mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
                         <!-- Personal Information -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>

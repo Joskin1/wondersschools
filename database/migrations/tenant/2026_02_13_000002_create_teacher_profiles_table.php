@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('teacher_profiles', function (Blueprint $table) {
+        Schema::create('teachers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->onDelete('cascade');
-            $table->date('dob');
-            $table->text('address');
-            $table->string('phone', 20);
-            $table->string('gender', 20);
+            $table->string('profile_picture')->nullable();
+            $table->date('dob')->nullable();
+            $table->text('address')->nullable();
+            $table->string('phone', 20)->nullable();
+            $table->string('gender', 20)->nullable();
             $table->timestamps();
             
             // Index for fast user lookups
@@ -30,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('teacher_profiles');
+        Schema::dropIfExists('teachers');
     }
 };

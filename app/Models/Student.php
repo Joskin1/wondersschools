@@ -22,6 +22,14 @@ class Student extends Model
     protected $fillable = [
         'user_id',
         'full_name',
+        'profile_picture',
+        'date_of_birth',
+        'gender',
+        'address',
+        'previous_school',
+        'parent_name',
+        'parent_phone',
+        'parent_email',
         'registration_slug',
         'registration_token',
         'registration_expires_at',
@@ -40,6 +48,7 @@ class Student extends Model
     protected function casts(): array
     {
         return [
+            'date_of_birth'            => 'date',
             'registration_expires_at'  => 'datetime',
             'registration_completed_at' => 'datetime',
             'is_portal_active'         => 'boolean',
@@ -53,14 +62,6 @@ class Student extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Get the student's profile.
-     */
-    public function profile(): HasOne
-    {
-        return $this->hasOne(StudentProfile::class);
     }
 
     /**
@@ -197,17 +198,11 @@ class Student extends Model
      */
     public function completeRegistration(array $profileData): void
     {
-        // Create or update profile
-        $this->profile()->updateOrCreate(
-            ['student_id' => $this->id],
-            $profileData
-        );
-
-        // Mark registration as completed and activate the student
-        $this->update([
+        // Update student directly with profile data
+        $this->update(array_merge($profileData, [
             'status' => 'active',
             'registration_completed_at' => now(),
-        ]);
+        ]));
 
         // Clear registration link (prevent reuse)
         $this->clearRegistrationLink();

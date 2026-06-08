@@ -2,20 +2,24 @@
 
 namespace App\Livewire;
 
-use App\Models\TeacherProfile;
+use App\Models\Teacher;
 use App\Models\TeacherRegistrationToken;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class TeacherRegistrationForm extends Component
 {
+    use WithFileUploads;
+
     public string $token;
     public User $user;
 
     // Profile fields
+    public $profile_picture;
     public $dob;
     public $address;
     public $phone;
@@ -38,6 +42,7 @@ class TeacherRegistrationForm extends Component
     protected function rules()
     {
         return [
+            'profile_picture' => 'nullable|image|max:2048', // 2MB Max
             'dob' => 'required|date|before:today|after:1950-01-01',
             'address' => 'required|string|max:500',
             'phone' => 'required|string|max:20|regex:/^[0-9+\-\s()]+$/',
@@ -81,11 +86,17 @@ class TeacherRegistrationForm extends Component
             return redirect()->route('login');
         }
 
+        $profilePicturePath = null;
+        if ($this->profile_picture) {
+            $profilePicturePath = $this->profile_picture->store('profile-pictures', 'public');
+        }
+
         try {
-            DB::transaction(function () use ($tokenRecord) {
+            DB::transaction(function () use ($tokenRecord, $profilePicturePath) {
                 // Create teacher profile
-                TeacherProfile::create([
+                Teacher::create([
                     'user_id' => $this->user->id,
+                    'profile_picture' => $profilePicturePath,
                     'dob' => $this->dob,
                     'address' => $this->address,
                     'phone' => $this->phone,

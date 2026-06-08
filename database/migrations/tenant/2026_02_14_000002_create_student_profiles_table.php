@@ -11,24 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('student_profiles', function (Blueprint $table) {
-            $table->id();
-            
-            $table->foreignId('student_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
-            
-            $table->date('date_of_birth')->nullable();
-            $table->string('gender')->nullable();
-            $table->string('address')->nullable();
-            $table->string('previous_school')->nullable();
-            
-            $table->string('parent_name')->nullable();
-            $table->string('parent_phone')->nullable();
-            $table->string('parent_email')->nullable();
-            
-            $table->timestamps();
-        });
+        // Removed as part of refactoring.
     }
 
     /**
@@ -36,6 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('student_profiles');
+        //
     }
 };

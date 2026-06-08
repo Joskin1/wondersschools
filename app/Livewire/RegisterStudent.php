@@ -5,12 +5,14 @@ namespace App\Livewire;
 use App\Models\Student;
 use App\Models\User;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterStudent extends Component
 {
+    use WithFileUploads;
     public ?Student $student = null;
     public ?string $slug = null;
     public ?string $token = null;
@@ -20,6 +22,7 @@ class RegisterStudent extends Component
     public string $error = '';
 
     // Form fields
+    public $profile_picture;
     public string $date_of_birth = '';
     public string $gender = '';
     public string $address = '';
@@ -71,6 +74,7 @@ class RegisterStudent extends Component
 
         // Validate form data
         $validated = Validator::make([
+            'profile_picture' => $this->profile_picture,
             'date_of_birth' => $this->date_of_birth,
             'gender' => $this->gender,
             'address' => $this->address,
@@ -81,6 +85,7 @@ class RegisterStudent extends Component
             'password' => $this->password,
             'password_confirmation' => $this->password_confirmation,
         ], [
+            'profile_picture' => 'nullable|image|max:2048', // 2MB Max
             'date_of_birth' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
             'address' => 'required|string|max:255',
@@ -90,6 +95,11 @@ class RegisterStudent extends Component
             'parent_email' => 'nullable|email|max:255',
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ])->validate();
+
+        // Handle profile picture upload
+        if ($this->profile_picture) {
+            $validated['profile_picture'] = $this->profile_picture->store('profile-pictures', 'public');
+        }
 
         // Create User account for the student (inactive until admin activates)
         $email = $validated['parent_email']

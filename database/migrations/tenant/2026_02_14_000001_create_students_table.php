@@ -15,6 +15,17 @@ return new class extends Migration
             $table->id();
             
             $table->string('full_name');
+            $table->string('profile_picture')->nullable();
+            
+            // Profile fields migrated from student_profiles
+            $table->date('date_of_birth')->nullable();
+            $table->string('gender')->nullable();
+            $table->string('address')->nullable();
+            $table->string('previous_school')->nullable();
+            $table->string('parent_name')->nullable();
+            $table->string('parent_phone')->nullable();
+            $table->string('parent_email')->nullable();
+            
             $table->string('registration_slug')->unique()->nullable();
             $table->string('registration_token', 64)->nullable(); // SHA-256 produces 64-char hex string
             $table->timestamp('registration_expires_at')->nullable();

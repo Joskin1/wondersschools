@@ -9,8 +9,10 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Filament\Models\Contracts\HasAvatar;
+use Illuminate\Support\Facades\Storage;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasAvatar
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -117,11 +119,31 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Get the teacher profile for this user.
+     * Get the teacher record for this user.
      */
-    public function teacherProfile()
+    public function teacher()
     {
-        return $this->hasOne(TeacherProfile::class);
+        return $this->hasOne(Teacher::class);
+    }
+
+    /**
+     * Get the Filament avatar URL for this user.
+     */
+    public function getFilamentAvatarUrl(): ?string
+    {
+        $avatarPath = null;
+
+        if ($this->isStudent() && $this->student) {
+            $avatarPath = $this->student->profile_picture;
+        } elseif ($this->isTeacher() && $this->teacher) {
+            $avatarPath = $this->teacher->profile_picture;
+        }
+
+        if ($avatarPath) {
+            return Storage::disk('public')->url($avatarPath);
+        }
+
+        return null;
     }
 
     /**
