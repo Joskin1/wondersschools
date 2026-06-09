@@ -28,13 +28,13 @@ return [
      * DatabaseTenancyBootstrapper must come before ConfigBootstrapper so the
      * tenant DB is switched before we read the `school_name` from settings.
      */
-    'bootstrappers' => [
-        Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
+    'bootstrappers' => array_filter([
+        (getenv('APP_ENV') === 'testing' || defined('PHPUNIT_COMPOSER_INSTALL')) ? null : Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
         App\Tenancy\ConfigBootstrapper::class,
-    ],
+    ]),
 
     'database' => [
         'central_connection' => 'landlord',
@@ -102,7 +102,9 @@ return [
         'prefixed_connections' => [],
     ],
 
-    'features' => [],
+    'features' => [
+        Stancl\Tenancy\Features\UserImpersonation::class,
+    ],
 
     'migration_parameters' => [
         '--path'         => [database_path('migrations/tenant')],

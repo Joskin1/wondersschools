@@ -17,6 +17,8 @@ use Filament\Actions;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Validation\Rule;
+use App\Models\User;
+use Filament\Notifications\Notification;
 
 class SchoolResource extends Resource
 {
@@ -141,6 +143,43 @@ class SchoolResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions([
+                Actions\Action::make('impersonate')
+                    ->label('Impersonate')
+                    ->icon('heroicon-m-user-circle')
+                    ->color('warning')
+                    ->action(function (Tenant $record) {
+                        $domain = $record->domains->first()?->domain;
+                        if (! $domain) {
+                            Notification::make()
+                                ->title('No Domain Found')
+                                ->body('This school has no domain configured.')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        // Initialize tenant context to search for the admin user inside the tenant's DB
+                        tenancy()->initialize($record);
+                        $adminUser = User::where('role', 'admin')->first();
+                        tenancy()->end();
+
+                        if (! $adminUser) {
+                            Notification::make()
+                                ->title('No Admin Found')
+                                ->body('No administrator account was found for this school.')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        // Generate the impersonation token
+                        $token = tenancy()->impersonate($record, $adminUser->id, '/admin', 'web');
+
+                        $protocol = app()->environment('local') ? 'http' : 'https';
+                        $url = "{$protocol}://{$domain}/impersonate/{$token->token}";
+
+                        return redirect()->away($url);
+                    }),
                 Actions\EditAction::make(),
                 Actions\DeleteAction::make(),
             ])

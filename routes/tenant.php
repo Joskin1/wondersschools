@@ -46,4 +46,9 @@ Route::get('/student/result-pdf', [\App\Http\Controllers\ResultPdfController::cl
     ->middleware('auth')
     ->name('student.result-pdf');
 
+// User Impersonation
+Route::get('/impersonate/{token}', function (string $token) {
+    return Stancl\Tenancy\Features\UserImpersonation::makeResponse($token);
+})->middleware(['web'])->name('tenant.impersonate');
+
 
