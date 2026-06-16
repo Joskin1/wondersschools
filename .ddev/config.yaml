@@ -26,8 +26,8 @@ additional_fqdns:
   - yo.wonders.test
   - chizylite-academy.wonders.test
 database:
-    type: mysql
-    version: "8.0"
+    type: postgres
+    version: "16"
 project_tld: test
 use_dns_when_possible: true
 timezone: UTC

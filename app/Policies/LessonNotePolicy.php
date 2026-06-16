@@ -12,8 +12,17 @@ class LessonNotePolicy
 {
     public function viewAny(User $user): bool
     {
-        // Admins, sudo, teachers, and active student users can view
-        return in_array($user->role, ['admin', 'sudo', 'teacher', 'student']);
+        // Admins, sudo, and teachers can view
+        if (in_array($user->role, ['admin', 'sudo', 'teacher'])) {
+            return true;
+        }
+
+        // Active student users can view
+        if ($user->role === 'student') {
+            return $user->student !== null && $user->student->status === 'active';
+        }
+
+        return false;
     }
 
     /**

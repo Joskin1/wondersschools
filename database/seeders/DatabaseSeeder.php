@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
         // were wiped but MySQL tenant DBs survive across fresh migrations).
         $prefix    = config('tenancy.database.prefix', 'tenant_');
         $tenantDbName = $prefix . 'wonders';
-        DB::connection('landlord')->statement("DROP DATABASE IF EXISTS `{$tenantDbName}`");
+        DB::connection('landlord')->statement("DROP DATABASE IF EXISTS \"{$tenantDbName}\"");
 
         /** @var Tenant $tenant */
         $tenant = Tenant::firstOrCreate(

@@ -186,9 +186,8 @@ describe('Student Registration System', function () {
 
             expect($student->status)->toBe('active')
                 ->and($student->isActive())->toBeTrue()
-                ->and($student->profile)->not->toBeNull()
-                ->and($student->profile->date_of_birth->format('Y-m-d'))->toBe('2010-01-01')
-                ->and($student->profile->parent_name)->toBe('John Parent')
+                ->and($student->date_of_birth->format('Y-m-d'))->toBe('2010-01-01')
+                ->and($student->parent_name)->toBe('John Parent')
                 ->and($student->registration_slug)->toBeNull()
                 ->and($student->registration_token)->toBeNull()
                 ->and($student->registration_expires_at)->toBeNull();
@@ -255,14 +254,6 @@ describe('Student Registration System', function () {
     });
 
     describe('Model Relationships', function () {
-        it('has profile relationship', function () {
-            $student = Student::factory()->create();
-            $profile = StudentProfile::factory()->create(['student_id' => $student->id]);
-
-            expect($student->profile)->not->toBeNull()
-                ->and($student->profile->id)->toBe($profile->id);
-        });
-
         it('has enrollments relationship', function () {
             $student = Student::factory()->create();
             $enrollment = StudentEnrollment::factory()->create(['student_id' => $student->id]);
@@ -271,16 +262,14 @@ describe('Student Registration System', function () {
                 ->and($student->enrollments->first()->id)->toBe($enrollment->id);
         });
 
-        it('cascades delete to profile and enrollments', function () {
+        it('cascades delete to enrollments', function () {
             $student = Student::factory()->create();
-            StudentProfile::factory()->create(['student_id' => $student->id]);
             StudentEnrollment::factory()->create(['student_id' => $student->id]);
 
             $studentId = $student->id;
             $student->delete();
 
-            expect(StudentProfile::where('student_id', $studentId)->count())->toBe(0)
-                ->and(StudentEnrollment::where('student_id', $studentId)->count())->toBe(0);
+            expect(StudentEnrollment::where('student_id', $studentId)->count())->toBe(0);
         });
     });
 

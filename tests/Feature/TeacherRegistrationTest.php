@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\User;
-use App\Models\TeacherProfile;
+use App\Models\Teacher;
 use App\Models\TeacherRegistrationToken;
 use App\Notifications\TeacherRegistrationInvitation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -125,9 +125,8 @@ describe('Teacher Registration System', function () {
             ]);
 
             $rawToken = TeacherRegistrationToken::createForUser($teacher);
-
             // Simulate registration completion
-            TeacherProfile::create([
+            Teacher::create([
                 'user_id' => $teacher->id,
                 'dob' => '1990-01-01',
                 'address' => '123 Test St',
@@ -149,9 +148,8 @@ describe('Teacher Registration System', function () {
             expect($teacher->password)->not->toBeNull()
                 ->and($teacher->is_active)->toBeTrue()
                 ->and($teacher->registration_completed_at)->not->toBeNull()
-                ->and($teacher->teacherProfile)->not->toBeNull()
-                ->and($tokenRecord->isUsed())->toBeTrue();
-        });
+                ->and($teacher->teacher)->not->toBeNull()
+                ->and($tokenRecord->isUsed())->toBeTrue();        });
     });
 
     describe('User Model Methods', function () {

@@ -107,7 +107,7 @@ it('hides pending and rejected notes from students', function () {
     createTestNote(['status' => 'pending']);
 
     // Note 2: Rejected
-    createTestNote(['status' => 'rejected']);
+    createTestNote(['status' => 'rejected', 'week_number' => 2]);
 
     // Authenticate as Student 1
     $this->actingAs($this->studentUser1);
