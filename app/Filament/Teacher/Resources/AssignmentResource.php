@@ -14,6 +14,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Repeater;
+use Filament\Actions;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -21,7 +22,7 @@ class AssignmentResource extends Resource
 {
     protected static ?string $model = Assignment::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
     protected static ?string $navigationLabel = 'Assignments';
 
@@ -71,7 +72,7 @@ class AssignmentResource extends Resource
 
                             Select::make('week_number')
                                 ->label('Week')
-                                ->options(array_combine(range(1, 12), array_map(fn ($w) => "Week {$w}", range(1, 12))))
+                                ->options(array_combine(range(1, 12), array_map(fn($w) => "Week {$w}", range(1, 12))))
                                 ->required(),
 
                             TextInput::make('title')
@@ -187,7 +188,7 @@ class AssignmentResource extends Resource
                             ->defaultItems(1)
                             ->addActionLabel('Add Question')
                             ->reorderable(false)
-                            ->itemLabel(fn (array $state): ?string => $state['question_text'] ?? 'New Question'),
+                            ->itemLabel(fn(array $state): ?string => $state['question_text'] ?? 'New Question'),
                     ]),
             ]);
     }
@@ -211,7 +212,7 @@ class AssignmentResource extends Resource
                     ->label('Week')
                     ->sortable()
                     ->badge()
-                    ->formatStateUsing(fn ($state) => "Week {$state}"),
+                    ->formatStateUsing(fn($state) => "Week {$state}"),
 
                 Tables\Columns\TextColumn::make('title')
                     ->label('Title')
@@ -246,14 +247,21 @@ class AssignmentResource extends Resource
 
                 Tables\Filters\SelectFilter::make('week_number')
                     ->label('Week')
-                    ->options(array_combine(range(1, 12), array_map(fn ($w) => "Week {$w}", range(1, 12)))),
+                    ->options(array_combine(range(1, 12), array_map(fn($w) => "Week {$w}", range(1, 12)))),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make()
-                    ->visible(fn (Assignment $record) => $record->submissions()->count() === 0),
+                Actions\ViewAction::make(),
+                Actions\EditAction::make()
+                    ->visible(fn(Assignment $record) => $record->submissions()->count() === 0),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            RelationManagers\SubmissionsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
