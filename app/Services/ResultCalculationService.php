@@ -45,6 +45,17 @@ class ResultCalculationService
      */
     public function calculateForClass(int $classroomId, int $sessionId, int $termId): void
     {
+        $structure = ClassScoreStructure::where('class_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->first();
+
+        if (! $structure || ! $structure->locked) {
+            throw new \RuntimeException(
+                'Cannot calculate results: class score structure is not locked.'
+            );
+        }
+
         // ── Determine if this is a third-term (cumulative) calculation ────────
         $term = Term::find($termId);
         $isThirdTerm = $term && $term->order === 3;

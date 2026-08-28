@@ -21,6 +21,12 @@ beforeEach(function () {
     $this->user = User::factory()->create(['role' => 'student', 'is_active' => true]);
     $this->student = Student::factory()->create(['user_id' => $this->user->id]);
 
+    \App\Models\StudentEnrollment::create([
+        'student_id'   => $this->student->id,
+        'classroom_id' => $this->classroom->id,
+        'session_id'   => $this->session->id,
+    ]);
+
     // Another student (for isolation checks)
     $this->otherUser = User::factory()->create(['role' => 'student', 'is_active' => true]);
     $this->otherStudent = Student::factory()->create(['user_id' => $this->otherUser->id]);
