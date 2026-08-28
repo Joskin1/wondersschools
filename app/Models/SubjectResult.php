@@ -10,12 +10,13 @@ class SubjectResult extends Model
     protected $fillable = [
         'student_id', 'classroom_id', 'subject_id',
         'session_id', 'term_id',
-        'total', 'grade', 'remark', 'position',
+        'total', 'grade', 'remark', 'position', 'is_published',
     ];
 
     protected $casts = [
-        'total'    => 'decimal:2',
-        'position' => 'integer',
+        'total'        => 'decimal:2',
+        'position'     => 'integer',
+        'is_published' => 'boolean',
     ];
 
     // ── Relationships ────────────────────────────────────────────────────────
@@ -70,5 +71,10 @@ class SubjectResult extends Model
     public function scopeForTerm($query, int $termId)
     {
         return $query->where('term_id', $termId);
+    }
+
+    public function scopePublished($query)
+    {
+        return $query->where('is_published', true);
     }
 }

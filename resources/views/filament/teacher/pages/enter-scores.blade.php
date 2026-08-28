@@ -77,9 +77,28 @@
                         </div>
                     </div>
 
-                    <div wire:loading wire:target="session_id,term_id,classroom_id,subject_id" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #6366f1; font-weight: 700;">
-                        <svg style="width: 16px; height: 16px;" class="animate-spin" fill="none" viewBox="0 0 24 24"><circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                        Loading scorecard...
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        @if ($this->loaded && !empty($students))
+                            @if ($this->isSubjectPublished)
+                                <span style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; background: #d1fae5; color: #065f46;" class="dark:bg-emerald-950 dark:text-emerald-300">
+                                    ✓ Subject Published
+                                </span>
+                            @else
+                                <span style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; background: #fef3c7; color: #92400e;" class="dark:bg-amber-950 dark:text-amber-300">
+                                    ● Draft Scores
+                                </span>
+                            @endif
+
+                            <button type="button" wire:click="publishSubject" wire:loading.attr="disabled" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.75rem; background: #4f46e5; color: white; font-size: 0.8125rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+                                <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3 21l19-9L3 3l3 9zm0 0h75"/></svg>
+                                Publish Subject Scores
+                            </button>
+                        @endif
+
+                        <div wire:loading wire:target="session_id,term_id,classroom_id,subject_id" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #6366f1; font-weight: 700;">
+                            <svg style="width: 16px; height: 16px;" class="animate-spin" fill="none" viewBox="0 0 24 24"><circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                            Loading scorecard...
+                        </div>
                     </div>
                 </div>
 

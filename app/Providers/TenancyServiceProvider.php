@@ -19,7 +19,10 @@ use Stancl\Tenancy\Resolvers\DomainTenantResolver;
 
 class TenancyServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->bind(InitializeTenancyByDomain::class, \App\Http\Middleware\InitializeTenancy::class);
+    }
 
     public function boot(): void
     {
@@ -43,6 +46,15 @@ class TenancyServiceProvider extends ServiceProvider
         // must pass through instead of throwing TenantCouldNotBeIdentifiedException.
         InitializeTenancyByDomain::$onFail = function ($exception, $request, $next) {
             return $next($request);
+        };
+
+        // If in single-tenant mode, do not block the request on central domains
+        // if a tenant has successfully been initialized.
+        PreventAccessFromCentralDomains::$abortRequest = function ($request, $next) {
+            if (tenancy()->initialized) {
+                return $next($request);
+            }
+            abort(404);
         };
     }
 

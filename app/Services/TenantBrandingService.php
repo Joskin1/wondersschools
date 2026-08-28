@@ -39,6 +39,36 @@ class TenantBrandingService
             return $this->defaults();
         }
 
+        $singleTenantId = env('SINGLE_TENANT_ID');
+        if ($singleTenantId) {
+            $localCentralDomains = ['wonders.test', 'localhost', '127.0.0.1'];
+            if (!in_array($host, $localCentralDomains, true) && !str_ends_with($host, '.test')) {
+                return Cache::remember(
+                    "tenant_branding:single_tenant:{$singleTenantId}",
+                    self::TTL,
+                    function () use ($singleTenantId): array {
+                        try {
+                            $tenant = Tenant::on('landlord')
+                                ->select('id', 'name', 'primary_color')
+                                ->find($singleTenantId);
+
+                            if ($tenant) {
+                                return [
+                                    'name'  => $tenant->name ?? config('app.name'),
+                                    'color' => $tenant->primary_color
+                                        ? Color::hex($tenant->primary_color)
+                                        : Color::Amber,
+                                ];
+                            }
+                        } catch (\Throwable) {
+                            // fall back
+                        }
+                        return $this->defaults();
+                    }
+                );
+            }
+        }
+
         return Cache::remember(
             "tenant_branding:{$host}",
             self::TTL,

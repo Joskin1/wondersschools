@@ -44,10 +44,10 @@ class StudentResultPage extends Page
             return;
         }
 
-        // Only load sessions where term_results exist for this student
-        $sessionIds = TermResult::where('student_id', $student->id)
-            ->distinct()
-            ->pluck('session_id');
+        // Load sessions where student has an enrollment
+        $sessionIds = StudentEnrollment::where('student_id', $student->id)
+            ->pluck('session_id')
+            ->unique();
 
         $this->sessions = Session::whereIn('id', $sessionIds)
             ->orderByDesc('id')
@@ -67,14 +67,7 @@ class StudentResultPage extends Page
             return;
         }
 
-        $student = Auth::user()->student;
-
-        $termIds = TermResult::where('student_id', $student->id)
-            ->where('session_id', $this->session_id)
-            ->distinct()
-            ->pluck('term_id');
-
-        $this->terms = \App\Models\Term::whereIn('id', $termIds)
+        $this->terms = \App\Models\Term::where('session_id', $this->session_id)
             ->orderBy('order')
             ->get()
             ->map(fn ($t) => ['id' => $t->id, 'name' => $t->name])
@@ -116,6 +109,7 @@ class StudentResultPage extends Page
         $termResult = TermResult::where('student_id', $student->id)
             ->where('session_id', $this->session_id)
             ->where('term_id', $this->term_id)
+            ->where('is_finalized', true)
             ->first();
 
         if (! $termResult) {

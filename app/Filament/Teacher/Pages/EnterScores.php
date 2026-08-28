@@ -256,26 +256,6 @@ class EnterScores extends Page
             }
         });
 
-        // ── Invalidate computed result caches ────────────────────────────────
-        SubjectResult::where('classroom_id', $this->classroom_id)
-            ->where('session_id', $this->session_id)
-            ->where('term_id', $this->term_id)
-            ->delete();
-
-        TermResult::where('classroom_id', $this->classroom_id)
-            ->where('session_id', $this->session_id)
-            ->where('term_id', $this->term_id)
-            ->delete();
-
-        $structure = ClassScoreStructure::where('class_id', $this->classroom_id)
-            ->where('session_id', $this->session_id)
-            ->where('term_id', $this->term_id)
-            ->first();
-
-        if ($structure?->locked) {
-            CalculateTermResults::dispatch($this->classroom_id, $this->session_id, $this->term_id);
-        }
-
         // Recalculate values for this student
         $studentTotal = collect($this->scoreHeads)->sum(
             fn($h) => (float) ($this->scores[$studentId][$h['id']] ?? 0)
@@ -454,6 +434,46 @@ class EnterScores extends Page
         }
 
         return TeacherSubjectAssignment::isAssigned($user->id, $subjectId, $classroomId, $sessionId, $termId);
+    }
+
+    public function publishSubject(): void
+    {
+        if (! $this->session_id || ! $this->term_id || ! $this->classroom_id || ! $this->subject_id) {
+            Notification::make()->title('Please select all filters first.')->warning()->send();
+            return;
+        }
+
+        $user = Auth::user();
+        if (! $this->canEnterScoresFor($user, $this->subject_id, $this->classroom_id, $this->session_id, $this->term_id)) {
+            Notification::make()->title('Unauthorized action.')->danger()->send();
+            return;
+        }
+
+        app(ResultCalculationService::class)->calculateForSubject(
+            $this->classroom_id,
+            $this->subject_id,
+            $this->session_id,
+            $this->term_id
+        );
+
+        Notification::make()
+            ->title('Subject scores published successfully!')
+            ->success()
+            ->send();
+    }
+
+    public function getIsSubjectPublishedProperty(): bool
+    {
+        if (! $this->session_id || ! $this->term_id || ! $this->classroom_id || ! $this->subject_id) {
+            return false;
+        }
+
+        return SubjectResult::where('classroom_id', $this->classroom_id)
+            ->where('subject_id', $this->subject_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->where('is_published', true)
+            ->exists();
     }
 
     private function clearScoreState(): void

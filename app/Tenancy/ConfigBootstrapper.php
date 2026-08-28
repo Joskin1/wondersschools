@@ -25,7 +25,17 @@ class ConfigBootstrapper implements TenancyBootstrapper
 {
     public function bootstrap(Tenant $tenant): void
     {
-        $domain = $tenant->domains->first()?->domain;
+        // In single-tenant mode, use the actual request host (e.g. the
+        // Cloudflare tunnel URL) instead of the tenant's stored domain,
+        // so that URL::forceRootUrl doesn't redirect away from the tunnel.
+        $singleTenantId = env('SINGLE_TENANT_ID');
+        $requestHost    = request()?->getHost();
+
+        if ($singleTenantId && $requestHost && !str_ends_with($requestHost, '.test')) {
+            $domain = $requestHost;
+        } else {
+            $domain = $tenant->domains->first()?->domain;
+        }
 
         if ($domain) {
             $scheme = app()->environment('local') ? 'http' : 'https';
