@@ -24,23 +24,31 @@ class DatabaseSeeder extends Seeder
         // ── 1. Sudo user (lives in the central DB) ───────────────────────────
         $this->call(SudoUserSeeder::class);
 
-        // ── 2. Create the development tenant + domain ────────────────────────
-        $this->command->info('Creating dev tenant...');
+        // ── 2. Create the tenant + domain ────────────────────────────────────
+        $this->command->info('Creating tenant...');
 
-        // Drop leftover tenant DB from a previous migrate:fresh (central tables
-        // were wiped but MySQL tenant DBs survive across fresh migrations).
+        $tenantId = env('SINGLE_TENANT_ID', 'wonders');
+        $tenantName = env('TENANT_NAME', 'Livingsspring School');
         $prefix    = config('tenancy.database.prefix', 'tenant_');
-        $tenantDbName = $prefix . 'wonders';
-        DB::connection('landlord')->statement("DROP DATABASE IF EXISTS \"{$tenantDbName}\"");
+        $tenantDbName = $prefix . $tenantId;
+
+        try {
+            DB::connection('landlord')->statement("DROP DATABASE IF EXISTS `{$tenantDbName}`");
+        } catch (\Throwable $e) {
+            // Fallback for PostgreSQL if running on Postgres
+            try {
+                DB::connection('landlord')->statement("DROP DATABASE IF EXISTS \"{$tenantDbName}\"");
+            } catch (\Throwable $ex) {}
+        }
 
         /** @var Tenant $tenant */
         $tenant = Tenant::firstOrCreate(
-            ['id' => 'wonders'],
-            ['name' => 'Wonders Kiddies Foundation Schools']
+            ['id' => $tenantId],
+            ['name' => $tenantName]
         );
 
         Domain::firstOrCreate(
-            ['domain' => env('DEV_TENANT_DOMAIN', 'school.wonders.test')],
+            ['domain' => env('DEV_TENANT_DOMAIN', 'livingsspring.duckdns.org')],
             ['tenant_id' => $tenant->id]
         );
 
