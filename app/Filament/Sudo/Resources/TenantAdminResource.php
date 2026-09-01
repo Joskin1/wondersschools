@@ -36,8 +36,9 @@ class TenantAdminResource extends Resource
 
                 Select::make('role')
                     ->options([
-                        'admin'   => 'Admin',
-                        'teacher' => 'Teacher',
+                        'admin'      => 'Admin',
+                        'sudo_admin' => 'Sudo Admin',
+                        'teacher'    => 'Teacher',
                     ])
                     ->default('admin')
                     ->required(),
@@ -74,10 +75,17 @@ class TenantAdminResource extends Resource
 
                 Tables\Columns\TextColumn::make('role')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'admin'      => 'Admin',
+                        'sudo_admin' => 'Sudo Admin',
+                        'teacher'    => 'Teacher',
+                        default      => ucfirst($state),
+                    })
                     ->color(fn (string $state): string => match ($state) {
-                        'admin'   => 'warning',
-                        'teacher' => 'info',
-                        default   => 'gray',
+                        'admin'      => 'warning',
+                        'sudo_admin' => 'danger',
+                        'teacher'    => 'info',
+                        default      => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('credentials_sent_at')

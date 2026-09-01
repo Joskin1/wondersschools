@@ -48,6 +48,7 @@ class UserResource extends Resource
                     ->options([
                         'teacher' => 'Teacher',
                         'admin' => 'Admin',
+                        'sudo_admin' => 'Sudo Admin',
                     ])
                     ->required()
                     ->default('teacher'),
@@ -68,8 +69,17 @@ class UserResource extends Resource
 
                 Tables\Columns\TextColumn::make('role')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'sudo' => 'Sudo',
+                        'sudo_admin' => 'Sudo Admin',
+                        'admin' => 'Admin',
+                        'teacher' => 'Teacher',
+                        'student' => 'Student',
+                        default => ucfirst($state),
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'sudo' => 'danger',
+                        'sudo_admin' => 'danger',
                         'admin' => 'warning',
                         'teacher' => 'success',
                         default => 'gray',
@@ -120,6 +130,7 @@ class UserResource extends Resource
                     ->options([
                         'teacher' => 'Teacher',
                         'admin' => 'Admin',
+                        'sudo_admin' => 'Sudo Admin',
                         'sudo' => 'Sudo',
                     ]),
 

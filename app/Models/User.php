@@ -62,7 +62,15 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function isSudo(): bool
     {
-        return $this->role === 'sudo';
+        return in_array($this->role, ['sudo', 'sudo_admin']);
+    }
+
+    /**
+     * Check if user is a sudo admin.
+     */
+    public function isSudoAdmin(): bool
+    {
+        return $this->role === 'sudo_admin';
     }
 
     /**
@@ -70,7 +78,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['admin', 'sudo_admin']);
     }
 
     /**
@@ -94,7 +102,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function canManageAcademics(): bool
     {
-        return in_array($this->role, ['sudo', 'admin']);
+        return in_array($this->role, ['sudo', 'admin', 'sudo_admin']);
     }
 
     /**
@@ -110,9 +118,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         }
 
         return match ($panel->getId()) {
-            'sudo' => $this->role === 'sudo',
-            'admin' => in_array($this->role, ['sudo', 'admin']),
-            'teacher' => in_array($this->role, ['sudo', 'admin', 'teacher']) && $this->isActive(),
+            'sudo' => in_array($this->role, ['sudo', 'sudo_admin']),
+            'admin' => in_array($this->role, ['sudo', 'admin', 'sudo_admin']),
+            'teacher' => in_array($this->role, ['sudo', 'admin', 'sudo_admin', 'teacher']) && $this->isActive(),
             'student' => $this->role === 'student' && $this->isActive(),
             default => false,
         };
@@ -226,7 +234,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function canImpersonate(): bool
     {
-        return $this->isSudo() || $this->isAdmin();
+        return in_array($this->role, ['sudo', 'admin', 'sudo_admin']);
     }
 
     /**
@@ -234,6 +242,6 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function canBeImpersonated(): bool
     {
-        return !$this->isSudo() && $this->isActive();
+        return !in_array($this->role, ['sudo', 'sudo_admin']) && $this->isActive();
     }
 }
