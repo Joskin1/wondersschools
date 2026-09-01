@@ -75,13 +75,33 @@ class UserResource extends Resource
                         default => 'gray',
                     }),
 
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('Active')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
+                Tables\Columns\ToggleColumn::make('is_active')
+                    ->label('Portal Access')
+                    ->afterStateUpdated(function (User $record, bool $state) {
+                        if ($state && $record->role === 'teacher') {
+                            try {
+                                $record->notify(new \App\Notifications\TeacherPortalActivated());
+                                Notification::make()
+                                    ->title('Portal Access Activated')
+                                    ->body("Welcome email sent to {$record->email}.")
+                                    ->success()
+                                    ->send();
+                            } catch (\Exception $e) {
+                                \Log::error("Failed sending portal activation email to {$record->email}: " . $e->getMessage());
+                                Notification::make()
+                                    ->title('Portal Activated (Email Failed)')
+                                    ->body("Activated {$record->name}, but email failed: " . $e->getMessage())
+                                    ->warning()
+                                    ->send();
+                            }
+                        } elseif (!$state && $record->role === 'teacher') {
+                            Notification::make()
+                                ->title('Portal Access Disabled')
+                                ->body("Portal access disabled for {$record->name}.")
+                                ->info()
+                                ->send();
+                        }
+                    }),
 
                 Tables\Columns\TextColumn::make('registration_completed_at')
                     ->label('Registered')
@@ -110,6 +130,46 @@ class UserResource extends Resource
                     ->falseLabel('Inactive only'),
             ])
             ->actions([
+                Action::make('toggle_portal_access')
+                    ->label(fn (User $record) => $record->isActive() ? 'Deactivate Portal' : 'Activate Portal')
+                    ->icon(fn (User $record) => $record->isActive() ? 'heroicon-o-lock-closed' : 'heroicon-o-lock-open')
+                    ->color(fn (User $record) => $record->isActive() ? 'warning' : 'success')
+                    ->visible(fn (User $record) => $record->role === 'teacher')
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (User $record) => $record->isActive() ? 'Deactivate Teacher Portal Access' : 'Activate Teacher Portal Access')
+                    ->modalDescription(fn (User $record) => $record->isActive()
+                        ? "Deactivate portal access for {$record->name}? They will no longer be able to log in."
+                        : "Activate portal access for {$record->name}? They will receive a welcome email with a link to log into their teacher portal."
+                    )
+                    ->action(function (User $record) {
+                        $newStatus = !$record->isActive();
+                        $record->update(['is_active' => $newStatus]);
+
+                        if ($newStatus) {
+                            try {
+                                $record->notify(new \App\Notifications\TeacherPortalActivated());
+                                Notification::make()
+                                    ->title('Portal Access Activated')
+                                    ->body("Welcome email sent to {$record->email}.")
+                                    ->success()
+                                    ->send();
+                            } catch (\Exception $e) {
+                                \Log::error("Failed sending portal activation email to {$record->email}: " . $e->getMessage());
+                                Notification::make()
+                                    ->title('Portal Activated (Email Failed)')
+                                    ->body("Activated {$record->name}, but email failed: " . $e->getMessage())
+                                    ->warning()
+                                    ->send();
+                            }
+                        } else {
+                            Notification::make()
+                                ->title('Portal Access Deactivated')
+                                ->body("Portal access disabled for {$record->name}.")
+                                ->info()
+                                ->send();
+                        }
+                    }),
+
                 Action::make('send_registration_link')
                     ->label('Send Registration Link')
                     ->icon('heroicon-o-envelope')
@@ -126,10 +186,7 @@ class UserResource extends Resource
                     )
                     ->action(function (User $record) {
                         try {
-                            // Generate token
                             $token = TeacherRegistrationToken::createForUser($record);
-                            
-                            // Send notification
                             $record->notify(new TeacherRegistrationInvitation($token));
                             
                             Notification::make()

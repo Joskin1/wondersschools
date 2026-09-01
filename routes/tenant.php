@@ -34,10 +34,16 @@ Route::get('/gallery', Gallery::class)->name('gallery');
 Route::get('/contact-us', Contact::class)->name('contact');
 
 // Teacher Registration
+Route::get('/register/teacher', \App\Livewire\PublicTeacherRegistrationForm::class)
+    ->name('public.teacher.register');
+
 Route::get('/teacher/register/{token}', [TeacherRegistrationController::class, 'show'])
     ->name('teacher.register');
 
 // Student Registration
+Route::get('/register/student', \App\Livewire\PublicStudentRegistrationForm::class)
+    ->name('public.student.register');
+
 Route::get('/register/student/{slug}', RegisterStudent::class)
     ->name('student.register');
 
