@@ -12,12 +12,14 @@ class TeacherSeeder extends Seeder
 
     public function run(): void
     {
+        $passwordHash = bcrypt('password');
+
         for ($i = 1; $i <= self::COUNT; $i++) {
             User::firstOrCreate(
                 ['email' => "teacher{$i}@wonders.test"],
                 [
                     'name' => "Teacher {$i}",
-                    'password' => bcrypt('password'),
+                    'password' => $passwordHash,
                     'role' => 'teacher',
                     'is_active' => true,
                     'registration_completed_at' => now(),

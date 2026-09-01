@@ -68,12 +68,12 @@ return [
             // Local driver config
             'root' => storage_path('app/private/lesson-notes'),
             'serve' => true,
+            'url' => env('LESSON_NOTES_URL', env('APP_URL').'/storage/lesson-notes'),
             // S3 driver config (used when LESSON_NOTES_DISK_DRIVER=s3)
             'key' => env('LESSON_NOTES_ACCESS_KEY_ID', env('AWS_ACCESS_KEY_ID')),
             'secret' => env('LESSON_NOTES_SECRET_ACCESS_KEY', env('AWS_SECRET_ACCESS_KEY')),
             'region' => env('LESSON_NOTES_REGION', env('AWS_DEFAULT_REGION')),
             'bucket' => env('LESSON_NOTES_BUCKET', env('AWS_BUCKET')),
-            'url' => env('LESSON_NOTES_URL'),
             'endpoint' => env('LESSON_NOTES_ENDPOINT'),
             'use_path_style_endpoint' => env('LESSON_NOTES_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => true,

@@ -28,13 +28,15 @@ class StudentSeeder extends Seeder
             return;
         }
 
+        $passwordHash = bcrypt('password');
+
         for ($i = 1; $i <= self::COUNT; $i++) {
             // Create user account
             $user = User::firstOrCreate(
                 ['email' => "student{$i}@wonders.test"],
                 [
                     'name' => "Student {$i}",
-                    'password' => bcrypt('password'),
+                    'password' => $passwordHash,
                     'role' => 'student',
                     'is_active' => true,
                     'registration_completed_at' => now(),

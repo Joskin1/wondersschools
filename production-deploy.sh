@@ -24,10 +24,7 @@ fi
 cd /var/www/Wonder
 git pull origin main || git pull origin master || true
 
-echo "=== 4. Installing Composer Dependencies ==="
-composer install --no-dev --optimize-autoloader --ignore-platform-reqs
-
-echo "=== 5. Configuring .env ==="
+echo "=== 4. Configuring .env ==="
 cat << 'EOF' > .env
 APP_NAME="Livingsspring School"
 APP_ENV=production
@@ -43,32 +40,35 @@ DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=Wonder
 DB_USERNAME=Wonder_user
-DB_PASSWORD=Akinbomi1#
+DB_PASSWORD="Akinbomi1#"
 
 LANDLORD_DB_CONNECTION=mysql
 LANDLORD_DB_HOST=127.0.0.1
 LANDLORD_DB_PORT=3306
 LANDLORD_DB_DATABASE=Wonder
 LANDLORD_DB_USERNAME=Wonder_user
-LANDLORD_DB_PASSWORD=Akinbomi1#
+LANDLORD_DB_PASSWORD="Akinbomi1#"
 
 TENANT_DB_HOST=127.0.0.1
 TENANT_DB_PORT=3306
 TENANT_ADMIN_USERNAME=Wonder_user
-TENANT_ADMIN_PASSWORD=Akinbomi1#
+TENANT_ADMIN_PASSWORD="Akinbomi1#"
 TENANT_DB_PREFIX=tenant_
 
 SESSION_DRIVER=database
 SESSION_LIFETIME=120
 
-CACHE_STORE=database
-QUEUE_CONNECTION=database
+CACHE_STORE=file
+QUEUE_CONNECTION=sync
 
 CENTRAL_DOMAINS="wonderlandlord.duckdns.org,livingsspring.duckdns.org"
 SINGLE_TENANT_ID=livingsspring
 TENANT_NAME="Livingsspring School"
 DEV_TENANT_DOMAIN="livingsspring.duckdns.org"
 EOF
+
+echo "=== 5. Installing Composer Dependencies ==="
+CACHE_STORE=file composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 php artisan key:generate --force
 php artisan config:clear
@@ -105,7 +105,7 @@ server {
     error_page 404 /index.php;
 
     location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
     }
