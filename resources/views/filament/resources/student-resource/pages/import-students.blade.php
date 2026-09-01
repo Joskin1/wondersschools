@@ -86,6 +86,8 @@
                             <tr class="text-left font-semibold text-gray-700 dark:text-gray-200">
                                 <th class="whitespace-nowrap px-3 py-3">Row</th>
                                 <th class="whitespace-nowrap px-3 py-3">Student</th>
+                                <th class="whitespace-nowrap px-3 py-3">Login Email</th>
+                                <th class="whitespace-nowrap px-3 py-3">Password</th>
                                 <th class="whitespace-nowrap px-3 py-3">Classroom</th>
                                 <th class="whitespace-nowrap px-3 py-3">Session</th>
                                 <th class="whitespace-nowrap px-3 py-3">Gender</th>
@@ -105,6 +107,12 @@
                                     </td>
                                     <td class="min-w-48 px-3 py-3 font-medium text-gray-950 dark:text-white">
                                         {{ $row['data']['full_name'] ?: '-' }}
+                                    </td>
+                                    <td class="min-w-48 px-3 py-3 text-gray-700 dark:text-gray-200">
+                                        {{ $row['data']['student_email'] ?: '-' }}
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-3 text-gray-700 dark:text-gray-200">
+                                        {{ $row['data']['password'] ? 'Set' : '-' }}
                                     </td>
                                     <td class="min-w-40 px-3 py-3 text-gray-700 dark:text-gray-200">
                                         {{ ($row['classroom_name'] ?? $row['data']['classroom']) ?: '-' }}

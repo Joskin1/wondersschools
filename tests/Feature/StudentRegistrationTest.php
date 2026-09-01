@@ -1,16 +1,21 @@
 <?php
 
-use App\Models\Student;
-use App\Models\StudentProfile;
-use App\Models\StudentEnrollment;
+use App\Filament\Pages\CustomProfile;
+use App\Filament\Resources\StudentResource;
 use App\Models\Classroom;
 use App\Models\Session;
+use App\Models\Student;
+use App\Models\StudentEnrollment;
+use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
 describe('Student Registration System', function () {
-    
+
     describe('Admin Creates Student', function () {
         it('creates student with pending status', function () {
             $student = Student::factory()->create([
@@ -55,7 +60,79 @@ describe('Student Registration System', function () {
                 'student_id' => $student->id,
                 'classroom_id' => $classroom2->id,
                 'session_id' => $session->id,
-            ]))->toThrow(\Illuminate\Database\QueryException::class);
+            ]))->toThrow(QueryException::class);
+        });
+
+        it('can create an active portal login with an initial password', function () {
+            $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+            $session = Session::factory()->create(['is_active' => true]);
+            $classroom = Classroom::factory()->create();
+
+            $this->actingAs($admin);
+
+            Livewire::test(StudentResource\Pages\CreateStudent::class)
+                ->fillForm([
+                    'full_name' => 'Ada Johnson',
+                    'student_email' => 'ada.johnson@student.test',
+                    'initial_password' => 'Password123',
+                    'classroom_id' => $classroom->id,
+                    'session_id' => $session->id,
+                ])
+                ->call('create')
+                ->assertHasNoFormErrors();
+
+            $student = Student::where('full_name', 'Ada Johnson')->firstOrFail();
+            $user = User::where('email', 'ada.johnson@student.test')->firstOrFail();
+
+            expect($student->user_id)->toBe($user->id)
+                ->and($student->status)->toBe('active')
+                ->and($student->is_portal_active)->toBeTrue()
+                ->and($student->registration_completed_at)->not->toBeNull()
+                ->and($user->role)->toBe('student')
+                ->and($user->is_active)->toBeTrue()
+                ->and(Hash::check('Password123', $user->password))->toBeTrue();
+        });
+
+        it('allows students to update their dashboard profile and password', function () {
+            $user = User::factory()->create([
+                'name' => 'Ada Johnson',
+                'email' => 'ada.johnson@student.test',
+                'password' => Hash::make('Password123'),
+                'role' => 'student',
+                'is_active' => true,
+            ]);
+            $student = Student::factory()->create([
+                'user_id' => $user->id,
+                'status' => 'active',
+                'is_portal_active' => true,
+            ]);
+
+            $this->actingAs($user);
+
+            Livewire::test(CustomProfile::class)
+                ->fillForm([
+                    'name' => 'Ada Johnson',
+                    'email' => 'ada.johnson@student.test',
+                    'role' => 'student',
+                    'date_of_birth' => '2014-04-12',
+                    'gender' => 'female',
+                    'address' => '25 School Road',
+                    'previous_school' => 'Old Primary School',
+                    'parent_name' => 'Mrs Johnson',
+                    'parent_phone' => '08012345678',
+                    'parent_email' => 'parent@example.com',
+                    'currentPassword' => 'Password123',
+                    'password' => 'Newpass123',
+                    'passwordConfirmation' => 'Newpass123',
+                ])
+                ->call('save')
+                ->assertHasNoFormErrors();
+
+            expect(Hash::check('Newpass123', $user->fresh()->password))->toBeTrue()
+                ->and($student->fresh()->date_of_birth->format('Y-m-d'))->toBe('2014-04-12')
+                ->and($student->fresh()->gender)->toBe('female')
+                ->and($student->fresh()->address)->toBe('25 School Road')
+                ->and($student->fresh()->parent_email)->toBe('parent@example.com');
         });
     });
 
@@ -97,7 +174,7 @@ describe('Student Registration System', function () {
 
         it('creates registration link with 3-day expiry', function () {
             $student = Student::factory()->create();
-            
+
             $rawToken = $student->createRegistrationLink();
 
             $student->refresh();
@@ -110,7 +187,7 @@ describe('Student Registration System', function () {
 
         it('stores hashed token, not raw token', function () {
             $student = Student::factory()->create();
-            
+
             $rawToken = $student->createRegistrationLink();
             $student->refresh();
 
@@ -135,7 +212,7 @@ describe('Student Registration System', function () {
         it('rejects expired token', function () {
             $student = Student::factory()->create();
             $rawToken = $student->createRegistrationLink();
-            
+
             // Manually expire the token
             $student->update(['registration_expires_at' => now()->subDay()]);
 
@@ -277,7 +354,7 @@ describe('Student Registration System', function () {
         it('filters enrollments by session', function () {
             $session1 = Session::factory()->create();
             $session2 = Session::factory()->create();
-            
+
             StudentEnrollment::factory()->create(['session_id' => $session1->id]);
             StudentEnrollment::factory()->create(['session_id' => $session2->id]);
 

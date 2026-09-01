@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\StudentResource\Pages;
 use App\Models\Session;
 use App\Models\Student;
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
@@ -37,6 +38,21 @@ class StudentResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->placeholder('e.g., John Doe'),
+
+                TextInput::make('student_email')
+                    ->label('Student Login Email')
+                    ->email()
+                    ->maxLength(255)
+                    ->unique(table: User::class, column: 'email')
+                    ->requiredWith('initial_password'),
+
+                TextInput::make('initial_password')
+                    ->label('Initial Password')
+                    ->password()
+                    ->revealable()
+                    ->minLength(8)
+                    ->requiredWith('student_email')
+                    ->dehydrated(fn ($state): bool => filled($state)),
 
                 Select::make('classroom_id')
                     ->label('Classroom')
@@ -88,6 +104,13 @@ class StudentResource extends Resource
                         'Awaiting Activation' => 'heroicon-o-clock',
                         'Pending' => 'heroicon-o-ellipsis-horizontal-circle',
                     }),
+
+                TextColumn::make('user.email')
+                    ->label('Login Email')
+                    ->searchable()
+                    ->copyable()
+                    ->placeholder('—')
+                    ->toggleable(),
 
                 ToggleColumn::make('is_portal_active')
                     ->label('Portal')
@@ -141,14 +164,13 @@ class StudentResource extends Resource
                     ->relationship('enrollments.classroom', 'name'),
             ])
             ->actions([
-                Action::make('generate_registration_link')
-                    ->label('Generate Link')
+                Action::make('copy_registration_link')
+                    ->label('Copy Registration Link')
                     ->icon('heroicon-o-link')
                     ->color('primary')
-                    ->visible(fn (Student $record) => $record->isPending() && ! $record->registration_slug)
+                    ->visible(fn (Student $record) => ! $record->is_portal_active)
                     ->modalHeading('Registration Link Information')
                     ->modalContent(function (Student $record) {
-                        // Generate the link when the modal opens
                         $rawToken = $record->createRegistrationLink();
                         $url = route('student.register', [
                             'slug' => $record->registration_slug,
@@ -160,7 +182,7 @@ class StudentResource extends Resource
                             'url' => $url,
                             'expiresAt' => $expiresAt,
                             'studentId' => $record->id,
-                            'note' => 'The full link with token is shown above. This link will expire in 3 days and can only be used once.',
+                            'note' => 'A fresh link was generated. It expires in 3 days and can only be used once.',
                         ]);
                     })
                     ->modalSubmitAction(false)

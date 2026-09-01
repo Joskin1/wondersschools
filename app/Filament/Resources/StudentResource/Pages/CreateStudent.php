@@ -4,6 +4,7 @@ namespace App\Filament\Resources\StudentResource\Pages;
 
 use App\Filament\Resources\StudentResource;
 use App\Models\StudentEnrollment;
+use App\Services\StudentAccountService;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateStudent extends CreateRecord
@@ -12,14 +13,13 @@ class CreateStudent extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Extract session_id and classroom_id for enrollment
         $this->sessionId = $data['session_id'] ?? null;
         $this->classroomId = $data['classroom_id'] ?? null;
+        $this->studentEmail = $data['student_email'] ?? null;
+        $this->initialPassword = $data['initial_password'] ?? null;
 
-        // Remove them from student data
-        unset($data['session_id'], $data['classroom_id']);
+        unset($data['session_id'], $data['classroom_id'], $data['student_email'], $data['initial_password']);
 
-        // Set default status
         $data['status'] = 'pending';
 
         return $data;
@@ -35,8 +35,22 @@ class CreateStudent extends CreateRecord
                 'session_id' => $this->sessionId,
             ]);
         }
+
+        if ($this->studentEmail && $this->initialPassword) {
+            app(StudentAccountService::class)->createOrUpdateLogin(
+                $this->record,
+                $this->studentEmail,
+                $this->initialPassword,
+                auth()->id(),
+            );
+        }
     }
 
     protected ?int $sessionId = null;
+
     protected ?int $classroomId = null;
+
+    protected ?string $studentEmail = null;
+
+    protected ?string $initialPassword = null;
 }
