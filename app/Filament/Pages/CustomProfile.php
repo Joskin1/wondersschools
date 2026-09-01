@@ -35,11 +35,16 @@ class CustomProfile extends BaseEditProfile
                             ->required()
                             ->readOnly()
                             ->maxLength(255),
+                        Placeholder::make('admission_number')
+                            ->label('Admission Number')
+                            ->visible(fn () => auth()->user()->isStudent())
+                            ->content(fn () => auth()->user()->student?->admission_number ?? 'Not assigned'),
                         TextInput::make('email')
                             ->email()
                             ->required()
                             ->readOnly()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->visible(fn () => ! auth()->user()->isStudent()),
                         TextInput::make('role')
                             ->readOnly()
                             ->formatStateUsing(fn ($state) => ucfirst($state ?? '')),

@@ -1,4 +1,13 @@
 <div class="space-y-4">
+    @isset($admissionNumber)
+        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Admission Number:</p>
+            <div class="bg-white dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700">
+                <code class="text-sm text-gray-900 dark:text-gray-100 break-all select-all">{{ $admissionNumber }}</code>
+            </div>
+        </div>
+    @endisset
+
     <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
         <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Registration URL:</p>
         <div class="bg-white dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700">

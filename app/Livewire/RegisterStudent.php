@@ -3,12 +3,11 @@
 namespace App\Livewire;
 
 use App\Models\Student;
-use App\Models\User;
-use Livewire\Component;
-use Livewire\WithFileUploads;
-use Illuminate\Support\Facades\Hash;
+use App\Services\StudentAccountService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class RegisterStudent extends Component
 {
@@ -101,24 +100,11 @@ class RegisterStudent extends Component
             $validated['profile_picture'] = $this->profile_picture->store('profile-pictures', 'public');
         }
 
-        // Create User account for the student (inactive until admin activates)
-        $email = $validated['parent_email']
-            ?? strtolower(str_replace(' ', '.', $this->student->full_name)) . '@student.local';
-
-        $user = User::create([
-            'name'      => $this->student->full_name,
-            'email'     => $email,
-            'password'  => Hash::make($validated['password']),
-            'role'      => 'student',
-            'is_active' => false,
-        ]);
-
-        // Link user to student
-        $this->student->update(['user_id' => $user->id]);
-
         // Complete registration (sets registration_completed_at, clears token)
+        $password = $validated['password'];
         unset($validated['password'], $validated['password_confirmation']);
         $this->student->completeRegistration($validated);
+        app(StudentAccountService::class)->createOrUpdateLogin($this->student, $password);
 
         // Mark as completed
         $this->isCompleted = true;

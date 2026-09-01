@@ -52,7 +52,7 @@
                 <form wire:submit.prevent="submit">
                     <div class="mb-8 pb-6 border-b border-gray-200">
                         <h3 class="text-2xl font-bold text-gray-900">Student: {{ $student->full_name }}</h3>
-                        <p class="mt-2 text-sm text-gray-500">Please fill in all required fields marked with *</p>
+                        <p class="mt-2 text-sm text-gray-500">Admission Number: <span class="font-semibold text-gray-900">{{ $student->admission_number }}</span></p>
                     </div>
 
                     <div class="space-y-6">
@@ -148,7 +148,7 @@
                         <!-- Account Credentials -->
                         <div class="pt-6 mt-6 border-t border-gray-200">
                             <h4 class="text-xl font-bold text-gray-900 mb-2">Create Your Login Password</h4>
-                            <p class="text-sm text-gray-500 mb-6">This password will be used to access your student portal after the school activates your account.</p>
+                            <p class="text-sm text-gray-500 mb-6">Use your admission number and this password to access your student portal.</p>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>

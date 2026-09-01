@@ -21,6 +21,7 @@ class Student extends Model
      */
     protected $fillable = [
         'user_id',
+        'admission_number',
         'full_name',
         'profile_picture',
         'date_of_birth',
@@ -54,6 +55,17 @@ class Student extends Model
             'is_portal_active'         => 'boolean',
             'activated_at'             => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (self $student): void {
+            if (! $student->admission_number) {
+                $student->forceFill([
+                    'admission_number' => self::generateAdmissionNumber($student->id),
+                ])->saveQuietly();
+            }
+        });
     }
 
     /**
@@ -113,6 +125,20 @@ class Student extends Model
         return "{$baseSlug}-{$randomString}";
     }
 
+    public static function generateAdmissionNumber(int $studentId): string
+    {
+        $base = 'ADM'.now()->format('Y').str_pad((string) $studentId, 5, '0', STR_PAD_LEFT);
+        $admissionNumber = $base;
+        $suffix = 2;
+
+        while (self::query()->where('admission_number', $admissionNumber)->whereKeyNot($studentId)->exists()) {
+            $admissionNumber = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $admissionNumber;
+    }
+
     /**
      * Generate a cryptographically secure random token.
      *
@@ -141,6 +167,8 @@ class Student extends Model
      */
     public function createRegistrationLink(): string
     {
+        $this->ensureAdmissionNumber();
+
         // Generate raw token
         $rawToken = self::generateRegistrationToken();
         
@@ -153,6 +181,17 @@ class Student extends Model
         
         // Return raw token for URL (never stored)
         return $rawToken;
+    }
+
+    public function ensureAdmissionNumber(): string
+    {
+        if (! $this->admission_number) {
+            $this->forceFill([
+                'admission_number' => self::generateAdmissionNumber($this->id),
+            ])->saveQuietly();
+        }
+
+        return $this->admission_number;
     }
 
     /**

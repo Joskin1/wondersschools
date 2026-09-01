@@ -15,10 +15,9 @@ class CreateStudent extends CreateRecord
     {
         $this->sessionId = $data['session_id'] ?? null;
         $this->classroomId = $data['classroom_id'] ?? null;
-        $this->studentEmail = $data['student_email'] ?? null;
         $this->initialPassword = $data['initial_password'] ?? null;
 
-        unset($data['session_id'], $data['classroom_id'], $data['student_email'], $data['initial_password']);
+        unset($data['session_id'], $data['classroom_id'], $data['initial_password']);
 
         $data['status'] = 'pending';
 
@@ -36,10 +35,9 @@ class CreateStudent extends CreateRecord
             ]);
         }
 
-        if ($this->studentEmail && $this->initialPassword) {
+        if ($this->initialPassword) {
             app(StudentAccountService::class)->createOrUpdateLogin(
                 $this->record,
-                $this->studentEmail,
                 $this->initialPassword,
                 auth()->id(),
             );
@@ -49,8 +47,6 @@ class CreateStudent extends CreateRecord
     protected ?int $sessionId = null;
 
     protected ?int $classroomId = null;
-
-    protected ?string $studentEmail = null;
 
     protected ?string $initialPassword = null;
 }

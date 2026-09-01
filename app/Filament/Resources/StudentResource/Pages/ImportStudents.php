@@ -7,7 +7,6 @@ use App\Models\Classroom;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
-use App\Models\User;
 use App\Services\StudentAccountService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -44,7 +43,6 @@ class ImportStudents extends Page
     /** @var array<int, string> */
     private const TEMPLATE_COLUMNS = [
         'full_name',
-        'student_email',
         'password',
         'classroom',
         'session',
@@ -82,7 +80,6 @@ class ImportStudents extends Page
         $sheet->fromArray(self::TEMPLATE_COLUMNS, null, 'A1');
         $sheet->fromArray([
             'Ada Johnson',
-            'ada.johnson@student.local',
             'Password123',
             Classroom::query()->orderBy('class_order')->orderBy('name')->value('name') ?? 'Primary 1',
             Session::active()->value('name') ?? '',
@@ -95,7 +92,7 @@ class ImportStudents extends Page
             'parent@example.com',
         ], null, 'A2');
 
-        foreach (range('A', 'L') as $column) {
+        foreach (range('A', 'K') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
@@ -207,10 +204,9 @@ class ImportStudents extends Page
                     'session_id' => $row['session_id'],
                 ]);
 
-                if (filled($row['data']['student_email']) && filled($row['data']['password'])) {
+                if (filled($row['data']['password'])) {
                     $studentAccounts->createOrUpdateLogin(
                         $student,
-                        $row['data']['student_email'],
                         $row['data']['password'],
                         auth()->id(),
                     );
@@ -261,7 +257,6 @@ class ImportStudents extends Page
         $activeSession = $sessions->firstWhere('is_active', true);
 
         $parsed = [];
-        $seenEmails = [];
 
         foreach (array_values($rows) as $index => $row) {
             if ($this->isBlankRow($row)) {
@@ -276,39 +271,8 @@ class ImportStudents extends Page
                 $errors[] = 'Full name is required.';
             }
 
-            if ($data['student_email'] !== '' && ! filter_var($data['student_email'], FILTER_VALIDATE_EMAIL)) {
-                $errors[] = 'Student login email is invalid.';
-            }
-
-            if ($data['student_email'] !== '') {
-                $data['student_email'] = strtolower((string) $data['student_email']);
-            }
-
-            if ($data['password'] !== '' && $data['student_email'] === '') {
-                $errors[] = 'Student login email is required when password is set.';
-            }
-
-            if ($data['student_email'] !== '' && $data['password'] === '') {
-                $errors[] = 'Password is required when student login email is set.';
-            }
-
             if ($data['password'] !== '' && strlen((string) $data['password']) < 8) {
                 $errors[] = 'Password must be at least 8 characters.';
-            }
-
-            if (
-                $data['student_email'] !== ''
-                && User::query()->where('email', strtolower((string) $data['student_email']))->exists()
-            ) {
-                $errors[] = "Student login email \"{$data['student_email']}\" is already in use.";
-            }
-
-            if ($data['student_email'] !== '' && in_array($data['student_email'], $seenEmails, true)) {
-                $errors[] = "Student login email \"{$data['student_email']}\" appears more than once in this file.";
-            }
-
-            if ($data['student_email'] !== '') {
-                $seenEmails[] = $data['student_email'];
             }
 
             $classroom = $this->matchByIdOrName($classrooms, $data['classroom']);

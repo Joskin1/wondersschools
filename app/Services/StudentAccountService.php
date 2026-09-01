@@ -9,15 +9,15 @@ use Illuminate\Support\Str;
 
 class StudentAccountService
 {
-    public function createOrUpdateLogin(Student $student, string $email, string $password, ?int $activatedBy = null): User
+    public function createOrUpdateLogin(Student $student, string $password, ?int $activatedBy = null): User
     {
-        $email = strtolower(trim($email));
+        $this->ensureAdmissionNumber($student);
 
         $user = $student->user ?: new User;
 
         $user->fill([
             'name' => $student->full_name,
-            'email' => $email,
+            'email' => $this->internalEmailFor($student),
             'password' => Hash::make($password),
             'role' => 'student',
             'is_active' => true,
@@ -42,17 +42,19 @@ class StudentAccountService
         return $user;
     }
 
-    public function generateLoginEmail(string $fullName): string
+    public function ensureAdmissionNumber(Student $student): string
     {
-        $base = Str::slug($fullName, '.') ?: 'student';
-        $email = "{$base}@student.local";
-        $suffix = 2;
+        return $student->ensureAdmissionNumber();
+    }
 
-        while (User::query()->where('email', $email)->exists()) {
-            $email = "{$base}.{$suffix}@student.local";
-            $suffix++;
-        }
+    public function internalEmailFor(Student $student): string
+    {
+        $admissionNumber = Str::of($this->ensureAdmissionNumber($student))
+            ->lower()
+            ->replaceMatches('/[^a-z0-9]+/', '.')
+            ->trim('.')
+            ->toString();
 
-        return $email;
+        return "{$admissionNumber}@student.local";
     }
 }

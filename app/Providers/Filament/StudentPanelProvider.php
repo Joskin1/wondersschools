@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\CustomProfile;
+use App\Filament\Student\Auth\Login;
 use App\Services\TenantBrandingService;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -33,7 +34,7 @@ class StudentPanelProvider extends PanelProvider
             ->id('student')
             ->path('student')
             ->brandName(fn () => $branding['name'])
-            ->login()
+            ->login(Login::class)
             ->profile(CustomProfile::class)
             ->colors([
                 'primary' => $branding['color'],

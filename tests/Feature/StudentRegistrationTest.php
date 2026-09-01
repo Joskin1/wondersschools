@@ -82,7 +82,7 @@ describe('Student Registration System', function () {
                 ->assertHasNoFormErrors();
 
             $student = Student::where('full_name', 'Ada Johnson')->firstOrFail();
-            $user = User::where('email', 'ada.johnson@student.test')->firstOrFail();
+            $user = $student->user;
 
             expect($student->user_id)->toBe($user->id)
                 ->and($student->status)->toBe('active')

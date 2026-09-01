@@ -32,6 +32,7 @@ class ViewStudent extends ViewRecord
                         'url' => $url,
                         'expiresAt' => $expiresAt,
                         'studentId' => $record->id,
+                        'admissionNumber' => $record->admission_number,
                         'note' => 'A fresh link was generated. It expires in 3 days and can only be used once.',
                     ]);
                 })
