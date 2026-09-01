@@ -214,7 +214,12 @@ class UserResource extends Resource
                 // Impersonate — nobody can impersonate sudo
                 \STS\FilamentImpersonate\Actions\Impersonate::make()
                     ->visible(fn (User $record) => !$record->isSudo())
-                    ->redirectTo('/teacher'),
+                    ->redirectTo(fn (User $record) => match ($record->role) {
+                        'admin' => '/admin',
+                        'student' => '/student',
+                        'sudo' => '/sudo',
+                        default => '/teacher',
+                    }),
 
                 // Edit — non-sudo can only edit non-sudo users
                 EditAction::make()
