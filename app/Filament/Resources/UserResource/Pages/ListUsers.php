@@ -6,6 +6,7 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\Action;
 use App\Filament\Resources\UserResource;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
 
 class ListUsers extends ListRecords
 {
@@ -28,5 +29,36 @@ class ListUsers extends ListRecords
                 ->modalCancelActionLabel('Close'),
             CreateAction::make(),
         ];
+    }
+
+    public function getTabs(): array
+    {
+        $isSudo = auth()->user()?->isSudo();
+
+        $tabs = [
+            'all' => Tab::make('All')
+                ->badge(fn () => UserResource::getEloquentQuery()->count()),
+            'students' => Tab::make('Students')
+                ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('role', 'student'))
+                ->badge(fn () => UserResource::getEloquentQuery()->where('role', 'student')->count())
+                ->badgeColor('info'),
+            'teachers' => Tab::make('Teachers')
+                ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('role', 'teacher'))
+                ->badge(fn () => UserResource::getEloquentQuery()->where('role', 'teacher')->count())
+                ->badgeColor('success'),
+            'admins' => Tab::make('Admins')
+                ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('role', 'admin'))
+                ->badge(fn () => UserResource::getEloquentQuery()->where('role', 'admin')->count())
+                ->badgeColor('warning'),
+        ];
+
+        if ($isSudo) {
+            $tabs['sudo'] = Tab::make('Sudo')
+                ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('role', 'sudo'))
+                ->badge(fn () => \App\Models\User::where('role', 'sudo')->count())
+                ->badgeColor('danger');
+        }
+
+        return $tabs;
     }
 }

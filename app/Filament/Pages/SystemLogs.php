@@ -37,9 +37,7 @@ class SystemLogs extends Page
         if (!$user) {
             return false;
         }
-        // isSudoAdmin() → role === 'sudo_admin'
-        // isSudo()      → role === 'sudo' or 'sudo_admin'
-        return $user->isSudoAdmin() || $user->role === 'sudo';
+        return $user->role === 'sudo';
     }
 
     public function mount(): void
