@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\HasAvatar;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Storage;
 class User extends Authenticatable implements FilamentUser, HasAvatar
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -62,15 +63,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function isSudo(): bool
     {
-        return in_array($this->role, ['sudo', 'sudo_admin']);
-    }
-
-    /**
-     * Check if user is a sudo admin.
-     */
-    public function isSudoAdmin(): bool
-    {
-        return $this->role === 'sudo_admin';
+        return $this->role === 'sudo';
     }
 
     /**
@@ -78,7 +71,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function isAdmin(): bool
     {
-        return in_array($this->role, ['admin', 'sudo_admin']);
+        return $this->role === 'admin';
     }
 
     /**
@@ -102,7 +95,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function canManageAcademics(): bool
     {
-        return in_array($this->role, ['sudo', 'admin', 'sudo_admin']);
+        return in_array($this->role, ['sudo', 'admin']);
     }
 
     /**
@@ -118,9 +111,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         }
 
         return match ($panel->getId()) {
-            'sudo' => in_array($this->role, ['sudo', 'sudo_admin']),
-            'admin' => in_array($this->role, ['sudo', 'admin', 'sudo_admin']),
-            'teacher' => in_array($this->role, ['sudo', 'admin', 'sudo_admin', 'teacher']) && $this->isActive(),
+            'sudo' => $this->role === 'sudo',
+            'admin' => in_array($this->role, ['sudo', 'admin']),
+            'teacher' => $this->role === 'teacher' && $this->isActive(),
             'student' => $this->role === 'student' && $this->isActive(),
             default => false,
         };
@@ -234,7 +227,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function canImpersonate(): bool
     {
-        return in_array($this->role, ['sudo', 'admin', 'sudo_admin']);
+        return $this->isSudo() || $this->isAdmin();
     }
 
     /**
@@ -242,6 +235,6 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function canBeImpersonated(): bool
     {
-        return !in_array($this->role, ['sudo', 'sudo_admin']) && $this->isActive();
+        return !$this->isSudo() && $this->isActive();
     }
 }
