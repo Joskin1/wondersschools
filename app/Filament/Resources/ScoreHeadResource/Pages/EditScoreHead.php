@@ -17,4 +17,9 @@ class EditScoreHead extends EditRecord
                 ->requiresConfirmation(),
         ];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

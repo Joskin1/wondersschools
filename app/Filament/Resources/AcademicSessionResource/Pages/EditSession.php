@@ -15,4 +15,9 @@ class EditSession extends EditRecord
             \Filament\Actions\ViewAction::make(),
         ];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }
