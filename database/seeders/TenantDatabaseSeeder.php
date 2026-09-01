@@ -114,7 +114,17 @@ class TenantDatabaseSeeder extends Seeder
             ]
         );
 
-        Staff::factory(4)->create(['image' => null]);
+        foreach ([
+            ['name' => 'Mrs. Grace Williams', 'role' => 'Nursery Lead', 'bio' => 'Mrs. Williams supports early learners with patient, play-based teaching.', 'order' => 3],
+            ['name' => 'Mr. Daniel Okafor', 'role' => 'Mathematics Teacher', 'bio' => 'Mr. Okafor helps pupils build confidence with numbers and problem solving.', 'order' => 4],
+            ['name' => 'Mrs. Amina Bello', 'role' => 'Literacy Coordinator', 'bio' => 'Mrs. Bello leads reading and writing activities across the school.', 'order' => 5],
+            ['name' => 'Mr. Peter Adeyemi', 'role' => 'Sports Coordinator', 'bio' => 'Mr. Adeyemi encourages teamwork, fitness, and healthy competition.', 'order' => 6],
+        ] as $staff) {
+            Staff::firstOrCreate(
+                ['name' => $staff['name']],
+                array_merge($staff, ['image' => null])
+            );
+        }
     }
 
     private function seedPosts(): void
@@ -156,7 +166,24 @@ class TenantDatabaseSeeder extends Seeder
             );
         }
 
-        Post::factory(5)->create(['image' => null]);
+        foreach ([
+            'Reading Week Begins' => 'Students are taking part in daily reading circles, spelling games, and storytelling sessions this week.',
+            'STEM Club Launch' => 'Our new STEM club introduces pupils to practical experiments, robotics basics, and creative problem solving.',
+            'Parent Teacher Forum' => 'Parents are invited to meet teachers and discuss learning goals for the current academic term.',
+            'Inter-House Sports Update' => 'Preparations are underway for track events, relays, and friendly house competitions.',
+            'Art Exhibition Preview' => 'Learners are preparing paintings, crafts, and mixed-media projects for the school art showcase.',
+        ] as $title => $body) {
+            Post::firstOrCreate(
+                ['title' => $title],
+                [
+                    'slug' => \Illuminate\Support\Str::slug($title),
+                    'body' => $body,
+                    'image' => null,
+                    'published_at' => now()->subDays(random_int(1, 30)),
+                    'is_featured' => false,
+                ]
+            );
+        }
     }
 
     private function seedGallery(): void
@@ -187,18 +214,42 @@ class TenantDatabaseSeeder extends Seeder
         $categories = ['Sports Day', 'Graduation', 'Field Trips', 'Classroom Activities', 'Art Exhibition', 'Cultural Day'];
 
         foreach ($categories as $category) {
-            GalleryImage::factory(2)->create(['category' => $category]);
+            foreach (['Highlights', 'Moments'] as $suffix) {
+                GalleryImage::firstOrCreate(
+                    ['caption' => "{$category} {$suffix}"],
+                    [
+                        'category' => $category,
+                        'image' => 'https://placehold.co/600x400',
+                    ]
+                );
+            }
         }
     }
 
     private function seedInquiries(): void
     {
         if (Inquiry::count() === 0) {
-            Inquiry::factory(5)->create();
+            foreach (range(1, 5) as $index) {
+                Inquiry::create([
+                    'name' => "Prospective Parent {$index}",
+                    'email' => "parent{$index}@example.com",
+                    'phone' => '+2348000000000',
+                    'child_age' => (string) random_int(3, 10),
+                    'message' => 'I would like to learn more about admission requirements.',
+                    'status' => 'pending',
+                ]);
+            }
         }
 
         if (\App\Models\ContactSubmission::count() === 0) {
-            \App\Models\ContactSubmission::factory(5)->create();
+            foreach (range(1, 5) as $index) {
+                \App\Models\ContactSubmission::create([
+                    'name' => "Website Visitor {$index}",
+                    'email' => "visitor{$index}@example.com",
+                    'message' => 'Please contact me with more information about the school.',
+                    'status' => 'new',
+                ]);
+            }
         }
     }
 

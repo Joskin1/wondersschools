@@ -31,6 +31,7 @@ APP_ENV=production
 APP_KEY=
 APP_DEBUG=false
 APP_URL=https://livingsspring.duckdns.org
+SUDO_DOMAIN=wonderlandlord.duckdns.org
 
 LOG_CHANNEL=stack
 LOG_LEVEL=error

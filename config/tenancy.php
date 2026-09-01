@@ -18,7 +18,6 @@ return [
     'central_domains' => array_filter([
         env('SUDO_DOMAIN', 'wonders.test'),
         env('CLOUD_DOMAIN'),  // explicit override (optional)
-        parse_url(env('APP_URL', ''), PHP_URL_HOST),  // auto-detect from APP_URL
         '127.0.0.1',
         'localhost',
     ]),
