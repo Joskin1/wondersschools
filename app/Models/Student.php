@@ -175,14 +175,19 @@ class Student extends Model
 
         // Generate raw token
         $rawToken = self::generateRegistrationToken();
+        $slug = self::generateRegistrationSlug($this->full_name);
+        $expiresAt = now()->addDays(3);
         
         // Update student with hashed token and slug
         $this->update([
-            'registration_slug' => self::generateRegistrationSlug($this->full_name),
+            'registration_slug' => $slug,
             'registration_token' => self::hashToken($rawToken),
-            'registration_expires_at' => now()->addDays(3), // 3-day expiry
+            'registration_expires_at' => $expiresAt, // 3-day expiry
         ]);
         
+        $this->registration_slug = $slug;
+        $this->registration_expires_at = $expiresAt;
+
         // Return raw token for URL (never stored)
         return $rawToken;
     }

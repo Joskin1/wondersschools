@@ -21,7 +21,7 @@ class ListUsers extends ListRecords
                 ->modalHeading('Teacher Self-Registration Link')
                 ->modalDescription('Share this link with teachers in your staff group. Anyone using this link can register their teacher profile. Portal access will remain pending until you activate it.')
                 ->modalContent(function () {
-                    $link = url('/register/teacher');
+                    $link = route('public.teacher.register');
                     return view('filament.components.copy-teacher-link-modal', ['link' => $link]);
                 })
                 ->modalSubmitAction(false)

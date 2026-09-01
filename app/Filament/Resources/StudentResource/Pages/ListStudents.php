@@ -21,7 +21,7 @@ class ListStudents extends ListRecords
                 ->modalHeading('Public Student Registration Link')
                 ->modalDescription('Share this link with parents or prospective students. Anyone using this link can complete full student registration online.')
                 ->modalContent(function () {
-                    $link = url('/register/student');
+                    $link = route('public.student.register');
                     return view('filament.components.copy-student-link-modal', ['link' => $link]);
                 })
                 ->modalSubmitAction(false)
