@@ -1,14 +1,17 @@
 <?php
 
+use App\Http\Middleware\InitializeTenancy;
 use App\Models\Tenant;
 use App\Services\TenantBrandingService;
-use App\Http\Middleware\InitializeTenancy;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
-use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
+use Illuminate\Support\Facades\Bus;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 it('initializes single tenant mode on non-local, non-central domains', function () {
+    Bus::fake();
+
     // Create a tenant in the landlord database
     $tenant = Tenant::create([
         'id' => 'chizylite',
@@ -41,6 +44,8 @@ it('initializes single tenant mode on non-local, non-central domains', function 
 });
 
 it('does not initialize single tenant mode on local central domains', function () {
+    Bus::fake();
+
     $tenant = Tenant::create([
         'id' => 'chizylite',
         'name' => 'Chizylite Academy',
@@ -67,6 +72,8 @@ it('does not initialize single tenant mode on local central domains', function (
 });
 
 it('resolves branding directly in single tenant mode', function () {
+    Bus::fake();
+
     $tenant = Tenant::create([
         'id' => 'chizylite',
         'name' => 'Chizylite Academy',
@@ -77,7 +84,7 @@ it('resolves branding directly in single tenant mode', function () {
     putenv('SINGLE_TENANT_ID=chizylite');
 
     $brandingService = app(TenantBrandingService::class);
-    
+
     // Resolve for a Cloudflare domain
     $branding = $brandingService->resolve('chizylite.trycloudflare.com');
 

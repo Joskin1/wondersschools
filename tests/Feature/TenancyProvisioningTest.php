@@ -17,13 +17,17 @@
  * does not actually try to create a MySQL tenant database.
  */
 
+use App\Enums\TenantStatus;
 use App\Jobs\Tenancy\ProvisionTenantJob;
 use App\Mail\TenantAdminCreated;
 use App\Models\Tenant;
 use App\Models\TenantAdminAssignment;
+use App\Models\TenantProvisionLog;
 use App\Models\User;
-use App\Enums\TenantStatus;
+use App\Services\TenantBrandingService;
+use App\Services\TenantHealthCheckService;
 use App\Tenancy\ConfigBootstrapper;
+use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -40,8 +44,8 @@ it('stores tenant name and primary_color in physical columns, not data JSON colu
     Bus::fake();
 
     Tenant::create([
-        'id'            => 'real-school',
-        'name'          => 'Real School',
+        'id' => 'real-school',
+        'name' => 'Real School',
         'primary_color' => '#e11d48',
     ]);
 
@@ -63,7 +67,7 @@ it('initializes a tenant with a pending status and nullable last_provisioned_at'
     Bus::fake();
 
     $tenant = Tenant::create([
-        'id'   => 'pending-school',
+        'id' => 'pending-school',
         'name' => 'Pending School',
     ]);
 
@@ -99,9 +103,9 @@ it('dispatches exactly one ProvisionTenantJob per tenant', function () {
     // Creating an assignment record must not trigger a second round of jobs.
     TenantAdminAssignment::create([
         'tenant_id' => 'one-school',
-        'name'      => 'Admin',
-        'email'     => 'admin@one.test',
-        'role'      => 'admin',
+        'name' => 'Admin',
+        'email' => 'admin@one.test',
+        'role' => 'admin',
     ]);
 
     Bus::assertDispatchedTimes(ProvisionTenantJob::class, 1);
@@ -118,9 +122,9 @@ it('persists a TenantAdminAssignment on the landlord connection', function () {
 
     $assignment = TenantAdminAssignment::create([
         'tenant_id' => 'assign-school',
-        'name'      => 'Alice Admin',
-        'email'     => 'alice@assign.test',
-        'role'      => 'admin',
+        'name' => 'Alice Admin',
+        'email' => 'alice@assign.test',
+        'role' => 'admin',
     ]);
 
     expect($assignment->getConnectionName())->toBe('landlord')
@@ -135,9 +139,9 @@ it('can update credentials_sent_at after provisioning', function () {
 
     $assignment = TenantAdminAssignment::create([
         'tenant_id' => 'ts-school',
-        'name'      => 'Bob Admin',
-        'email'     => 'bob@ts.test',
-        'role'      => 'admin',
+        'name' => 'Bob Admin',
+        'email' => 'bob@ts.test',
+        'role' => 'admin',
     ]);
 
     $assignment->update(['credentials_sent_at' => now()]);
@@ -152,9 +156,9 @@ it('supports the teacher role on a TenantAdminAssignment', function () {
 
     $assignment = TenantAdminAssignment::create([
         'tenant_id' => 'teacher-school',
-        'name'      => 'Carol Teacher',
-        'email'     => 'carol@teacher.test',
-        'role'      => 'teacher',
+        'name' => 'Carol Teacher',
+        'email' => 'carol@teacher.test',
+        'role' => 'teacher',
     ]);
 
     expect($assignment->role)->toBe('teacher');
@@ -168,10 +172,10 @@ it('allows email_verified_at to be mass-assigned on User', function () {
     $verifiedAt = now()->subMinute();
 
     $user = User::create([
-        'name'              => 'Verified Admin',
-        'email'             => 'verified@test.test',
-        'password'          => Hash::make('test-password'),
-        'role'              => 'admin',
+        'name' => 'Verified Admin',
+        'email' => 'verified@test.test',
+        'password' => Hash::make('test-password'),
+        'role' => 'admin',
         'email_verified_at' => $verifiedAt,
     ]);
 
@@ -183,23 +187,23 @@ it('updateOrCreate with email_verified_at does not throw MassAssignmentException
     expect(fn () => User::updateOrCreate(
         ['email' => 'upsert@test.test'],
         [
-            'name'              => 'Upsert Admin',
-            'password'          => Hash::make('secret'),
-            'role'              => 'admin',
-            'is_active'         => true,
+            'name' => 'Upsert Admin',
+            'password' => Hash::make('secret'),
+            'role' => 'admin',
+            'is_active' => true,
             'email_verified_at' => now(),
         ]
-    ))->not->toThrow(\Illuminate\Database\Eloquent\MassAssignmentException::class);
+    ))->not->toThrow(MassAssignmentException::class);
 });
 
 it('User created via provisionAdmin pattern has a verified email', function () {
     $user = User::updateOrCreate(
         ['email' => 'provision@test.test'],
         [
-            'name'              => 'Provision Admin',
-            'password'          => Hash::make('Abc123Xyz789'),
-            'role'              => 'admin',
-            'is_active'         => true,
+            'name' => 'Provision Admin',
+            'password' => Hash::make('Abc123Xyz789'),
+            'role' => 'admin',
+            'is_active' => true,
             'email_verified_at' => now(),
         ]
     );
@@ -216,13 +220,13 @@ it('ConfigBootstrapper sets app.url, mail.from.address, and primary_color from t
     Bus::fake();
 
     $tenant = Tenant::create([
-        'id'            => 'cfg-school',
-        'name'          => 'Config School',
+        'id' => 'cfg-school',
+        'name' => 'Config School',
         'primary_color' => '#7c3aed',
     ]);
     $tenant->domains()->create(['domain' => 'cfg.wonders.test']);
 
-    (new ConfigBootstrapper())->bootstrap($tenant->fresh(['domains']));
+    (new ConfigBootstrapper)->bootstrap($tenant->fresh(['domains']));
 
     $scheme = app()->environment('local') ? 'http' : 'https';
 
@@ -236,7 +240,7 @@ it('ConfigBootstrapper falls back to app.name from tenant->name when no settings
 
     $tenant = Tenant::create(['id' => 'fallback-school', 'name' => 'Fallback School']);
 
-    (new ConfigBootstrapper())->bootstrap($tenant->fresh(['domains']));
+    (new ConfigBootstrapper)->bootstrap($tenant->fresh(['domains']));
 
     expect(config('app.name'))->toBe('Fallback School');
 });
@@ -246,7 +250,7 @@ it('ConfigBootstrapper falls back to #f59e0b when tenant has no primary_color', 
 
     $tenant = Tenant::create(['id' => 'amber-school', 'name' => 'Amber School']);
 
-    (new ConfigBootstrapper())->bootstrap($tenant->fresh(['domains']));
+    (new ConfigBootstrapper)->bootstrap($tenant->fresh(['domains']));
 
     expect(config('app.tenant_primary_color'))->toBe('#f59e0b');
 });
@@ -255,19 +259,19 @@ it('ConfigBootstrapper does not set app.url when the tenant has no domain', func
     Bus::fake();
 
     $originalUrl = config('app.url');
-    $tenant      = Tenant::create(['id' => 'nodomain-school', 'name' => 'NoDomain School']);
+    $tenant = Tenant::create(['id' => 'nodomain-school', 'name' => 'NoDomain School']);
 
-    (new ConfigBootstrapper())->bootstrap($tenant->fresh(['domains']));
+    (new ConfigBootstrapper)->bootstrap($tenant->fresh(['domains']));
 
     expect(config('app.url'))->toBe($originalUrl);
 });
 
 it('ConfigBootstrapper revert() restores app.url, app.name, mail.from.address from env', function () {
-    config(['app.url'           => 'http://changed.test']);
-    config(['app.name'          => 'Changed Name']);
+    config(['app.url' => 'http://changed.test']);
+    config(['app.name' => 'Changed Name']);
     config(['mail.from.address' => 'changed@changed.test']);
 
-    (new ConfigBootstrapper())->revert();
+    (new ConfigBootstrapper)->revert();
 
     expect(config('app.url'))->toBe(env('APP_URL'))
         ->and(config('app.name'))->toBe(env('APP_NAME', 'Laravel'))
@@ -277,7 +281,7 @@ it('ConfigBootstrapper revert() restores app.url, app.name, mail.from.address fr
 it('ConfigBootstrapper revert() nulls out the tenant primary color', function () {
     config(['app.tenant_primary_color' => '#ff0000']);
 
-    (new ConfigBootstrapper())->revert();
+    (new ConfigBootstrapper)->revert();
 
     expect(config('app.tenant_primary_color'))->toBeNull();
 });
@@ -333,25 +337,27 @@ it('does not send TenantAdminCreated when no login URL is available', function (
 // ─────────────────────────────────────────────────────────────────────────────
 
 it('updates tenant status to failed and logs when the provisioning job encounters an exception', function () {
+    Bus::fake();
+
     $tenant = Tenant::create(['id' => 'fail-school', 'name' => 'Failing School']);
 
-    $healthCheckMock = mock(App\Services\TenantHealthCheckService::class);
-    $healthCheckMock->shouldReceive('verifyProvisioning')->andThrow(new \RuntimeException('Mocked provisioning validation failure'));
+    $healthCheckMock = mock(TenantHealthCheckService::class);
+    $healthCheckMock->shouldReceive('verifyProvisioning')->andThrow(new RuntimeException('Mocked provisioning validation failure'));
 
-    $brandingMock = mock(App\Services\TenantBrandingService::class);
+    $brandingMock = mock(TenantBrandingService::class);
 
     $job = new ProvisionTenantJob($tenant);
 
     try {
         $job->handle($healthCheckMock, $brandingMock);
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         expect($e->getMessage())->toBe('Mocked provisioning validation failure');
     }
 
     $tenant->refresh();
     expect($tenant->status)->toBe(TenantStatus::Failed);
 
-    $log = \App\Models\TenantProvisionLog::where('tenant_id', 'fail-school')
+    $log = TenantProvisionLog::where('tenant_id', 'fail-school')
         ->where('event_type', 'provisioning')
         ->where('status', 'failed')
         ->first();
@@ -361,6 +367,8 @@ it('updates tenant status to failed and logs when the provisioning job encounter
 });
 
 it('cleans up tenancy context and reverts to landlord on job failure', function () {
+    Bus::fake();
+
     $tenant = Tenant::create(['id' => 'cleanup-school', 'name' => 'Cleanup School']);
 
     // Initialize mock active tenancy context
@@ -368,9 +376,8 @@ it('cleans up tenancy context and reverts to landlord on job failure', function 
     expect(tenancy()->initialized)->toBeTrue();
 
     $job = new ProvisionTenantJob($tenant);
-    $job->failed(new \RuntimeException('Force context clean'));
+    $job->failed(new RuntimeException('Force context clean'));
 
     // Verify tenancy was cleanly ended, reverting connection state
     expect(tenancy()->initialized)->toBeFalse();
 });
-
