@@ -25,7 +25,7 @@ cd /var/www/Wonder
 git pull origin main || git pull origin master || true
 
 echo "=== 4. Installing Composer Dependencies ==="
-composer install --no-dev --optimize-autoloader
+composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 echo "=== 5. Configuring .env ==="
 cat << 'EOF' > .env
