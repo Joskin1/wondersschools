@@ -49,4 +49,9 @@ class CreateStudent extends CreateRecord
     protected ?int $classroomId = null;
 
     protected ?string $initialPassword = null;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

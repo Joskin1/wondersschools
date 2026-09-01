@@ -117,9 +117,13 @@ class Student extends Model
      *
      * @return string
      */
-    public static function generateRegistrationSlug(string $fullName): string
+    public static function generateRegistrationSlug(?string $fullName): string
     {
-        $baseSlug = Str::slug($fullName);
+        $name = $fullName ? trim($fullName) : 'student';
+        $baseSlug = Str::slug($name);
+        if (empty($baseSlug)) {
+            $baseSlug = 'student';
+        }
         $randomString = Str::lower(Str::random(5));
         
         return "{$baseSlug}-{$randomString}";
