@@ -3,10 +3,9 @@
 namespace App\Filament\Resources\StudentResource\Pages;
 
 use App\Filament\Resources\StudentResource;
-use App\Models\Student;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Actions\Action;
-use Filament\Notifications\Notification;
+use Filament\Actions\CreateAction;
+use Filament\Resources\Pages\ListRecords;
 
 class ListStudents extends ListRecords
 {
@@ -15,7 +14,18 @@ class ListStudents extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\CreateAction::make(),
+            Action::make('download_template')
+                ->label('Download Template')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->action(fn () => ImportStudents::downloadTemplate()),
+
+            Action::make('bulk_import')
+                ->label('Bulk Import')
+                ->icon('heroicon-o-arrow-up-tray')
+                ->url(StudentResource::getUrl('import')),
+
+            CreateAction::make(),
         ];
     }
 }

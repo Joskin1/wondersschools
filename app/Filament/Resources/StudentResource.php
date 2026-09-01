@@ -3,30 +3,27 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentResource\Pages;
-use App\Models\Student;
-use App\Models\Classroom;
 use App\Models\Session;
-use Filament\Schemas\Schema;
+use App\Models\Student;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\ViewAction;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
-
+use Filament\Tables\Table;
+use STS\FilamentImpersonate\Actions\Impersonate;
 
 class StudentResource extends Resource
 {
     protected static ?string $model = Student::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Academic Management';
+    protected static string|\UnitEnum|null $navigationGroup = 'Academic Management';
 
     protected static ?string $navigationLabel = 'Students';
 
@@ -78,6 +75,7 @@ class StudentResource extends Resource
                         if ($record->isRegistrationCompleted()) {
                             return 'Awaiting Activation';
                         }
+
                         return 'Pending';
                     })
                     ->color(fn (string $state): string => match ($state) {
@@ -147,7 +145,7 @@ class StudentResource extends Resource
                     ->label('Generate Link')
                     ->icon('heroicon-o-link')
                     ->color('primary')
-                    ->visible(fn (Student $record) => $record->isPending() && !$record->registration_slug)
+                    ->visible(fn (Student $record) => $record->isPending() && ! $record->registration_slug)
                     ->modalHeading('Registration Link Information')
                     ->modalContent(function (Student $record) {
                         // Generate the link when the modal opens
@@ -157,7 +155,7 @@ class StudentResource extends Resource
                             'token' => $rawToken,
                         ]);
                         $expiresAt = $record->registration_expires_at->format('M d, Y H:i');
-                        
+
                         return view('filament.modals.generated-registration-link', [
                             'url' => $url,
                             'expiresAt' => $expiresAt,
@@ -168,9 +166,9 @@ class StudentResource extends Resource
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close')
                     ->modalWidth('lg'),
-                    
+
                 ViewAction::make(),
-                \STS\FilamentImpersonate\Actions\Impersonate::make()
+                Impersonate::make()
                     ->impersonateRecord(fn ($record) => $record->user)
                     ->redirectTo('/student')
                     ->visible(fn ($record) => $record->user !== null && $record->is_portal_active),
@@ -193,6 +191,7 @@ class StudentResource extends Resource
         return [
             'index' => Pages\ListStudents::route('/'),
             'create' => Pages\CreateStudent::route('/create'),
+            'import' => Pages\ImportStudents::route('/import'),
             'view' => Pages\ViewStudent::route('/{record}'),
         ];
     }
