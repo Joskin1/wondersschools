@@ -13,10 +13,13 @@ use Filament\Resources\Resource;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UserResource extends Resource
 {
@@ -30,8 +33,37 @@ class UserResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    /**
+     * Build the base query for the resource.
+     * Non-sudo users never see sudo records.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
+
+        $user = auth()->user();
+        if (!$user || !$user->isSudo()) {
+            $query->where('role', '!=', 'sudo');
+        }
+
+        return $query;
+    }
+
     public static function form(Schema $schema): Schema
     {
+        $currentUser = auth()->user();
+        $isSudo = $currentUser && $currentUser->isSudo();
+
+        $roleOptions = [
+            'teacher' => 'Teacher',
+            'admin' => 'Admin',
+        ];
+
+        // Only sudo users can assign sudo role
+        if ($isSudo) {
+            $roleOptions['sudo'] = 'Sudo';
+        }
+
         return $schema
             ->components([
                 TextInput::make('name')
@@ -45,18 +77,19 @@ class UserResource extends Resource
                     ->maxLength(255),
 
                 Select::make('role')
-                    ->options([
-                        'teacher' => 'Teacher',
-                        'admin' => 'Admin',
-                        'sudo_admin' => 'Sudo Admin',
-                    ])
+                    ->options($roleOptions)
                     ->required()
-                    ->default('teacher'),
+                    ->default('teacher')
+                    // Prevent non-sudo from changing the role of a sudo user
+                    ->disabled(fn (?User $record) => $record && $record->isSudo() && !$isSudo),
             ]);
     }
 
     public static function table(Table $table): Table
     {
+        $currentUser = auth()->user();
+        $isSudo = $currentUser && $currentUser->isSudo();
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -69,24 +102,18 @@ class UserResource extends Resource
 
                 Tables\Columns\TextColumn::make('role')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'sudo' => 'Sudo',
-                        'sudo_admin' => 'Sudo Admin',
-                        'admin' => 'Admin',
-                        'teacher' => 'Teacher',
-                        'student' => 'Student',
-                        default => ucfirst($state),
-                    })
                     ->color(fn (string $state): string => match ($state) {
                         'sudo' => 'danger',
-                        'sudo_admin' => 'danger',
                         'admin' => 'warning',
                         'teacher' => 'success',
+                        'student' => 'info',
                         default => 'gray',
                     }),
 
+                // Portal Access toggle — editable for teachers, disabled for sudo/admin records
                 Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Portal Access')
+                    ->disabled(fn (User $record): bool => in_array($record->role, ['sudo', 'admin']))
                     ->afterStateUpdated(function (User $record, bool $state) {
                         if ($state && $record->role === 'teacher') {
                             try {
@@ -119,6 +146,13 @@ class UserResource extends Resource
                     ->sortable()
                     ->toggleable(),
 
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Deleted')
+                    ->dateTime('M d, Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visible($isSudo),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Created')
                     ->dateTime('M d, Y')
@@ -127,60 +161,23 @@ class UserResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('role')
-                    ->options([
-                        'teacher' => 'Teacher',
-                        'admin' => 'Admin',
-                        'sudo_admin' => 'Sudo Admin',
-                        'sudo' => 'Sudo',
-                    ]),
+                    ->options(
+                        $isSudo
+                            ? ['student' => 'Student', 'teacher' => 'Teacher', 'admin' => 'Admin', 'sudo' => 'Sudo']
+                            : ['student' => 'Student', 'teacher' => 'Teacher', 'admin' => 'Admin']
+                    ),
 
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Active Status')
                     ->placeholder('All users')
                     ->trueLabel('Active only')
                     ->falseLabel('Inactive only'),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->visible($isSudo),
             ])
             ->actions([
-                Action::make('toggle_portal_access')
-                    ->label(fn (User $record) => $record->isActive() ? 'Deactivate Portal' : 'Activate Portal')
-                    ->icon(fn (User $record) => $record->isActive() ? 'heroicon-o-lock-closed' : 'heroicon-o-lock-open')
-                    ->color(fn (User $record) => $record->isActive() ? 'warning' : 'success')
-                    ->visible(fn (User $record) => $record->role === 'teacher')
-                    ->requiresConfirmation()
-                    ->modalHeading(fn (User $record) => $record->isActive() ? 'Deactivate Teacher Portal Access' : 'Activate Teacher Portal Access')
-                    ->modalDescription(fn (User $record) => $record->isActive()
-                        ? "Deactivate portal access for {$record->name}? They will no longer be able to log in."
-                        : "Activate portal access for {$record->name}? They will receive a welcome email with a link to log into their teacher portal."
-                    )
-                    ->action(function (User $record) {
-                        $newStatus = !$record->isActive();
-                        $record->update(['is_active' => $newStatus]);
-
-                        if ($newStatus) {
-                            try {
-                                $record->notify(new \App\Notifications\TeacherPortalActivated());
-                                Notification::make()
-                                    ->title('Portal Access Activated')
-                                    ->body("Welcome email sent to {$record->email}.")
-                                    ->success()
-                                    ->send();
-                            } catch (\Exception $e) {
-                                \Log::error("Failed sending portal activation email to {$record->email}: " . $e->getMessage());
-                                Notification::make()
-                                    ->title('Portal Activated (Email Failed)')
-                                    ->body("Activated {$record->name}, but email failed: " . $e->getMessage())
-                                    ->warning()
-                                    ->send();
-                            }
-                        } else {
-                            Notification::make()
-                                ->title('Portal Access Deactivated')
-                                ->body("Portal access disabled for {$record->name}.")
-                                ->info()
-                                ->send();
-                        }
-                    }),
-
+                // Send registration link — only for unregistered teachers
                 Action::make('send_registration_link')
                     ->label('Send Registration Link')
                     ->icon('heroicon-o-envelope')
@@ -214,11 +211,26 @@ class UserResource extends Resource
                         }
                     }),
 
+                // Impersonate — nobody can impersonate sudo
                 \STS\FilamentImpersonate\Actions\Impersonate::make()
+                    ->visible(fn (User $record) => !$record->isSudo())
                     ->redirectTo('/teacher'),
-                EditAction::make(),
+
+                // Edit — non-sudo can only edit non-sudo users
+                EditAction::make()
+                    ->visible(fn (User $record) => !$record->isSudo() || $isSudo),
+
+                // Delete (soft) — only sudo can delete
                 DeleteAction::make()
-                    ->visible(fn (User $record) => !in_array($record->role, ['sudo'])),
+                    ->visible(fn () => $isSudo),
+
+                // Restore — only sudo can restore
+                RestoreAction::make()
+                    ->visible(fn () => $isSudo),
+
+                // Force Delete — only sudo can force delete
+                ForceDeleteAction::make()
+                    ->visible(fn () => $isSudo),
             ])
             ->bulkActions([
                 // No bulk actions for security
