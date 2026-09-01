@@ -1,77 +1,73 @@
 #!/bin/bash
-set -e
+set -euo pipefail
+
+APP_DIR=/var/www/Wonder
 
 echo "=== 1. Ensuring Firewall Rules for HTTP/HTTPS ==="
 sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT 2>/dev/null || true
 sudo iptables -I INPUT 1 -p tcp --dport 443 -j ACCEPT 2>/dev/null || true
 sudo netfilter-persistent save 2>/dev/null || true
 
-echo "=== 2. Setting up MySQL Database and User ==="
-sudo mysql -e "CREATE DATABASE IF NOT EXISTS Wonder;"
-sudo mysql -e "CREATE USER IF NOT EXISTS 'Wonder_user'@'localhost' IDENTIFIED BY 'Akinbomi1#';"
-sudo mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'Wonder_user'@'localhost' WITH GRANT OPTION;"
-sudo mysql -e "FLUSH PRIVILEGES;"
+echo "=== 2. Setting up Application Directory ==="
+sudo mkdir -p "$APP_DIR"
+sudo chown -R ubuntu:ubuntu "$APP_DIR"
 
-echo "=== 3. Setting up Application Directory ==="
-sudo mkdir -p /var/www/Wonder
-sudo chown -R ubuntu:ubuntu /var/www/Wonder
-
-if [ ! -d "/var/www/Wonder/.git" ]; then
+if [ ! -d "$APP_DIR/.git" ]; then
     echo "Cloning repository..."
-    git clone git@github.com:Joskin1/wondersschools.git /var/www/Wonder
+    git clone git@github.com:Joskin1/wondersschools.git "$APP_DIR"
 fi
 
-cd /var/www/Wonder
-git pull origin main || git pull origin master || true
+cd "$APP_DIR"
+git pull --ff-only origin main || git pull --ff-only origin master
 
-echo "=== 4. Configuring .env ==="
-cat << 'EOF' > .env
-APP_NAME="Livingsspring School"
-APP_ENV=production
-APP_KEY=
-APP_DEBUG=false
-APP_URL=https://livingsspring.duckdns.org
-SUDO_DOMAIN=wonderlandlord.duckdns.org
+if [ ! -f .env ]; then
+    echo "Production .env is missing at $APP_DIR/.env. Create it on the server before deploying."
+    exit 1
+fi
 
-LOG_CHANNEL=stack
-LOG_LEVEL=error
+set -a
+source .env
+set +a
 
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=Wonder
-DB_USERNAME=Wonder_user
-DB_PASSWORD="Akinbomi1#"
+echo "=== 3. Setting up MySQL Database and User ==="
+sudo mysql -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE:-Wonder}\`;"
+if [ -n "${DB_PASSWORD:-}" ]; then
+    sudo mysql -e "CREATE USER IF NOT EXISTS '${DB_USERNAME:-Wonder_user}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+    sudo mysql -e "GRANT ALL PRIVILEGES ON *.* TO '${DB_USERNAME:-Wonder_user}'@'localhost' WITH GRANT OPTION;"
+    sudo mysql -e "FLUSH PRIVILEGES;"
+else
+    echo "DB_PASSWORD is not set. Skipping database user creation."
+fi
 
-LANDLORD_DB_CONNECTION=mysql
-LANDLORD_DB_HOST=127.0.0.1
-LANDLORD_DB_PORT=3306
-LANDLORD_DB_DATABASE=Wonder
-LANDLORD_DB_USERNAME=Wonder_user
-LANDLORD_DB_PASSWORD="Akinbomi1#"
+echo "=== 4. Configuring system mail sender ==="
+if [ -n "${MAIL_PASSWORD:-}" ]; then
+sudo tee /etc/msmtprc > /dev/null << MSMTPEOF
+defaults
+auth on
+tls on
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
 
-TENANT_DB_HOST=127.0.0.1
-TENANT_DB_PORT=3306
-TENANT_ADMIN_USERNAME=Wonder_user
-TENANT_ADMIN_PASSWORD="Akinbomi1#"
-TENANT_DB_PREFIX=tenant_
+account gmail
+host ${MAIL_HOST:-smtp.gmail.com}
+port ${MAIL_PORT:-587}
+from ${MAIL_FROM_ADDRESS:-demaevolutionary@gmail.com}
+user ${MAIL_USERNAME:-demaevolutionary@gmail.com}
+password ${MAIL_PASSWORD}
 
-SESSION_DRIVER=database
-SESSION_LIFETIME=120
-
-CACHE_STORE=file
-QUEUE_CONNECTION=sync
-
-CENTRAL_DOMAINS="wonderlandlord.duckdns.org,livingsspring.duckdns.org"
-SINGLE_TENANT_ID=livingsspring
-TENANT_NAME="Livingsspring School"
-DEV_TENANT_DOMAIN="livingsspring.duckdns.org"
-EOF
+account default : gmail
+MSMTPEOF
+sudo chown root:www-data /etc/msmtprc
+sudo chmod 640 /etc/msmtprc
+else
+    echo "MAIL_PASSWORD is not set. Skipping msmtp configuration."
+fi
 
 echo "=== 5. Installing Composer Dependencies ==="
 CACHE_STORE=file composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
-php artisan key:generate --force
+if ! grep -q '^APP_KEY=base64:' .env; then
+    php artisan key:generate --force
+fi
 php artisan config:clear
 
 echo "=== 6. Running Migrations ==="
@@ -83,7 +79,7 @@ sudo chown -R www-data:www-data storage bootstrap/cache
 sudo chmod -R 775 storage bootstrap/cache
 
 echo "=== 8. Configuring Nginx ==="
-cat << 'EOF' | sudo tee /etc/nginx/sites-available/wonder > /dev/null
+cat << 'NGINXEOF' | sudo tee /etc/nginx/sites-available/wonder > /dev/null
 server {
     listen 80;
     listen [::]:80;
@@ -115,7 +111,7 @@ server {
         deny all;
     }
 }
-EOF
+NGINXEOF
 
 sudo ln -sf /etc/nginx/sites-available/wonder /etc/nginx/sites-enabled/
 sudo nginx -t
