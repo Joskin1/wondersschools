@@ -13,7 +13,6 @@ use Filament\Resources\Resource;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
-use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -231,10 +230,6 @@ class UserResource extends Resource
 
                 // Restore — only sudo can restore
                 RestoreAction::make()
-                    ->visible(fn () => $isSudo),
-
-                // Force Delete — only sudo can force delete
-                ForceDeleteAction::make()
                     ->visible(fn () => $isSudo),
             ])
             ->bulkActions([

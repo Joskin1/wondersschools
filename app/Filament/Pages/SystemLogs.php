@@ -22,6 +22,7 @@ class SystemLogs extends Page
     protected string $view = 'filament.pages.system-logs';
 
     // Filters
+    public string $selectedFile = '';
     public string $level = 'all';
     public string $search = '';
     public string $dateFilter = '';
@@ -45,27 +46,80 @@ class SystemLogs extends Page
         if (!static::canAccess()) {
             abort(403, 'Unauthorized access. System logs are restricted to Sudo Administrators.');
         }
+
+        $availableFiles = $this->getAvailableLogFiles();
+        if (!empty($availableFiles)) {
+            $this->selectedFile = array_key_first($availableFiles);
+        }
     }
 
     /**
-     * Clear / truncate the log file.
+     * Get array of available log files [filename => full_path] sorted by last modified desc.
+     *
+     * @return array<string, string>
+     */
+    public function getAvailableLogFiles(): array
+    {
+        $logDir = storage_path('logs');
+        if (!File::isDirectory($logDir)) {
+            return [];
+        }
+
+        $files = File::glob("{$logDir}/*.log");
+        if (empty($files)) {
+            return [];
+        }
+
+        // Sort by last modified descending
+        usort($files, fn ($a, $b) => File::lastModified($b) <=> File::lastModified($a));
+
+        $result = [];
+        foreach ($files as $file) {
+            $filename = basename($file);
+            $result[$filename] = $file;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Resolve path to current log file.
+     */
+    public function getLogFilePath(): ?string
+    {
+        $available = $this->getAvailableLogFiles();
+
+        if (!empty($this->selectedFile) && isset($available[$this->selectedFile])) {
+            return $available[$this->selectedFile];
+        }
+
+        if (!empty($available)) {
+            return reset($available);
+        }
+
+        $default = storage_path('logs/laravel.log');
+        return File::exists($default) ? $default : null;
+    }
+
+    /**
+     * Clear / truncate the selected log file.
      */
     public function clearLogs(): void
     {
-        $logPath = storage_path('logs/laravel.log');
+        $logPath = $this->getLogFilePath();
 
-        if (File::exists($logPath)) {
+        if ($logPath && File::exists($logPath)) {
             File::put($logPath, '');
             
             Notification::make()
                 ->title('System Logs Cleared')
-                ->body('The laravel.log file has been successfully truncated.')
+                ->body('The log file has been successfully truncated.')
                 ->success()
                 ->send();
         } else {
             Notification::make()
                 ->title('Log File Not Found')
-                ->body('No log file found at storage/logs/laravel.log.')
+                ->body('No log file found to clear.')
                 ->warning()
                 ->send();
         }
@@ -76,9 +130,9 @@ class SystemLogs extends Page
      */
     public function downloadLogs(): ?BinaryFileResponse
     {
-        $logPath = storage_path('logs/laravel.log');
+        $logPath = $this->getLogFilePath();
 
-        if (!File::exists($logPath)) {
+        if (!$logPath || !File::exists($logPath)) {
             Notification::make()
                 ->title('Log File Not Found')
                 ->warning()
@@ -86,7 +140,7 @@ class SystemLogs extends Page
             return null;
         }
 
-        return response()->download($logPath, 'laravel-' . now()->format('Y-m-d-His') . '.log');
+        return response()->download($logPath, basename($logPath));
     }
 
     /**
@@ -96,9 +150,9 @@ class SystemLogs extends Page
      */
     public function getLogData(): array
     {
-        $logPath = storage_path('logs/laravel.log');
+        $logPath = $this->getLogFilePath();
 
-        if (!File::exists($logPath) || File::size($logPath) === 0) {
+        if (!$logPath || !File::exists($logPath) || File::size($logPath) === 0) {
             return [
                 'entries' => [],
                 'stats' => [
@@ -126,7 +180,7 @@ class SystemLogs extends Page
         }
 
         // Regex pattern to split entries starting with timestamp: [YYYY-MM-DD HH:MM:SS]
-        $pattern = '/^\[(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}\.?\d*[\+\-]?\d*:?\d*)\]\s+([a-zA-Z0-9_\-\.]+)\.([A-Z]+):\s+(.*)/m';
+        $pattern = '/^\[(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}\.?\d*[\+\-]?\d*:?\d*)\]\s+(?:([a-zA-Z0-9_\-\.]+)\.)?([A-Z]+):\s+(.*)/m';
 
         preg_match_all($pattern, $content, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
 
@@ -144,7 +198,7 @@ class SystemLogs extends Page
         for ($i = 0; $i < $matchCount; $i++) {
             $match = $matches[$i];
             $timestamp = $match[1][0];
-            $env = $match[2][0];
+            $env = !empty($match[2][0]) ? $match[2][0] : 'local';
             $level = strtoupper($match[3][0]);
             $messageLine = $match[4][0];
 

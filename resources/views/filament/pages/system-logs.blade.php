@@ -3,6 +3,7 @@
         $data = $this->getLogData();
         $entries = $data['entries'];
         $stats = $data['stats'];
+        $availableFiles = $this->getAvailableLogFiles();
     @endphp
 
     {{-- Top Metrics Overview --}}
@@ -13,7 +14,7 @@
                 <p class="text-2xl font-extrabold text-gray-900 dark:text-white mt-1">{{ number_format($stats['total']) }}</p>
             </div>
             <div class="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
-                <x-heroicon-o-document-text class="w-6 h-6" />
+                <x-heroicon-o-document-text class="w-6 h-6" style="width: 24px; height: 24px;" />
             </div>
         </div>
 
@@ -23,7 +24,7 @@
                 <p class="text-2xl font-extrabold text-red-600 dark:text-red-400 mt-1">{{ number_format($stats['errors']) }}</p>
             </div>
             <div class="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
-                <x-heroicon-o-exclamation-triangle class="w-6 h-6" />
+                <x-heroicon-o-exclamation-triangle class="w-6 h-6" style="width: 24px; height: 24px;" />
             </div>
         </div>
 
@@ -33,7 +34,7 @@
                 <p class="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1">{{ number_format($stats['warnings']) }}</p>
             </div>
             <div class="p-3 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
-                <x-heroicon-o-bell-alert class="w-6 h-6" />
+                <x-heroicon-o-bell-alert class="w-6 h-6" style="width: 24px; height: 24px;" />
             </div>
         </div>
 
@@ -43,7 +44,7 @@
                 <p class="text-2xl font-extrabold text-gray-800 dark:text-gray-200 mt-1">{{ $stats['file_size'] }}</p>
             </div>
             <div class="p-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg">
-                <x-heroicon-o-circle-stack class="w-6 h-6" />
+                <x-heroicon-o-circle-stack class="w-6 h-6" style="width: 24px; height: 24px;" />
             </div>
         </div>
     </div>
@@ -54,10 +55,20 @@
             
             {{-- Search and Level Filter --}}
             <div class="flex flex-col sm:flex-row gap-3 flex-1">
+                @if(count($availableFiles) > 1)
+                    {{-- File Selector --}}
+                    <select wire:model.live="selectedFile"
+                            class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-sm rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white font-mono">
+                        @foreach($availableFiles as $filename => $path)
+                            <option value="{{ $filename }}">{{ $filename }}</option>
+                        @endforeach
+                    </select>
+                @endif
+
                 {{-- Search Input --}}
                 <div class="relative flex-1">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <x-heroicon-o-magnifying-glass class="w-4 h-4" />
+                        <x-heroicon-o-magnifying-glass class="w-4 h-4" style="width: 16px; height: 16px;" />
                     </div>
                     <input type="text"
                            wire:model.live.debounce.300ms="search"
@@ -94,14 +105,14 @@
                 <button wire:click="$refresh"
                         type="button"
                         class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-sm transition">
-                    <x-heroicon-o-arrow-path class="w-4 h-4 mr-1.5" />
+                    <x-heroicon-o-arrow-path class="w-4 h-4 mr-1.5" style="width: 16px; height: 16px;" />
                     Refresh
                 </button>
 
                 <button wire:click="downloadLogs"
                         type="button"
                         class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-sm transition">
-                    <x-heroicon-o-arrow-down-tray class="w-4 h-4 mr-1.5" />
+                    <x-heroicon-o-arrow-down-tray class="w-4 h-4 mr-1.5" style="width: 16px; height: 16px;" />
                     Download
                 </button>
 
@@ -109,7 +120,7 @@
                         wire:click="clearLogs"
                         type="button"
                         class="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 shadow-sm transition">
-                    <x-heroicon-o-trash class="w-4 h-4 mr-1.5" />
+                    <x-heroicon-o-trash class="w-4 h-4 mr-1.5" style="width: 16px; height: 16px;" />
                     Clear Logs
                 </button>
             </div>
@@ -159,7 +170,7 @@
                         @if(!empty($log['stack']))
                             <button type="button" class="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline flex items-center">
                                 <span x-text="open ? 'Hide Trace' : 'View Trace'"></span>
-                                <x-heroicon-o-chevron-down class="w-4 h-4 ml-1 transition-transform" ::class="open ? 'rotate-180' : ''" />
+                                <x-heroicon-o-chevron-down class="w-4 h-4 ml-1 transition-transform" style="width: 16px; height: 16px;" ::class="open ? 'rotate-180' : ''" />
                             </button>
                         @endif
                     </div>
@@ -173,7 +184,7 @@
                             <button type="button"
                                     @click="navigator.clipboard.writeText(`{{ addslashes($log['message']) }}\n{{ addslashes($log['stack']) }}`); copied = true; setTimeout(() => copied = false, 2000)"
                                     class="px-2.5 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-200 rounded transition flex items-center">
-                                <x-heroicon-o-clipboard class="w-3.5 h-3.5 mr-1" />
+                                <x-heroicon-o-clipboard class="w-3.5 h-3.5 mr-1" style="width: 14px; height: 14px;" />
                                 <span x-text="copied ? 'Copied!' : 'Copy'"></span>
                             </button>
                         </div>
@@ -182,8 +193,8 @@
                 @endif
             </div>
         @empty
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
-                <x-heroicon-o-check-circle class="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center flex flex-col items-center justify-center">
+                <x-heroicon-o-check-circle class="w-12 h-12 text-emerald-500 mb-3" style="width: 48px; height: 48px;" />
                 <h3 class="text-base font-semibold text-gray-900 dark:text-white">No Log Entries Found</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">There are no log entries matching your current filter criteria.</p>
             </div>
