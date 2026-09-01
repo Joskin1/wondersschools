@@ -918,7 +918,7 @@ describe('User Panel Access', function () {
         }
 
         expect($this->teacher->canAccessPanel($teacherPanel))->toBeTrue()
-            ->and($this->admin->canAccessPanel($teacherPanel))->toBeTrue()
+            ->and($this->admin->canAccessPanel($teacherPanel))->toBeFalse()
             ->and($this->student->canAccessPanel($teacherPanel))->toBeFalse();
     });
 
