@@ -113,4 +113,6 @@ return [
     'seeder_parameters' => [
         '--class' => Database\Seeders\TenantDatabaseSeeder::class,
     ],
+
+    'auto_seed_tenants' => env('TENANT_AUTO_SEED', false),
 ];

@@ -74,8 +74,8 @@ CACHE_STORE=file composer install --no-dev --optimize-autoloader --ignore-platfo
 php artisan key:generate --force
 php artisan config:clear
 
-echo "=== 6. Running Fresh Migrations and Seeding ==="
-php artisan migrate:fresh --seed --force
+echo "=== 6. Running Migrations ==="
+php artisan migrate --force
 
 echo "=== 7. Setting Permissions & Storage Link ==="
 php artisan storage:link || true

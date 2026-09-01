@@ -26,14 +26,14 @@ use Throwable;
  *   1. Acquire a distributed lock to prevent duplicate provisioning.
  *   2. Create the tenant's dedicated database.
  *   3. Run tenant-specific migrations.
- *   4. Run TenantDatabaseSeeder (transaction-wrapped, idempotent).
+ *   4. Optionally run TenantDatabaseSeeder.
  *   5. Validate provisioning via TenantHealthCheckService.
  *   6. Activate the tenant and warm the branding cache.
  *
  * Every step is idempotent, so retries re-run the full pipeline safely:
  *   - CreateDatabase catches "database already exists"
  *   - Migrations are inherently idempotent
- *   - Seeder uses firstOrCreate() and count guards
+ *   - Tenant seeding is opt-in for demo/bootstrap environments
  *
  * On failure: tenant status is set to "failed" and the exception is re-thrown
  * so the queue worker can retry (up to $tries).
@@ -95,10 +95,14 @@ class ProvisionTenantJob implements ShouldQueue
             $this->migrateDatabase();
             ProvisionLogger::log($tenantId, 'migration', 'success');
 
-            // ── Step 3: Seed database ────────────────────────────────────
-            ProvisionLogger::log($tenantId, 'seeding', 'started');
-            $this->seedDatabase();
-            ProvisionLogger::log($tenantId, 'seeding', 'success');
+            // ── Step 3: Seed database (opt-in) ───────────────────────────
+            if (config('tenancy.auto_seed_tenants')) {
+                ProvisionLogger::log($tenantId, 'seeding', 'started');
+                $this->seedDatabase();
+                ProvisionLogger::log($tenantId, 'seeding', 'success');
+            } else {
+                ProvisionLogger::log($tenantId, 'seeding', 'skipped');
+            }
 
             // ── Step 3.5: Create public storage symlink ──────────────────
             ProvisionLogger::log($tenantId, 'storage_link', 'started');
@@ -180,8 +184,7 @@ class ProvisionTenantJob implements ShouldQueue
     }
 
     /**
-     * Step 3: Run TenantDatabaseSeeder.
-     * Idempotent: seeder uses firstOrCreate() and count guards inside a transaction.
+     * Step 3: Run TenantDatabaseSeeder when TENANT_AUTO_SEED=true.
      */
     private function seedDatabase(): void
     {
