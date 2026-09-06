@@ -26,7 +26,11 @@ class Home extends Component
         }
 
         try {
-            $heroImages = \App\Models\GalleryImage::where('is_hero_slider', true)->pluck('image')->toArray();
+            $heroImages = \App\Models\GalleryImage::where('is_hero_slider', true)
+                ->pluck('image')
+                ->map(fn ($img) => str_starts_with($img, 'http') ? $img : \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($img))
+                ->values()
+                ->toArray();
         } catch (\Throwable) {
             $heroImages = [];
         }

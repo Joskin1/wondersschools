@@ -23,7 +23,7 @@
         <template x-for="(image, i) in images" :key="i">
             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transition: opacity 1s ease-in-out;"
                  :style="active === i ? 'opacity: 1; z-index: 0;' : 'opacity: 0; z-index: -1; pointer-events: none;'">
-                <img :src="image.startsWith('http') ? image : '/storage/' + image" alt="Hero Image" style="width: 100%; height: 100%; object-fit: cover;">
+                <img :src="image" alt="Hero Image" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
         </template>
 
