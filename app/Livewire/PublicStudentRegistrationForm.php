@@ -82,7 +82,7 @@ class PublicStudentRegistrationForm extends Component
 
         $profilePicturePath = null;
         if ($this->profile_picture) {
-            $profilePicturePath = $this->profile_picture->store('profile-pictures', 'public');
+            $profilePicturePath = $this->profile_picture->store('profile-pictures', config('filesystems.upload_disk', 'public'));
         }
 
         try {

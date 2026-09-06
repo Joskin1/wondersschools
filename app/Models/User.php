@@ -141,7 +141,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         }
 
         if ($avatarPath) {
-            return Storage::disk('public')->url($avatarPath);
+            return Storage::disk(config('filesystems.upload_disk', 'public'))->url($avatarPath);
         }
 
         return null;

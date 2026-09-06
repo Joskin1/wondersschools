@@ -97,7 +97,7 @@ class RegisterStudent extends Component
 
         // Handle profile picture upload
         if ($this->profile_picture) {
-            $validated['profile_picture'] = $this->profile_picture->store('profile-pictures', 'public');
+            $validated['profile_picture'] = $this->profile_picture->store('profile-pictures', config('filesystems.upload_disk', 'public'));
         }
 
         // Complete registration (sets registration_completed_at, clears token)

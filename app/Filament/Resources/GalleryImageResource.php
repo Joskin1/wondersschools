@@ -38,6 +38,7 @@ class GalleryImageResource extends Resource
                 FileUpload::make('image')
                     ->image()
                     ->directory('gallery')
+                    ->disk(config('filesystems.upload_disk', 'public'))
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->maxSize(5120) // 5MB
                     ->required(),

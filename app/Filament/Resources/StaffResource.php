@@ -54,6 +54,7 @@ class StaffResource extends Resource
                 FileUpload::make('image')
                     ->image()
                     ->directory('staff')
+                    ->disk(config('filesystems.upload_disk', 'public'))
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                     ->maxSize(2048), // 2MB
                 TextInput::make('order')

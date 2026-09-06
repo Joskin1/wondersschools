@@ -51,7 +51,7 @@ class Settings extends Page
                         FileUpload::make('school_logo')
                             ->image()
                             ->directory('logos')
-                            ->disk('public')
+                            ->disk(config('filesystems.upload_disk', 'public'))
                             ->maxSize(512)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->helperText('Max 512 KB. Used on report cards and navigation.'),

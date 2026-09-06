@@ -329,6 +329,7 @@ class FrontendContentResource extends Resource
                 FileUpload::make('value_image')
                     ->label('Value (Image)')
                     ->directory('frontend')
+                    ->disk(config('filesystems.upload_disk', 'public'))
                     ->columnSpanFull()
                     ->visible($isImage)
                     ->dehydrated(fn ($state, $component) => $component->isVisible()),

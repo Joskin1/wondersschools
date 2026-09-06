@@ -62,7 +62,7 @@ class CustomProfile extends BaseEditProfile
                             ->label('Profile Picture')
                             ->image()
                             ->directory('profile-pictures')
-                            ->disk('public')
+                            ->disk(config('filesystems.upload_disk', 'public'))
                             ->maxSize(2048),
                         DatePicker::make('date_of_birth')
                             ->label('Date of Birth')
