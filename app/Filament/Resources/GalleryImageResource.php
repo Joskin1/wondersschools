@@ -57,7 +57,8 @@ class GalleryImageResource extends Resource
     {
         return $table
             ->columns([
-                ImageColumn::make('image'),
+                ImageColumn::make('image')
+                    ->disk(config('filesystems.upload_disk', 'public')),
                 TextColumn::make('category')
                     ->searchable(),
                 TextColumn::make('caption')

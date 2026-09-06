@@ -11,6 +11,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
@@ -66,6 +67,8 @@ class PostResource extends Resource
     {
         return $table
             ->columns([
+                ImageColumn::make('image')
+                    ->disk(config('filesystems.upload_disk', 'public')),
                 TextColumn::make('title')
                     ->searchable(),
                 TextColumn::make('published_at')

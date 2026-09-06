@@ -6,6 +6,7 @@ use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\FileUpload;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
@@ -67,6 +68,9 @@ class StaffResource extends Resource
     {
         return $table
             ->columns([
+                ImageColumn::make('image')
+                    ->disk(config('filesystems.upload_disk', 'public'))
+                    ->circular(),
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('role')
