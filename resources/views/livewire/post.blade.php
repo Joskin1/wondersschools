@@ -1,7 +1,7 @@
 <div>
     <!-- Header Image -->
     <div class="relative h-96">
-        <img class="w-full h-full object-cover" src="{{ Str::startsWith($post->image, 'http') ? $post->image : Storage::url($post->image) }}" alt="{{ $post->title }}">
+        <img class="w-full h-full object-cover" src="{{ Str::startsWith($post->image, 'http') ? $post->image : Storage::disk(config('filesystems.upload_disk', 'public'))->url($post->image) }}" alt="{{ $post->title }}">
         <div class="absolute inset-0 bg-gray-900 bg-opacity-50"></div>
         <div class="absolute inset-0 flex items-center justify-center">
             <div class="text-center px-4">

@@ -127,7 +127,7 @@
                         <div class="space-y-4">
                             <div class="mx-auto h-40 w-40 rounded-full overflow-hidden border-4 border-tenant-accent shadow-lg transform group-hover:scale-105 transition duration-300">
                                 <img class="w-full h-full object-cover"
-                                     src="{{ Str::startsWith($member->image, 'http') ? $member->image : Storage::url($member->image) }}"
+                                     src="{{ Str::startsWith($member->image, 'http') ? $member->image : Storage::disk(config('filesystems.upload_disk', 'public'))->url($member->image) }}"
                                      alt="{{ $member->name }}">
                             </div>
                             <div class="space-y-2">

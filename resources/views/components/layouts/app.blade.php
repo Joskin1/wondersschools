@@ -51,7 +51,7 @@
                     <div class="flex-shrink-0 flex items-center space-x-3">
                         <a href="{{ route('home') }}" class="flex items-center space-x-3">
                             @if(\App\Services\FrontendLibrary::getSetting('school_logo'))
-                                <img src="{{ Storage::url(\App\Services\FrontendLibrary::getSetting('school_logo')) }}"
+                                <img src="{{ Storage::disk(config('filesystems.upload_disk', 'public'))->url(\App\Services\FrontendLibrary::getSetting('school_logo')) }}"
                                      alt="{{ \App\Services\FrontendLibrary::getSetting('school_name', 'School') }} Logo"
                                      class="h-12 w-auto">
                             @endif
@@ -133,7 +133,7 @@
                     {{-- Column 1: Brand + Social --}}
                     <div>
                         @if(\App\Services\FrontendLibrary::getSetting('school_logo'))
-                            <img src="{{ Storage::url(\App\Services\FrontendLibrary::getSetting('school_logo')) }}"
+                            <img src="{{ Storage::disk(config('filesystems.upload_disk', 'public'))->url(\App\Services\FrontendLibrary::getSetting('school_logo')) }}"
                                  alt="{{ \App\Services\FrontendLibrary::getSetting('school_name') }}"
                                  class="h-10 w-auto mb-4">
                         @else

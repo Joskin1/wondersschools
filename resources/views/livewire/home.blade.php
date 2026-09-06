@@ -112,7 +112,7 @@
                         <div class="pillar-card">
                             @php $img = \App\Services\FrontendLibrary::get($pillar['img_key']); @endphp
                             @if($img)
-                                <img src="{{ Storage::url($img) }}" alt="{{ \App\Services\FrontendLibrary::get($pillar['key'], $pillar['default']) }}">
+                                <img src="{{ Storage::disk(config('filesystems.upload_disk', 'public'))->url($img) }}" alt="{{ \App\Services\FrontendLibrary::get($pillar['key'], $pillar['default']) }}">
                             @else
                                 <div class="w-full h-full flex items-center justify-center" style="background: color-mix(in srgb, var(--color-tenant-primary) 12%, #f3f4f6);">
                                     <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -213,7 +213,7 @@
                 @forelse($latestNews as $post)
                     <div class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 border border-gray-100">
                         <div class="relative h-48 overflow-hidden">
-                            <img src="{{ Str::startsWith($post->image, 'http') ? $post->image : Storage::url($post->image) }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                            <img src="{{ Str::startsWith($post->image, 'http') ? $post->image : Storage::disk(config('filesystems.upload_disk', 'public'))->url($post->image) }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
                             <div class="absolute top-4 left-4 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide" style="background: var(--color-tenant-accent); color: #1D2A44;">{{ \App\Services\FrontendLibrary::get('news_badge_label', 'News') }}</div>
                         </div>
                         <div class="p-6">

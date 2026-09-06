@@ -27,7 +27,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 @forelse($images as $image)
                     <div class="relative group overflow-hidden rounded-lg shadow-lg aspect-w-1 aspect-h-1">
-                        <img class="w-full h-full object-cover transform transition-transform duration-300 group-hover:scale-110" src="{{ Str::startsWith($image->image, 'http') ? $image->image : Storage::url($image->image) }}" alt="{{ $image->caption }}">
+                        <img class="w-full h-full object-cover transform transition-transform duration-300 group-hover:scale-110" src="{{ Str::startsWith($image->image, 'http') ? $image->image : Storage::disk(config('filesystems.upload_disk', 'public'))->url($image->image) }}" alt="{{ $image->caption }}">
                         <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-300 flex items-center justify-center">
                             <p class="text-white text-center px-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-medium">
                                 {{ $image->caption }}

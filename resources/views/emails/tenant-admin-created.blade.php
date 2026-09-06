@@ -28,7 +28,7 @@
         <div style="margin-bottom: 20px;">
             @if(\App\Services\FrontendLibrary::getSetting('school_logo'))
                 <img 
-                    src="{{ Storage::url(\App\Services\FrontendLibrary::getSetting('school_logo')) }}" 
+                    src="{{ Storage::disk(config('filesystems.upload_disk', 'public'))->url(\App\Services\FrontendLibrary::getSetting('school_logo')) }}" 
                     alt="{{ \App\Services\FrontendLibrary::getSetting('school_name', 'School') }} Logo" 
                     style="height:60px;"
                 >
