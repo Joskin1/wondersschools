@@ -7,6 +7,8 @@ use App\Models\Session;
 use App\Models\Student;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -14,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use STS\FilamentImpersonate\Actions\Impersonate;
 
@@ -153,6 +156,8 @@ class StudentResource extends Resource
                 SelectFilter::make('classroom_id')
                     ->label('Classroom')
                     ->relationship('enrollments.classroom', 'name'),
+
+                TrashedFilter::make(),
             ])
             ->actions([
                 Action::make('copy_registration_link')
@@ -182,6 +187,8 @@ class StudentResource extends Resource
                     ->modalWidth('lg'),
 
                 ViewAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make(),
                 Impersonate::make()
                     ->impersonateRecord(fn ($record) => $record->user)
                     ->redirectTo('/student')
@@ -212,7 +219,6 @@ class StudentResource extends Resource
 
     public static function canDelete($record): bool
     {
-        // Prevent deletion to preserve historical records
-        return false;
+        return auth()->user()?->isSudo() || auth()->user()?->isAdmin();
     }
 }

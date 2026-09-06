@@ -6,198 +6,223 @@
         $availableFiles = $this->getAvailableLogFiles();
     @endphp
 
-    {{-- Top Metrics Overview --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Log Entries</p>
-                <p class="text-2xl font-extrabold text-gray-900 dark:text-white mt-1">{{ number_format($stats['total']) }}</p>
+    {{-- Metrics Grid --}}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        
+        <x-filament::section>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-gray-500, #6b7280);">
+                        Total Log Entries
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 800; margin-top: 0.25rem;">
+                        {{ number_format($stats['total']) }}
+                    </div>
+                </div>
+                <div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+                    <x-heroicon-o-document-text style="width: 28px; height: 28px;" />
+                </div>
             </div>
-            <div class="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
-                <x-heroicon-o-document-text class="w-6 h-6" style="width: 24px; height: 24px;" />
-            </div>
-        </div>
+        </x-filament::section>
 
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-red-500 uppercase tracking-wider">Errors & Critical</p>
-                <p class="text-2xl font-extrabold text-red-600 dark:text-red-400 mt-1">{{ number_format($stats['errors']) }}</p>
+        <x-filament::section>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #ef4444;">
+                        Errors & Critical
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 800; color: #ef4444; margin-top: 0.25rem;">
+                        {{ number_format($stats['errors']) }}
+                    </div>
+                </div>
+                <div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                    <x-heroicon-o-exclamation-triangle style="width: 28px; height: 28px;" />
+                </div>
             </div>
-            <div class="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
-                <x-heroicon-o-exclamation-triangle class="w-6 h-6" style="width: 24px; height: 24px;" />
-            </div>
-        </div>
+        </x-filament::section>
 
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-amber-500 uppercase tracking-wider">Warnings</p>
-                <p class="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1">{{ number_format($stats['warnings']) }}</p>
+        <x-filament::section>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #f59e0b;">
+                        Warnings
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 800; color: #f59e0b; margin-top: 0.25rem;">
+                        {{ number_format($stats['warnings']) }}
+                    </div>
+                </div>
+                <div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                    <x-heroicon-o-bell-alert style="width: 28px; height: 28px;" />
+                </div>
             </div>
-            <div class="p-3 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
-                <x-heroicon-o-bell-alert class="w-6 h-6" style="width: 24px; height: 24px;" />
-            </div>
-        </div>
+        </x-filament::section>
 
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Log File Size</p>
-                <p class="text-2xl font-extrabold text-gray-800 dark:text-gray-200 mt-1">{{ $stats['file_size'] }}</p>
+        <x-filament::section>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-gray-500, #6b7280);">
+                        Log File Size
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 800; margin-top: 0.25rem;">
+                        {{ $stats['file_size'] }}
+                    </div>
+                </div>
+                <div style="padding: 0.75rem; border-radius: 0.5rem; background-color: rgba(107, 114, 128, 0.1); color: #9ca3af;">
+                    <x-heroicon-o-circle-stack style="width: 28px; height: 28px;" />
+                </div>
             </div>
-            <div class="p-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg">
-                <x-heroicon-o-circle-stack class="w-6 h-6" style="width: 24px; height: 24px;" />
-            </div>
-        </div>
+        </x-filament::section>
+
     </div>
 
     {{-- Controls & Filter Bar --}}
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-6 space-y-4">
-        <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+    <x-filament::section style="margin-bottom: 1.5rem;">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between;">
             
-            {{-- Search and Level Filter --}}
-            <div class="flex flex-col sm:flex-row gap-3 flex-1">
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; flex: 1; min-width: 280px;">
                 @if(count($availableFiles) > 1)
-                    {{-- File Selector --}}
-                    <select wire:model.live="selectedFile"
-                            class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-sm rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white font-mono">
-                        @foreach($availableFiles as $filename => $path)
-                            <option value="{{ $filename }}">{{ $filename }}</option>
-                        @endforeach
-                    </select>
+                    <div style="min-width: 160px;">
+                        <x-filament::input.wrapper>
+                            <x-filament::input.select wire:model.live="selectedFile">
+                                @foreach($availableFiles as $filename => $path)
+                                    <option value="{{ $filename }}">{{ $filename }}</option>
+                                @endforeach
+                            </x-filament::input.select>
+                        </x-filament::input.wrapper>
+                    </div>
                 @endif
 
-                {{-- Search Input --}}
-                <div class="relative flex-1">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <x-heroicon-o-magnifying-glass class="w-4 h-4" style="width: 16px; height: 16px;" />
-                    </div>
-                    <input type="text"
-                           wire:model.live.debounce.300ms="search"
-                           placeholder="Search logs (message, stack trace, class...)"
-                           class="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:text-white">
+                <div style="flex: 1; min-width: 220px;">
+                    <x-filament::input.wrapper prefix-icon="heroicon-m-magnifying-glass">
+                        <x-filament::input
+                            type="text"
+                            wire:model.live.debounce.300ms="search"
+                            placeholder="Search logs (message, trace, class...)"
+                        />
+                    </x-filament::input.wrapper>
                 </div>
 
-                {{-- Level Dropdown --}}
-                <select wire:model.live="level"
-                        class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-sm rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white">
-                    <option value="all">All Levels</option>
-                    <option value="error">Errors & Critical</option>
-                    <option value="warning">Warnings</option>
-                    <option value="info">Info & Notice</option>
-                    <option value="debug">Debug</option>
-                </select>
+                <div style="min-width: 140px;">
+                    <x-filament::input.wrapper>
+                        <x-filament::input.select wire:model.live="level">
+                            <option value="all">All Levels</option>
+                            <option value="error">Errors & Critical</option>
+                            <option value="warning">Warnings</option>
+                            <option value="info">Info & Notice</option>
+                            <option value="debug">Debug</option>
+                        </x-filament::input.select>
+                    </x-filament::input.wrapper>
+                </div>
 
-                {{-- Date Filter --}}
-                <input type="date"
-                       wire:model.live="dateFilter"
-                       class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-sm rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white">
+                <div style="min-width: 140px;">
+                    <x-filament::input.wrapper>
+                        <x-filament::input
+                            type="date"
+                            wire:model.live="dateFilter"
+                        />
+                    </x-filament::input.wrapper>
+                </div>
 
                 @if($search || $level !== 'all' || $dateFilter)
-                    <button wire:click="resetFilters"
-                            type="button"
-                            class="px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition">
+                    <x-filament::button color="gray" wire:click="resetFilters" size="sm">
                         Reset Filters
-                    </button>
+                    </x-filament::button>
                 @endif
             </div>
 
-            {{-- Action Buttons --}}
-            <div class="flex items-center gap-2">
-                <button wire:click="$refresh"
-                        type="button"
-                        class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-sm transition">
-                    <x-heroicon-o-arrow-path class="w-4 h-4 mr-1.5" style="width: 16px; height: 16px;" />
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <x-filament::button wire:click="$refresh" color="gray" icon="heroicon-m-arrow-path" size="sm">
                     Refresh
-                </button>
+                </x-filament::button>
 
-                <button wire:click="downloadLogs"
-                        type="button"
-                        class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-sm transition">
-                    <x-heroicon-o-arrow-down-tray class="w-4 h-4 mr-1.5" style="width: 16px; height: 16px;" />
+                <x-filament::button wire:click="downloadLogs" color="gray" icon="heroicon-m-arrow-down-tray" size="sm">
                     Download
-                </button>
+                </x-filament::button>
 
-                <button onclick="confirm('Are you sure you want to clear all logs? This cannot be undone.') || event.stopImmediatePropagation()"
-                        wire:click="clearLogs"
-                        type="button"
-                        class="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 shadow-sm transition">
-                    <x-heroicon-o-trash class="w-4 h-4 mr-1.5" style="width: 16px; height: 16px;" />
+                <x-filament::button
+                    color="danger"
+                    icon="heroicon-m-trash"
+                    size="sm"
+                    onclick="confirm('Are you sure you want to clear all logs? This cannot be undone.') || event.stopImmediatePropagation()"
+                    wire:click="clearLogs"
+                >
                     Clear Logs
-                </button>
+                </x-filament::button>
             </div>
 
         </div>
-    </div>
+    </x-filament::section>
 
     {{-- Log Entries List --}}
-    <div class="space-y-3">
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         @forelse($entries as $log)
             @php
-                $badgeClasses = match($log['level']) {
-                    'EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR' => 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border-red-200 dark:border-red-800',
-                    'WARNING' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-                    'INFO', 'NOTICE' => 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border-blue-200 dark:border-blue-800',
-                    default => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600',
+                $badgeColor = match($log['level']) {
+                    'EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR' => 'danger',
+                    'WARNING' => 'warning',
+                    'INFO', 'NOTICE' => 'info',
+                    default => 'gray',
                 };
             @endphp
 
-            <div x-data="{ open: false, copied: false }" class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition">
-                <div class="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-750"
+            <div x-data="{ open: false, copied: false }" style="border: 1px solid rgba(255,255,255,0.08); border-radius: 0.75rem; background-color: var(--color-gray-900, #111827); overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
+                <div style="padding: 1rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; cursor: pointer;"
                      @click="open = !open">
                     
-                    <div class="flex items-start sm:items-center gap-3 flex-1 min-w-0">
-                        {{-- Level Badge --}}
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $badgeClasses }}">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 250px;">
+                        <x-filament::badge :color="$badgeColor" size="sm">
                             {{ $log['level'] }}
-                        </span>
+                        </x-filament::badge>
 
-                        {{-- Timestamp & Env --}}
-                        <span class="text-xs font-mono text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        <span style="font-size: 0.8125rem; font-family: monospace; opacity: 0.7; white-space: nowrap;">
                             {{ $log['timestamp'] }}
                         </span>
-                        
-                        <span class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 font-mono">
+
+                        <span style="font-size: 0.75rem; font-family: monospace; padding: 0.15rem 0.4rem; border-radius: 0.25rem; background: rgba(255,255,255,0.06); opacity: 0.8;">
                             {{ $log['env'] }}
                         </span>
 
-                        {{-- Log Message --}}
-                        <p class="text-sm font-semibold text-gray-900 dark:text-white truncate flex-1">
+                        <span style="font-size: 0.875rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0;">
                             {{ $log['message'] }}
-                        </p>
+                        </span>
                     </div>
 
-                    {{-- Toggle Button --}}
-                    <div class="flex items-center gap-2 flex-shrink-0">
-                        @if(!empty($log['stack']))
-                            <button type="button" class="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline flex items-center">
-                                <span x-text="open ? 'Hide Trace' : 'View Trace'"></span>
-                                <x-heroicon-o-chevron-down class="w-4 h-4 ml-1 transition-transform" style="width: 16px; height: 16px;" ::class="open ? 'rotate-180' : ''" />
-                            </button>
-                        @endif
-                    </div>
+                    @if(!empty($log['stack']))
+                        <div style="flex-shrink: 0; display: flex; align-items: center; gap: 0.25rem; font-size: 0.8125rem; font-weight: 500; color: #3b82f6;">
+                            <span x-text="open ? 'Hide Trace' : 'View Trace'"></span>
+                            <x-heroicon-m-chevron-down style="width: 16px; height: 16px; transition: transform 0.2s;" ::style="open ? 'transform: rotate(180deg);' : ''" />
+                        </div>
+                    @endif
                 </div>
 
-                {{-- Stack Trace / Details Accordion --}}
                 @if(!empty($log['stack']))
-                    <div x-show="open" x-collapse x-cloak class="border-t border-gray-200 dark:border-gray-700 bg-gray-900 text-gray-100 p-4 text-xs font-mono overflow-x-auto relative">
-                        <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-800">
-                            <span class="text-gray-400 font-sans text-xs">Stack Trace / Details</span>
-                            <button type="button"
-                                    @click="navigator.clipboard.writeText(`{{ addslashes($log['message']) }}\n{{ addslashes($log['stack']) }}`); copied = true; setTimeout(() => copied = false, 2000)"
-                                    class="px-2.5 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-200 rounded transition flex items-center">
-                                <x-heroicon-o-clipboard class="w-3.5 h-3.5 mr-1" style="width: 14px; height: 14px;" />
-                                <span x-text="copied ? 'Copied!' : 'Copy'"></span>
-                            </button>
+                    <div x-show="open" x-cloak style="border-top: 1px solid rgba(255,255,255,0.08); background-color: #0d1117; padding: 1rem; font-family: monospace; font-size: 0.8125rem; overflow-x: auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                            <span style="opacity: 0.6; font-size: 0.75rem;">Stack Trace / Exception Context</span>
+                            <x-filament::button
+                                size="xs"
+                                color="gray"
+                                icon="heroicon-m-clipboard"
+                                type="button"
+                                @click="navigator.clipboard.writeText(`{{ addslashes($log['message']) }}\n{{ addslashes($log['stack']) }}`); copied = true; setTimeout(() => copied = false, 2000)"
+                            >
+                                <span x-text="copied ? 'Copied!' : 'Copy Trace'"></span>
+                            </x-filament::button>
                         </div>
-                        <pre class="whitespace-pre-wrap break-all leading-relaxed text-gray-300">{{ $log['stack'] }}</pre>
+                        <pre style="white-space: pre-wrap; word-break: break-all; line-height: 1.6; color: #e6edf3; margin: 0;">{{ $log['stack'] }}</pre>
                     </div>
                 @endif
             </div>
         @empty
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center flex flex-col items-center justify-center">
-                <x-heroicon-o-check-circle class="w-12 h-12 text-emerald-500 mb-3" style="width: 48px; height: 48px;" />
-                <h3 class="text-base font-semibold text-gray-900 dark:text-white">No Log Entries Found</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">There are no log entries matching your current filter criteria.</p>
-            </div>
+            <x-filament::section>
+                <div style="padding: 2.5rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <x-heroicon-o-check-circle style="width: 56px; height: 56px; color: #10b981; margin-bottom: 0.75rem;" />
+                    <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.25rem;">No Log Entries Found</h3>
+                    <p style="font-size: 0.875rem; opacity: 0.7; max-width: 400px;">
+                        There are no log entries recorded matching your active filters.
+                    </p>
+                </div>
+            </x-filament::section>
         @endforelse
     </div>
 </x-filament-panels::page>

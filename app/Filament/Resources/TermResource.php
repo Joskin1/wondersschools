@@ -11,6 +11,9 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -100,8 +103,12 @@ class TermResource extends Resource
                     ->placeholder('All terms')
                     ->trueLabel('Active only')
                     ->falseLabel('Inactive only'),
+                TrashedFilter::make(),
             ])
             ->actions([
+                ViewAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make(),
                 \Filament\Actions\Action::make('activate')
                     ->label('Activate')
                     ->icon('heroicon-o-check-circle')
@@ -123,7 +130,6 @@ class TermResource extends Resource
                             ->send();
                     })
                     ->visible(fn (Term $record) => ! $record->is_active),
-                ViewAction::make(),
                 
                 Action::make('migrate')
                     ->label('Migrate Term')

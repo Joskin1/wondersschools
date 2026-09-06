@@ -9,11 +9,14 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Filters\TrashedFilter;
 
 class SubjectResource extends Resource
 {
@@ -87,9 +90,12 @@ class SubjectResource extends Resource
             ->filters([
                 TernaryFilter::make('is_active')
                     ->label('Active Status'),
+                TrashedFilter::make(),
             ])
             ->actions([
                 EditAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->bulkActions([
                 // No bulk actions — preserve data integrity

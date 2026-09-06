@@ -9,6 +9,9 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\RestoreAction;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -89,6 +92,7 @@ class AcademicSessionResource extends Resource
                     ->placeholder('All sessions')
                     ->trueLabel('Active only')
                     ->falseLabel('Inactive only'),
+                TrashedFilter::make(),
             ])
             ->actions([
                 \Filament\Actions\Action::make('activate')
@@ -110,6 +114,8 @@ class AcademicSessionResource extends Resource
                     ->visible(fn (Session $record) => ! $record->is_active),
                 ViewAction::make(),
                 EditAction::make(),
+                DeleteAction::make(),
+                RestoreAction::make(),
             ])
             ->bulkActions([
                 // No bulk delete - preserve historical data
