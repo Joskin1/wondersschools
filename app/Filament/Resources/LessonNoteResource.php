@@ -325,9 +325,13 @@ class LessonNoteResource extends Resource
         if (! tenant()) {
             return null;
         }
-        $pendingCount = static::getModel()::where('status', 'pending')->count();
-        
-        return $pendingCount > 0 ? (string) $pendingCount : null;
+
+        try {
+            $pendingCount = static::getModel()::where('status', 'pending')->count();
+            return $pendingCount > 0 ? (string) $pendingCount : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     public static function getNavigationBadgeColor(): ?string
@@ -335,9 +339,13 @@ class LessonNoteResource extends Resource
         if (! tenant()) {
             return null;
         }
-        $pendingCount = static::getModel()::where('status', 'pending')->count();
-        
-        return $pendingCount > 0 ? 'warning' : null;
+
+        try {
+            $pendingCount = static::getModel()::where('status', 'pending')->count();
+            return $pendingCount > 0 ? 'warning' : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     public static function canCreate(): bool
