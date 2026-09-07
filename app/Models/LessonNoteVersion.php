@@ -108,14 +108,22 @@ class LessonNoteVersion extends Model
      * Generate a signed URL for downloading this file.
      * 
      * @param int $expirationMinutes
-     * @return string
+     * @return string|null
      */
-    public function getDownloadUrl(int $expirationMinutes = 60): string
+    public function getDownloadUrl(int $expirationMinutes = 60): ?string
     {
-        return Storage::disk('lesson_notes')->temporaryUrl(
-            $this->file_path,
-            now()->addMinutes($expirationMinutes)
-        );
+        if (empty($this->file_path)) {
+            return null;
+        }
+
+        try {
+            return Storage::disk('lesson_notes')->temporaryUrl(
+                $this->file_path,
+                now()->addMinutes($expirationMinutes)
+            );
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**

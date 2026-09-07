@@ -16,6 +16,14 @@ class TeacherSubjectAssignment extends Model
         'classroom_id',
         'session_id',
         'term_id',
+        'status',
+        'approved_by',
+        'approved_at',
+        'rejection_reason',
+    ];
+
+    protected $casts = [
+        'approved_at' => 'datetime',
     ];
 
     /**
@@ -58,6 +66,87 @@ class TeacherSubjectAssignment extends Model
         return $this->belongsTo(Term::class);
     }
 
+    /**
+     * Get the user who approved this assignment.
+     */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /**
+     * Check if assignment is approved.
+     */
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    /**
+     * Check if assignment is pending approval.
+     */
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    /**
+     * Check if assignment is rejected.
+     */
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
+    }
+
+    /**
+     * Approve this assignment.
+     */
+    public function approve(int $adminId): void
+    {
+        $this->update([
+            'status' => 'approved',
+            'approved_by' => $adminId,
+            'approved_at' => now(),
+            'rejection_reason' => null,
+        ]);
+    }
+
+    /**
+     * Reject this assignment.
+     */
+    public function reject(int $adminId, ?string $reason = null): void
+    {
+        $this->update([
+            'status' => 'rejected',
+            'approved_by' => $adminId,
+            'approved_at' => now(),
+            'rejection_reason' => $reason,
+        ]);
+    }
+
+    /**
+     * Scope to get approved assignments.
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'approved');
+    }
+
+    /**
+     * Scope to get pending assignments.
+     */
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    /**
+     * Scope to get rejected assignments.
+     */
+    public function scopeRejected($query)
+    {
+        return $query->where('status', 'rejected');
+    }
 
     /**
      * Scope to get assignments for a specific teacher.
@@ -104,7 +193,8 @@ class TeacherSubjectAssignment extends Model
         }
 
         return $query->where('session_id', $activeSession->id)
-            ->where('term_id', $activeTerm->id);
+            ->where('term_id', $activeTerm->id)
+            ->where('status', 'approved');
     }
 
     /**
@@ -117,6 +207,7 @@ class TeacherSubjectAssignment extends Model
             ->where('classroom_id', $classroomId)
             ->where('session_id', $sessionId)
             ->where('term_id', $termId)
+            ->where('status', 'approved')
             ->exists();
     }
 }

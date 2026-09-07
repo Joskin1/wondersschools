@@ -53,12 +53,12 @@ LOG;
         $this->assertTrue(SystemLogs::canAccess());
     }
 
-    public function test_admin_user_can_access_system_logs()
+    public function test_admin_user_cannot_access_system_logs()
     {
         $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user);
 
-        $this->assertTrue(SystemLogs::canAccess());
+        $this->assertFalse(SystemLogs::canAccess());
     }
 
     public function test_teacher_cannot_access_system_logs()

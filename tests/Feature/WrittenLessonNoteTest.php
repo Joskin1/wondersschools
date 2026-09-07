@@ -117,4 +117,49 @@ class WrittenLessonNoteTest extends TestCase
         $this->assertFalse($version->isFile());
         $this->assertCount(1, $version->getImageUrls());
     }
+
+    public function test_admin_can_view_written_lesson_note_in_admin_review_without_500()
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $this->actingAs($admin);
+
+        \Filament\Facades\Filament::setCurrentPanel(\Filament\Facades\Filament::getPanel('admin'));
+
+        $note = LessonNote::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 1,
+            'status' => 'pending',
+        ]);
+
+        $version = LessonNoteVersion::create([
+            'lesson_note_id' => $note->id,
+            'submission_type' => 'written',
+            'title' => 'Sample Written Topic',
+            'content' => '<p>Some written content here</p>',
+            'file_path' => null,
+            'uploaded_by' => $this->teacher->id,
+            'status' => 'pending',
+        ]);
+
+        $note->update(['latest_version_id' => $version->id]);
+
+        // Test List table page renders cleanly and sees record
+        Livewire::test(\App\Filament\Resources\LessonNoteResource\Pages\ListLessonNotes::class)
+            ->assertSuccessful()
+            ->assertCanSeeTableRecords([$note]);
+
+        // Test View page renders cleanly
+        Livewire::test(\App\Filament\Resources\LessonNoteResource\Pages\ViewLessonNote::class, [
+            'record' => $note->id,
+        ])
+            ->assertSuccessful()
+            ->assertSee('Sample Written Topic')
+            ->assertSee('Some written content here');
+    }
 }
+
+

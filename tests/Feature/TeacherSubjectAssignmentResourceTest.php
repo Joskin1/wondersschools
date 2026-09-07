@@ -42,6 +42,7 @@ beforeEach(function () {
 
     // Create classroom and subject
     $this->classroom = Classroom::factory()->create(['name' => 'JSS 1A']);
+    $this->classroom2 = Classroom::factory()->create(['name' => 'JSS 2B']);
     $this->subject = Subject::factory()->create(['name' => 'Mathematics']);
 
     // Authenticate as admin
@@ -53,28 +54,26 @@ test('admin can view teacher subject assignment list page', function () {
         ->assertSuccessful();
 });
 
-test('admin can create teacher subject assignment', function () {
+test('admin can create teacher subject assignment with multiple classes', function () {
     $subject = Subject::factory()->create(['name' => 'English Language']);
-    
+
     Livewire::test(TeacherSubjectAssignmentResource\Pages\CreateTeacherSubjectAssignment::class)
         ->fillForm([
             'teacher_id' => $this->teacher->id,
-            'classroom_id' => $this->classroom->id,
+            'subject_id' => $subject->id,
+            'classroom_ids' => [$this->classroom->id, $this->classroom2->id],
             'session_id' => $this->session->id,
             'term_id' => $this->term->id,
-        ])
-        ->fillForm([
-            'subject_id' => $subject->id,
         ])
         ->call('create')
         ->assertHasNoFormErrors();
 
-    expect(TeacherSubjectAssignment::count())->toBe(1);
+    expect(TeacherSubjectAssignment::count())->toBe(2);
 
-    $assignment = TeacherSubjectAssignment::first();
-    expect($assignment->teacher_id)->toBe($this->teacher->id)
-        ->and($assignment->subject_id)->toBe($subject->id)
-        ->and($assignment->classroom_id)->toBe($this->classroom->id);
+    $assignments = TeacherSubjectAssignment::where('teacher_id', $this->teacher->id)->get();
+    expect($assignments)->toHaveCount(2)
+        ->and($assignments->every(fn ($a) => $a->status === 'approved'))->toBeTrue()
+        ->and($assignments->pluck('classroom_id')->toArray())->toEqualCanonicalizing([$this->classroom->id, $this->classroom2->id]);
 });
 
 test('admin can edit teacher subject assignment', function () {
@@ -84,6 +83,7 @@ test('admin can edit teacher subject assignment', function () {
         'classroom_id' => $this->classroom->id,
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,
+        'status' => 'approved',
     ]);
 
     $newSubject = Subject::factory()->create(['name' => 'English']);
@@ -100,6 +100,45 @@ test('admin can edit teacher subject assignment', function () {
     expect($assignment->fresh()->subject_id)->toBe($newSubject->id);
 });
 
+test('admin can approve a pending teacher subject assignment', function () {
+    $pendingAssignment = TeacherSubjectAssignment::create([
+        'teacher_id' => $this->teacher->id,
+        'subject_id' => $this->subject->id,
+        'classroom_id' => $this->classroom->id,
+        'session_id' => $this->session->id,
+        'term_id' => $this->term->id,
+        'status' => 'pending',
+    ]);
+
+    Livewire::test(TeacherSubjectAssignmentResource\Pages\ListTeacherSubjectAssignments::class)
+        ->callTableAction('approve', $pendingAssignment->id);
+
+    $fresh = $pendingAssignment->fresh();
+    expect($fresh->status)->toBe('approved')
+        ->and($fresh->approved_by)->toBe($this->admin->id)
+        ->and($fresh->approved_at)->not->toBeNull();
+});
+
+test('admin can reject a pending teacher subject assignment with reason', function () {
+    $pendingAssignment = TeacherSubjectAssignment::create([
+        'teacher_id' => $this->teacher->id,
+        'subject_id' => $this->subject->id,
+        'classroom_id' => $this->classroom->id,
+        'session_id' => $this->session->id,
+        'term_id' => $this->term->id,
+        'status' => 'pending',
+    ]);
+
+    Livewire::test(TeacherSubjectAssignmentResource\Pages\ListTeacherSubjectAssignments::class)
+        ->callTableAction('reject', $pendingAssignment->id, data: [
+            'rejection_reason' => 'Class already assigned to senior teacher',
+        ]);
+
+    $fresh = $pendingAssignment->fresh();
+    expect($fresh->status)->toBe('rejected')
+        ->and($fresh->rejection_reason)->toBe('Class already assigned to senior teacher');
+});
+
 test('admin can delete teacher subject assignment', function () {
     $assignment = TeacherSubjectAssignment::create([
         'teacher_id' => $this->teacher->id,
@@ -107,6 +146,7 @@ test('admin can delete teacher subject assignment', function () {
         'classroom_id' => $this->classroom->id,
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,
+        'status' => 'approved',
     ]);
 
     Livewire::test(TeacherSubjectAssignmentResource\Pages\ListTeacherSubjectAssignments::class)
@@ -120,10 +160,10 @@ test('form validates required fields', function () {
         ->fillForm([
             'teacher_id' => null,
             'subject_id' => null,
-            'classroom_id' => null,
+            'classroom_ids' => [],
         ])
         ->call('create')
-        ->assertHasFormErrors(['teacher_id', 'subject_id', 'classroom_id']);
+        ->assertHasFormErrors(['teacher_id', 'subject_id', 'classroom_ids']);
 });
 
 test('form defaults to active session and term', function () {
@@ -152,6 +192,7 @@ test('classroom filter widget shows assignment counts', function () {
         'classroom_id' => $classroom->id,
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,
+        'status' => 'approved',
     ]);
 
     Livewire::test(TeacherSubjectAssignmentResource\Widgets\ClassroomFilterWidget::class)
@@ -168,6 +209,7 @@ test('can filter assignments by classroom', function () {
         'classroom_id' => $classroom1->id,
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,
+        'status' => 'approved',
     ]);
 
     $assignment2 = TeacherSubjectAssignment::create([
@@ -176,6 +218,7 @@ test('can filter assignments by classroom', function () {
         'classroom_id' => $classroom2->id,
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,
+        'status' => 'approved',
     ]);
 
     Livewire::test(TeacherSubjectAssignmentResource\Pages\ListTeacherSubjectAssignments::class)
@@ -193,6 +236,7 @@ test('can clear classroom filter', function () {
         'classroom_id' => $classroom->id,
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,
+        'status' => 'approved',
     ]);
 
     Livewire::test(TeacherSubjectAssignmentResource\Pages\ListTeacherSubjectAssignments::class)
@@ -208,6 +252,7 @@ test('table displays correct columns', function () {
         'classroom_id' => $this->classroom->id,
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,
+        'status' => 'approved',
     ]);
 
     Livewire::test(TeacherSubjectAssignmentResource\Pages\ListTeacherSubjectAssignments::class)
@@ -218,3 +263,4 @@ test('table displays correct columns', function () {
         ->assertSee($this->session->name)
         ->assertSee($this->term->name);
 });
+

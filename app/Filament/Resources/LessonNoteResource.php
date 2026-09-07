@@ -130,21 +130,35 @@ class LessonNoteResource extends Resource
 
                 Tables\Columns\TextColumn::make('latestVersion.file_name')
                     ->label('Note / Topic')
-                    ->formatStateUsing(function ($state, LessonNote $record) {
-                        if ($record->latestVersion?->isWritten()) {
-                            return '📝 ' . ($record->latestVersion->title ?: 'Written Note');
+                    ->formatStateUsing(function ($state, $record) {
+                        $version = $record instanceof \App\Models\LessonNoteVersion 
+                            ? $record 
+                            : ($record instanceof \App\Models\LessonNote ? $record->latestVersion : null);
+
+                        if ($version?->isWritten()) {
+                            return '📝 ' . ($version->title ?: 'Written Note');
                         }
                         return '📄 ' . ($state ?: 'Document File');
                     })
                     ->limit(35)
-                    ->tooltip(fn ($record) => $record->latestVersion?->isWritten() ? ($record->latestVersion->title ?: 'Written Lesson Note') : $record->latestVersion?->file_name),
+                    ->tooltip(function ($record) {
+                        $version = $record instanceof \App\Models\LessonNoteVersion 
+                            ? $record 
+                            : ($record instanceof \App\Models\LessonNote ? $record->latestVersion : null);
+
+                        return $version?->isWritten() ? ($version->title ?: 'Written Lesson Note') : $version?->file_name;
+                    }),
 
                 Tables\Columns\TextColumn::make('latestVersion.file_size')
                     ->label('Size / Length')
-                    ->formatStateUsing(function ($state, LessonNote $record) {
-                        if ($record->latestVersion?->isWritten()) {
-                            $imgCount = count($record->latestVersion->images ?? []);
-                            $chars = strlen($record->latestVersion->content ?? '');
+                    ->formatStateUsing(function ($state, $record) {
+                        $version = $record instanceof \App\Models\LessonNoteVersion 
+                            ? $record 
+                            : ($record instanceof \App\Models\LessonNote ? $record->latestVersion : null);
+
+                        if ($version?->isWritten()) {
+                            $imgCount = count($version->images ?? []);
+                            $chars = strlen($version->content ?? '');
                             return number_format($chars) . ' chars' . ($imgCount > 0 ? " ({$imgCount} img)" : '');
                         }
                         return $state ? number_format($state / 1024, 2) . ' KB' : 'N/A';
@@ -187,9 +201,9 @@ class LessonNoteResource extends Resource
                 Action::make('download')
                     ->label('Download')
                     ->icon('heroicon-o-arrow-down-tray')
-                    ->url(fn (LessonNote $record) => $record->latestVersion?->getDownloadUrl())
+                    ->url(fn (LessonNote $record) => $record->latestVersion?->getDownloadUrl() ?: '#')
                     ->openUrlInNewTab()
-                    ->visible(fn (LessonNote $record) => $record->latestVersion !== null),
+                    ->visible(fn (LessonNote $record) => $record->latestVersion !== null && $record->latestVersion->isFile() && !empty($record->latestVersion->file_path)),
 
                 Action::make('approve')
                     ->label('Approve')

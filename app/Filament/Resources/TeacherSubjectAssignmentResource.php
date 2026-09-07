@@ -9,19 +9,23 @@ use App\Models\Subject;
 use App\Models\Classroom;
 use App\Models\Session;
 use App\Models\Term;
-use Closure;
+use App\Services\LessonNoteCache;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Collection;
 
 class TeacherSubjectAssignmentResource extends Resource
 {
@@ -50,55 +54,31 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->preload()
                     ->helperText('Only active teachers who have completed registration are shown'),
 
-                Select::make('classroom_id')
-                    ->label('Class')
-                    ->options(Classroom::active()->ordered()->pluck('name', 'id'))
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->reactive()
-                    ->afterStateUpdated(fn (callable $set) => $set('subject_id', null)),
-
                 Select::make('subject_id')
                     ->label('Subject')
                     ->options(Subject::orderBy('name')->pluck('name', 'id'))
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->rules([
-                        fn (\Filament\Schemas\Components\Utilities\Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
-                            $classroomId = $get('classroom_id');
-                            $sessionId = $get('session_id');
-                            $termId = $get('term_id');
+                    ->reactive(),
 
-                            if (! $value || ! $classroomId || ! $sessionId || ! $termId) {
-                                return;
-                            }
+                Select::make('classroom_ids')
+                    ->label('Classes')
+                    ->options(Classroom::active()->ordered()->pluck('name', 'id'))
+                    ->multiple()
+                    ->required()
+                    ->searchable()
+                    ->preload()
+                    ->helperText('Select one or more classes for this subject assignment')
+                    ->visible(fn (string $operation): bool => $operation === 'create'),
 
-                            $existing = TeacherSubjectAssignment::where('subject_id', $value)
-                                ->where('classroom_id', $classroomId)
-                                ->where('session_id', $sessionId)
-                                ->where('term_id', $termId)
-                                ->with('teacher')
-                                ->first();
-
-                            if (! $existing) {
-                                return;
-                            }
-
-                            // When editing, ignore the current record
-                            $recordId = request()->route('record');
-                            if ($recordId && (int) $existing->id === (int) $recordId) {
-                                return;
-                            }
-
-                            $subjectName = Subject::find($value)?->name ?? 'This subject';
-                            $classroomName = Classroom::find($classroomId)?->name ?? 'this class';
-                            $teacherName = $existing->teacher?->name ?? 'another teacher';
-
-                            $fail("{$subjectName} is already assigned to {$teacherName} in {$classroomName} for the selected term.");
-                        },
-                    ]),
+                Select::make('classroom_id')
+                    ->label('Class')
+                    ->options(Classroom::active()->ordered()->pluck('name', 'id'))
+                    ->required()
+                    ->searchable()
+                    ->preload()
+                    ->visible(fn (string $operation): bool => $operation === 'edit'),
 
                 Select::make('session_id')
                     ->label('Academic Session')
@@ -125,6 +105,23 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->required()
                     ->searchable()
                     ->helperText('Select session first to see available terms'),
+
+                Select::make('status')
+                    ->label('Status')
+                    ->options([
+                        'approved' => 'Approved',
+                        'pending' => 'Pending Approval',
+                        'rejected' => 'Rejected',
+                    ])
+                    ->default('approved')
+                    ->required()
+                    ->visible(fn (string $operation): bool => $operation === 'edit'),
+
+                Textarea::make('rejection_reason')
+                    ->label('Rejection Reason')
+                    ->placeholder('Reason why this request was rejected...')
+                    ->rows(3)
+                    ->visible(fn (callable $get, string $operation): bool => $operation === 'edit' && $get('status') === 'rejected'),
             ]);
     }
 
@@ -137,6 +134,13 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('subject.name')
+                    ->label('Subject')
+                    ->searchable()
+                    ->sortable()
+                    ->badge()
+                    ->color('success'),
+
                 TextColumn::make('classroom.name')
                     ->label('Class')
                     ->searchable()
@@ -144,12 +148,22 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->badge()
                     ->color('info'),
 
-                TextColumn::make('subject.name')
-                    ->label('Subject')
-                    ->searchable()
-                    ->sortable()
+                TextColumn::make('status')
+                    ->label('Status')
                     ->badge()
-                    ->color('success'),
+                    ->color(fn (string $state): string => match ($state) {
+                        'approved' => 'success',
+                        'pending' => 'warning',
+                        'rejected' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'approved' => 'Approved',
+                        'pending' => 'Pending Approval',
+                        'rejected' => 'Rejected',
+                        default => ucfirst($state),
+                    })
+                    ->sortable(),
 
                 TextColumn::make('session.name')
                     ->label('Session')
@@ -168,12 +182,21 @@ class TeacherSubjectAssignmentResource extends Resource
                     }),
 
                 TextColumn::make('created_at')
-                    ->label('Assigned On')
+                    ->label('Requested / Assigned')
                     ->dateTime('M d, Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('status')
+                    ->label('Status')
+                    ->options([
+                        'approved' => 'Approved',
+                        'pending' => 'Pending Approval',
+                        'rejected' => 'Rejected',
+                    ])
+                    ->placeholder('All Statuses'),
+
                 SelectFilter::make('classroom_id')
                     ->label('Class')
                     ->options(Classroom::ordered()->pluck('name', 'id'))
@@ -209,14 +232,132 @@ class TeacherSubjectAssignmentResource extends Resource
             ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
             ->persistFiltersInSession()
             ->actions([
+                Action::make('approve')
+                    ->label('Approve')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Approve Subject Assignment')
+                    ->modalDescription(fn (TeacherSubjectAssignment $record) => "Are you sure you want to approve {$record->teacher?->name} to teach {$record->subject?->name} in {$record->classroom?->name}?")
+                    ->visible(fn (TeacherSubjectAssignment $record) => $record->status !== 'approved')
+                    ->action(function (TeacherSubjectAssignment $record) {
+                        $record->approve(auth()->id());
+                        app(LessonNoteCache::class)->invalidateTeacherAssignments((int) $record->teacher_id);
+
+                        if ($record->teacher) {
+                            Notification::make()
+                                ->title('Subject Assignment Approved')
+                                ->body("Your request to teach {$record->subject?->name} in {$record->classroom?->name} has been approved.")
+                                ->success()
+                                ->sendToDatabase($record->teacher);
+                        }
+
+                        Notification::make()
+                            ->title('Assignment Approved')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('reject')
+                    ->label('Reject')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn (TeacherSubjectAssignment $record) => $record->status !== 'rejected')
+                    ->form([
+                        Textarea::make('rejection_reason')
+                            ->label('Reason for Rejection')
+                            ->placeholder('Optional reason for rejecting this assignment request...')
+                            ->rows(3),
+                    ])
+                    ->action(function (TeacherSubjectAssignment $record, array $data) {
+                        $record->reject(auth()->id(), $data['rejection_reason'] ?? null);
+                        app(LessonNoteCache::class)->invalidateTeacherAssignments((int) $record->teacher_id);
+
+                        if ($record->teacher) {
+                            $body = "Your request to teach {$record->subject?->name} in {$record->classroom?->name} was rejected.";
+                            if (!empty($data['rejection_reason'])) {
+                                $body .= " Reason: {$data['rejection_reason']}";
+                            }
+
+                            Notification::make()
+                                ->title('Subject Assignment Rejected')
+                                ->body($body)
+                                ->danger()
+                                ->sendToDatabase($record->teacher);
+                        }
+
+                        Notification::make()
+                            ->title('Assignment Rejected')
+                            ->warning()
+                            ->send();
+                    }),
+
                 \STS\FilamentImpersonate\Actions\Impersonate::make()
                     ->impersonateRecord(fn ($record) => $record->teacher)
                     ->redirectTo('/teacher'),
+
                 EditAction::make(),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->after(function (TeacherSubjectAssignment $record) {
+                        app(LessonNoteCache::class)->invalidateTeacherAssignments((int) $record->teacher_id);
+                    }),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
+                    BulkAction::make('bulk_approve')
+                        ->label('Approve Selected')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $count = 0;
+                            foreach ($records as $record) {
+                                $record->approve(auth()->id());
+                                app(LessonNoteCache::class)->invalidateTeacherAssignments((int) $record->teacher_id);
+
+                                if ($record->teacher) {
+                                    Notification::make()
+                                        ->title('Subject Assignment Approved')
+                                        ->body("Your request to teach {$record->subject?->name} in {$record->classroom?->name} has been approved.")
+                                        ->success()
+                                        ->sendToDatabase($record->teacher);
+                                }
+                                $count++;
+                            }
+
+                            Notification::make()
+                                ->title("Approved {$count} assignment(s)")
+                                ->success()
+                                ->send();
+                        }),
+
+                    BulkAction::make('bulk_reject')
+                        ->label('Reject Selected')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $count = 0;
+                            foreach ($records as $record) {
+                                $record->reject(auth()->id());
+                                app(LessonNoteCache::class)->invalidateTeacherAssignments((int) $record->teacher_id);
+
+                                if ($record->teacher) {
+                                    Notification::make()
+                                        ->title('Subject Assignment Rejected')
+                                        ->body("Your request to teach {$record->subject?->name} in {$record->classroom?->name} was rejected.")
+                                        ->danger()
+                                        ->sendToDatabase($record->teacher);
+                                }
+                                $count++;
+                            }
+
+                            Notification::make()
+                                ->title("Rejected {$count} assignment(s)")
+                                ->warning()
+                                ->send();
+                        }),
+
                     DeleteBulkAction::make(),
                 ]),
             ])
@@ -244,13 +385,14 @@ class TeacherSubjectAssignmentResource extends Resource
         if (! tenant()) {
             return null;
         }
-        $activeSession = Session::active()->first();
-        if (!$activeSession || !$activeSession->activeTerm) {
-            return null;
-        }
+        
+        $pendingCount = static::getModel()::pending()->count();
 
-        return static::getModel()::where('session_id', $activeSession->id)
-            ->where('term_id', $activeSession->activeTerm->id)
-            ->count();
+        return $pendingCount > 0 ? (string) $pendingCount : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
     }
 }

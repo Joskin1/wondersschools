@@ -30,7 +30,7 @@ class SystemLogs extends Page
     public int $page = 1;
 
     /**
-     * Allow access to Sudo Administrators and School Administrators.
+     * Allow access only to Sudo Administrators.
      */
     public static function canAccess(): bool
     {
@@ -38,13 +38,13 @@ class SystemLogs extends Page
         if (!$user) {
             return false;
         }
-        return in_array($user->role, ['sudo', 'admin'], true);
+        return $user->isSudo();
     }
 
     public function mount(): void
     {
         if (!static::canAccess()) {
-            abort(403, 'Unauthorized access. System logs are restricted to Administrators.');
+            abort(403, 'Unauthorized access. System logs are restricted to Sudo Administrators.');
         }
 
         $availableFiles = $this->getAvailableLogFiles();

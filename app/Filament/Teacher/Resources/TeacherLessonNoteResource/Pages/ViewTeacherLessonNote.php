@@ -16,9 +16,9 @@ class ViewTeacherLessonNote extends ViewRecord
             Actions\Action::make('download')
                 ->label('Download File')
                 ->icon('heroicon-o-arrow-down-tray')
-                ->url(fn () => $this->record->latestVersion?->getDownloadUrl())
+                ->url(fn () => $this->record->latestVersion?->getDownloadUrl() ?: '#')
                 ->openUrlInNewTab()
-                ->visible(fn () => $this->record->latestVersion !== null),
+                ->visible(fn () => $this->record->latestVersion !== null && $this->record->latestVersion->isFile() && !empty($this->record->latestVersion->file_path)),
         ];
     }
 }
