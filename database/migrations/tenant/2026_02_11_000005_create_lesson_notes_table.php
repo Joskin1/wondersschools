@@ -22,6 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('latest_version_id')->nullable(); // Foreign key added in separate migration
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamps();
+            $table->softDeletes();
 
             // Critical indexes for 5M+ concurrent users
             // Admin filtering: "Show me all lesson notes for JSS 1A, Week 3"

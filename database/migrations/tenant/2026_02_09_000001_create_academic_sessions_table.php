@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('end_year');
             $table->boolean('is_active')->default(false);
             $table->timestamps();
+            $table->softDeletes();
 
             // Index for fast active session queries
             $table->index('is_active');

@@ -34,6 +34,7 @@ return new class extends Migration
                   ->default('pending');
             
             $table->timestamps();
+            $table->softDeletes();
             
             // Indexes for efficient lookups
             $table->index('registration_slug');

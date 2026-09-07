@@ -20,6 +20,7 @@ return new class extends Migration
             $table->tinyInteger('order'); // 1, 2, or 3
             $table->boolean('is_active')->default(false);
             $table->timestamps();
+            $table->softDeletes();
 
             // Ensure unique term order within a session
             $table->unique(['session_id', 'order']);

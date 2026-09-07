@@ -20,6 +20,7 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
             $table->boolean('is_featured')->default(false);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
