@@ -29,7 +29,7 @@ return [
      */
     'bootstrappers' => array_filter([
         (getenv('APP_ENV') === 'testing' || defined('PHPUNIT_COMPOSER_INSTALL')) ? null : Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
-        Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
+        (in_array(env('CACHE_STORE', env('CACHE_DRIVER', 'file')), ['redis', 'memcached'], true)) ? Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class : null,
         Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
         App\Tenancy\ConfigBootstrapper::class,

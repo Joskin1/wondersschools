@@ -69,29 +69,38 @@ class TenantBrandingService
             }
         }
 
-        return Cache::remember(
-            "tenant_branding:{$host}",
-            self::TTL,
-            function () use ($host): array {
-                try {
-                    $domain = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
-                        ->where('domain', $host)
-                        ->with('tenant:id,name,primary_color')
-                        ->first();
-
-                    $tenant = $domain?->tenant;
-
-                    return [
-                        'name'  => $tenant?->name ?? config('app.name'),
-                        'color' => $tenant?->primary_color
-                            ? Color::hex($tenant->primary_color)
-                            : Color::Amber,
-                    ];
-                } catch (\Throwable) {
-                    return $this->defaults();
+        try {
+            return Cache::remember(
+                "tenant_branding:{$host}",
+                self::TTL,
+                function () use ($host): array {
+                    return $this->fetchFromLandlord($host);
                 }
-            }
-        );
+            );
+        } catch (\Throwable) {
+            return $this->fetchFromLandlord($host);
+        }
+    }
+
+    private function fetchFromLandlord(string $host): array
+    {
+        try {
+            $domain = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
+                ->where('domain', $host)
+                ->with('tenant:id,name,primary_color')
+                ->first();
+
+            $tenant = $domain?->tenant;
+
+            return [
+                'name'  => $tenant?->name ?? config('app.name'),
+                'color' => $tenant?->primary_color
+                    ? Color::hex($tenant->primary_color)
+                    : Color::Amber,
+            ];
+        } catch (\Throwable) {
+            return $this->defaults();
+        }
     }
 
     /**
@@ -101,19 +110,23 @@ class TenantBrandingService
      */
     public function warm(Tenant $tenant): void
     {
-        $domains = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
-            ->where('tenant_id', $tenant->id)
-            ->get();
+        try {
+            $domains = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
+                ->where('tenant_id', $tenant->id)
+                ->get();
 
-        $payload = [
-            'name'  => $tenant->name ?? config('app.name'),
-            'color' => $tenant->primary_color
-                ? Color::hex($tenant->primary_color)
-                : Color::Amber,
-        ];
+            $payload = [
+                'name'  => $tenant->name ?? config('app.name'),
+                'color' => $tenant->primary_color
+                    ? Color::hex($tenant->primary_color)
+                    : Color::Amber,
+            ];
 
-        foreach ($domains as $domain) {
-            Cache::put("tenant_branding:{$domain->domain}", $payload, self::TTL);
+            foreach ($domains as $domain) {
+                Cache::put("tenant_branding:{$domain->domain}", $payload, self::TTL);
+            }
+        } catch (\Throwable) {
+            // Safe fallback
         }
     }
 
@@ -122,12 +135,16 @@ class TenantBrandingService
      */
     public function invalidate(Tenant $tenant): void
     {
-        $domains = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
-            ->where('tenant_id', $tenant->id)
-            ->get();
+        try {
+            $domains = \Stancl\Tenancy\Database\Models\Domain::on('landlord')
+                ->where('tenant_id', $tenant->id)
+                ->get();
 
-        foreach ($domains as $domain) {
-            Cache::forget("tenant_branding:{$domain->domain}");
+            foreach ($domains as $domain) {
+                Cache::forget("tenant_branding:{$domain->domain}");
+            }
+        } catch (\Throwable) {
+            // Safe fallback
         }
     }
 
