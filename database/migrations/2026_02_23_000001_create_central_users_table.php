@@ -35,6 +35,7 @@ return new class extends Migration
             $table->string('password')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::connection('landlord')->create('password_reset_tokens', function (Blueprint $table) {
