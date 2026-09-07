@@ -69,6 +69,7 @@ class TenancyServiceProvider extends ServiceProvider
             $storagePath = storage_path();
             
             $dirs = [
+                $storagePath . '/logs',
                 $storagePath . '/framework/cache',
                 $storagePath . '/framework/sessions',
                 $storagePath . '/framework/views',

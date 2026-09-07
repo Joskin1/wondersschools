@@ -89,8 +89,10 @@ class PublicTeacherRegistrationForm extends Component
             });
 
             $this->submitted = true;
-        } catch (\Exception $e) {
-            \Log::error('Public teacher registration failed: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            \Log::error('Public teacher registration failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
             session()->flash('error', 'An error occurred during registration. Please try again.');
         }
     }

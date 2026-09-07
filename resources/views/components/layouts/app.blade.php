@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? \App\Services\FrontendLibrary::getSetting('school_name', 'Our School') }}</title>
     <meta name="description" content="{{ \App\Services\FrontendLibrary::get('meta_description', 'A premium educational institution dedicated to academic excellence and holistic development.') }}">
+    @php
+        $schoolLogo = \App\Services\FrontendLibrary::getSetting('school_logo');
+        $faviconUrl = $schoolLogo 
+            ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($schoolLogo) 
+            : asset('favicon.ico');
+    @endphp
+    <link rel="icon" href="{{ $faviconUrl }}">
+    <link rel="shortcut icon" href="{{ $faviconUrl }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

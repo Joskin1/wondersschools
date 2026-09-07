@@ -344,7 +344,7 @@ describe('Student Registration System', function () {
             StudentEnrollment::factory()->create(['student_id' => $student->id]);
 
             $studentId = $student->id;
-            $student->delete();
+            $student->forceDelete();
 
             expect(StudentEnrollment::where('student_id', $studentId)->count())->toBe(0);
         });

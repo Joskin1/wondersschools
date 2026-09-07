@@ -30,7 +30,7 @@ class SystemLogs extends Page
     public int $page = 1;
 
     /**
-     * Restrict page access exclusively to Sudo Admin (or Sudo).
+     * Allow access to Sudo Administrators and School Administrators.
      */
     public static function canAccess(): bool
     {
@@ -38,13 +38,13 @@ class SystemLogs extends Page
         if (!$user) {
             return false;
         }
-        return $user->role === 'sudo';
+        return in_array($user->role, ['sudo', 'admin'], true);
     }
 
     public function mount(): void
     {
         if (!static::canAccess()) {
-            abort(403, 'Unauthorized access. System logs are restricted to Sudo Administrators.');
+            abort(403, 'Unauthorized access. System logs are restricted to Administrators.');
         }
 
         $availableFiles = $this->getAvailableLogFiles();
@@ -54,29 +54,57 @@ class SystemLogs extends Page
     }
 
     /**
-     * Get array of available log files [filename => full_path] sorted by last modified desc.
+     * Get array of available log files [label => full_path] sorted by last modified desc.
+     * Searches central storage/logs, current context storage/logs, and all tenant log directories.
      *
      * @return array<string, string>
      */
     public function getAvailableLogFiles(): array
     {
-        $logDir = storage_path('logs');
-        if (!File::isDirectory($logDir)) {
-            return [];
+        $found = [];
+
+        // 1. Central storage/logs
+        $centralLogDir = base_path('storage/logs');
+        if (File::isDirectory($centralLogDir)) {
+            foreach (File::glob("{$centralLogDir}/*.log") as $file) {
+                $found[$file] = 'Central: ' . basename($file);
+            }
         }
 
-        $files = File::glob("{$logDir}/*.log");
-        if (empty($files)) {
+        // 2. Current context storage_path('logs') if different from central
+        $currentLogDir = storage_path('logs');
+        if (File::isDirectory($currentLogDir) && $currentLogDir !== $centralLogDir) {
+            foreach (File::glob("{$currentLogDir}/*.log") as $file) {
+                $found[$file] = 'Current Context: ' . basename($file);
+            }
+        }
+
+        // 3. Any tenant-specific storage directories: storage/tenant*/logs/*.log
+        $tenantLogDirs = File::glob(base_path('storage/tenant*/logs/*.log'));
+        if (!empty($tenantLogDirs)) {
+            foreach ($tenantLogDirs as $file) {
+                if (!isset($found[$file])) {
+                    // Extract tenant identifier from path e.g. storage/tenantlivingsspring/logs/laravel.log
+                    preg_match('#storage/tenant([^/]+)/logs/(.+)#', $file, $m);
+                    $tenantName = $m[1] ?? 'tenant';
+                    $logName = $m[2] ?? basename($file);
+                    $found[$file] = "Tenant ({$tenantName}): {$logName}";
+                }
+            }
+        }
+
+        if (empty($found)) {
             return [];
         }
 
         // Sort by last modified descending
+        $files = array_keys($found);
         usort($files, fn ($a, $b) => File::lastModified($b) <=> File::lastModified($a));
 
         $result = [];
         foreach ($files as $file) {
-            $filename = basename($file);
-            $result[$filename] = $file;
+            $label = $found[$file];
+            $result[$label] = $file;
         }
 
         return $result;
@@ -98,7 +126,7 @@ class SystemLogs extends Page
         }
 
         $default = storage_path('logs/laravel.log');
-        return File::exists($default) ? $default : null;
+        return File::exists($default) ? $default : (File::exists(base_path('storage/logs/laravel.log')) ? base_path('storage/logs/laravel.log') : null);
     }
 
     /**

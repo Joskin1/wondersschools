@@ -25,6 +25,7 @@ class SudoPanelProvider extends PanelProvider
         return $panel
             ->id('sudo')
             ->path('sudo')
+            ->favicon(asset('favicon.ico'))
             ->login()
             ->passwordReset()
             ->profile(\App\Filament\Pages\CustomProfile::class)
@@ -36,6 +37,7 @@ class SudoPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Sudo/Pages'), for: 'App\\Filament\\Sudo\\Pages')
             ->pages([
                 Dashboard::class,
+                \App\Filament\Pages\SystemLogs::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Sudo/Widgets'), for: 'App\\Filament\\Sudo\\Widgets')
             ->widgets([

@@ -33,6 +33,12 @@ class TeacherPanelProvider extends PanelProvider
             ->id('teacher')
             ->path('teacher')
             ->brandName(fn () => $branding['name'])
+            ->favicon(function () {
+                $logo = \App\Services\FrontendLibrary::getSetting('school_logo');
+                return $logo 
+                    ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($logo) 
+                    : asset('favicon.ico');
+            })
             ->login()
             ->passwordReset()
             ->profile(\App\Filament\Pages\CustomProfile::class)

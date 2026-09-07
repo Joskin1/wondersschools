@@ -83,7 +83,7 @@ class TeacherRegistrationForm extends Component
         // Check if user has already completed registration
         if ($this->user->hasCompletedRegistration()) {
             session()->flash('error', 'You have already completed registration.');
-            return redirect()->route('login');
+            return redirect()->to('/teacher/login');
         }
 
         $profilePicturePath = null;

@@ -34,6 +34,12 @@ class StudentPanelProvider extends PanelProvider
             ->id('student')
             ->path('student')
             ->brandName(fn () => $branding['name'])
+            ->favicon(function () {
+                $logo = \App\Services\FrontendLibrary::getSetting('school_logo');
+                return $logo 
+                    ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($logo) 
+                    : asset('favicon.ico');
+            })
             ->login(Login::class)
             ->profile(CustomProfile::class)
             ->colors([
