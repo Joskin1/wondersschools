@@ -110,9 +110,15 @@ class LessonNoteResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('latestVersion.file_name')
-                    ->label('File')
-                    ->limit(30)
-                    ->tooltip(fn ($record) => $record->latestVersion?->file_name),
+                    ->label('Note / Topic')
+                    ->formatStateUsing(function ($state, LessonNote $record) {
+                        if ($record->latestVersion?->isWritten()) {
+                            return '📝 ' . ($record->latestVersion->title ?: 'Written Note');
+                        }
+                        return '📄 ' . ($state ?: 'Document File');
+                    })
+                    ->limit(35)
+                    ->tooltip(fn ($record) => $record->latestVersion?->isWritten() ? ($record->latestVersion->title ?: 'Written Lesson Note') : $record->latestVersion?->file_name),
 
                 Tables\Columns\TextColumn::make('latestVersion.reviewed_at')
                     ->label('Published')
@@ -135,7 +141,7 @@ class LessonNoteResource extends Resource
                     ->icon('heroicon-o-arrow-down-tray')
                     ->url(fn (LessonNote $record) => $record->latestVersion?->getDownloadUrl())
                     ->openUrlInNewTab()
-                    ->visible(fn (LessonNote $record) => $record->latestVersion !== null),
+                    ->visible(fn (LessonNote $record) => $record->latestVersion?->isFile() && $record->latestVersion?->file_path !== null),
             ])
             ->bulkActions([
                 // No bulk actions for students

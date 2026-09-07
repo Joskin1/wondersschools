@@ -13,6 +13,10 @@ class LessonNoteVersion extends Model
 
     protected $fillable = [
         'lesson_note_id',
+        'submission_type',
+        'title',
+        'content',
+        'images',
         'file_path',
         'file_name',
         'file_size',
@@ -34,12 +38,47 @@ class LessonNoteVersion extends Model
 
     protected $casts = [
         'file_size' => 'integer',
+        'images' => 'array',
         'reviewed_at' => 'datetime',
         'is_duplicate' => 'boolean',
         'metadata' => 'array',
         'file_modified_at' => 'datetime',
         'cdn_available' => 'boolean',
     ];
+
+    /**
+     * Check if this version is a written note.
+     */
+    public function isWritten(): bool
+    {
+        return $this->submission_type === 'written' || !empty($this->content);
+    }
+
+    /**
+     * Check if this version is an uploaded document file.
+     */
+    public function isFile(): bool
+    {
+        return !$this->isWritten();
+    }
+
+    /**
+     * Get image URLs for uploaded supporting images.
+     *
+     * @return array<string>
+     */
+    public function getImageUrls(): array
+    {
+        if (empty($this->images) || !is_array($this->images)) {
+            return [];
+        }
+
+        $disk = config('filesystems.upload_disk', 'public');
+
+        return array_map(function ($imagePath) use ($disk) {
+            return Storage::disk($disk)->url($imagePath);
+        }, $this->images);
+    }
 
     /**
      * Get the lesson note this version belongs to.

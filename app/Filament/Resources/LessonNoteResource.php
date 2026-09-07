@@ -129,13 +129,26 @@ class LessonNoteResource extends Resource
                     }),
 
                 Tables\Columns\TextColumn::make('latestVersion.file_name')
-                    ->label('File')
-                    ->limit(30)
-                    ->tooltip(fn ($record) => $record->latestVersion?->file_name),
+                    ->label('Note / Topic')
+                    ->formatStateUsing(function ($state, LessonNote $record) {
+                        if ($record->latestVersion?->isWritten()) {
+                            return '📝 ' . ($record->latestVersion->title ?: 'Written Note');
+                        }
+                        return '📄 ' . ($state ?: 'Document File');
+                    })
+                    ->limit(35)
+                    ->tooltip(fn ($record) => $record->latestVersion?->isWritten() ? ($record->latestVersion->title ?: 'Written Lesson Note') : $record->latestVersion?->file_name),
 
                 Tables\Columns\TextColumn::make('latestVersion.file_size')
-                    ->label('Size')
-                    ->formatStateUsing(fn ($state) => $state ? number_format($state / 1024, 2) . ' KB' : 'N/A'),
+                    ->label('Size / Length')
+                    ->formatStateUsing(function ($state, LessonNote $record) {
+                        if ($record->latestVersion?->isWritten()) {
+                            $imgCount = count($record->latestVersion->images ?? []);
+                            $chars = strlen($record->latestVersion->content ?? '');
+                            return number_format($chars) . ' chars' . ($imgCount > 0 ? " ({$imgCount} img)" : '');
+                        }
+                        return $state ? number_format($state / 1024, 2) . ' KB' : 'N/A';
+                    }),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Submitted')

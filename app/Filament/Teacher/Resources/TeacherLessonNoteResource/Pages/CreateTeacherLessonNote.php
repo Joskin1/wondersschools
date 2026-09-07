@@ -16,9 +16,13 @@ class CreateTeacherLessonNote extends CreateRecord
 {
     protected static string $resource = TeacherLessonNoteResource::class;
 
-    protected ?string $heading = 'Upload Lesson Note';
+    protected ?string $heading = 'Submit Lesson Note';
 
     private ?string $uploadedFilePath = null;
+    private string $submissionType = 'file';
+    private ?string $writtenTitle = null;
+    private ?string $writtenContent = null;
+    private ?array $writtenImages = null;
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
@@ -93,33 +97,54 @@ class CreateTeacherLessonNote extends CreateRecord
         if ($existing) {
             Notification::make()
                 ->title('Already Submitted')
-                ->body('You have already submitted a lesson note for this combination. Use the re-upload option to submit a new version.')
+                ->body('You have already submitted a lesson note for this combination. Use the re-upload/re-submit option to submit a new version.')
                 ->warning()
                 ->send();
             $this->halt();
         }
 
-        // Store file path and remove from data (not a DB column)
+        // Store form submission payloads (not direct columns on lesson_notes table)
+        $this->submissionType = $data['submission_type'] ?? 'file';
         $this->uploadedFilePath = $data['file'] ?? null;
-        unset($data['file']);
+        $this->writtenTitle = $data['title'] ?? null;
+        $this->writtenContent = $data['content'] ?? null;
+        $this->writtenImages = $data['images'] ?? null;
+
+        unset($data['submission_type'], $data['file'], $data['title'], $data['content'], $data['images']);
 
         return $data;
     }
 
     protected function afterCreate(): void
     {
-        if (!$this->uploadedFilePath) {
-            return;
+        if ($this->submissionType === 'written') {
+            $version = \App\Models\LessonNoteVersion::create([
+                'lesson_note_id' => $this->record->id,
+                'submission_type' => 'written',
+                'title' => $this->writtenTitle,
+                'content' => $this->writtenContent,
+                'images' => $this->writtenImages,
+                'file_name' => ($this->writtenTitle ? $this->writtenTitle : 'Written Lesson Note') . ' (Week ' . $this->record->week_number . ')',
+                'file_size' => strlen($this->writtenContent ?? ''),
+                'file_hash' => hash('sha256', ($this->writtenContent ?? '') . json_encode($this->writtenImages ?? [])),
+                'uploaded_by' => auth()->id(),
+                'mime_type' => 'text/html',
+                'status' => 'pending',
+            ]);
+
+            $this->record->update([
+                'latest_version_id' => $version->id,
+            ]);
+        } elseif ($this->uploadedFilePath) {
+            $fileName = basename($this->uploadedFilePath);
+
+            ProcessLessonNoteUpload::dispatch(
+                $this->record->id,
+                $this->uploadedFilePath,
+                $fileName,
+                auth()->id()
+            );
         }
-
-        $fileName = basename($this->uploadedFilePath);
-
-        ProcessLessonNoteUpload::dispatch(
-            $this->record->id,
-            $this->uploadedFilePath,
-            $fileName,
-            auth()->id()
-        );
     }
 
     protected function getRedirectUrl(): string
@@ -129,6 +154,8 @@ class CreateTeacherLessonNote extends CreateRecord
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Lesson note uploaded successfully. It is now being processed.';
+        return $this->submissionType === 'written'
+            ? 'Written lesson note submitted successfully.'
+            : 'Lesson note uploaded successfully. It is now being processed.';
     }
 }
