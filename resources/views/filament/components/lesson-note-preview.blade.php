@@ -5,6 +5,16 @@
     $mimeType = $latestVersion?->mime_type ?? '';
     $fileName = $latestVersion?->file_name ?? 'No file';
     $fileSize = $latestVersion?->formatted_file_size ?? 'N/A';
+    $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+    $isOfficeDocument = in_array($fileExtension, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'], true)
+        || in_array($mimeType, [
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        ], true);
     $imageUrls = $latestVersion ? $latestVersion->getImageUrls() : [];
 
     $downloadUrl = null;
@@ -17,38 +27,54 @@
     }
 @endphp
 
+<style>
+    .note-document { background: #fff; border: 1px solid #d1d5db; border-radius: 4px; box-shadow: 0 12px 30px rgba(15, 23, 42, .12); color: #1f2937; margin: 0 auto; max-width: 900px; padding: 56px 72px 72px; }
+    .note-document__masthead { border-bottom: 2px solid #1f2937; margin-bottom: 32px; padding-bottom: 24px; text-align: center; }
+    .note-document__eyebrow { color: #6b7280; font-size: 11px; font-weight: 700; letter-spacing: .16em; margin: 0 0 10px; text-transform: uppercase; }
+    .note-document__title { color: #111827; font-size: 25px; font-weight: 800; line-height: 1.2; margin: 0; }
+    .note-document__meta { color: #4b5563; display: flex; flex-wrap: wrap; font-size: 13px; gap: 8px 20px; justify-content: center; margin-top: 16px; }
+    .note-document__content { color: #374151; font-size: 15px; line-height: 1.8; }
+    .note-document__content p { margin: 0 0 14px; }
+    .note-document__content h1, .note-document__content h2, .note-document__content h3, .note-document__content h4 { color: #111827; font-weight: 800; line-height: 1.35; margin: 22px 0 9px; }
+    .note-document__content h1 { font-size: 21px; }
+    .note-document__content h2 { font-size: 18px; }
+    .note-document__content h3, .note-document__content h4 { font-size: 16px; }
+    .note-document__content strong, .note-document__content b { color: #111827; font-weight: 800; }
+    .note-document__content em, .note-document__content i { font-style: italic; }
+    .note-document__content ul, .note-document__content ol { margin: 10px 0 16px; padding-left: 28px; }
+    .note-document__content ul { list-style: disc; }
+    .note-document__content ol { list-style: decimal; }
+    .note-document__content li { margin: 4px 0; padding-left: 4px; }
+    .note-document__content blockquote { border-left: 3px solid #9ca3af; color: #4b5563; font-style: italic; margin: 16px 0; padding-left: 16px; }
+    .note-document__content table { border-collapse: collapse; margin: 18px 0; width: 100%; }
+    .note-document__content th, .note-document__content td { border: 1px solid #d1d5db; padding: 8px 10px; text-align: left; }
+    .note-document__content th { background: #f3f4f6; font-weight: 800; }
+    @media (max-width: 700px) { .note-document { padding: 32px 22px 42px; } .note-document__title { font-size: 21px; } }
+</style>
+
 @if($latestVersion)
     <div class="space-y-6">
+        <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-gray-200 pb-4 text-sm dark:border-gray-700">
+            <span class="font-semibold text-gray-900 dark:text-gray-100">{{ $record?->subject?->name }}</span>
+            <span class="text-gray-500 dark:text-gray-400">{{ $record?->classroom?->name }}</span>
+            <span class="text-gray-500 dark:text-gray-400">Week {{ $record?->week_number }}</span>
+            <span class="text-gray-500 dark:text-gray-400">Teacher: {{ $record?->teacher?->name }}</span>
+        </div>
+
         @if($isWritten)
-            {{-- Written Lesson Note View --}}
-            <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4 dark:border-gray-700">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                                📝 Written Lesson Note
-                            </span>
-                            <span class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
-                                Week {{ $record?->week_number }}
-                            </span>
-                        </div>
-                        <h2 class="mt-2 text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                            {{ $latestVersion->title ?: ($record?->subject?->name . ' - Week ' . $record?->week_number) }}
-                        </h2>
+            <article class="note-document">
+                <header class="note-document__masthead">
+                    <p class="note-document__eyebrow">Lesson Note</p>
+                    <h2 class="note-document__title">{{ $latestVersion->title ?: ($record?->subject?->name . ' - Week ' . $record?->week_number) }}</h2>
+                    <div class="note-document__meta">
+                        <span><strong>Subject:</strong> {{ $record?->subject?->name }}</span>
+                        <span><strong>Class:</strong> {{ $record?->classroom?->name }}</span>
+                        <span><strong>Week:</strong> {{ $record?->week_number }}</span>
+                        @if($latestVersion->created_at)<span><strong>Submitted:</strong> {{ $latestVersion->created_at->format('M d, Y') }}</span>@endif
                     </div>
-
-                    <div class="text-right text-xs text-gray-500 dark:text-gray-400">
-                        @if($latestVersion->created_at)
-                            Submitted {{ $latestVersion->created_at->format('M d, Y · h:i A') }}
-                        @endif
-                    </div>
-                </div>
-
-                {{-- Written Content Body --}}
-                <div class="prose max-w-none text-gray-800 dark:prose-invert dark:text-gray-200 leading-relaxed space-y-4">
-                    {!! $latestVersion->content !!}
-                </div>
-            </div>
+                </header>
+                <div class="note-document__content">{!! $latestVersion->content !!}</div>
+            </article>
 
             {{-- Optional Attached Diagrams & Images --}}
             @if(!empty($imageUrls))
@@ -136,14 +162,7 @@
                         title="Lesson Note Preview"
                     ></iframe>
                 </div>
-            @elseif(in_array($mimeType, [
-                'application/msword',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/vnd.ms-excel',
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'application/vnd.ms-powerpoint',
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            ]))
+            @elseif($isOfficeDocument)
                 <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700" style="height: 700px;">
                     <iframe
                         src="https://view.officeapps.live.com/op/embed.aspx?src={{ urlencode($downloadUrl) }}"

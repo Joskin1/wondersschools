@@ -92,10 +92,11 @@ class LessonNotePolicy
             return true;
         }
 
-        // Teachers can only update their own pending notes
+        // Teachers can refine notes until their matching lesson plan is submitted,
+        // and can correct notes rejected by an administrator.
         if ($user->role === 'teacher') {
             return $lessonNote->teacher_id === $user->id 
-                && $lessonNote->status === 'pending';
+                && $lessonNote->canBeEditedByTeacher();
         }
 
         return false;

@@ -17,6 +17,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Notifications\Notification;
 use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -262,6 +263,11 @@ class TeacherLessonNoteResource extends Resource
                     )),
             ])
             ->actions([
+                EditAction::make()
+                    ->label('Edit')
+                    ->icon('heroicon-o-pencil')
+                    ->visible(fn (LessonNote $record): bool => $record->canBeEditedByTeacher()),
+
                 Action::make('reupload')
                     ->label('Re-submit')
                     ->icon('heroicon-o-arrow-path')
@@ -381,13 +387,15 @@ class TeacherLessonNoteResource extends Resource
         return [
             'index' => Pages\ListTeacherLessonNotes::route('/'),
             'create' => Pages\CreateTeacherLessonNote::route('/create'),
+            'edit' => Pages\EditTeacherLessonNote::route('/{record}/edit'),
             'view' => Pages\ViewTeacherLessonNote::route('/{record}'),
         ];
     }
 
     public static function canEdit($record): bool
     {
-        return false;
+        return $record->teacher_id === auth()->id()
+            && $record->canBeEditedByTeacher();
     }
 
     public static function canDelete($record): bool

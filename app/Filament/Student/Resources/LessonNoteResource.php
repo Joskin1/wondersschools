@@ -91,6 +91,14 @@ class LessonNoteResource extends Resource
                             ->view('filament.components.lesson-note-preview')
                             ->columnSpanFull(),
                     ]),
+
+                Section::make('Lesson Plan')
+                    ->schema([
+                        ViewField::make('lesson_plan_preview')
+                            ->view('filament.components.lesson-plan-review')
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn (LessonNote $record): bool => $record->getPairedLessonPlan()?->status === 'approved'),
             ]);
     }
 
@@ -153,17 +161,18 @@ class LessonNoteResource extends Resource
             ->actions([
                 ViewAction::make(),
                 Action::make('download_pdf')
-                    ->label('Download PDF')
+                    ->label('Download Lesson Note PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('primary')
                     ->url(fn (LessonNote $record) => route('student.lesson-note.pdf', $record))
                     ->openUrlInNewTab(),
-                Action::make('download')
-                    ->label('Download Original')
+                Action::make('download_lesson_plan_pdf')
+                    ->label('Download Lesson Plan PDF')
                     ->icon('heroicon-o-document-arrow-down')
-                    ->url(fn (LessonNote $record) => $record->latestVersion?->getDownloadUrl())
+                    ->color('gray')
+                    ->url(fn (LessonNote $record) => route('student.lesson-plan.pdf', $record))
                     ->openUrlInNewTab()
-                    ->visible(fn (LessonNote $record) => $record->latestVersion?->isFile() && $record->latestVersion?->file_path !== null),
+                    ->visible(fn (LessonNote $record): bool => $record->getPairedLessonPlan()?->status === 'approved'),
             ])
             ->bulkActions([
                 // No bulk actions for students

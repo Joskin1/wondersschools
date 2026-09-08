@@ -416,11 +416,25 @@ describe('Authorization Policies', function () {
             ->and($this->student->can('create', LessonNote::class))->toBeFalse();
     });
 
-    it('allows teacher to update only their own pending notes', function () {
+    it('allows teacher to edit notes until the matching plan is submitted', function () {
         $pendingNote = createNote(['status' => 'pending']);
         $approvedNote = createNote(['status' => 'approved', 'week_number' => 2]);
+        $rejectedNote = createNote(['status' => 'rejected', 'week_number' => 3]);
+
+        $lockedNote = createNote(['status' => 'pending', 'week_number' => 4]);
+        \App\Models\LessonPlan::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 4,
+            'status' => 'pending',
+        ]);
 
         expect($this->teacher->can('update', $pendingNote))->toBeTrue()
+            ->and($this->teacher->can('update', $rejectedNote))->toBeTrue()
+            ->and($this->teacher->can('update', $lockedNote))->toBeFalse()
             ->and($this->teacher->can('update', $approvedNote))->toBeFalse();
     });
 
@@ -488,9 +502,24 @@ describe('Editable State', function () {
         expect($note->canBeEditedByTeacher())->toBeFalse();
     });
 
-    it('blocks teacher from editing rejected notes', function () {
+    it('allows teacher to correct rejected notes', function () {
         $note = createNote(['status' => 'rejected']);
-        expect($note->canBeEditedByTeacher())->toBeFalse();
+        expect($note->canBeEditedByTeacher())->toBeTrue();
+    });
+
+    it('locks a pending note after its matching plan is submitted', function () {
+        $note = createNote(['status' => 'pending', 'week_number' => 4]);
+        \App\Models\LessonPlan::create([
+            'teacher_id' => test()->teacher->id,
+            'subject_id' => test()->subject->id,
+            'classroom_id' => test()->classroom->id,
+            'session_id' => test()->session->id,
+            'term_id' => test()->term->id,
+            'week_number' => 4,
+            'status' => 'pending',
+        ]);
+
+        expect($note->fresh()->canBeEditedByTeacher())->toBeFalse();
     });
 
 });

@@ -101,21 +101,21 @@ class LessonNoteResource extends Resource
                         ]),
                     ]),
 
-                // ── PART 1: LESSON PLAN ──────────────────────────────────────────
-                Section::make('Part 1 — Lesson Plan')
-                    ->description('Review the teacher\'s lesson plan before viewing the lesson note.')
-                    ->schema([
-                        ViewField::make('lesson_plan_review')
-                            ->view('filament.components.lesson-plan-review')
-                            ->columnSpanFull(),
-                    ]),
-
-                // ── PART 2: LESSON NOTE ──────────────────────────────────────────
-                Section::make('Part 2 — Lesson Note')
-                    ->description('Review the submitted lesson note.')
+                // ── PART 1: LESSON NOTE ──────────────────────────────────────────
+                Section::make('Part 1 — Lesson Note')
+                    ->description('Read the teacher\'s lesson note first, then compare it with the lesson plan below.')
                     ->schema([
                         ViewField::make('file_preview')
                             ->view('filament.components.lesson-note-preview')
+                            ->columnSpanFull(),
+                    ]),
+
+                // ── PART 2: LESSON PLAN ──────────────────────────────────────────
+                Section::make('Part 2 — Lesson Plan')
+                    ->description('Review the lesson plan against the lesson note before making a decision.')
+                    ->schema([
+                        ViewField::make('lesson_plan_review')
+                            ->view('filament.components.lesson-plan-review')
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -155,6 +155,18 @@ class LessonNoteResource extends Resource
                         'approved' => 'success',
                         'rejected' => 'danger',
                     }),
+
+                Tables\Columns\TextColumn::make('lesson_plan_status')
+                    ->label('Lesson Plan')
+                    ->state(fn (LessonNote $record): string => $record->getPairedLessonPlan()?->status ?? 'missing')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
 
                 Tables\Columns\TextColumn::make('latestVersion.file_name')
                     ->label('Note / Topic')
@@ -268,7 +280,8 @@ class LessonNoteResource extends Resource
                             ->success()
                             ->send();
                     })
-                    ->visible(fn (LessonNote $record) => $record->status === 'pending'),
+                    ->visible(fn (LessonNote $record) => $record->status === 'pending'
+                        && $record->getPairedLessonPlan()?->status === 'pending'),
 
                 Action::make('reject')
                     ->label('Reject')
@@ -305,7 +318,10 @@ class LessonNoteResource extends Resource
                     })
                     ->visible(fn (LessonNote $record) => $record->status === 'pending'),
 
-                ViewAction::make(),
+                ViewAction::make('review')
+                    ->label('Review submission')
+                    ->icon('heroicon-o-eye')
+                    ->color('primary'),
             ])
             ->bulkActions([
                 BulkAction::make('bulk_approve')

@@ -220,7 +220,17 @@ class LessonNote extends Model
      */
     public function canBeEditedByTeacher(): bool
     {
-        return $this->status === 'pending';
+        if ($this->status === 'rejected') {
+            return true;
+        }
+
+        if ($this->status !== 'pending') {
+            return false;
+        }
+
+        $pairedPlan = $this->getPairedLessonPlan();
+
+        return $pairedPlan === null || $pairedPlan->status === 'draft';
     }
 
     /**
@@ -322,4 +332,3 @@ class LessonNote extends Model
         return $v1->file_hash !== $v2->file_hash;
     }
 }
-

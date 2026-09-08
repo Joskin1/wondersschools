@@ -14,6 +14,11 @@ class ViewLessonNote extends ViewRecord
 {
     protected static string $resource = LessonNoteResource::class;
 
+    public function getTitle(): string
+    {
+        return 'Review Lesson Submission';
+    }
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $this->record->load(['latestVersion', 'teacher', 'subject', 'classroom', 'session', 'term']);
