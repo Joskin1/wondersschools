@@ -75,7 +75,19 @@ class SubjectRequests extends Page implements HasForms, HasTable
 
                 Select::make('classroom_ids')
                     ->label('Classes')
-                    ->options(Classroom::active()->ordered()->pluck('name', 'id'))
+                    ->options(function () {
+                        $classrooms = Classroom::active()->ordered()->with('classGroup')->get();
+                        $hasGroups = $classrooms->contains(fn ($c) => $c->class_group_id !== null);
+                        if ($hasGroups) {
+                            $grouped = [];
+                            foreach ($classrooms as $classroom) {
+                                $groupName = $classroom->classGroup?->name ?? 'Ungrouped Classes';
+                                $grouped[$groupName][$classroom->id] = $classroom->name;
+                            }
+                            return $grouped;
+                        }
+                        return $classrooms->pluck('name', 'id');
+                    })
                     ->multiple()
                     ->required()
                     ->searchable()

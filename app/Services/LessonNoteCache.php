@@ -14,7 +14,7 @@ class LessonNoteCache
     private const CACHE_TTL = 15;
 
     /**
-     * Get the active submission window for a specific week (cached).
+     * Get the week record for a specific session and term (cached).
      * 
      * @param int $sessionId
      * @param int $termId
@@ -26,9 +26,7 @@ class LessonNoteCache
         $cacheKey = "submission_window:{$sessionId}:{$termId}:{$weekNumber}";
 
         return Cache::remember($cacheKey, now()->addMinutes(self::CACHE_TTL), function () use ($sessionId, $termId, $weekNumber) {
-            return SubmissionWindow::forWeek($sessionId, $termId, $weekNumber)
-                ->currentlyOpen()
-                ->first();
+            return SubmissionWindow::forWeek($sessionId, $termId, $weekNumber)->first();
         });
     }
 
@@ -157,10 +155,7 @@ class LessonNoteCache
             return $this->getActiveWindow($sessionId, $termId, $weekNumber);
         } catch (\Exception $e) {
             // Fallback to direct database query
-            return SubmissionWindow::forWeek($sessionId, $termId, $weekNumber)
-                ->currentlyOpen()
-                ->first();
+            return SubmissionWindow::forWeek($sessionId, $termId, $weekNumber)->first();
         }
     }
 }
-

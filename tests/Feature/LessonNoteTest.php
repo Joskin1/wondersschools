@@ -73,18 +73,6 @@ beforeEach(function () {
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,
         'week_number' => 1,
-        'opens_at' => now()->subDay(),
-        'closes_at' => now()->addDay(),
-        'is_open' => true,
-    ]);
-
-    $this->closedWindow = SubmissionWindow::create([
-        'session_id' => $this->session->id,
-        'term_id' => $this->term->id,
-        'week_number' => 2,
-        'opens_at' => now()->subWeek(),
-        'closes_at' => now()->subDay(),
-        'is_open' => false,
     ]);
 });
 
@@ -181,38 +169,10 @@ describe('Teacher Upload', function () {
 });
 
 // ──────────────────────────────────────────────────────────────
-// 2. Submission Window Enforcement
+// 2. Submission Week Availability
 // ──────────────────────────────────────────────────────────────
 
-describe('Submission Window Enforcement', function () {
-
-    it('reports window as open when is_open=true and within time range', function () {
-        expect($this->openWindow->isCurrentlyOpen())->toBeTrue();
-    });
-
-    it('reports window as closed when is_open=false', function () {
-        expect($this->closedWindow->isCurrentlyOpen())->toBeFalse();
-    });
-
-    it('reports window as closed when past closes_at even if is_open=true', function () {
-        $this->openWindow->update(['closes_at' => now()->subHour()]);
-
-        expect($this->openWindow->fresh()->isCurrentlyOpen())->toBeFalse();
-    });
-
-    it('reports window as closed when before opens_at even if is_open=true', function () {
-        $this->openWindow->update(['opens_at' => now()->addHour()]);
-
-        expect($this->openWindow->fresh()->isCurrentlyOpen())->toBeFalse();
-    });
-
-    it('finds currently open windows via scope', function () {
-        $open = SubmissionWindow::currentlyOpen()->get();
-
-        expect($open)->toHaveCount(1)
-            ->and($open->first()->week_number)->toBe(1);
-    });
-
+describe('Submission Week Availability', function () {
     it('finds windows by session/term/week via forWeek scope', function () {
         $found = SubmissionWindow::forWeek($this->session->id, $this->term->id, 1)->first();
 
@@ -220,12 +180,13 @@ describe('Submission Window Enforcement', function () {
             ->and($found->id)->toBe($this->openWindow->id);
     });
 
-    it('can toggle a window open and closed', function () {
-        $this->openWindow->close($this->admin->id);
-        expect($this->openWindow->fresh()->is_open)->toBeFalse();
+    it('stores only the academic week context', function () {
+        $attributes = $this->openWindow->fresh()->getAttributes();
 
-        $this->openWindow->open($this->admin->id);
-        expect($this->openWindow->fresh()->is_open)->toBeTrue();
+        expect($attributes)->not->toHaveKey('opens_at')
+            ->and($attributes)->not->toHaveKey('closes_at')
+            ->and($attributes)->not->toHaveKey('is_open')
+            ->and($attributes)->not->toHaveKey('updated_by');
     });
 
 });
@@ -842,12 +803,13 @@ describe('Caching', function () {
             ->and($window->id)->toBe($this->openWindow->id);
     });
 
-    it('returns null for closed window from cache', function () {
+    it('does not require a window status in cache', function () {
         $cache = app(LessonNoteCache::class);
 
-        $window = $cache->getActiveWindow($this->session->id, $this->term->id, 2);
+        $window = $cache->getActiveWindow($this->session->id, $this->term->id, 1);
 
-        expect($window)->toBeNull();
+        expect($window)->not->toBeNull()
+            ->and($window->week_number)->toBe(1);
     });
 
     it('caches teacher assignments', function () {
@@ -865,10 +827,8 @@ describe('Caching', function () {
         $cache->getActiveWindow($this->session->id, $this->term->id, 1);
         $cache->invalidateWindow($this->session->id, $this->term->id, 1);
 
-        $this->openWindow->update(['is_open' => false]);
-
         $window = $cache->getActiveWindow($this->session->id, $this->term->id, 1);
-        expect($window)->toBeNull();
+        expect($window)->not->toBeNull();
     });
 
     it('invalidates teacher assignment cache', function () {
@@ -1553,7 +1513,9 @@ describe('Performance Benchmarks', function () {
             ->with(['subject', 'classroom'])
             ->get();
 
-        $windows = SubmissionWindow::currentlyOpen()->get();
+        $windows = SubmissionWindow::where('session_id', $this->session->id)
+            ->where('term_id', $this->term->id)
+            ->get();
 
         $duration = (microtime(true) - $start) * 1000; // Convert to ms
 
@@ -1817,4 +1779,3 @@ describe('File Metadata', function () {
     });
 
 });
-

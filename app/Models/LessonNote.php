@@ -19,13 +19,29 @@ class LessonNote extends Model
         'session_id',
         'term_id',
         'week_number',
+        'learning_objectives',
         'latest_version_id',
         'status',
     ];
 
     protected $casts = [
         'week_number' => 'integer',
+        'learning_objectives' => 'array',
     ];
+
+    /**
+     * Find the paired Lesson Plan for the same academic context.
+     */
+    public function getPairedLessonPlan(): ?LessonPlan
+    {
+        return LessonPlan::where('teacher_id', $this->teacher_id)
+            ->where('subject_id', $this->subject_id)
+            ->where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->where('week_number', $this->week_number)
+            ->first();
+    }
 
     /**
      * Get the teacher who created this lesson note.
@@ -156,7 +172,7 @@ class LessonNote extends Model
     }
 
     /**
-     * Approve this lesson note.
+     * Approve this lesson note and any paired lesson plan.
      */
     public function approve(?string $comment = null, ?int $reviewerId = null): void
     {
@@ -170,10 +186,15 @@ class LessonNote extends Model
                 'reviewed_at' => now(),
             ]);
         }
+
+        $pairedPlan = $this->getPairedLessonPlan();
+        if ($pairedPlan) {
+            $pairedPlan->approve($comment, $reviewerId);
+        }
     }
 
     /**
-     * Reject this lesson note.
+     * Reject this lesson note and any paired lesson plan.
      */
     public function reject(?string $comment = null, ?int $reviewerId = null): void
     {
@@ -186,6 +207,11 @@ class LessonNote extends Model
                 'reviewed_by' => $reviewerId,
                 'reviewed_at' => now(),
             ]);
+        }
+
+        $pairedPlan = $this->getPairedLessonPlan();
+        if ($pairedPlan) {
+            $pairedPlan->reject($comment, $reviewerId);
         }
     }
 

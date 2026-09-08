@@ -44,23 +44,6 @@ class CreateTeacherLessonNote extends CreateRecord
         $data['term_id'] = $activeTerm->id;
         $data['status'] = 'pending';
 
-        // Validate submission window is open
-        $cache = app(LessonNoteCache::class);
-        $window = $cache->getActiveWindow(
-            $activeSession->id,
-            $activeTerm->id,
-            $data['week_number']
-        );
-
-        if (!$window) {
-            Notification::make()
-                ->title('Submission Window Closed')
-                ->body('The submission window for this week is not currently open.')
-                ->danger()
-                ->send();
-            $this->halt();
-        }
-
         // Validate teacher assignment - check class teacher first, then subject teacher
         $isClassTeacher = ClassTeacherAssignment::isClassTeacher(
             auth()->id(),
@@ -110,6 +93,14 @@ class CreateTeacherLessonNote extends CreateRecord
         $this->writtenContent = $data['content'] ?? null;
         $this->writtenImages = $data['images'] ?? null;
 
+        if (isset($data['learning_objectives'])) {
+            $data['learning_objectives'] = collect($data['learning_objectives'])
+                ->pluck('objective')
+                ->filter()
+                ->values()
+                ->toArray();
+        }
+
         unset($data['submission_type'], $data['file'], $data['title'], $data['content'], $data['images']);
 
         return $data;
@@ -122,6 +113,7 @@ class CreateTeacherLessonNote extends CreateRecord
                 'lesson_note_id' => $this->record->id,
                 'submission_type' => 'written',
                 'title' => $this->writtenTitle,
+                'learning_objectives' => $this->record->learning_objectives,
                 'content' => $this->writtenContent,
                 'images' => $this->writtenImages,
                 'file_name' => ($this->writtenTitle ? $this->writtenTitle : 'Written Lesson Note') . ' (Week ' . $this->record->week_number . ')',
@@ -145,6 +137,9 @@ class CreateTeacherLessonNote extends CreateRecord
                 auth()->id()
             );
         }
+
+        // Check if paired lesson plan is ready and notify admins if complete
+        app(\App\Services\LessonSubmissionService::class)->checkAndNotifyIfComplete($this->record);
     }
 
     protected function getRedirectUrl(): string

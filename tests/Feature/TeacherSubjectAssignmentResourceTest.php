@@ -174,29 +174,35 @@ test('form defaults to active session and term', function () {
         ]);
 });
 
-test('classroom filter widget displays classrooms', function () {
-    $classroom1 = Classroom::factory()->create(['name' => 'SS1']);
-    $classroom2 = Classroom::factory()->create(['name' => 'SS2']);
+test('can filter assignments by class group', function () {
+    $group1 = \App\Models\ClassGroup::create(['name' => 'Primary Group', 'order' => 1]);
+    $group2 = \App\Models\ClassGroup::create(['name' => 'Secondary Group', 'order' => 2]);
 
-    Livewire::test(TeacherSubjectAssignmentResource\Widgets\ClassroomFilterWidget::class)
-        ->assertSee('SS1')
-        ->assertSee('SS2');
-});
+    $classroom1 = Classroom::factory()->create(['name' => 'PRI 1', 'class_group_id' => $group1->id]);
+    $classroom2 = Classroom::factory()->create(['name' => 'SS 1', 'class_group_id' => $group2->id]);
 
-test('classroom filter widget shows assignment counts', function () {
-    $classroom = Classroom::factory()->create(['name' => 'SS1']);
-
-    TeacherSubjectAssignment::create([
+    $assignment1 = TeacherSubjectAssignment::create([
         'teacher_id' => $this->teacher->id,
         'subject_id' => $this->subject->id,
-        'classroom_id' => $classroom->id,
+        'classroom_id' => $classroom1->id,
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,
         'status' => 'approved',
     ]);
 
-    Livewire::test(TeacherSubjectAssignmentResource\Widgets\ClassroomFilterWidget::class)
-        ->assertSee('1 teacher');
+    $assignment2 = TeacherSubjectAssignment::create([
+        'teacher_id' => $this->teacher->id,
+        'subject_id' => Subject::factory()->create(['name' => 'Physics'])->id,
+        'classroom_id' => $classroom2->id,
+        'session_id' => $this->session->id,
+        'term_id' => $this->term->id,
+        'status' => 'approved',
+    ]);
+
+    Livewire::test(TeacherSubjectAssignmentResource\Pages\ListTeacherSubjectAssignments::class)
+        ->filterTable('class_group_id', $group1->id)
+        ->assertCanSeeTableRecords([$assignment1])
+        ->assertCanNotSeeTableRecords([$assignment2]);
 });
 
 test('can filter assignments by classroom', function () {
@@ -222,27 +228,9 @@ test('can filter assignments by classroom', function () {
     ]);
 
     Livewire::test(TeacherSubjectAssignmentResource\Pages\ListTeacherSubjectAssignments::class)
-        ->set('classroomFilter', $classroom1->id)
+        ->filterTable('classroom_id', $classroom1->id)
         ->assertCanSeeTableRecords([$assignment1])
         ->assertCanNotSeeTableRecords([$assignment2]);
-});
-
-test('can clear classroom filter', function () {
-    $classroom = Classroom::factory()->create(['name' => 'SS1']);
-
-    $assignment = TeacherSubjectAssignment::create([
-        'teacher_id' => $this->teacher->id,
-        'subject_id' => $this->subject->id,
-        'classroom_id' => $classroom->id,
-        'session_id' => $this->session->id,
-        'term_id' => $this->term->id,
-        'status' => 'approved',
-    ]);
-
-    Livewire::test(TeacherSubjectAssignmentResource\Pages\ListTeacherSubjectAssignments::class)
-        ->set('classroomFilter', $classroom->id)
-        ->call('updateClassroomFilter', null)
-        ->assertSet('classroomFilter', null);
 });
 
 test('table displays correct columns', function () {

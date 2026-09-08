@@ -11,7 +11,20 @@ class CreateSubmissionWindow extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['updated_by'] = auth()->id();
+        $exists = \App\Models\SubmissionWindow::where('session_id', $data['session_id'])
+            ->where('term_id', $data['term_id'])
+            ->where('week_number', $data['week_number'])
+            ->exists();
+
+        if ($exists) {
+            \Filament\Notifications\Notification::make()
+                ->title('Duplicate Submission Window')
+                ->body("A submission window for Week {$data['week_number']} in the selected session and term already exists.")
+                ->danger()
+                ->send();
+            $this->halt();
+        }
+
         return $data;
     }
 

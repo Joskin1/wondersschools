@@ -66,7 +66,10 @@ class LessonNoteResource extends Resource
                                 ->dehydrated(false),
 
                             Select::make('week_number')
-                                ->options(array_combine(range(1, 12), range(1, 12)))
+                                ->options(array_combine(
+                                    range(1, config('academic.weeks_per_term')),
+                                    range(1, config('academic.weeks_per_term'))
+                                ))
                                 ->disabled()
                                 ->dehydrated(false),
 
@@ -142,13 +145,22 @@ class LessonNoteResource extends Resource
 
                 Tables\Filters\SelectFilter::make('week_number')
                     ->label('Week')
-                    ->options(array_combine(range(1, 12), range(1, 12))),
+                    ->options(array_combine(
+                        range(1, config('academic.weeks_per_term')),
+                        range(1, config('academic.weeks_per_term'))
+                    )),
             ])
             ->actions([
                 ViewAction::make(),
-                Action::make('download')
-                    ->label('Download')
+                Action::make('download_pdf')
+                    ->label('Download PDF')
                     ->icon('heroicon-o-arrow-down-tray')
+                    ->color('primary')
+                    ->url(fn (LessonNote $record) => route('student.lesson-note.pdf', $record))
+                    ->openUrlInNewTab(),
+                Action::make('download')
+                    ->label('Download Original')
+                    ->icon('heroicon-o-document-arrow-down')
                     ->url(fn (LessonNote $record) => $record->latestVersion?->getDownloadUrl())
                     ->openUrlInNewTab()
                     ->visible(fn (LessonNote $record) => $record->latestVersion?->isFile() && $record->latestVersion?->file_path !== null),

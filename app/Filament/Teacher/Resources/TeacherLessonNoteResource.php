@@ -5,14 +5,14 @@ namespace App\Filament\Teacher\Resources;
 use App\Filament\Teacher\Resources\TeacherLessonNoteResource\Pages;
 use App\Jobs\ProcessLessonNoteUpload;
 use App\Models\LessonNote;
-use App\Models\Session;
-use App\Models\SubmissionWindow;
 use App\Services\LessonNoteCache;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ViewField;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Notifications\Notification;
@@ -23,15 +23,23 @@ use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
+
 class TeacherLessonNoteResource extends Resource
 {
     protected static ?string $model = LessonNote::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-arrow-up';
+    protected static ?string $slug = 'lesson-notes';
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-arrow-up';
+
+    protected static string|\UnitEnum|null $navigationGroup = 'Lessons';
 
     protected static ?string $navigationLabel = 'My Lesson Notes';
 
     protected static ?string $modelLabel = 'Lesson Note';
+
+    protected static ?int $navigationSort = 1;
+
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
@@ -45,9 +53,6 @@ class TeacherLessonNoteResource extends Resource
         $cache = app(LessonNoteCache::class);
         $teacherId = auth()->id();
         $assignments = $cache->getTeacherAssignments($teacherId);
-
-        $activeSession = Session::active()->first();
-        $activeTerm = $activeSession?->activeTerm;
 
         return $schema
             ->components([
@@ -79,21 +84,33 @@ class TeacherLessonNoteResource extends Resource
 
                             Select::make('week_number')
                                 ->label('Week')
-                                ->options(function () use ($activeSession, $activeTerm) {
-                                    if (!$activeSession || !$activeTerm) {
-                                        return [];
-                                    }
-
-                                    return SubmissionWindow::where('session_id', $activeSession->id)
-                                        ->where('term_id', $activeTerm->id)
-                                        ->currentlyOpen()
-                                        ->pluck('week_number')
-                                        ->mapWithKeys(fn ($w) => [$w => "Week {$w}"])
-                                        ->toArray();
-                                })
+                                ->options(array_combine(
+                                    range(1, config('academic.weeks_per_term')),
+                                    array_map(fn ($week) => "Week {$week}", range(1, config('academic.weeks_per_term')))
+                                ))
                                 ->required()
-                                ->helperText('Only weeks with open submission windows are shown'),
+                                ->helperText('Select any week in the 14-week term.'),
                         ]),
+                    ]),
+
+                Section::make('Learning Objectives')
+                    ->description('At the end of the lesson, students should be able to:')
+                    ->schema([
+                        Repeater::make('learning_objectives')
+                            ->label('')
+                            ->schema([
+                                TextInput::make('objective')
+                                    ->label('Objective')
+                                    ->placeholder('Enter a learning objective…')
+                                    ->required(),
+                            ])
+                            ->addActionLabel('Add Objective')
+                            ->defaultItems(0)
+                            ->reorderable()
+                            ->reorderableWithButtons()
+                            ->deletable()
+                            ->columnSpanFull()
+                            ->helperText('These objectives can be reused in your corresponding Lesson Plan.'),
                     ]),
 
                 Section::make('Lesson Note Content')
@@ -239,7 +256,10 @@ class TeacherLessonNoteResource extends Resource
 
                 Tables\Filters\SelectFilter::make('week_number')
                     ->label('Week')
-                    ->options(array_combine(range(1, 12), range(1, 12))),
+                    ->options(array_combine(
+                        range(1, config('academic.weeks_per_term')),
+                        range(1, config('academic.weeks_per_term'))
+                    )),
             ])
             ->actions([
                 Action::make('reupload')

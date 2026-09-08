@@ -37,7 +37,7 @@ class TeacherSubjectAssignmentResource extends Resource
 
     protected static ?string $navigationLabel = 'Subject Teachers';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {
@@ -64,7 +64,19 @@ class TeacherSubjectAssignmentResource extends Resource
 
                 Select::make('classroom_ids')
                     ->label('Classes')
-                    ->options(Classroom::active()->ordered()->pluck('name', 'id'))
+                    ->options(function () {
+                        $classrooms = Classroom::active()->ordered()->with('classGroup')->get();
+                        $hasGroups = $classrooms->contains(fn ($c) => $c->class_group_id !== null);
+                        if ($hasGroups) {
+                            $grouped = [];
+                            foreach ($classrooms as $classroom) {
+                                $groupName = $classroom->classGroup?->name ?? 'Ungrouped Classes';
+                                $grouped[$groupName][$classroom->id] = $classroom->name;
+                            }
+                            return $grouped;
+                        }
+                        return $classrooms->pluck('name', 'id');
+                    })
                     ->multiple()
                     ->required()
                     ->searchable()
@@ -74,7 +86,19 @@ class TeacherSubjectAssignmentResource extends Resource
 
                 Select::make('classroom_id')
                     ->label('Class')
-                    ->options(Classroom::active()->ordered()->pluck('name', 'id'))
+                    ->options(function () {
+                        $classrooms = Classroom::active()->ordered()->with('classGroup')->get();
+                        $hasGroups = $classrooms->contains(fn ($c) => $c->class_group_id !== null);
+                        if ($hasGroups) {
+                            $grouped = [];
+                            foreach ($classrooms as $classroom) {
+                                $groupName = $classroom->classGroup?->name ?? 'Ungrouped Classes';
+                                $grouped[$groupName][$classroom->id] = $classroom->name;
+                            }
+                            return $grouped;
+                        }
+                        return $classrooms->pluck('name', 'id');
+                    })
                     ->required()
                     ->searchable()
                     ->preload()
@@ -148,6 +172,13 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->badge()
                     ->color('info'),
 
+                TextColumn::make('classroom.classGroup.name')
+                    ->label('Class Group')
+                    ->badge()
+                    ->color('gray')
+                    ->sortable()
+                    ->toggleable(),
+
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -188,18 +219,31 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('status')
-                    ->label('Status')
-                    ->options([
-                        'approved' => 'Approved',
-                        'pending' => 'Pending Approval',
-                        'rejected' => 'Rejected',
-                    ])
-                    ->placeholder('All Statuses'),
+                SelectFilter::make('class_group_id')
+                    ->label('Class Group')
+                    ->options(fn () => \App\Models\ClassGroup::active()->ordered()->pluck('name', 'id'))
+                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data) {
+                        if (filled($data['value'])) {
+                            $query->whereHas('classroom', fn ($q) => $q->where('class_group_id', (int) $data['value']));
+                        }
+                    })
+                    ->placeholder('All Class Groups'),
 
                 SelectFilter::make('classroom_id')
                     ->label('Class')
-                    ->options(Classroom::ordered()->pluck('name', 'id'))
+                    ->options(function () {
+                        $classrooms = Classroom::active()->ordered()->with('classGroup')->get();
+                        $hasGroups = $classrooms->contains(fn ($c) => $c->class_group_id !== null);
+                        if ($hasGroups) {
+                            $grouped = [];
+                            foreach ($classrooms as $classroom) {
+                                $groupName = $classroom->classGroup?->name ?? 'Ungrouped Classes';
+                                $grouped[$groupName][$classroom->id] = $classroom->name;
+                            }
+                            return $grouped;
+                        }
+                        return $classrooms->pluck('name', 'id');
+                    })
                     ->searchable()
                     ->preload()
                     ->placeholder('All Classes'),
@@ -230,6 +274,7 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->placeholder('All Terms'),
             ])
             ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->deferFilters(false)
             ->persistFiltersInSession()
             ->actions([
                 Action::make('approve')

@@ -29,7 +29,7 @@ class LessonNoteResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Lesson Notes';
+    protected static string|\UnitEnum|null $navigationGroup = 'Lessons';
 
     protected static ?string $navigationLabel = 'Admin Review';
 
@@ -39,9 +39,10 @@ class LessonNoteResource extends Resource
     {
         return $schema
             ->components([
-                Section::make('Lesson Note Details')
+                // ── SUBMISSION CONTEXT ───────────────────────────────────────────
+                Section::make('Submission Details')
                     ->schema([
-                        Grid::make(2)->schema([
+                        Grid::make(4)->schema([
                             Select::make('teacher_id')
                                 ->relationship('teacher', 'name')
                                 ->required()
@@ -61,14 +62,28 @@ class LessonNoteResource extends Resource
                                 ->dehydrated(false),
 
                             Select::make('week_number')
-                                ->options(array_combine(range(1, 12), range(1, 12)))
+                                ->label('Week')
+                                ->options(array_combine(
+                                    range(1, config('academic.weeks_per_term')),
+                                    range(1, config('academic.weeks_per_term'))
+                                ))
                                 ->required()
+                                ->disabled()
+                                ->dehydrated(false),
+
+                            Select::make('session_id')
+                                ->relationship('session', 'name')
+                                ->disabled()
+                                ->dehydrated(false),
+
+                            Select::make('term_id')
+                                ->relationship('term', 'name')
                                 ->disabled()
                                 ->dehydrated(false),
 
                             Select::make('status')
                                 ->options([
-                                    'pending' => 'Pending',
+                                    'pending'  => 'Pending',
                                     'approved' => 'Approved',
                                     'rejected' => 'Rejected',
                                 ])
@@ -77,15 +92,27 @@ class LessonNoteResource extends Resource
                                 ->dehydrated(false),
 
                             Textarea::make('latestVersion.admin_comment')
-                                ->label('Admin Comment')
-                                ->rows(3)
+                                ->label('Admin Feedback')
+                                ->rows(2)
                                 ->disabled()
-                                ->visible(fn ($record) => $record->latestVersion?->admin_comment !== null)
-                                ->helperText('Feedback provided to the teacher'),
+                                ->visible(fn ($record) => $record?->latestVersion?->admin_comment !== null)
+                                ->helperText('Feedback provided to the teacher')
+                                ->columnSpanFull(),
                         ]),
                     ]),
 
-                Section::make('Uploaded File')
+                // ── PART 1: LESSON PLAN ──────────────────────────────────────────
+                Section::make('Part 1 — Lesson Plan')
+                    ->description('Review the teacher\'s lesson plan before viewing the lesson note.')
+                    ->schema([
+                        ViewField::make('lesson_plan_review')
+                            ->view('filament.components.lesson-plan-review')
+                            ->columnSpanFull(),
+                    ]),
+
+                // ── PART 2: LESSON NOTE ──────────────────────────────────────────
+                Section::make('Part 2 — Lesson Note')
+                    ->description('Review the submitted lesson note.')
                     ->schema([
                         ViewField::make('file_preview')
                             ->view('filament.components.lesson-note-preview')
@@ -93,6 +120,7 @@ class LessonNoteResource extends Resource
                     ]),
             ]);
     }
+
 
     public static function table(Table $table): Table
     {
@@ -182,7 +210,10 @@ class LessonNoteResource extends Resource
 
                 Tables\Filters\SelectFilter::make('week_number')
                     ->label('Week')
-                    ->options(array_combine(range(1, 12), range(1, 12)))
+                    ->options(array_combine(
+                        range(1, config('academic.weeks_per_term')),
+                        range(1, config('academic.weeks_per_term'))
+                    ))
                     ->multiple(),
 
                 Tables\Filters\SelectFilter::make('status')

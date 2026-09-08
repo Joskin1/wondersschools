@@ -14,6 +14,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 
 class ClassroomResource extends Resource
@@ -26,7 +27,7 @@ class ClassroomResource extends Resource
 
     protected static ?string $navigationLabel = 'Classrooms';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {
@@ -37,6 +38,14 @@ class ClassroomResource extends Resource
                     ->maxLength(255)
                     ->unique(ignoreRecord: true)
                     ->placeholder('e.g., JSS1, SS2'),
+
+                Select::make('class_group_id')
+                    ->label('Class Group')
+                    ->relationship('classGroup', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Select a class group / category (optional)')
+                    ->helperText('Category or stage this classroom belongs to (e.g., Primary, JSS, SSS).'),
 
                 TextInput::make('class_order')
                     ->label('Promotion Order')
@@ -69,6 +78,14 @@ class ClassroomResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
+
+                TextColumn::make('classGroup.name')
+                    ->label('Group')
+                    ->badge()
+                    ->color('gray')
+                    ->sortable()
+                    ->searchable()
+                    ->placeholder('None'),
 
                 TextColumn::make('class_order')
                     ->label('Order')
@@ -104,6 +121,10 @@ class ClassroomResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('class_group_id')
+                    ->relationship('classGroup', 'name')
+                    ->label('Class Group'),
+
                 TernaryFilter::make('is_active')
                     ->label('Active Status'),
             ])

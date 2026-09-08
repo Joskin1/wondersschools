@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('classroom_id')->constrained('classrooms')->onDelete('cascade');
             $table->foreignId('session_id')->constrained('academic_sessions')->onDelete('cascade');
             $table->foreignId('term_id')->constrained('terms')->onDelete('cascade');
-            $table->unsignedTinyInteger('week_number'); // 1-12
+            $table->unsignedTinyInteger('week_number'); // 1-14
             $table->unsignedBigInteger('latest_version_id')->nullable(); // Foreign key added in separate migration
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamps();

@@ -99,7 +99,10 @@ class StudentAssignmentResource extends Resource
                     
                 Tables\Filters\SelectFilter::make('week_number')
                     ->label('Week')
-                    ->options(array_combine(range(1, 12), array_map(fn ($w) => "Week {$w}", range(1, 12)))),
+                    ->options(array_combine(
+                        range(1, config('academic.weeks_per_term')),
+                        array_map(fn ($week) => "Week {$week}", range(1, config('academic.weeks_per_term')))
+                    )),
             ])
             ->actions([
                 Tables\Actions\Action::make('take_quiz')

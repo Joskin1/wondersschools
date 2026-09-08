@@ -56,9 +56,6 @@ beforeEach(function () {
         'session_id' => $this->session->id,
         'term_id' => $this->term->id,
         'week_number' => 1,
-        'opens_at' => now()->subDay(),
-        'closes_at' => now()->addDay(),
-        'is_open' => true,
     ]);
 });
 

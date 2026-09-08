@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('session_id')->constrained('academic_sessions')->onDelete('cascade');
             $table->foreignId('term_id')->constrained('terms')->onDelete('cascade');
-            $table->unsignedTinyInteger('week_number'); // 1-12
+            $table->unsignedTinyInteger('week_number'); // 1-14
             $table->timestamp('opens_at');
             $table->timestamp('closes_at');
             $table->boolean('is_open')->default(true);

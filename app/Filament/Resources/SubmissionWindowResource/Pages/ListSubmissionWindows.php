@@ -9,10 +9,4 @@ class ListSubmissionWindows extends ListRecords
 {
     protected static string $resource = SubmissionWindowResource::class;
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            \Filament\Actions\CreateAction::make(),
-        ];
-    }
 }

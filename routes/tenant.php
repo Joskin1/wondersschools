@@ -52,6 +52,11 @@ Route::get('/student/result-pdf', [\App\Http\Controllers\ResultPdfController::cl
     ->middleware('auth')
     ->name('student.result-pdf');
 
+// Student Lesson Note PDF Download (auth-protected)
+Route::get('/student/lesson-notes/{lessonNote}/pdf', [\App\Http\Controllers\LessonNotePdfController::class, 'download'])
+    ->middleware('auth')
+    ->name('student.lesson-note.pdf');
+
 // User Impersonation
 Route::get('/impersonate/{token}', function (string $token) {
     return Stancl\Tenancy\Features\UserImpersonation::makeResponse($token);

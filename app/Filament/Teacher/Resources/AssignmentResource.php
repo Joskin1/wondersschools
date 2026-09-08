@@ -72,7 +72,10 @@ class AssignmentResource extends Resource
 
                             Select::make('week_number')
                                 ->label('Week')
-                                ->options(array_combine(range(1, 12), array_map(fn($w) => "Week {$w}", range(1, 12))))
+                                ->options(array_combine(
+                                    range(1, config('academic.weeks_per_term')),
+                                    array_map(fn($week) => "Week {$week}", range(1, config('academic.weeks_per_term')))
+                                ))
                                 ->required(),
 
                             TextInput::make('title')
@@ -247,7 +250,10 @@ class AssignmentResource extends Resource
 
                 Tables\Filters\SelectFilter::make('week_number')
                     ->label('Week')
-                    ->options(array_combine(range(1, 12), array_map(fn($w) => "Week {$w}", range(1, 12)))),
+                    ->options(array_combine(
+                        range(1, config('academic.weeks_per_term')),
+                        array_map(fn($week) => "Week {$week}", range(1, config('academic.weeks_per_term')))
+                    )),
             ])
             ->actions([
                 Actions\ViewAction::make(),

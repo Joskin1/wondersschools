@@ -15,6 +15,7 @@ class LessonNoteVersion extends Model
         'lesson_note_id',
         'submission_type',
         'title',
+        'learning_objectives',
         'content',
         'images',
         'file_path',
@@ -38,6 +39,7 @@ class LessonNoteVersion extends Model
 
     protected $casts = [
         'file_size' => 'integer',
+        'learning_objectives' => 'array',
         'images' => 'array',
         'reviewed_at' => 'datetime',
         'is_duplicate' => 'boolean',

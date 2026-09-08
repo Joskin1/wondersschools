@@ -51,14 +51,11 @@ class WrittenLessonNoteTest extends TestCase
             'term_id' => $this->term->id,
         ]);
 
-        // Open submission window for week 1
+        // Register week 1 for the active term.
         SubmissionWindow::create([
             'session_id' => $this->session->id,
             'term_id' => $this->term->id,
             'week_number' => 1,
-            'opens_at' => now()->subDay(),
-            'closes_at' => now()->addDays(5),
-            'status' => 'open',
         ]);
 
         \Filament\Facades\Filament::setCurrentPanel(\Filament\Facades\Filament::getPanel('teacher'));
@@ -161,5 +158,4 @@ class WrittenLessonNoteTest extends TestCase
             ->assertSee('Some written content here');
     }
 }
-
 
