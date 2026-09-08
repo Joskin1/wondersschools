@@ -27,9 +27,6 @@ class LessonNoteOverview extends StatsOverviewWidget
             Stat::make('Needs Revision', $rejected)
                 ->icon('heroicon-o-x-circle')
                 ->color('danger'),
-            Stat::make('Weeks Available', config('academic.weeks_per_term'))
-                ->icon('heroicon-o-calendar-days')
-                ->color('primary'),
         ];
     }
 }

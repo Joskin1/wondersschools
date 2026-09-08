@@ -12,7 +12,6 @@ use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -112,7 +111,7 @@ class UserResource extends Resource
                 // Portal Access toggle — editable for teachers, disabled for sudo/admin records
                 Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Portal Access')
-                    ->disabled(fn (User $record): bool => in_array($record->role, ['sudo', 'admin']))
+                    ->disabled(fn (User $record): bool => $record->trashed() || in_array($record->role, ['sudo', 'admin']))
                     ->afterStateUpdated(function (User $record, bool $state) {
                         if ($state && $record->role === 'teacher') {
                             try {
@@ -172,8 +171,6 @@ class UserResource extends Resource
                     ->trueLabel('Active only')
                     ->falseLabel('Inactive only'),
 
-                Tables\Filters\TrashedFilter::make()
-                    ->visible($isSudo),
             ])
             ->actions([
                 // Send registration link — only for unregistered teachers
@@ -182,6 +179,7 @@ class UserResource extends Resource
                     ->icon('heroicon-o-envelope')
                     ->color('primary')
                     ->visible(fn (User $record) => 
+                        !$record->trashed() &&
                         $record->role === 'teacher' && 
                         !$record->isActive() &&
                         !$record->hasCompletedRegistration()
@@ -212,7 +210,7 @@ class UserResource extends Resource
 
                 // Impersonate — nobody can impersonate sudo
                 \STS\FilamentImpersonate\Actions\Impersonate::make()
-                    ->visible(fn (User $record) => !$record->isSudo())
+                    ->visible(fn (User $record) => !$record->trashed() && !$record->isSudo())
                     ->redirectTo(fn (User $record) => match ($record->role) {
                         'admin' => '/admin',
                         'student' => '/student',
@@ -222,15 +220,11 @@ class UserResource extends Resource
 
                 // Edit — non-sudo can only edit non-sudo users
                 EditAction::make()
-                    ->visible(fn (User $record) => !$record->isSudo() || $isSudo),
+                    ->visible(fn (User $record) => !$record->trashed() && (!$record->isSudo() || $isSudo)),
 
-                // Delete (soft) — only sudo can delete
-                DeleteAction::make()
-                    ->visible(fn () => $isSudo),
-
-                // Restore — only sudo can restore
+                // Deleted users can only be restored from search results.
                 RestoreAction::make()
-                    ->visible(fn () => $isSudo),
+                    ->visible(fn (User $record) => $isSudo && $record->trashed()),
             ])
             ->bulkActions([
                 // No bulk actions for security

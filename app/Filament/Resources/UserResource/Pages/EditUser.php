@@ -16,8 +16,8 @@ class EditUser extends EditRecord
         $isSudo = auth()->user()?->isSudo();
 
         return [
-            DeleteAction::make()->visible(fn () => $isSudo),
-            RestoreAction::make()->visible(fn () => $isSudo),
+            DeleteAction::make()->visible(fn () => $isSudo && ! $this->record->trashed()),
+            RestoreAction::make()->visible(fn () => $isSudo && $this->record->trashed()),
         ];
     }
 

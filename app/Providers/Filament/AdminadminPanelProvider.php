@@ -14,7 +14,6 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -55,9 +54,10 @@ class AdminadminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                \App\Filament\Widgets\SchoolOverviewWidget::class,
+                \App\Filament\Widgets\StudentsByClassWidget::class,
                 \App\Filament\Widgets\PendingLessonNotesWidget::class,
                 AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->navigationItems([
                 NavigationItem::make('Visit School Website')

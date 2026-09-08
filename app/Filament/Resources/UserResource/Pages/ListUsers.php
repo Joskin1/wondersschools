@@ -7,6 +7,8 @@ use Filament\Actions\Action;
 use App\Filament\Resources\UserResource;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 class ListUsers extends ListRecords
 {
@@ -31,24 +33,53 @@ class ListUsers extends ListRecords
         ];
     }
 
+    protected function getTableQuery(): Builder | Relation | null
+    {
+        $query = parent::getTableQuery();
+
+        if (! $query instanceof Builder) {
+            return $query;
+        }
+
+        $search = trim((string) $this->getTableSearch());
+
+        if ($search === '') {
+            return $query->whereNull('deleted_at');
+        }
+
+        return $query->where(function (Builder $query) use ($search): void {
+            $query
+                ->whereNull('deleted_at')
+                ->orWhere(function (Builder $query) use ($search): void {
+                    $query
+                        ->whereNotNull('deleted_at')
+                        ->where(function (Builder $query) use ($search): void {
+                            $query
+                                ->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                });
+        });
+    }
+
     public function getTabs(): array
     {
         $isSudo = auth()->user()?->isSudo();
 
         $tabs = [
             'all' => Tab::make('All')
-                ->badge(fn () => UserResource::getEloquentQuery()->count()),
+                ->badge(fn () => UserResource::getEloquentQuery()->whereNull('deleted_at')->count()),
             'students' => Tab::make('Students')
                 ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('role', 'student'))
-                ->badge(fn () => UserResource::getEloquentQuery()->where('role', 'student')->count())
+                ->badge(fn () => UserResource::getEloquentQuery()->whereNull('deleted_at')->where('role', 'student')->count())
                 ->badgeColor('info'),
             'teachers' => Tab::make('Teachers')
                 ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('role', 'teacher'))
-                ->badge(fn () => UserResource::getEloquentQuery()->where('role', 'teacher')->count())
+                ->badge(fn () => UserResource::getEloquentQuery()->whereNull('deleted_at')->where('role', 'teacher')->count())
                 ->badgeColor('success'),
             'admins' => Tab::make('Admins')
                 ->modifyQueryUsing(fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('role', 'admin'))
-                ->badge(fn () => UserResource::getEloquentQuery()->where('role', 'admin')->count())
+                ->badge(fn () => UserResource::getEloquentQuery()->whereNull('deleted_at')->where('role', 'admin')->count())
                 ->badgeColor('warning'),
         ];
 
