@@ -49,13 +49,10 @@ class TeacherPanelProvider extends PanelProvider
             ->databaseNotifications()
             ->navigationGroups([
                 NavigationGroup::make('Lessons')
-                    ->icon('heroicon-o-book-open')
                     ->collapsed(false),
                 NavigationGroup::make('Results')
-                    ->icon('heroicon-o-calculator')
                     ->collapsed(false),
                 NavigationGroup::make('Academic Management')
-                    ->icon('heroicon-o-academic-cap')
                     ->collapsed(false),
             ])
             ->discoverResources(in: app_path('Filament/Teacher/Resources'), for: 'App\\Filament\\Teacher\\Resources')
