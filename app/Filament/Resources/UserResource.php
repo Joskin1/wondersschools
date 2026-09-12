@@ -12,6 +12,7 @@ use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Actions\RestoreAction;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -236,9 +237,40 @@ class UserResource extends Resource
                         default => '/teacher',
                     }),
 
-                // Edit — non-sudo can only edit non-sudo users
+                ViewAction::make(),
+
+                // Change role — admins and sudo can change user role between teacher and admin
+                Action::make('change_role')
+                    ->label('Change Role')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->visible(fn (User $record) => !$record->trashed() && !$record->isSudo())
+                    ->form([
+                        Select::make('role')
+                            ->label('New Role')
+                            ->options(
+                                $isSudo
+                                    ? ['teacher' => 'Teacher', 'admin' => 'Admin', 'sudo' => 'Sudo']
+                                    : ['teacher' => 'Teacher', 'admin' => 'Admin']
+                            )
+                            ->default(fn (User $record) => $record->role)
+                            ->required(),
+                    ])
+                    ->requiresConfirmation()
+                    ->modalHeading('Change User Role')
+                    ->modalDescription(fn (User $record) => "Change role for {$record->name} ({$record->email})")
+                    ->action(function (User $record, array $data) {
+                        $record->update(['role' => $data['role']]);
+                        Notification::make()
+                            ->title('Role Updated')
+                            ->body("{$record->name} is now a " . ucfirst($data['role']) . ".")
+                            ->success()
+                            ->send();
+                    }),
+
+                // Edit — only sudo can edit personal user data
                 EditAction::make()
-                    ->visible(fn (User $record) => !$record->trashed() && (!$record->isSudo() || $isSudo)),
+                    ->visible(fn (User $record) => $isSudo && !$record->trashed()),
 
                 // Deleted users can only be restored from search results.
                 RestoreAction::make()
@@ -248,6 +280,11 @@ class UserResource extends Resource
                 // No bulk actions for security
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->isSudo() ?? false;
     }
 
     public static function getRelations(): array
@@ -262,6 +299,7 @@ class UserResource extends Resource
         return [
             'index' => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
+            'view' => Pages\ViewUser::route('/{record}'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }

@@ -416,6 +416,25 @@ class TeacherLessonPlanResource extends Resource
                 ViewAction::make(),
                 EditAction::make()
                     ->visible(fn (LessonPlan $record) => in_array($record->status, ['draft', 'rejected'])),
+                Action::make('submit_for_review')
+                    ->label('Submit for Review')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Submit Lesson Plan for Admin Review?')
+                    ->modalDescription('Once submitted, you will not be able to edit this lesson plan unless it is rejected.')
+                    ->visible(fn (LessonPlan $record) => in_array($record->status, ['draft', 'rejected']))
+                    ->action(function (LessonPlan $record) {
+                        $record->update(['status' => 'pending']);
+
+                        app(LessonSubmissionService::class)->checkAndNotifyIfComplete($record);
+
+                        Notification::make()
+                            ->title('Lesson Plan Submitted')
+                            ->body('Your lesson plan has been submitted for admin review.')
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->defaultSort('created_at', 'desc');
     }
