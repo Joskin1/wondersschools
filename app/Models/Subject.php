@@ -7,10 +7,34 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Subject extends Model
 {
     use HasFactory, SoftDeletes;
+
+    /**
+     * Auto-generate a subject code from the name if not provided.
+     * Prevents NOT NULL violation on the code column.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Subject $subject) {
+            if (empty($subject->code)) {
+                $baseCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $subject->name), 0, 10));
+                if (empty($baseCode)) {
+                    $baseCode = 'SUBJ';
+                }
+                $code = $baseCode;
+                $suffix = 1;
+                while (static::withTrashed()->where('code', $code)->exists()) {
+                    $code = substr($baseCode, 0, 7) . $suffix;
+                    $suffix++;
+                }
+                $subject->code = $code;
+            }
+        });
+    }
 
     protected $fillable = [
         'name',

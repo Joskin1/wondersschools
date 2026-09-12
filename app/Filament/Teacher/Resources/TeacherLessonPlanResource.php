@@ -166,10 +166,11 @@ class TeacherLessonPlanResource extends Resource
                                 TextInput::make('name')
                                     ->label('Material Name')
                                     ->required()
+                                    ->maxLength(255)
                                     ->placeholder('e.g. Mathematics Textbook for JSS 2'),
                             ])
                             ->createOptionUsing(function (array $data) {
-                                return ReferenceMaterial::firstOrCreate(['name' => $data['name']])->id;
+                                return ReferenceMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
                             })
                             ->helperText('Select existing materials or type to create a new one.')
                             ->columnSpanFull(),
@@ -191,10 +192,11 @@ class TeacherLessonPlanResource extends Resource
                                 TextInput::make('name')
                                     ->label('Material Name')
                                     ->required()
+                                    ->maxLength(255)
                                     ->placeholder('e.g. Whiteboard, Projector, Charts'),
                             ])
                             ->createOptionUsing(function (array $data) {
-                                return InstructionalMaterial::firstOrCreate(['name' => $data['name']])->id;
+                                return InstructionalMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
                             })
                             ->helperText('Select existing materials or type to create a new one.')
                             ->columnSpanFull(),
@@ -246,10 +248,11 @@ class TeacherLessonPlanResource extends Resource
                                 TextInput::make('name')
                                     ->label('Method Name')
                                     ->required()
+                                    ->maxLength(255)
                                     ->placeholder('e.g. Discussion Method, Group Work'),
                             ])
                             ->createOptionUsing(function (array $data) {
-                                return TeachingMethod::firstOrCreate(['name' => $data['name']])->id;
+                                return TeachingMethod::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
                             })
                             ->helperText('Select existing methods or create a new one.')
                             ->columnSpanFull(),

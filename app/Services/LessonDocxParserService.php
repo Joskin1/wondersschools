@@ -134,7 +134,7 @@ class LessonDocxParserService
         if (!empty($parsed['reference_materials'])) {
             $refIds = collect($parsed['reference_materials'])
                 ->filter()
-                ->map(fn ($name) => ReferenceMaterial::firstOrCreate(['name' => trim($name)])->id)
+                ->map(fn ($name) => ReferenceMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit(trim($name), 252)])->id)
                 ->toArray();
             $plan->referenceMaterials()->sync($refIds);
         }
@@ -142,7 +142,7 @@ class LessonDocxParserService
         if (!empty($parsed['instructional_materials'])) {
             $instIds = collect($parsed['instructional_materials'])
                 ->filter()
-                ->map(fn ($name) => InstructionalMaterial::firstOrCreate(['name' => trim($name)])->id)
+                ->map(fn ($name) => InstructionalMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit(trim($name), 252)])->id)
                 ->toArray();
             $plan->instructionalMaterials()->sync($instIds);
         }
@@ -150,7 +150,7 @@ class LessonDocxParserService
         if (!empty($parsed['teaching_methods'])) {
             $methodIds = collect($parsed['teaching_methods'])
                 ->filter()
-                ->map(fn ($name) => TeachingMethod::firstOrCreate(['name' => trim($name)])->id)
+                ->map(fn ($name) => TeachingMethod::firstOrCreate(['name' => \Illuminate\Support\Str::limit(trim($name), 252)])->id)
                 ->toArray();
             $plan->teachingMethods()->sync($methodIds);
         }
