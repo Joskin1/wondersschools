@@ -90,6 +90,24 @@ class UserResource extends Resource
 
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('avatar')
+                    ->label('')
+                    ->circular()
+                    ->getStateUsing(function (User $record): string {
+                        $avatarPath = null;
+                        if ($record->role === 'student' && $record->student) {
+                            $avatarPath = $record->student->profile_picture;
+                        } elseif ($record->role === 'teacher' && $record->teacher) {
+                            $avatarPath = $record->teacher->profile_picture;
+                        }
+                        if ($avatarPath) {
+                            return \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($avatarPath);
+                        }
+                        return 'https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&background=6366f1&color=fff&size=40';
+                    })
+                    ->size(40)
+                    ->grow(false),
+
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable(),

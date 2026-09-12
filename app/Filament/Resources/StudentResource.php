@@ -13,6 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -70,6 +71,14 @@ class StudentResource extends Resource
     {
         return $table
             ->columns([
+                ImageColumn::make('profile_picture')
+                    ->label('')
+                    ->circular()
+                    ->disk(config('filesystems.upload_disk', 'public'))
+                    ->defaultImageUrl(fn (Student $record): string => 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name) . '&background=6366f1&color=fff&size=40')
+                    ->size(40)
+                    ->grow(false),
+
                 TextColumn::make('full_name')
                     ->searchable()
                     ->sortable()
