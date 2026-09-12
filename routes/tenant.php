@@ -62,6 +62,15 @@ Route::get('/student/lesson-notes/{lessonNote}/lesson-plan.pdf', [\App\Http\Cont
     ->middleware('auth')
     ->name('student.lesson-plan.pdf');
 
+// Lesson Template Downloads (auth-protected)
+Route::get('/teacher/templates/lesson-plan', [\App\Http\Controllers\LessonTemplateController::class, 'lessonPlanTemplate'])
+    ->middleware('auth')
+    ->name('teacher.template.lesson-plan');
+
+Route::get('/teacher/templates/lesson-note', [\App\Http\Controllers\LessonTemplateController::class, 'lessonNoteTemplate'])
+    ->middleware('auth')
+    ->name('teacher.template.lesson-note');
+
 // User Impersonation
 Route::get('/impersonate/{token}', function (string $token) {
     return Stancl\Tenancy\Features\UserImpersonation::makeResponse($token);

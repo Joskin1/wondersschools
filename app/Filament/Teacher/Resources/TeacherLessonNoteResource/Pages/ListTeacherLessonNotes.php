@@ -13,7 +13,14 @@ class ListTeacherLessonNotes extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()->label('Upload Lesson Note'),
+            Actions\Action::make('download_template')
+                ->label('Download Template')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(route('teacher.template.lesson-note'))
+                ->openUrlInNewTab(),
+
+            Actions\CreateAction::make()->label('Submit Lesson Note'),
         ];
     }
 }

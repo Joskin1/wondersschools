@@ -8,9 +8,13 @@ use App\Models\LessonNote;
 use App\Models\Session;
 use App\Models\TeacherSubjectAssignment;
 use App\Models\ClassTeacherAssignment;
+use App\Services\LessonDocxParserService;
 use App\Services\LessonNoteCache;
+use App\Services\LessonSubmissionService;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Storage;
 
 class CreateTeacherLessonNote extends CreateRecord
 {
@@ -19,10 +23,23 @@ class CreateTeacherLessonNote extends CreateRecord
     protected ?string $heading = 'Submit Lesson Note';
 
     private ?string $uploadedFilePath = null;
+    private ?string $templateFilePath = null;
     private string $submissionType = 'file';
     private ?string $writtenTitle = null;
     private ?string $writtenContent = null;
     private ?array $writtenImages = null;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('download_template')
+                ->label('Download Template')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(route('teacher.template.lesson-note'))
+                ->openUrlInNewTab(),
+        ];
+    }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
@@ -88,27 +105,58 @@ class CreateTeacherLessonNote extends CreateRecord
 
         // Store form submission payloads (not direct columns on lesson_notes table)
         $this->submissionType = $data['submission_type'] ?? 'file';
-        $this->uploadedFilePath = $data['file'] ?? null;
-        $this->writtenTitle = $data['title'] ?? null;
-        $this->writtenContent = $data['content'] ?? null;
-        $this->writtenImages = $data['images'] ?? null;
 
-        if (isset($data['learning_objectives'])) {
+        if ($this->submissionType === 'template') {
+            $templateFile = $data['template_file'] ?? null;
+            if (!$templateFile) {
+                Notification::make()
+                    ->title('Template file required')
+                    ->danger()
+                    ->send();
+                $this->halt();
+            }
+
+            $fullPath = Storage::disk('public')->path($templateFile);
+            try {
+                $parsed = app(LessonDocxParserService::class)->parseLessonNote($fullPath);
+            } catch (\Throwable $e) {
+                Notification::make()
+                    ->title('Failed to read template')
+                    ->body($e->getMessage())
+                    ->danger()
+                    ->send();
+                $this->halt();
+            }
+
+            $this->writtenTitle = $parsed['title'] ?: 'Lesson Note';
+            $this->writtenContent = $parsed['content'] ?: '<p>No content provided in template.</p>';
+            if (!empty($parsed['learning_objectives'])) {
+                $data['learning_objectives'] = $parsed['learning_objectives'];
+            }
+            $this->templateFilePath = $templateFile;
+        } else {
+            $this->uploadedFilePath = $data['file'] ?? null;
+            $this->writtenTitle = $data['title'] ?? null;
+            $this->writtenContent = $data['content'] ?? null;
+            $this->writtenImages = $data['images'] ?? null;
+        }
+
+        if (isset($data['learning_objectives']) && is_array($data['learning_objectives'])) {
             $data['learning_objectives'] = collect($data['learning_objectives'])
-                ->pluck('objective')
+                ->map(fn ($obj) => is_array($obj) ? ($obj['objective'] ?? '') : $obj)
                 ->filter()
                 ->values()
                 ->toArray();
         }
 
-        unset($data['submission_type'], $data['file'], $data['title'], $data['content'], $data['images']);
+        unset($data['submission_type'], $data['file'], $data['template_file'], $data['title'], $data['content'], $data['images']);
 
         return $data;
     }
 
     protected function afterCreate(): void
     {
-        if ($this->submissionType === 'written') {
+        if ($this->submissionType === 'written' || $this->submissionType === 'template') {
             $version = \App\Models\LessonNoteVersion::create([
                 'lesson_note_id' => $this->record->id,
                 'submission_type' => 'written',
@@ -127,6 +175,10 @@ class CreateTeacherLessonNote extends CreateRecord
             $this->record->update([
                 'latest_version_id' => $version->id,
             ]);
+
+            if (!empty($this->templateFilePath)) {
+                Storage::disk('public')->delete($this->templateFilePath);
+            }
         } elseif ($this->uploadedFilePath) {
             $fileName = basename($this->uploadedFilePath);
 
@@ -139,7 +191,7 @@ class CreateTeacherLessonNote extends CreateRecord
         }
 
         // Check if paired lesson plan is ready and notify admins if complete
-        app(\App\Services\LessonSubmissionService::class)->checkAndNotifyIfComplete($this->record);
+        app(LessonSubmissionService::class)->checkAndNotifyIfComplete($this->record);
     }
 
     protected function getRedirectUrl(): string
@@ -149,8 +201,10 @@ class CreateTeacherLessonNote extends CreateRecord
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return $this->submissionType === 'written'
-            ? 'Written lesson note submitted successfully.'
-            : 'Lesson note uploaded successfully. It is now being processed.';
+        return match ($this->submissionType) {
+            'template' => 'Lesson note uploaded from template and processed successfully.',
+            'written' => 'Written lesson note submitted successfully.',
+            default => 'Lesson note uploaded successfully. It is now being processed.',
+        };
     }
 }
