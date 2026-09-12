@@ -11,13 +11,13 @@ class SystemLogs extends Page
 {
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-command-line';
 
-    protected static string | \UnitEnum | null $navigationGroup = 'System Management';
+    protected static string | \UnitEnum | null $navigationGroup = 'System';
 
     protected static ?string $navigationLabel = 'System Logs';
 
     protected static ?string $title = 'System Logs';
 
-    protected static ?int $navigationSort = 99;
+    protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.pages.system-logs';
 

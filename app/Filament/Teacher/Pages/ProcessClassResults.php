@@ -22,7 +22,7 @@ class ProcessClassResults extends Page
 
     protected static ?string $navigationLabel = 'Process Class Results';
 
-    protected static ?int $navigationSort = 15;
+    protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.teacher.pages.process-class-results';
 

@@ -9,6 +9,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
@@ -46,6 +47,17 @@ class TeacherPanelProvider extends PanelProvider
                 'primary' => $branding['color'],
             ])
             ->databaseNotifications()
+            ->navigationGroups([
+                NavigationGroup::make('Lessons')
+                    ->icon('heroicon-o-book-open')
+                    ->collapsed(false),
+                NavigationGroup::make('Results')
+                    ->icon('heroicon-o-calculator')
+                    ->collapsed(false),
+                NavigationGroup::make('Academic Management')
+                    ->icon('heroicon-o-academic-cap')
+                    ->collapsed(false),
+            ])
             ->discoverResources(in: app_path('Filament/Teacher/Resources'), for: 'App\\Filament\\Teacher\\Resources')
             ->discoverPages(in: app_path('Filament/Teacher/Pages'), for: 'App\\Filament\\Teacher\\Pages')
             ->pages([

@@ -28,7 +28,7 @@ class SubjectRequests extends Page implements HasForms, HasTable
     use InteractsWithForms;
     use InteractsWithTable;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-academic-cap';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-hand-raised';
 
     protected static string | \UnitEnum | null $navigationGroup = 'Academic Management';
 
@@ -36,7 +36,7 @@ class SubjectRequests extends Page implements HasForms, HasTable
 
     protected static ?string $title = 'Subject & Class Selection';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.teacher.pages.subject-requests';
 

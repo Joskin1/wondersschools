@@ -22,6 +22,12 @@ class AcademicSessionResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-calendar';
 
+    protected static string | \UnitEnum | null $navigationGroup = 'Academic Management';
+
+    protected static ?string $navigationLabel = 'Academic Sessions';
+
+    protected static ?int $navigationSort = 1;
+
     public static function form(Schema $schema): Schema
     {
         return $schema

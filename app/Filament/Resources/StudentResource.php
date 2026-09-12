@@ -31,7 +31,7 @@ class StudentResource extends Resource
 
     protected static ?string $navigationLabel = 'Students';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 6;
 
     public static function form(Schema $schema): Schema
     {

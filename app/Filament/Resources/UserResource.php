@@ -239,12 +239,12 @@ class UserResource extends Resource
 
                 ViewAction::make(),
 
-                // Change role — admins and sudo can change user role between teacher and admin
+                // Change role — admins and sudo can change user role between teacher and admin (students cannot change role)
                 Action::make('change_role')
                     ->label('Change Role')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
-                    ->visible(fn (User $record) => !$record->trashed() && !$record->isSudo())
+                    ->visible(fn (User $record) => !$record->trashed() && !$record->isSudo() && $record->role !== 'student')
                     ->form([
                         Select::make('role')
                             ->label('New Role')

@@ -17,6 +17,12 @@ class Settings extends Page
 {
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
+    protected static string | \UnitEnum | null $navigationGroup = 'System';
+
+    protected static ?string $navigationLabel = 'School Settings';
+
+    protected static ?int $navigationSort = 1;
+
     protected string $view = 'filament.pages.settings';
 
     public ?array $data = [];

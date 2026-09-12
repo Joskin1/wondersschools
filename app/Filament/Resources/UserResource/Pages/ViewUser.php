@@ -25,12 +25,12 @@ class ViewUser extends ViewRecord
         $isSudo = $currentUser?->isSudo();
 
         return [
-            // Role change action — available to both admin and sudo
+            // Role change action — available to both admin and sudo for non-student users
             Action::make('change_role')
                 ->label('Change Role')
                 ->icon('heroicon-o-arrow-path')
                 ->color('warning')
-                ->visible(fn () => !$this->record->trashed() && !$this->record->isSudo())
+                ->visible(fn () => !$this->record->trashed() && !$this->record->isSudo() && $this->record->role !== 'student')
                 ->form([
                     \Filament\Forms\Components\Select::make('role')
                         ->label('New Role')

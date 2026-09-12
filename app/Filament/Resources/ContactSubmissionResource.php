@@ -27,7 +27,13 @@ class ContactSubmissionResource extends Resource
 {
     protected static ?string $model = ContactSubmission::class;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-envelope';
+
+    protected static string | \UnitEnum | null $navigationGroup = 'Website';
+
+    protected static ?string $navigationLabel = 'Contact Messages';
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

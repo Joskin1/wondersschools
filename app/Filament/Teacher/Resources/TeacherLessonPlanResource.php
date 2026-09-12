@@ -41,7 +41,7 @@ class TeacherLessonPlanResource extends Resource
 
     protected static ?string $modelLabel = 'Lesson Plan';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {

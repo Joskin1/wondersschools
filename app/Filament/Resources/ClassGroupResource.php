@@ -28,7 +28,7 @@ class ClassGroupResource extends Resource
 
     protected static ?string $navigationLabel = 'Class Groups';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {

@@ -24,6 +24,12 @@ class TermResource extends Resource
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-calendar-days';
 
+    protected static string | \UnitEnum | null $navigationGroup = 'Academic Management';
+
+    protected static ?string $navigationLabel = 'Terms';
+
+    protected static ?int $navigationSort = 2;
+
     public static function form(Schema $schema): Schema
     {
         return $schema
