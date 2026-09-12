@@ -16,6 +16,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Actions\Action;
@@ -153,6 +154,19 @@ class TeacherSubjectAssignmentResource extends Resource
     {
         return $table
             ->columns([
+                ImageColumn::make('teacher_avatar')
+                    ->label('')
+                    ->circular()
+                    ->getStateUsing(function (TeacherSubjectAssignment $record): string {
+                        $avatarPath = $record->teacher?->teacher?->profile_picture;
+                        if ($avatarPath) {
+                            return \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($avatarPath);
+                        }
+                        return 'https://ui-avatars.com/api/?name=' . urlencode($record->teacher?->name ?? '?') . '&background=6366f1&color=fff&size=40';
+                    })
+                    ->size(40)
+                    ->grow(false),
+
                 TextColumn::make('teacher.name')
                     ->label('Teacher')
                     ->searchable()

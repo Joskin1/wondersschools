@@ -118,6 +118,19 @@ class ClassTeacherAssignmentResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('teacher_avatar')
+                    ->label('')
+                    ->circular()
+                    ->getStateUsing(function (ClassTeacherAssignment $record): string {
+                        $avatarPath = $record->teacher?->teacher?->profile_picture;
+                        if ($avatarPath) {
+                            return \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($avatarPath);
+                        }
+                        return 'https://ui-avatars.com/api/?name=' . urlencode($record->teacher?->name ?? '?') . '&background=6366f1&color=fff&size=40';
+                    })
+                    ->size(40)
+                    ->grow(false),
+
                 Tables\Columns\TextColumn::make('teacher.name')
                     ->label('Teacher')
                     ->searchable()
