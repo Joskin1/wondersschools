@@ -9,6 +9,11 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: function () {
+            if (file_exists(base_path('routes/preview.php'))) {
+                require base_path('routes/preview.php');
+            }
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Prepend tenancy initialization to the web group so it runs for
