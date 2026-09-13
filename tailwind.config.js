@@ -8,6 +8,8 @@ export default {
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
+        './resources/views/partials/**/*.blade.php',
+        './resources/views/components/**/*.blade.php',
         './app/Filament/**/*.php',
         './resources/views/filament/**/*.blade.php',
         './vendor/filament/**/*.blade.php',
@@ -17,11 +19,21 @@ export default {
         extend: {
             fontFamily: {
                 sans: ['Inter', 'Montserrat', ...defaultTheme.fontFamily.sans],
+                serif: ['Fraunces', 'Playfair Display', 'Georgia', 'serif'],
             },
             maxWidth: {
                 '8xl': '1280px',
             },
             colors: {
+                ink: 'var(--ink)',
+                'ink-contrast': 'var(--ink-contrast)',
+                paper: 'var(--paper)',
+                accent: 'var(--accent)',
+                'accent-contrast': 'var(--accent-contrast)',
+                'accent-hover': 'var(--accent-hover)',
+                rule: 'var(--rule)',
+                support: 'var(--support)',
+                body: 'var(--body)',
                 'lime-green': '#D9EF60',
                 'dark-green': '#228B22',
                 'brand-red': '#D62828',
