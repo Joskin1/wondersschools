@@ -20,6 +20,22 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(prepend: [
             \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
         ]);
+
+        $middleware->redirectGuestsTo(function (\Illuminate\Http\Request $request): string {
+            if ($request->is('teacher*')) {
+                return '/teacher/login';
+            }
+
+            if ($request->is('student*')) {
+                return '/student/login';
+            }
+
+            if ($request->is('sudo*')) {
+                return '/sudo/login';
+            }
+
+            return '/admin/login';
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
