@@ -333,4 +333,93 @@ describe('Content isolation', function () {
 
         expect($result)->toBe('Default School Name');
     });
+
+    it('immediately invalidates cache on FrontendContent update via observer', function () {
+        $record = FrontendContent::create([
+            'key'   => 'hero_title',
+            'group' => 'home.hero',
+            'value' => 'Initial Title',
+        ]);
+
+        // Cold load -> cached
+        expect(FrontendLibrary::get('hero_title'))->toBe('Initial Title');
+
+        // Update record -> observer flushes cache
+        $record->update(['value' => 'Updated Academic Title']);
+
+        // Next read returns new value immediately
+        expect(FrontendLibrary::get('hero_title'))->toBe('Updated Academic Title');
+    });
+
+    it('immediately invalidates cache on Setting update via observer', function () {
+        Setting::create([
+            'key'   => 'school_phone',
+            'value' => '+234 800 000 0000',
+        ]);
+
+        expect(FrontendLibrary::getSetting('school_phone'))->toBe('+234 800 000 0000');
+
+        Setting::where('key', 'school_phone')->update(['value' => '+234 811 111 1111']);
+        // Trigger model saved event for observer
+        Setting::where('key', 'school_phone')->first()->touch();
+
+        expect(FrontendLibrary::getSetting('school_phone'))->toBe('+234 811 111 1111');
+    });
+
+    it('decodes JSON repeaters via getJson with fallback', function () {
+        FrontendContent::create([
+            'key'   => 'features_items',
+            'value' => json_encode([['title' => 'Pillar 1', 'desc' => 'Description 1']]),
+        ]);
+
+        $items = FrontendLibrary::getJson('features_items', []);
+        expect($items)->toHaveCount(1)
+            ->and($items[0]['title'])->toBe('Pillar 1');
+
+        $emptyFallback = FrontendLibrary::getJson('missing_items', [['title' => 'Default']]);
+        expect($emptyFallback)->toHaveCount(1)
+            ->and($emptyFallback[0]['title'])->toBe('Default');
+    });
+
+    it('seeds all defaults via TenantFrontendContentSeeder', function () {
+        $seeder = new \Database\Seeders\TenantFrontendContentSeeder();
+        $seeder->run();
+
+        expect(Setting::count())->toBe(17);
+        expect(FrontendContent::count())->toBe(108);
+        expect(FrontendLibrary::get('hero_badge'))->toBe('2026 / 2027 Academic Session');
+        expect(FrontendLibrary::get('hero_title'))->toBe('Nurturing Intellectual Depth & Moral Leadership');
+        expect(FrontendLibrary::get('about_body'))->toContain('Founded in 2001');
+        expect(FrontendLibrary::getSetting('school_short_name'))->toBe('AC');
+    });
+
+    it('executes at most 2 queries for all frontend contents and settings on page load', function () {
+        (new \Database\Seeders\TenantFrontendContentSeeder())->run();
+
+        // Flush in-memory and persistent cache to simulate cold request
+        FrontendLibrary::flush();
+
+        \Illuminate\Support\Facades\DB::enableQueryLog();
+
+        get('/');
+
+        $queries = collect(\Illuminate\Support\Facades\DB::getQueryLog());
+        $contentQueries = $queries->filter(function ($query) {
+            return str_contains($query['query'], 'frontend_contents') || str_contains($query['query'], 'settings');
+        });
+
+        // Exactly 1 query for frontend_contents and 1 query for settings
+        expect($contentQueries->count())->toBeLessThanOrEqual(2);
+
+        // Warm request -> 0 queries for frontend_contents and settings
+        \Illuminate\Support\Facades\DB::flushQueryLog();
+        get('/');
+        $warmQueries = collect(\Illuminate\Support\Facades\DB::getQueryLog());
+        $warmContentQueries = $warmQueries->filter(function ($query) {
+            return str_contains($query['query'], 'frontend_contents') || str_contains($query['query'], 'settings');
+        });
+
+        expect($warmContentQueries->count())->toBe(0);
+    });
 });
+

@@ -1,4 +1,46 @@
-@if(!empty($school['facilities']))
+@php
+    $facilitiesEyebrow = \App\Services\FrontendLibrary::get('facilities_eyebrow', 'CAMPUS INFRASTRUCTURE');
+    $facilitiesHeading = \App\Services\FrontendLibrary::get('facilities_heading', 'Purpose-Built Learning & Living Environments');
+    $facilitiesItems = \App\Services\FrontendLibrary::getJson('facilities_items', [
+        [
+            'title'    => 'Advanced Science Laboratories',
+            'category' => 'ACADEMIC',
+            'desc'     => 'Dedicated biology, chemistry, and physics laboratories fully fitted with modern glassware, fume hoods, and analytical instrumentation.',
+            'image'    => 'https://placehold.co/1000x800/0B2545/FAF8F4?text=Science+Laboratories+Apex+Crown',
+        ],
+        [
+            'title'    => 'Digital ICT & AI Suites',
+            'category' => 'TECHNOLOGY',
+            'desc'     => 'High-speed gigabit workstations, interactive smartboards, and robotics hardware kits.',
+            'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Digital+ICT+Suites',
+        ],
+        [
+            'title'    => 'E-Library & Study Commons',
+            'category' => 'RESEARCH',
+            'desc'     => 'Over 15,000 bound volumes complemented by digital JSTOR and Britannica research terminals.',
+            'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=E-Library+Commons',
+        ],
+        [
+            'title'    => 'Sports Arena & Athletic Complex',
+            'category' => 'ATHLETICS',
+            'desc'     => 'Standard football pitch, outdoor basketball and tennis courts, and all-weather track.',
+            'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Sports+Complex',
+        ],
+        [
+            'title'    => 'Residential Hostels & Dining',
+            'category' => 'RESIDENTIAL',
+            'desc'     => 'Air-conditioned boarding houses with 24/7 power backup, resident house parents, and dining hall.',
+            'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Boarding+Hostels',
+        ],
+        [
+            'title'    => 'Acoustic Auditorium & Music Studio',
+            'category' => 'CULTURE',
+            'desc'     => '800-seat theater hall for assemblies, orchestral recitals, and graduation valedictions.',
+            'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Auditorium+Studio',
+        ],
+    ]);
+@endphp
+
 <!-- ====== 05 — Campus Infrastructure (Uneven Editorial Gallery) ====== -->
 <section id="facilities" class="py-24 md:py-32 bg-paper"
          x-data="{ 
@@ -19,7 +61,7 @@
     <div class="mb-16">
       <div class="flex items-center gap-3">
         <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent">
-          {{ $school['facilities']['number'] ?? '05' }} &mdash; {{ $school['facilities']['eyebrow'] ?? 'INFRASTRUCTURE' }}
+          05 &mdash; {{ $facilitiesEyebrow }}
         </span>
         <span class="flex-grow h-[1px] bg-rule"></span>
       </div>
@@ -28,20 +70,23 @@
     <!-- Section Heading -->
     <div class="mb-16 max-w-2xl">
       <h2 class="font-serif font-semibold text-ink tracking-tight leading-[1.15]" style="font-size: clamp(2rem, 4vw, 3rem);">
-        {{ $school['facilities']['heading'] }}
+        {{ $facilitiesHeading }}
       </h2>
     </div>
 
     <!-- Deliberately Uneven Grid: First item 2x2 (col-span-8 row-span-2), remaining 1x1 (col-span-4) -->
     <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
       
-      @foreach($school['facilities']['items'] as $index => $fac)
-        <div @click="openZoom('{{ addslashes($fac['title']) }}', '{{ addslashes($fac['desc']) }}', '{{ $fac['image'] }}')"
-             class="{{ $fac['span'] ?? 'col-span-12 md:col-span-4' }} relative group cursor-pointer border border-rule bg-white p-2 overflow-hidden">
+      @foreach($facilitiesItems as $index => $fac)
+        @php
+            $spanClass = $index === 0 ? 'col-span-12 md:col-span-8 md:row-span-2' : 'col-span-12 md:col-span-4';
+        @endphp
+        <div @click="openZoom('{{ addslashes($fac['title'] ?? '') }}', '{{ addslashes($fac['desc'] ?? '') }}', '{{ $fac['image'] ?? '' }}')"
+             class="{{ $spanClass }} relative group cursor-pointer border border-rule bg-white p-2 overflow-hidden">
           
           <div class="relative w-full {{ $index === 0 ? 'h-[360px] sm:h-[480px] md:h-full min-h-[380px]' : 'h-[240px]' }} overflow-hidden">
-            <img src="{{ $fac['image'] }}"
-                 alt="{{ $fac['title'] }}"
+            <img src="{{ $fac['image'] ?? '' }}"
+                 alt="{{ $fac['title'] ?? 'Campus Facility' }}"
                  loading="lazy"
                  class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" />
             <div class="absolute inset-0 bg-ink/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-6 text-center">
@@ -57,10 +102,10 @@
               {{ $fac['category'] ?? 'CAMPUS' }}
             </span>
             <h3 class="font-serif text-base sm:text-lg font-semibold text-ink">
-              {{ $fac['title'] }}
+              {{ $fac['title'] ?? '' }}
             </h3>
             <p class="text-xs text-body/80 font-sans line-clamp-2 leading-relaxed">
-              {{ $fac['desc'] }}
+              {{ $fac['desc'] ?? '' }}
             </p>
           </div>
 
@@ -99,4 +144,3 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
   <div class="h-[1px] w-full bg-rule"></div>
 </div>
-@endif

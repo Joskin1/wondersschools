@@ -1,18 +1,76 @@
+@php
+    $schoolName = \App\Services\FrontendLibrary::getSetting('school_name', 'Apex Crown College');
+    $schoolShortName = \App\Services\FrontendLibrary::getSetting('school_short_name', 'AC');
+    $schoolEstablished = \App\Services\FrontendLibrary::getSetting('school_established', '2001');
+    $schoolPhone = \App\Services\FrontendLibrary::getSetting('school_phone', '+234 800 123 4567');
+    $schoolEmail = \App\Services\FrontendLibrary::getSetting('school_email', 'admissions@apexcrown.edu.ng');
+    $schoolAddress = \App\Services\FrontendLibrary::getSetting('school_address', 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria');
+    $schoolLogo = \App\Services\FrontendLibrary::getSetting('school_logo');
+
+    $primaryColor = \App\Services\FrontendLibrary::getSetting('primary_color', '#0B2545');
+    $secondaryColor = \App\Services\FrontendLibrary::getSetting('secondary_color', '#1e293b');
+    $accentColor = \App\Services\FrontendLibrary::getSetting('accent_color', '#C8A951');
+
+    $studentPortalUrl = \App\Services\FrontendLibrary::getSetting('student_portal_url', '/student/login');
+    $staffPortalUrl = \App\Services\FrontendLibrary::getSetting('staff_portal_url', '/teacher/login');
+    $adminPortalUrl = \App\Services\FrontendLibrary::getSetting('admin_portal_url', '/admin/login');
+
+    $topbarBadge = \App\Services\FrontendLibrary::get('topbar_badge', 'Admissions 2026/2027');
+    $topbarText = \App\Services\FrontendLibrary::get('topbar_text', 'Entrance examination and transfer enrollment now open.');
+
+    $navAboutLabel = \App\Services\FrontendLibrary::get('nav_about_label', 'About');
+    $navFeaturesLabel = \App\Services\FrontendLibrary::get('nav_features_label', 'Distinctives');
+    $navAcademicsLabel = \App\Services\FrontendLibrary::get('nav_academics_label', 'Curriculum');
+    $navStatsLabel = \App\Services\FrontendLibrary::get('nav_stats_label', 'Outcomes');
+    $navFacilitiesLabel = \App\Services\FrontendLibrary::get('nav_facilities_label', 'Campus');
+    $navNewsLabel = \App\Services\FrontendLibrary::get('nav_news_label', 'Bulletin');
+    $navContactLabel = \App\Services\FrontendLibrary::get('nav_contact_label', 'Contact');
+
+    $navPortalsLabel = \App\Services\FrontendLibrary::get('nav_portals_label', 'Portals');
+    $portalStudentLabel = \App\Services\FrontendLibrary::get('portal_student_label', 'Student Portal');
+    $portalStaffLabel = \App\Services\FrontendLibrary::get('portal_staff_label', 'Faculty Portal');
+    $portalAdminLabel = \App\Services\FrontendLibrary::get('portal_admin_label', 'Administration');
+
+    $portalStudentLabelShort = \App\Services\FrontendLibrary::get('portal_student_label_short', 'Student');
+    $portalStaffLabelShort = \App\Services\FrontendLibrary::get('portal_staff_label_short', 'Faculty');
+    $portalAdminLabelShort = \App\Services\FrontendLibrary::get('portal_admin_label_short', 'Admin');
+
+    $headerCtaText = \App\Services\FrontendLibrary::get('header_cta_text', 'Admissions');
+    $headerCtaLink = \App\Services\FrontendLibrary::get('header_cta_link', '#admissions');
+
+    $footerEditionLabel = \App\Services\FrontendLibrary::get('footer_edition_label', 'Prospectus Edition');
+    $footerDescription = \App\Services\FrontendLibrary::get('footer_description', 'An accredited British-Nigerian secondary school dedicated to academic brilliance, moral character, and global leadership.');
+    $footerAccreditations = \App\Services\FrontendLibrary::get('footer_accreditations', 'Accredited by WAEC, NECO & Cambridge International.');
+    $footerCol2Heading = \App\Services\FrontendLibrary::get('footer_col2_heading', 'Prospectus');
+    $footerCol3Heading = \App\Services\FrontendLibrary::get('footer_col3_heading', 'Registry & Portals');
+    $footerCol4Heading = \App\Services\FrontendLibrary::get('footer_col4_heading', 'Campus Registry');
+    $footerExamLinkLabel = \App\Services\FrontendLibrary::get('footer_exam_link_label', 'Entrance Examination Dates');
+    $footerExamLinkUrl = \App\Services\FrontendLibrary::get('footer_exam_link_url', '#admissions');
+    $footerTuitionLinkLabel = \App\Services\FrontendLibrary::get('footer_tuition_link_label', 'Tuition & Scholarships');
+    $footerTuitionLinkUrl = \App\Services\FrontendLibrary::get('footer_tuition_link_url', '#admissions');
+    $footerPrivacyLabel = \App\Services\FrontendLibrary::get('footer_privacy_label', 'Privacy Policy');
+    $footerPrivacyLink = \App\Services\FrontendLibrary::get('footer_privacy_link', '#about');
+    $footerTermsLabel = \App\Services\FrontendLibrary::get('footer_terms_label', 'Terms of Enrollment');
+    $footerTermsLink = \App\Services\FrontendLibrary::get('footer_terms_link', '#about');
+    $footerDirectionsLabel = \App\Services\FrontendLibrary::get('footer_directions_label', 'Campus Directions');
+    $footerDirectionsLink = \App\Services\FrontendLibrary::get('footer_directions_link', '#contact');
+
+    $faviconUrl = $schoolLogo 
+        ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($schoolLogo) 
+        : asset('favicon.ico');
+    $logoUrl = $schoolLogo 
+        ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($schoolLogo) 
+        : null;
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? (($school['name'] ?? \App\Services\FrontendLibrary::getSetting('school_name', 'Apex Crown College')) . ' | Admissions Prospectus 2026/2027') }}</title>
-    <meta name="description" content="{{ $metaDescription ?? ('Official admissions prospectus of ' . ($school['name'] ?? \App\Services\FrontendLibrary::getSetting('school_name', 'Apex Crown College')) . '. A premier British-Nigerian secondary institution in Lagos.') }}">
+    <title>{{ $title ?? ($schoolName . ' | Admissions Prospectus 2026/2027') }}</title>
+    <meta name="description" content="{{ $metaDescription ?? ('Official admissions prospectus of ' . $schoolName . '. A premier British-Nigerian secondary institution in Lagos.') }}">
     
-    @php
-        $schoolLogo = \App\Services\FrontendLibrary::getSetting('school_logo');
-        $faviconUrl = $schoolLogo 
-            ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($schoolLogo) 
-            : asset('favicon.ico');
-    @endphp
     <link rel="icon" href="{{ $faviconUrl }}">
     <link rel="shortcut icon" href="{{ $faviconUrl }}">
 
@@ -25,11 +83,6 @@
 
     <style>
       :root {
-        @php
-          $primaryColor = \App\Services\FrontendLibrary::getSetting('primary_color', '#0B2545');
-          $secondaryColor = \App\Services\FrontendLibrary::getSetting('secondary_color', '#1e293b');
-          $accentColor = \App\Services\FrontendLibrary::getSetting('accent_color', '#C8A951');
-        @endphp
         /* Tenant identity — the only three admin-supplied colours */
         --ink:     {{ $primaryColor }};
         --support: {{ $secondaryColor }};
@@ -99,16 +152,20 @@
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-1">
           <div class="flex items-center gap-2">
             <span class="inline-block w-1.5 h-1.5 rounded-full bg-accent"></span>
-            <span class="tracking-wider uppercase font-semibold text-accent">Admissions 2026/2027</span>
-            <span class="text-white/80 hidden sm:inline">&mdash; Entrance examination and transfer enrollment now open.</span>
+            @if(!empty($topbarBadge))
+              <span class="tracking-wider uppercase font-semibold text-accent">{{ $topbarBadge }}</span>
+            @endif
+            @if(!empty($topbarText))
+              <span class="text-white/80 hidden sm:inline">&mdash; {{ $topbarText }}</span>
+            @endif
           </div>
           <div class="flex items-center gap-4 text-white/90">
-            @if(!empty($school['contact_phone'] ?? '+234 800 123 4567'))
-              <a href="tel:{{ $school['contact_phone'] ?? '+234 800 123 4567' }}" class="hover:text-accent transition">{{ $school['contact_phone'] ?? '+234 800 123 4567' }}</a>
+            @if(!empty($schoolPhone))
+              <a href="tel:{{ $schoolPhone }}" class="hover:text-accent transition">{{ $schoolPhone }}</a>
             @endif
-            @if(!empty($school['contact_email'] ?? 'admissions@apexcrown.edu.ng'))
+            @if(!empty($schoolEmail))
               <span class="text-white/30 hidden sm:inline">|</span>
-              <a href="mailto:{{ $school['contact_email'] ?? 'admissions@apexcrown.edu.ng' }}" class="hover:text-accent transition hidden sm:inline">{{ $school['contact_email'] ?? 'admissions@apexcrown.edu.ng' }}</a>
+              <a href="mailto:{{ $schoolEmail }}" class="hover:text-accent transition hidden sm:inline">{{ $schoolEmail }}</a>
             @endif
           </div>
         </div>
@@ -120,36 +177,32 @@
           
           <!-- Crest & School Name -->
           <a href="{{ route('home') }}" class="flex items-center gap-3.5 group">
-            @php
-              $logoUrl = $schoolLogo ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($schoolLogo) : null;
-              $shortName = $school['short_name'] ?? 'AC';
-            @endphp
             @if($logoUrl)
-              <img src="{{ $logoUrl }}" alt="{{ $school['name'] ?? 'Apex Crown College' }}" class="w-10 h-10 object-contain border border-ink p-0.5 bg-paper" />
+              <img src="{{ $logoUrl }}" alt="{{ $schoolName }}" class="w-10 h-10 object-contain border border-ink p-0.5 bg-paper" />
             @else
               <div class="w-10 h-10 border border-ink bg-ink text-accent flex items-center justify-center font-serif text-lg font-semibold tracking-wider">
-                {{ $shortName }}
+                {{ $schoolShortName }}
               </div>
             @endif
             <div>
               <span class="block font-serif text-lg sm:text-xl font-semibold tracking-tight text-ink leading-none">
-                {{ $school['name'] ?? 'Apex Crown College' }}
+                {{ $schoolName }}
               </span>
               <span class="block text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-accent mt-1 font-sans font-medium">
-                Lagos &bull; Est. {{ $school['established'] ?? '2001' }}
+                Lagos &bull; Est. {{ $schoolEstablished }}
               </span>
             </div>
           </a>
 
           <!-- Desktop Navigation Links -->
           <nav class="hidden lg:flex items-center gap-8 text-xs font-sans font-medium tracking-wider uppercase text-ink/80">
-            <a href="#about" class="hover:text-ink hover:underline underline-offset-8 transition">About</a>
-            <a href="#features" class="hover:text-ink hover:underline underline-offset-8 transition">Distinctives</a>
-            <a href="#academics" class="hover:text-ink hover:underline underline-offset-8 transition">Curriculum</a>
-            <a href="#stats" class="hover:text-ink hover:underline underline-offset-8 transition">Outcomes</a>
-            <a href="#facilities" class="hover:text-ink hover:underline underline-offset-8 transition">Campus</a>
-            <a href="#news" class="hover:text-ink hover:underline underline-offset-8 transition">Bulletin</a>
-            <a href="#contact" class="hover:text-ink hover:underline underline-offset-8 transition">Contact</a>
+            <a href="#about" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navAboutLabel }}</a>
+            <a href="#features" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navFeaturesLabel }}</a>
+            <a href="#academics" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navAcademicsLabel }}</a>
+            <a href="#stats" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navStatsLabel }}</a>
+            <a href="#facilities" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navFacilitiesLabel }}</a>
+            <a href="#news" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navNewsLabel }}</a>
+            <a href="#contact" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navContactLabel }}</a>
           </nav>
 
           <!-- Action Buttons -->
@@ -159,22 +212,24 @@
               <button @click="portalsOpen = !portalsOpen"
                       type="button"
                       class="px-4 py-2.5 text-xs font-sans uppercase tracking-wider font-semibold border border-ink/30 text-ink hover:border-ink transition flex items-center gap-1.5 rounded-none">
-                <span>Portals</span>
+                <span>{{ $navPortalsLabel }}</span>
                 <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
               </button>
               <div x-show="portalsOpen" x-cloak
                    class="absolute right-0 mt-1 w-48 bg-white border border-rule shadow-md py-1 z-50 rounded-none">
-                <a href="{{ \App\Services\FrontendLibrary::get('student_portal_url', '/student/login') }}" class="block px-4 py-2 text-xs font-sans text-ink hover:bg-paper transition">Student Portal</a>
-                <a href="{{ \App\Services\FrontendLibrary::get('staff_portal_url', '/teacher/login') }}" class="block px-4 py-2 text-xs font-sans text-ink hover:bg-paper transition">Faculty Portal</a>
-                <a href="/admin/login" class="block px-4 py-2 text-xs font-sans text-ink hover:bg-paper transition">Administration</a>
+                <a href="{{ $studentPortalUrl }}" class="block px-4 py-2 text-xs font-sans text-ink hover:bg-paper transition">{{ $portalStudentLabel }}</a>
+                <a href="{{ $staffPortalUrl }}" class="block px-4 py-2 text-xs font-sans text-ink hover:bg-paper transition">{{ $portalStaffLabel }}</a>
+                <a href="{{ $adminPortalUrl }}" class="block px-4 py-2 text-xs font-sans text-ink hover:bg-paper transition">{{ $portalAdminLabel }}</a>
               </div>
             </div>
 
             <!-- Primary CTA -->
-            <a href="#admissions"
-               class="px-6 py-2.5 text-xs font-sans uppercase tracking-widest font-semibold bg-accent text-[color:var(--accent-contrast)] hover:bg-accent-hover transition rounded-none">
-              Admissions
-            </a>
+            @if(!empty($headerCtaText))
+              <a href="{{ $headerCtaLink }}"
+                 class="px-6 py-2.5 text-xs font-sans uppercase tracking-widest font-semibold bg-accent text-[color:var(--accent-contrast)] hover:bg-accent-hover transition rounded-none">
+                {{ $headerCtaText }}
+              </a>
+            @endif
           </div>
 
           <!-- Mobile Menu Toggle -->
@@ -194,24 +249,32 @@
       <!-- Mobile Drawer -->
       <div x-show="mobileOpen" x-cloak
            class="lg:hidden bg-paper border-b border-rule px-6 py-6 space-y-4">
+        @if(!empty($topbarText))
+          <div class="text-[11px] text-body/80 border-b border-rule pb-3 flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0"></span>
+            <span>{{ $topbarText }}</span>
+          </div>
+        @endif
         <nav class="flex flex-col space-y-3 text-xs uppercase tracking-widest text-ink font-semibold">
-          <a @click="mobileOpen = false" href="#about" class="py-1">About</a>
-          <a @click="mobileOpen = false" href="#features" class="py-1">Distinctives</a>
-          <a @click="mobileOpen = false" href="#academics" class="py-1">Curriculum</a>
-          <a @click="mobileOpen = false" href="#stats" class="py-1">Outcomes</a>
-          <a @click="mobileOpen = false" href="#facilities" class="py-1">Campus</a>
-          <a @click="mobileOpen = false" href="#news" class="py-1">Bulletin</a>
-          <a @click="mobileOpen = false" href="#contact" class="py-1">Contact</a>
+          <a @click="mobileOpen = false" href="#about" class="py-1">{{ $navAboutLabel }}</a>
+          <a @click="mobileOpen = false" href="#features" class="py-1">{{ $navFeaturesLabel }}</a>
+          <a @click="mobileOpen = false" href="#academics" class="py-1">{{ $navAcademicsLabel }}</a>
+          <a @click="mobileOpen = false" href="#stats" class="py-1">{{ $navStatsLabel }}</a>
+          <a @click="mobileOpen = false" href="#facilities" class="py-1">{{ $navFacilitiesLabel }}</a>
+          <a @click="mobileOpen = false" href="#news" class="py-1">{{ $navNewsLabel }}</a>
+          <a @click="mobileOpen = false" href="#contact" class="py-1">{{ $navContactLabel }}</a>
         </nav>
         <div class="pt-4 border-t border-rule flex flex-col gap-2">
           <div class="grid grid-cols-3 gap-2 text-center text-[11px] uppercase tracking-wider font-semibold">
-            <a href="{{ \App\Services\FrontendLibrary::get('student_portal_url', '/student/login') }}" class="py-2 border border-rule text-ink">Student</a>
-            <a href="{{ \App\Services\FrontendLibrary::get('staff_portal_url', '/teacher/login') }}" class="py-2 border border-rule text-ink">Faculty</a>
-            <a href="/admin/login" class="py-2 border border-rule text-ink">Admin</a>
+            <a href="{{ $studentPortalUrl }}" class="py-2 border border-rule text-ink">{{ $portalStudentLabelShort }}</a>
+            <a href="{{ $staffPortalUrl }}" class="py-2 border border-rule text-ink">{{ $portalStaffLabelShort }}</a>
+            <a href="{{ $adminPortalUrl }}" class="py-2 border border-rule text-ink">{{ $portalAdminLabelShort }}</a>
           </div>
-          <a @click="mobileOpen = false" href="#admissions" class="w-full text-center py-3 bg-accent text-[color:var(--accent-contrast)] text-xs uppercase tracking-widest font-bold">
-            Apply for Admission
-          </a>
+          @if(!empty($headerCtaText))
+            <a @click="mobileOpen = false" href="{{ $headerCtaLink }}" class="w-full text-center py-3 bg-accent text-[color:var(--accent-contrast)] text-xs uppercase tracking-widest font-bold">
+              {{ $headerCtaText }}
+            </a>
+          @endif
         </div>
       </div>
     </header>
@@ -232,73 +295,79 @@
           <div class="lg:pr-8 lg:border-r border-white/10 space-y-4 pb-8 lg:pb-0">
             <div class="flex items-center gap-3">
               @if(!empty($logoUrl))
-                <img src="{{ $logoUrl }}" alt="{{ $school['name'] ?? 'Apex Crown College' }}" class="w-10 h-10 object-contain border border-accent p-0.5 bg-white/10" />
+                <img src="{{ $logoUrl }}" alt="{{ $schoolName }}" class="w-10 h-10 object-contain border border-accent p-0.5 bg-white/10" />
               @else
                 <div class="w-10 h-10 border border-accent bg-transparent text-accent flex items-center justify-center font-serif text-lg font-semibold tracking-wider">
-                  {{ $school['short_name'] ?? 'AC' }}
+                  {{ $schoolShortName }}
                 </div>
               @endif
               <div>
                 <span class="block font-serif text-base font-semibold tracking-tight text-[color:var(--ink-contrast)] leading-none">
-                  {{ $school['name'] ?? 'Apex Crown College' }}
+                  {{ $schoolName }}
                 </span>
                 <span class="block text-[10px] uppercase tracking-[0.2em] text-accent mt-1 font-sans">
-                  Prospectus Edition
+                  {{ $footerEditionLabel }}
                 </span>
               </div>
             </div>
 
             <p class="text-xs text-[color:var(--ink-contrast)]/70 font-sans leading-[1.7] max-w-xs">
-              {{ $school['footer']['description'] ?? 'An accredited British-Nigerian secondary school dedicated to academic brilliance, moral character, and global leadership.' }}
+              {{ $footerDescription }}
             </p>
 
-            <p class="text-[11px] text-accent font-sans">
-              {{ $school['footer']['accreditations'] ?? 'Accredited by WAEC, NECO & Cambridge International.' }}
-            </p>
+            @if(!empty($footerAccreditations))
+              <p class="text-[11px] text-accent font-sans">
+                {{ $footerAccreditations }}
+              </p>
+            @endif
           </div>
 
           <!-- Col 2: Prospectus Chapters -->
           <div class="lg:px-8 lg:border-r border-white/10 space-y-4 py-8 lg:py-0 border-t md:border-t-0 border-white/10">
             <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent block">
-              Prospectus
+              {{ $footerCol2Heading }}
             </span>
             <ul class="space-y-2.5 text-xs font-sans text-[color:var(--ink-contrast)]/80">
-              <li><a href="#about" class="hover:text-accent transition">01 &mdash; About the College</a></li>
-              <li><a href="#features" class="hover:text-accent transition">02 &mdash; Distinctives &amp; Mentorship</a></li>
-              <li><a href="#stats" class="hover:text-accent transition">03 &mdash; Examination Outcomes</a></li>
-              <li><a href="#academics" class="hover:text-accent transition">04 &mdash; Curriculum Tracks</a></li>
-              <li><a href="#facilities" class="hover:text-accent transition">05 &mdash; Campus Infrastructure</a></li>
+              <li><a href="#about" class="hover:text-accent transition">01 &mdash; {{ $navAboutLabel }}</a></li>
+              <li><a href="#features" class="hover:text-accent transition">02 &mdash; {{ $navFeaturesLabel }}</a></li>
+              <li><a href="#stats" class="hover:text-accent transition">03 &mdash; {{ $navStatsLabel }}</a></li>
+              <li><a href="#academics" class="hover:text-accent transition">04 &mdash; {{ $navAcademicsLabel }}</a></li>
+              <li><a href="#facilities" class="hover:text-accent transition">05 &mdash; {{ $navFacilitiesLabel }}</a></li>
             </ul>
           </div>
 
           <!-- Col 3: Admissions & Registry -->
           <div class="lg:px-8 lg:border-r border-white/10 space-y-4 py-8 lg:py-0 border-t md:border-t-0 border-white/10">
             <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent block">
-              Registry &amp; Portals
+              {{ $footerCol3Heading }}
             </span>
             <ul class="space-y-2.5 text-xs font-sans text-[color:var(--ink-contrast)]/80">
-              <li><a href="#admissions" class="hover:text-accent transition">Entrance Examination Dates</a></li>
-              <li><a href="#admissions" class="hover:text-accent transition">Tuition &amp; Scholarships</a></li>
-              <li><a href="{{ \App\Services\FrontendLibrary::get('student_portal_url', '/student/login') }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>Student Portal</a></li>
-              <li><a href="{{ \App\Services\FrontendLibrary::get('staff_portal_url', '/teacher/login') }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>Faculty Portal</a></li>
-              <li><a href="/admin/login" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>Administration</a></li>
+              <li><a href="{{ $footerExamLinkUrl }}" class="hover:text-accent transition">{{ $footerExamLinkLabel }}</a></li>
+              <li><a href="{{ $footerTuitionLinkUrl }}" class="hover:text-accent transition">{{ $footerTuitionLinkLabel }}</a></li>
+              <li><a href="{{ $studentPortalUrl }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>{{ $portalStudentLabel }}</a></li>
+              <li><a href="{{ $staffPortalUrl }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>{{ $portalStaffLabel }}</a></li>
+              <li><a href="{{ $adminPortalUrl }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>{{ $portalAdminLabel }}</a></li>
             </ul>
           </div>
 
           <!-- Col 4: Dispatch & Location -->
           <div class="lg:pl-8 space-y-4 pt-8 lg:pt-0 border-t md:border-t-0 border-white/10">
             <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent block">
-              Campus Registry
+              {{ $footerCol4Heading }}
             </span>
             <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans leading-relaxed">
-              {{ $school['location'] ?? 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria' }}
+              {{ $schoolAddress }}
             </p>
-            <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans">
-              Tel: {{ $school['contact_phone'] ?? '+234 800 123 4567' }}
-            </p>
-            <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans">
-              Email: {{ $school['contact_email'] ?? 'admissions@apexcrown.edu.ng' }}
-            </p>
+            @if(!empty($schoolPhone))
+              <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans">
+                Tel: {{ $schoolPhone }}
+              </p>
+            @endif
+            @if(!empty($schoolEmail))
+              <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans">
+                Email: {{ $schoolEmail }}
+              </p>
+            @endif
           </div>
 
         </div>
@@ -306,12 +375,12 @@
         <!-- Bottom Copyright & Legal Bar -->
         <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-sans text-[color:var(--ink-contrast)]/60">
           <div>
-            &copy; {{ date('Y') }} {{ $school['name'] ?? 'Apex Crown College' }}. All Rights Reserved.
+            &copy; {{ date('Y') }} {{ $schoolName }}. All Rights Reserved.
           </div>
           <div class="flex items-center gap-6">
-            <a href="#about" class="hover:text-[color:var(--ink-contrast)] transition">Privacy Policy</a>
-            <a href="#about" class="hover:text-[color:var(--ink-contrast)] transition">Terms of Enrollment</a>
-            <a href="#contact" class="hover:text-[color:var(--ink-contrast)] transition">Campus Directions</a>
+            <a href="{{ $footerPrivacyLink }}" class="hover:text-[color:var(--ink-contrast)] transition">{{ $footerPrivacyLabel }}</a>
+            <a href="{{ $footerTermsLink }}" class="hover:text-[color:var(--ink-contrast)] transition">{{ $footerTermsLabel }}</a>
+            <a href="{{ $footerDirectionsLink }}" class="hover:text-[color:var(--ink-contrast)] transition">{{ $footerDirectionsLabel }}</a>
           </div>
         </div>
 

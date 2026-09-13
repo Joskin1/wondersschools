@@ -181,6 +181,32 @@ describe('CSS variable injection in layout', function () {
             ->assertSee('--color-tenant-accent: #f4a261');
     });
 
+    it('cascades known primary_color and accent_color into :root tokens', function () {
+        Setting::create(['key' => 'primary_color', 'value' => '#0A3D2C']);
+        Setting::create(['key' => 'accent_color', 'value' => '#E85D04']);
+
+        get('/')
+            ->assertOk()
+            ->assertSee('--ink:     #0A3D2C;', false)
+            ->assertSee('--accent:  #E85D04;', false);
+    });
+
+    it('resolves dark ink-contrast when primary_color is bright yellow #FFFF00', function () {
+        Setting::create(['key' => 'primary_color', 'value' => '#FFFF00']);
+
+        get('/')
+            ->assertOk()
+            ->assertSee('--ink-contrast:    #0B2545;', false);
+    });
+
+    it('resolves white ink-contrast when primary_color is black #000000', function () {
+        Setting::create(['key' => 'primary_color', 'value' => '#000000']);
+
+        get('/')
+            ->assertOk()
+            ->assertSee('--ink-contrast:    #FFFFFF;', false);
+    });
+
     it('uses fallback colors when config values are not set', function () {
         // When config key has null value, config() returns null (not the default)
         // but the Blade template uses config('..', 'fallback') which returns null.

@@ -27,5 +27,7 @@ abstract class TestCase extends BaseTestCase
             InitializeTenancyByDomain::class,
             PreventAccessFromCentralDomains::class,
         ]);
+
+        \App\Services\FrontendLibrary::flush();
     }
 }
