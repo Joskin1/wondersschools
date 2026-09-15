@@ -58,6 +58,15 @@ class TeacherLessonPlanResource extends Resource
 
         return $schema
             ->components([
+                ViewField::make('draft_manager')
+                    ->view('filament.components.form-draft-manager')
+                    ->viewData([
+                        'resourceName' => 'Lesson Plan',
+                        'draftType' => 'lesson_plan',
+                    ])
+                    ->dehydrated(false)
+                    ->columnSpanFull(),
+
                 // ─────────────────────────────────────────────────────────────────
                 // 1. LESSON INFORMATION
                 // ─────────────────────────────────────────────────────────────────
@@ -93,6 +102,21 @@ class TeacherLessonPlanResource extends Resource
                                 ))
                                 ->required()
                                 ->helperText('Select any week in the 14-week term.'),
+                        ]),
+
+                        Grid::make(2)->schema([
+                            TextInput::make('topic')
+                                ->label('Topic')
+                                ->placeholder('e.g. Introduction to Photosynthesis')
+                                ->required()
+                                ->maxLength(255)
+                                ->helperText('Main topic for this lesson plan.'),
+
+                            TextInput::make('sub_topic')
+                                ->label('Sub-Topic (Optional)')
+                                ->placeholder('e.g. Light & Dark Reactions of Photosynthesis')
+                                ->maxLength(255)
+                                ->helperText('Specific sub-topic or focus area for this lesson.'),
                         ]),
 
                         Grid::make(2)->schema([
@@ -366,8 +390,11 @@ class TeacherLessonPlanResource extends Resource
                     ->sortable()
                     ->badge(),
 
-                Tables\Columns\TextColumn::make('title')
-                    ->label('Topic / Title')
+                Tables\Columns\TextColumn::make('topic')
+                    ->label('Topic')
+                    ->getStateUsing(fn ($record) => $record->topic ?: $record->title)
+                    ->description(fn ($record) => $record->sub_topic ? 'Sub: ' . $record->sub_topic : null)
+                    ->searchable(['topic', 'title', 'sub_topic'])
                     ->limit(40)
                     ->placeholder('—'),
 

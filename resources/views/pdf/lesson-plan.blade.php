@@ -70,7 +70,14 @@
         <tr><td class="label">Teacher:</td><td>{{ $plan->teacher?->name ?? '—' }}</td><td class="label">Duration:</td><td>{{ $plan->time ?: '—' }}</td></tr>
     </table>
 
-    <div class="title">{{ $plan->title ?: ($plan->subject?->name . ' Lesson Plan') }}</div>
+    <div class="title">
+        {{ $plan->topic ?: $plan->title ?: ($plan->subject?->name . ' Lesson Plan') }}
+        @if($plan->sub_topic)
+            <div style="font-size: 13px; font-weight: normal; color: #4b5563; margin-top: 4px;">
+                <strong>Sub-Topic:</strong> {{ $plan->sub_topic }}
+            </div>
+        @endif
+    </div>
 
     @if($objectives)
         <div class="section"><div class="heading">Learning Objectives</div><em>At the end of the lesson, students should be able to:</em><ol class="items">@foreach($objectives as $item)<li>{{ is_array($item) ? ($item['objective'] ?? '') : $item }}</li>@endforeach</ol></div>

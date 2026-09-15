@@ -41,6 +41,10 @@ class EditTeacherLessonPlan extends EditRecord
             $data['key_vocabulary'] = array_map('trim', explode(',', $data['key_vocabulary']));
         }
 
+        if (empty($data['topic']) && !empty($data['title'])) {
+            $data['topic'] = $data['title'];
+        }
+
         return $data;
     }
 
@@ -74,6 +78,12 @@ class EditTeacherLessonPlan extends EditRecord
         if (isset($data['key_vocabulary']) && is_array($data['key_vocabulary'])) {
             $data['key_vocabulary'] = implode(', ', $data['key_vocabulary']);
         }
+
+        if (isset($data['topic'])) {
+            $data['title'] = $data['topic'];
+        }
+
+        unset($data['draft_manager']);
 
         return $data;
     }

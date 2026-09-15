@@ -61,7 +61,7 @@ class EditTeacherLessonNote extends EditRecord
             ->toArray();
         $data['status'] = 'pending';
 
-        unset($data['submission_type'], $data['file'], $data['title'], $data['content'], $data['images']);
+        unset($data['submission_type'], $data['file'], $data['title'], $data['content'], $data['images'], $data['draft_manager']);
 
         return $data;
     }

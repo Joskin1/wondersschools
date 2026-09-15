@@ -22,6 +22,8 @@ class LessonPlan extends Model
         'week_number',
         'status',
         'title',
+        'topic',
+        'sub_topic',
         'time',
         'section',
         'learning_objectives',

@@ -73,7 +73,12 @@
     <article class="review-document">
         <header class="review-document__masthead">
             <p class="review-document__eyebrow">Lesson Plan</p>
-            <h1 class="review-document__title">{{ $plan->title ?: ($record?->subject?->name . ' Lesson Plan') }}</h1>
+            <h1 class="review-document__title">{{ $plan->topic ?: $plan->title ?: ($record?->subject?->name . ' Lesson Plan') }}</h1>
+            @if($plan->sub_topic)
+                <p class="review-document__intro" style="margin-top: 6px; font-style: normal; color: #4b5563;">
+                    <strong>Sub-Topic:</strong> {{ $plan->sub_topic }}
+                </p>
+            @endif
             <div class="review-document__meta">
                 <span><strong>Subject:</strong> {{ $record?->subject?->name }}</span>
                 <span><strong>Class:</strong> {{ $record?->classroom?->name }}</span>

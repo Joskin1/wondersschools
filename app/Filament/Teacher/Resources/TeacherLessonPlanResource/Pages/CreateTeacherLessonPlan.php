@@ -249,6 +249,12 @@ class CreateTeacherLessonPlan extends CreateRecord
             $data['key_vocabulary'] = implode(', ', $data['key_vocabulary']);
         }
 
+        if (isset($data['topic']) && !isset($data['title'])) {
+            $data['title'] = $data['topic'];
+        }
+
+        unset($data['draft_manager']);
+
         return $data;
     }
 

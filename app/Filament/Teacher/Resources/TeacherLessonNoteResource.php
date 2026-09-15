@@ -57,6 +57,15 @@ class TeacherLessonNoteResource extends Resource
 
         return $schema
             ->components([
+                ViewField::make('draft_manager')
+                    ->view('filament.components.form-draft-manager')
+                    ->viewData([
+                        'resourceName' => 'Lesson Note',
+                        'draftType' => 'lesson_note',
+                    ])
+                    ->dehydrated(false)
+                    ->columnSpanFull(),
+
                 Section::make('Class & Subject Selection')
                     ->description('Select the target classroom, subject, and week for this lesson note.')
                     ->schema([
