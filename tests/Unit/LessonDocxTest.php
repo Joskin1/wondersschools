@@ -138,4 +138,67 @@ class LessonDocxTest extends TestCase
         $this->assertStringContainsString('rigid outer cell wall', $parsed['content']);
         $this->assertStringContainsString('contain chloroplasts', $parsed['content']);
     }
+
+    public function test_can_parse_new_lesson_plan_template_with_topic_and_sub_topic_without_embedded_materials(): void
+    {
+        $phpWord = new PhpWord();
+        $section = $phpWord->addSection();
+
+        $section->addText('TOPIC', ['bold' => true]);
+        $section->addText('Cellular Respiration');
+
+        $section->addText('SUB-TOPIC', ['bold' => true]);
+        $section->addText('Aerobic vs Anaerobic Pathways');
+
+        $section->addText('TIME / DURATION', ['bold' => true]);
+        $section->addText('40 minutes');
+
+        $section->addText('SECTION / PERIOD', ['bold' => true]);
+        $section->addText('Period 1');
+
+        $section->addText('LEARNING OBJECTIVES', ['bold' => true]);
+        $section->addText('1. Understand ATP generation');
+
+        $section->addText('KEY VOCABULARY WORDS', ['bold' => true]);
+        $section->addText('ATP, glycolysis, mitochondria');
+
+        $section->addText('PRIOR KNOWLEDGE / BACKGROUND', ['bold' => true]);
+        $section->addText('Connected to prior cell anatomy class.');
+
+        $section->addText('CONTENT', ['bold' => true]);
+        $section->addText('Respiration releases cellular energy.');
+
+        $section->addText('PRESENTATION STEPS', ['bold' => true]);
+        $section->addText('1. Step 1 of presentation');
+
+        $section->addText('STRATEGIES AND ACTIVITIES', ['bold' => true]);
+        $section->addText('Group activity');
+
+        $section->addText('EVALUATION QUESTIONS', ['bold' => true]);
+        $section->addText('1. Where does glycolysis occur?');
+
+        $section->addText('CONCLUSION', ['bold' => true]);
+        $section->addText('Review ATP equations.');
+
+        $section->addText('ASSIGNMENT / HOMEWORK', ['bold' => true]);
+        $section->addText('Draw the mitochondria structure.');
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'test_lp_new_') . '.docx';
+        $writer = IOFactory::createWriter($phpWord, 'Word2007');
+        $writer->save($tempPath);
+
+        $parser = new LessonDocxParserService();
+        $parsed = $parser->parseLessonPlan($tempPath);
+
+        @unlink($tempPath);
+
+        $this->assertEquals('Cellular Respiration', $parsed['topic']);
+        $this->assertEquals('Cellular Respiration', $parsed['title']);
+        $this->assertEquals('Aerobic vs Anaerobic Pathways', $parsed['sub_topic']);
+        $this->assertEquals('40 minutes', $parsed['time']);
+        $this->assertEquals(['Understand ATP generation'], $parsed['learning_objectives']);
+        $this->assertEmpty($parsed['reference_materials']);
+        $this->assertEmpty($parsed['instructional_materials']);
+        $this->assertEmpty($parsed['teaching_methods']);
+    }
 }

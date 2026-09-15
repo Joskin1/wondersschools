@@ -279,4 +279,43 @@ class LessonPlanWorkflowTest extends TestCase
             ->test(\App\Filament\Teacher\Resources\TeacherLessonPlanResource\Pages\CreateTeacherLessonPlan::class)
             ->assertSuccessful();
     }
+
+    public function test_teacher_can_create_and_edit_lesson_plan_with_topic_subtopic_and_reusable_materials(): void
+    {
+        $refMaterial = ReferenceMaterial::create(['name' => 'Physics for Senior Secondary 1']);
+        $instMaterial = InstructionalMaterial::create(['name' => 'Prism and Light Source']);
+        $teachMethod = TeachingMethod::create(['name' => 'Experimental Demonstration']);
+
+        $plan = LessonPlan::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 5,
+            'status' => 'draft',
+            'topic' => 'Optics and Light Refraction',
+            'sub_topic' => 'Total Internal Reflection',
+            'learning_objectives' => ['Define critical angle', 'State Snell\'s law'],
+        ]);
+
+        $plan->referenceMaterials()->sync([$refMaterial->id]);
+        $plan->instructionalMaterials()->sync([$instMaterial->id]);
+        $plan->teachingMethods()->sync([$teachMethod->id]);
+
+        $this->assertEquals('Optics and Light Refraction', $plan->topic);
+        $this->assertEquals('Total Internal Reflection', $plan->sub_topic);
+        $this->assertCount(1, $plan->referenceMaterials);
+        $this->assertCount(1, $plan->instructionalMaterials);
+        $this->assertCount(1, $plan->teachingMethods);
+
+        // Edit reusable material name
+        $refMaterial->update(['name' => 'Advanced Physics for SS 1']);
+        $this->assertEquals('Advanced Physics for SS 1', $plan->fresh()->referenceMaterials->first()->name);
+
+        // Add a second reusable teaching method
+        $secondMethod = TeachingMethod::create(['name' => 'Group Discussion']);
+        $plan->teachingMethods()->sync([$teachMethod->id, $secondMethod->id]);
+        $this->assertCount(2, $plan->fresh()->teachingMethods);
+    }
 }

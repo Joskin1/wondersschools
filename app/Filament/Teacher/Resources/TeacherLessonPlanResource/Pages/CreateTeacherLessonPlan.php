@@ -3,16 +3,20 @@
 namespace App\Filament\Teacher\Resources\TeacherLessonPlanResource\Pages;
 
 use App\Filament\Teacher\Resources\TeacherLessonPlanResource;
+use App\Models\InstructionalMaterial;
 use App\Models\LessonNote;
 use App\Models\LessonPlan;
+use App\Models\ReferenceMaterial;
 use App\Models\Session;
 use App\Models\TeacherSubjectAssignment;
+use App\Models\TeachingMethod;
 use App\Services\LessonDocxParserService;
 use App\Services\LessonNoteCache;
 use App\Services\LessonSubmissionService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Storage;
@@ -38,7 +42,7 @@ class CreateTeacherLessonPlan extends CreateRecord
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('primary')
                 ->modalHeading('Upload Lesson Plan (.docx)')
-                ->modalDescription('Upload your filled Lesson_Plan_Template.docx. The system will automatically extract and structure all 13 sections.')
+                ->modalDescription('Upload your completed Lesson_Plan_Template.docx. Select or add your materials and teaching methods below.')
                 ->form([
                     Select::make('subject_id')
                         ->label('Subject')
@@ -80,6 +84,81 @@ class CreateTeacherLessonPlan extends CreateRecord
                         ->maxSize(10240)
                         ->required()
                         ->helperText('Only .docx template files are supported.')
+                        ->columnSpanFull(),
+
+                    Select::make('reference_materials')
+                        ->label('Reference Materials')
+                        ->options(fn () => ReferenceMaterial::pluck('name', 'id'))
+                        ->multiple()
+                        ->searchable()
+                        ->preload()
+                        ->createOptionForm([
+                            TextInput::make('name')
+                                ->label('Material Name')
+                                ->required()
+                                ->maxLength(255)
+                                ->placeholder('e.g. Mathematics Textbook for JSS 2'),
+                        ])
+                        ->createOptionUsing(function (array $data) {
+                            return ReferenceMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
+                        })
+                        ->editOptionForm([
+                            TextInput::make('name')
+                                ->label('Material Name')
+                                ->required()
+                                ->maxLength(255),
+                        ])
+                        ->helperText('Select or add reference materials.')
+                        ->columnSpanFull(),
+
+                    Select::make('instructional_materials')
+                        ->label('Instructional Materials')
+                        ->options(fn () => InstructionalMaterial::pluck('name', 'id'))
+                        ->multiple()
+                        ->searchable()
+                        ->preload()
+                        ->createOptionForm([
+                            TextInput::make('name')
+                                ->label('Material Name')
+                                ->required()
+                                ->maxLength(255)
+                                ->placeholder('e.g. Whiteboard, Projector, Charts'),
+                        ])
+                        ->createOptionUsing(function (array $data) {
+                            return InstructionalMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
+                        })
+                        ->editOptionForm([
+                            TextInput::make('name')
+                                ->label('Material Name')
+                                ->required()
+                                ->maxLength(255),
+                        ])
+                        ->helperText('Select or add instructional resources.')
+                        ->columnSpanFull(),
+
+                    Select::make('teaching_methods')
+                        ->label('Teaching Methods')
+                        ->options(fn () => TeachingMethod::pluck('name', 'id'))
+                        ->multiple()
+                        ->searchable()
+                        ->preload()
+                        ->createOptionForm([
+                            TextInput::make('name')
+                                ->label('Method Name')
+                                ->required()
+                                ->maxLength(255)
+                                ->placeholder('e.g. Discussion Method, Group Work'),
+                        ])
+                        ->createOptionUsing(function (array $data) {
+                            return TeachingMethod::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
+                        })
+                        ->editOptionForm([
+                            TextInput::make('name')
+                                ->label('Method Name')
+                                ->required()
+                                ->maxLength(255),
+                        ])
+                        ->helperText('Select or add teaching methods.')
                         ->columnSpanFull(),
                 ])
                 ->action(function (array $data) {
@@ -141,18 +220,21 @@ class CreateTeacherLessonPlan extends CreateRecord
                             sessionId: (int) $activeSession->id,
                             termId: (int) $activeTerm->id,
                             weekNumber: (int) $data['week_number'],
-                            filePath: $fullPath
+                            filePath: $fullPath,
+                            referenceMaterials: $data['reference_materials'] ?? [],
+                            instructionalMaterials: $data['instructional_materials'] ?? [],
+                            teachingMethods: $data['teaching_methods'] ?? []
                         );
 
                         Storage::disk('public')->delete($uploadedPath);
 
                         Notification::make()
                             ->title('Lesson Plan Created')
-                            ->body('Your lesson plan was extracted from the template and saved as draft.')
+                            ->body('Your lesson plan was extracted from the template and saved as draft. You can review or edit it below.')
                             ->success()
                             ->send();
 
-                        $this->redirect(TeacherLessonPlanResource::getUrl('view', ['record' => $plan]));
+                        $this->redirect(TeacherLessonPlanResource::getUrl('edit', ['record' => $plan]));
                     } catch (\Throwable $e) {
                         Notification::make()
                             ->title('Failed to parse template')

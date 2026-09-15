@@ -19,6 +19,9 @@ class LessonDocxParserService
      * Known section headers for lesson plan templates.
      */
     private const LESSON_PLAN_SECTIONS = [
+        'TOPIC',
+        'SUB-TOPIC',
+        'SUB TOPIC',
         'TITLE',
         'TIME / DURATION',
         'SECTION / PERIOD',
@@ -40,6 +43,7 @@ class LessonDocxParserService
      * Known section headers for lesson note templates.
      */
     private const LESSON_NOTE_SECTIONS = [
+        'TOPIC',
         'TITLE',
         'LEARNING OBJECTIVES',
         'LESSON NOTE CONTENT',
@@ -57,8 +61,15 @@ class LessonDocxParserService
     {
         $sections = $this->extractSections($filePath, self::LESSON_PLAN_SECTIONS);
 
+        $topic = $this->getSingleLine($sections, 'TOPIC') ?: $this->getSingleLine($sections, 'TITLE');
+        $subTopic = $this->getSingleLine($sections, 'SUB-TOPIC') 
+            ?: $this->getSingleLine($sections, 'SUB TOPIC') 
+            ?: $this->getSingleLine($sections, 'SUB_TOPIC');
+
         return [
-            'title' => $this->getSingleLine($sections, 'TITLE'),
+            'topic' => $topic,
+            'sub_topic' => $subTopic,
+            'title' => $topic,
             'time' => $this->getSingleLine($sections, 'TIME / DURATION'),
             'section' => $this->getSingleLine($sections, 'SECTION / PERIOD'),
             'learning_objectives' => $this->getNumberedList($sections, 'LEARNING OBJECTIVES'),
@@ -88,8 +99,10 @@ class LessonDocxParserService
     {
         $sections = $this->extractSections($filePath, self::LESSON_NOTE_SECTIONS);
 
+        $title = $this->getSingleLine($sections, 'TOPIC') ?: $this->getSingleLine($sections, 'TITLE');
+
         return [
-            'title' => $this->getSingleLine($sections, 'TITLE'),
+            'title' => $title,
             'learning_objectives' => $this->getNumberedList($sections, 'LEARNING OBJECTIVES'),
             'content' => $this->getRichText($sections, 'LESSON NOTE CONTENT'),
         ];
@@ -105,7 +118,10 @@ class LessonDocxParserService
         int $sessionId,
         int $termId,
         int $weekNumber,
-        string $filePath
+        string $filePath,
+        array $referenceMaterials = [],
+        array $instructionalMaterials = [],
+        array $teachingMethods = []
     ): LessonPlan {
         $parsed = $this->parseLessonPlan($filePath);
 
@@ -117,6 +133,8 @@ class LessonDocxParserService
             'term_id' => $termId,
             'week_number' => $weekNumber,
             'status' => 'draft',
+            'topic' => $parsed['topic'] ?? null,
+            'sub_topic' => $parsed['sub_topic'] ?? null,
             'title' => $parsed['title'] ?? null,
             'time' => $parsed['time'] ?? null,
             'section' => $parsed['section'] ?? null,
@@ -131,7 +149,10 @@ class LessonDocxParserService
             'assignment' => $parsed['assignment'] ?? null,
         ]);
 
-        if (!empty($parsed['reference_materials'])) {
+        // Reference materials: prioritize manual input from upload modal, then parsed list
+        if (!empty($referenceMaterials)) {
+            $plan->referenceMaterials()->sync($referenceMaterials);
+        } elseif (!empty($parsed['reference_materials'])) {
             $refIds = collect($parsed['reference_materials'])
                 ->filter()
                 ->map(fn ($name) => ReferenceMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit(trim($name), 252)])->id)
@@ -139,7 +160,10 @@ class LessonDocxParserService
             $plan->referenceMaterials()->sync($refIds);
         }
 
-        if (!empty($parsed['instructional_materials'])) {
+        // Instructional materials: prioritize manual input from upload modal, then parsed list
+        if (!empty($instructionalMaterials)) {
+            $plan->instructionalMaterials()->sync($instructionalMaterials);
+        } elseif (!empty($parsed['instructional_materials'])) {
             $instIds = collect($parsed['instructional_materials'])
                 ->filter()
                 ->map(fn ($name) => InstructionalMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit(trim($name), 252)])->id)
@@ -147,7 +171,10 @@ class LessonDocxParserService
             $plan->instructionalMaterials()->sync($instIds);
         }
 
-        if (!empty($parsed['teaching_methods'])) {
+        // Teaching methods: prioritize manual input from upload modal, then parsed list
+        if (!empty($teachingMethods)) {
+            $plan->teachingMethods()->sync($teachingMethods);
+        } elseif (!empty($parsed['teaching_methods'])) {
             $methodIds = collect($parsed['teaching_methods'])
                 ->filter()
                 ->map(fn ($name) => TeachingMethod::firstOrCreate(['name' => \Illuminate\Support\Str::limit(trim($name), 252)])->id)

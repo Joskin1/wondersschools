@@ -196,6 +196,12 @@ class TeacherLessonPlanResource extends Resource
                             ->createOptionUsing(function (array $data) {
                                 return ReferenceMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
                             })
+                            ->editOptionForm([
+                                TextInput::make('name')
+                                    ->label('Material Name')
+                                    ->required()
+                                    ->maxLength(255),
+                            ])
                             ->helperText('Select existing materials or type to create a new one.')
                             ->columnSpanFull(),
                     ]),
@@ -222,6 +228,12 @@ class TeacherLessonPlanResource extends Resource
                             ->createOptionUsing(function (array $data) {
                                 return InstructionalMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
                             })
+                            ->editOptionForm([
+                                TextInput::make('name')
+                                    ->label('Material Name')
+                                    ->required()
+                                    ->maxLength(255),
+                            ])
                             ->helperText('Select existing materials or type to create a new one.')
                             ->columnSpanFull(),
                     ]),
@@ -278,6 +290,12 @@ class TeacherLessonPlanResource extends Resource
                             ->createOptionUsing(function (array $data) {
                                 return TeachingMethod::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
                             })
+                            ->editOptionForm([
+                                TextInput::make('name')
+                                    ->label('Method Name')
+                                    ->required()
+                                    ->maxLength(255),
+                            ])
                             ->helperText('Select existing methods or create a new one.')
                             ->columnSpanFull(),
                     ]),

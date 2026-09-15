@@ -31,22 +31,27 @@ class LessonDocxTemplateService
             ['alignment' => 'center', 'spaceAfter' => 400]
         );
 
-        // Section 1: Title
-        $this->addSectionHeader($section, 'TITLE');
-        $this->addPlaceholder($section, 'Enter the lesson title here (e.g. Introduction to Photosynthesis)');
+        // Section 1: Title / Topic
+        $this->addSectionHeader($section, 'TOPIC');
+        $this->addPlaceholder($section, 'Enter the main lesson topic here (e.g. Introduction to Photosynthesis)');
         $section->addTextBreak();
 
-        // Section 2: Time / Duration
+        // Section 2: Sub-Topic
+        $this->addSectionHeader($section, 'SUB-TOPIC');
+        $this->addPlaceholder($section, 'Enter the sub-topic or focus area (e.g. Light and Dark Reactions)');
+        $section->addTextBreak();
+
+        // Section 3: Time / Duration
         $this->addSectionHeader($section, 'TIME / DURATION');
         $this->addPlaceholder($section, 'e.g. 40 minutes');
         $section->addTextBreak();
 
-        // Section 3: Section / Period
+        // Section 4: Section / Period
         $this->addSectionHeader($section, 'SECTION / PERIOD');
         $this->addPlaceholder($section, 'e.g. Morning, Period 3');
         $section->addTextBreak();
 
-        // Section 4: Learning Objectives
+        // Section 5: Learning Objectives
         $this->addSectionHeader($section, 'LEARNING OBJECTIVES');
         $this->addPlaceholder($section, 'List each objective on a new line. At the end of the lesson, students should be able to:');
         $this->addPlaceholder($section, '1. First learning objective');
@@ -54,37 +59,22 @@ class LessonDocxTemplateService
         $this->addPlaceholder($section, '3. Third learning objective');
         $section->addTextBreak();
 
-        // Section 5: Key Vocabulary Words
+        // Section 6: Key Vocabulary Words
         $this->addSectionHeader($section, 'KEY VOCABULARY WORDS');
         $this->addPlaceholder($section, 'Enter words separated by commas (e.g. photosynthesis, chlorophyll, glucose)');
         $section->addTextBreak();
 
-        // Section 6: Reference Materials
-        $this->addSectionHeader($section, 'REFERENCE MATERIALS');
-        $this->addPlaceholder($section, 'Enter materials separated by commas (e.g. Mathematics Textbook for JSS 2, National Curriculum Guide)');
-        $section->addTextBreak();
-
-        // Section 7: Instructional Materials
-        $this->addSectionHeader($section, 'INSTRUCTIONAL MATERIALS');
-        $this->addPlaceholder($section, 'Enter materials separated by commas (e.g. Whiteboard, Projector, Charts, Markers)');
-        $section->addTextBreak();
-
-        // Section 8: Prior Knowledge / Background
+        // Section 7: Prior Knowledge / Background
         $this->addSectionHeader($section, 'PRIOR KNOWLEDGE / BACKGROUND');
         $this->addPlaceholder($section, 'Explain how this lesson connects to what students have previously learned...');
         $section->addTextBreak();
 
-        // Section 9: Content
+        // Section 8: Content
         $this->addSectionHeader($section, 'CONTENT');
         $this->addPlaceholder($section, 'Enter the full lesson content here. You can use multiple paragraphs...');
         $section->addTextBreak();
 
-        // Section 10: Teaching Methods
-        $this->addSectionHeader($section, 'TEACHING METHODS');
-        $this->addPlaceholder($section, 'Enter methods separated by commas (e.g. Discussion Method, Group Work, Demonstration)');
-        $section->addTextBreak();
-
-        // Section 11: Presentation Steps
+        // Section 9: Presentation Steps
         $this->addSectionHeader($section, 'PRESENTATION STEPS');
         $this->addPlaceholder($section, 'List each step on a new line:');
         $this->addPlaceholder($section, '1. First step of your presentation');
@@ -92,12 +82,12 @@ class LessonDocxTemplateService
         $this->addPlaceholder($section, '3. Third step of your presentation');
         $section->addTextBreak();
 
-        // Section 12: Strategies and Activities
+        // Section 10: Strategies and Activities
         $this->addSectionHeader($section, 'STRATEGIES AND ACTIVITIES');
         $this->addPlaceholder($section, 'Describe the teaching strategies and student activities for this lesson...');
         $section->addTextBreak();
 
-        // Section 13: Evaluation Questions
+        // Section 11: Evaluation Questions
         $this->addSectionHeader($section, 'EVALUATION QUESTIONS');
         $this->addPlaceholder($section, 'List each question on a new line:');
         $this->addPlaceholder($section, '1. First evaluation question');
@@ -105,12 +95,12 @@ class LessonDocxTemplateService
         $this->addPlaceholder($section, '3. Third evaluation question');
         $section->addTextBreak();
 
-        // Section 14: Conclusion
+        // Section 12: Conclusion
         $this->addSectionHeader($section, 'CONCLUSION');
         $this->addPlaceholder($section, 'Explain how the lesson is brought to a close...');
         $section->addTextBreak();
 
-        // Section 15: Assignment / Homework
+        // Section 13: Assignment / Homework
         $this->addSectionHeader($section, 'ASSIGNMENT / HOMEWORK');
         $this->addPlaceholder($section, 'Enter the assignment or homework given to students after this lesson...');
 
