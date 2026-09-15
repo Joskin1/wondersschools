@@ -9,6 +9,10 @@ use function Pest\Laravel\get;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    (new \Database\Seeders\TenantFrontendContentSeeder())->run();
+});
+
 describe('Home Page', function () {
     it('displays the home page successfully', function () {
         get('/')
@@ -18,11 +22,12 @@ describe('Home Page', function () {
 
     // TODO Phase 1: restore dynamic binding test when CMS keys are registered
     it('shows the hero section with school name', function () {
-        Setting::create(['key' => 'school_name', 'value' => 'Wonders Kiddies Foundation Schools']);
+        Setting::updateOrCreate(['key' => 'school_name'], ['value' => 'Wonders Kiddies Foundation Schools']);
+        \App\Services\FrontendLibrary::flush();
 
         get('/')
             ->assertSee('Wonders Kiddies Foundation Schools')
-            ->assertSee('Nurturing Intellectual Depth & Moral Leadership');
+            ->assertSee('Nurturing Intellectual Depth &amp; Moral Leadership', false);
     });
 
     // TODO Phase 1: restore dynamic binding test when CMS keys are registered

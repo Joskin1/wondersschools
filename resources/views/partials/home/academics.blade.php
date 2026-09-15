@@ -38,7 +38,7 @@
     <div class="mb-16">
       <div class="flex items-center gap-3">
         <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent">
-          04 &mdash; {{ $academicsEyebrow }}
+          {{ $sectionNumber ?? '04' }} &mdash; {{ $academicsEyebrow }}
         </span>
         <span class="flex-grow h-[1px] bg-rule"></span>
       </div>

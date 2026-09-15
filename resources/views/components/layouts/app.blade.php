@@ -55,12 +55,13 @@
     $footerDirectionsLabel = \App\Services\FrontendLibrary::get('footer_directions_label', 'Campus Directions');
     $footerDirectionsLink = \App\Services\FrontendLibrary::get('footer_directions_link', '#contact');
 
-    $faviconUrl = $schoolLogo 
-        ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($schoolLogo) 
-        : asset('favicon.ico');
-    $logoUrl = $schoolLogo 
-        ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($schoolLogo) 
-        : null;
+    $socialFacebook = \App\Services\FrontendLibrary::getSetting('footer_social_facebook');
+    $socialInstagram = \App\Services\FrontendLibrary::getSetting('footer_social_instagram');
+    $socialLinkedin = \App\Services\FrontendLibrary::getSetting('footer_social_linkedin');
+    $socialX = \App\Services\FrontendLibrary::getSetting('footer_social_x');
+
+    $faviconUrl = \App\Services\FrontendLibrary::imageUrl($schoolLogo, asset('favicon.ico'));
+    $logoUrl = \App\Services\FrontendLibrary::imageUrl($schoolLogo);
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
@@ -148,28 +149,30 @@
             class="sticky top-0 z-50 transition-all duration-300">
       
       <!-- Top Academic Session Notice -->
-      <div class="bg-ink text-paper text-[11px] sm:text-xs py-2 px-4 border-b border-ink/20">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-1">
-          <div class="flex items-center gap-2">
-            <span class="inline-block w-1.5 h-1.5 rounded-full bg-accent"></span>
-            @if(!empty($topbarBadge))
-              <span class="tracking-wider uppercase font-semibold text-accent">{{ $topbarBadge }}</span>
-            @endif
-            @if(!empty($topbarText))
-              <span class="text-white/80 hidden sm:inline">&mdash; {{ $topbarText }}</span>
-            @endif
-          </div>
-          <div class="flex items-center gap-4 text-white/90">
-            @if(!empty($schoolPhone))
-              <a href="tel:{{ $schoolPhone }}" class="hover:text-accent transition">{{ $schoolPhone }}</a>
-            @endif
-            @if(!empty($schoolEmail))
-              <span class="text-white/30 hidden sm:inline">|</span>
-              <a href="mailto:{{ $schoolEmail }}" class="hover:text-accent transition hidden sm:inline">{{ $schoolEmail }}</a>
-            @endif
+      @if(!empty($topbarBadge) || !empty($topbarText))
+        <div class="bg-ink text-paper text-[11px] sm:text-xs py-2 px-4 border-b border-ink/20">
+          <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-1">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-accent"></span>
+              @if(!empty($topbarBadge))
+                <span class="tracking-wider uppercase font-semibold text-accent">{{ $topbarBadge }}</span>
+              @endif
+              @if(!empty($topbarText))
+                <span class="text-white/80 hidden sm:inline">&mdash; {{ $topbarText }}</span>
+              @endif
+            </div>
+            <div class="flex items-center gap-4 text-white/90">
+              @if(!empty($schoolPhone))
+                <a href="tel:{{ $schoolPhone }}" class="hover:text-accent transition">{{ $schoolPhone }}</a>
+              @endif
+              @if(!empty($schoolEmail))
+                <span class="text-white/30 hidden sm:inline">|</span>
+                <a href="mailto:{{ $schoolEmail }}" class="hover:text-accent transition hidden sm:inline">{{ $schoolEmail }}</a>
+              @endif
+            </div>
           </div>
         </div>
-      </div>
+      @endif
 
       <!-- Main Navigation Bar -->
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -320,55 +323,86 @@
                 {{ $footerAccreditations }}
               </p>
             @endif
+
+            @if(!empty($socialFacebook) || !empty($socialInstagram) || !empty($socialLinkedin) || !empty($socialX))
+              <div class="pt-2 flex items-center gap-3 text-white/70">
+                @if(!empty($socialFacebook))
+                  <a href="{{ $socialFacebook }}" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition text-xs font-sans uppercase tracking-wider">Facebook</a>
+                @endif
+                @if(!empty($socialInstagram))
+                  <a href="{{ $socialInstagram }}" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition text-xs font-sans uppercase tracking-wider">Instagram</a>
+                @endif
+                @if(!empty($socialLinkedin))
+                  <a href="{{ $socialLinkedin }}" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition text-xs font-sans uppercase tracking-wider">LinkedIn</a>
+                @endif
+                @if(!empty($socialX))
+                  <a href="{{ $socialX }}" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition text-xs font-sans uppercase tracking-wider">X</a>
+                @endif
+              </div>
+            @endif
           </div>
 
           <!-- Col 2: Prospectus Chapters -->
-          <div class="lg:px-8 lg:border-r border-white/10 space-y-4 py-8 lg:py-0 border-t md:border-t-0 border-white/10">
-            <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent block">
-              {{ $footerCol2Heading }}
-            </span>
-            <ul class="space-y-2.5 text-xs font-sans text-[color:var(--ink-contrast)]/80">
-              <li><a href="#about" class="hover:text-accent transition">01 &mdash; {{ $navAboutLabel }}</a></li>
-              <li><a href="#features" class="hover:text-accent transition">02 &mdash; {{ $navFeaturesLabel }}</a></li>
-              <li><a href="#stats" class="hover:text-accent transition">03 &mdash; {{ $navStatsLabel }}</a></li>
-              <li><a href="#academics" class="hover:text-accent transition">04 &mdash; {{ $navAcademicsLabel }}</a></li>
-              <li><a href="#facilities" class="hover:text-accent transition">05 &mdash; {{ $navFacilitiesLabel }}</a></li>
-            </ul>
-          </div>
+          @if(!empty($navAboutLabel) || !empty($navFeaturesLabel) || !empty($navStatsLabel) || !empty($navAcademicsLabel) || !empty($navFacilitiesLabel))
+            <div class="lg:px-8 lg:border-r border-white/10 space-y-4 py-8 lg:py-0 border-t md:border-t-0 border-white/10">
+              @if(!empty($footerCol2Heading))
+                <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent block">
+                  {{ $footerCol2Heading }}
+                </span>
+              @endif
+              <ul class="space-y-2.5 text-xs font-sans text-[color:var(--ink-contrast)]/80">
+                @if(!empty($navAboutLabel))<li><a href="#about" class="hover:text-accent transition">01 &mdash; {{ $navAboutLabel }}</a></li>@endif
+                @if(!empty($navFeaturesLabel))<li><a href="#features" class="hover:text-accent transition">02 &mdash; {{ $navFeaturesLabel }}</a></li>@endif
+                @if(!empty($navStatsLabel))<li><a href="#stats" class="hover:text-accent transition">03 &mdash; {{ $navStatsLabel }}</a></li>@endif
+                @if(!empty($navAcademicsLabel))<li><a href="#academics" class="hover:text-accent transition">04 &mdash; {{ $navAcademicsLabel }}</a></li>@endif
+                @if(!empty($navFacilitiesLabel))<li><a href="#facilities" class="hover:text-accent transition">05 &mdash; {{ $navFacilitiesLabel }}</a></li>@endif
+              </ul>
+            </div>
+          @endif
 
           <!-- Col 3: Admissions & Registry -->
-          <div class="lg:px-8 lg:border-r border-white/10 space-y-4 py-8 lg:py-0 border-t md:border-t-0 border-white/10">
-            <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent block">
-              {{ $footerCol3Heading }}
-            </span>
-            <ul class="space-y-2.5 text-xs font-sans text-[color:var(--ink-contrast)]/80">
-              <li><a href="{{ $footerExamLinkUrl }}" class="hover:text-accent transition">{{ $footerExamLinkLabel }}</a></li>
-              <li><a href="{{ $footerTuitionLinkUrl }}" class="hover:text-accent transition">{{ $footerTuitionLinkLabel }}</a></li>
-              <li><a href="{{ $studentPortalUrl }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>{{ $portalStudentLabel }}</a></li>
-              <li><a href="{{ $staffPortalUrl }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>{{ $portalStaffLabel }}</a></li>
-              <li><a href="{{ $adminPortalUrl }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>{{ $portalAdminLabel }}</a></li>
-            </ul>
-          </div>
+          @if(!empty($footerExamLinkLabel) || !empty($footerTuitionLinkLabel) || !empty($portalStudentLabel) || !empty($portalStaffLabel) || !empty($portalAdminLabel))
+            <div class="lg:px-8 lg:border-r border-white/10 space-y-4 py-8 lg:py-0 border-t md:border-t-0 border-white/10">
+              @if(!empty($footerCol3Heading))
+                <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent block">
+                  {{ $footerCol3Heading }}
+                </span>
+              @endif
+              <ul class="space-y-2.5 text-xs font-sans text-[color:var(--ink-contrast)]/80">
+                @if(!empty($footerExamLinkLabel))<li><a href="{{ $footerExamLinkUrl }}" class="hover:text-accent transition">{{ $footerExamLinkLabel }}</a></li>@endif
+                @if(!empty($footerTuitionLinkLabel))<li><a href="{{ $footerTuitionLinkUrl }}" class="hover:text-accent transition">{{ $footerTuitionLinkLabel }}</a></li>@endif
+                @if(!empty($portalStudentLabel))<li><a href="{{ $studentPortalUrl }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>{{ $portalStudentLabel }}</a></li>@endif
+                @if(!empty($portalStaffLabel))<li><a href="{{ $staffPortalUrl }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>{{ $portalStaffLabel }}</a></li>@endif
+                @if(!empty($portalAdminLabel))<li><a href="{{ $adminPortalUrl }}" class="hover:text-accent transition flex items-center gap-2"><span class="w-1.5 h-1.5 bg-accent"></span>{{ $portalAdminLabel }}</a></li>@endif
+              </ul>
+            </div>
+          @endif
 
           <!-- Col 4: Dispatch & Location -->
-          <div class="lg:pl-8 space-y-4 pt-8 lg:pt-0 border-t md:border-t-0 border-white/10">
-            <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent block">
-              {{ $footerCol4Heading }}
-            </span>
-            <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans leading-relaxed">
-              {{ $schoolAddress }}
-            </p>
-            @if(!empty($schoolPhone))
-              <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans">
-                Tel: {{ $schoolPhone }}
-              </p>
-            @endif
-            @if(!empty($schoolEmail))
-              <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans">
-                Email: {{ $schoolEmail }}
-              </p>
-            @endif
-          </div>
+          @if(!empty($schoolAddress) || !empty($schoolPhone) || !empty($schoolEmail))
+            <div class="lg:pl-8 space-y-4 pt-8 lg:pt-0 border-t md:border-t-0 border-white/10">
+              @if(!empty($footerCol4Heading))
+                <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent block">
+                  {{ $footerCol4Heading }}
+                </span>
+              @endif
+              @if(!empty($schoolAddress))
+                <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans leading-relaxed">
+                  {{ $schoolAddress }}
+                </p>
+              @endif
+              @if(!empty($schoolPhone))
+                <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans">
+                  Tel: {{ $schoolPhone }}
+                </p>
+              @endif
+              @if(!empty($schoolEmail))
+                <p class="text-xs text-[color:var(--ink-contrast)]/80 font-sans">
+                  Email: {{ $schoolEmail }}
+                </p>
+              @endif
+            </div>
+          @endif
 
         </div>
 
@@ -378,9 +412,9 @@
             &copy; {{ date('Y') }} {{ $schoolName }}. All Rights Reserved.
           </div>
           <div class="flex items-center gap-6">
-            <a href="{{ $footerPrivacyLink }}" class="hover:text-[color:var(--ink-contrast)] transition">{{ $footerPrivacyLabel }}</a>
-            <a href="{{ $footerTermsLink }}" class="hover:text-[color:var(--ink-contrast)] transition">{{ $footerTermsLabel }}</a>
-            <a href="{{ $footerDirectionsLink }}" class="hover:text-[color:var(--ink-contrast)] transition">{{ $footerDirectionsLabel }}</a>
+            @if(!empty($footerPrivacyLabel))<a href="{{ $footerPrivacyLink }}" class="hover:text-[color:var(--ink-contrast)] transition">{{ $footerPrivacyLabel }}</a>@endif
+            @if(!empty($footerTermsLabel))<a href="{{ $footerTermsLink }}" class="hover:text-[color:var(--ink-contrast)] transition">{{ $footerTermsLabel }}</a>@endif
+            @if(!empty($footerDirectionsLabel))<a href="{{ $footerDirectionsLink }}" class="hover:text-[color:var(--ink-contrast)] transition">{{ $footerDirectionsLabel }}</a>@endif
           </div>
         </div>
 

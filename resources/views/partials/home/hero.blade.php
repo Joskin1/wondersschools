@@ -1,5 +1,6 @@
 @php
-    $heroImage = \App\Services\FrontendLibrary::get('hero_image', 'https://placehold.co/1920x1080/0B2545/FAF8F4?text=Apex+Crown+College+Scholars+Lagos');
+    $heroImageRaw = \App\Services\FrontendLibrary::get('hero_image', 'https://placehold.co/1920x1080/0B2545/FAF8F4?text=Apex+Crown+College+Scholars+Lagos');
+    $heroImage = \App\Services\FrontendLibrary::imageUrl($heroImageRaw, 'https://placehold.co/1920x1080/0B2545/FAF8F4?text=Apex+Crown+College+Scholars+Lagos');
     $heroImageAlt = \App\Services\FrontendLibrary::get('hero_image_alt', (\App\Services\FrontendLibrary::getSetting('school_name', 'Apex Crown College') . ' Scholars Lagos'));
     $heroBadge = \App\Services\FrontendLibrary::get('hero_badge', '2026 / 2027 Academic Session');
     $heroTitle = \App\Services\FrontendLibrary::get('hero_title', 'Nurturing Intellectual Depth & Moral Leadership');

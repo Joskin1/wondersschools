@@ -34,7 +34,7 @@
     <div class="mb-16">
       <div class="flex items-center gap-3">
         <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent">
-          06 &mdash; {{ $newsEyebrow }}
+          {{ $sectionNumber ?? '06' }} &mdash; {{ $newsEyebrow }}
         </span>
         <span class="flex-grow h-[1px] bg-rule"></span>
       </div>
@@ -56,7 +56,7 @@
           <!-- Small Square Thumbnail on the Left (Cols 1-2) -->
           <div class="md:col-span-2">
             <div class="w-24 h-24 sm:w-28 sm:h-28 border border-rule bg-white p-1 flex-shrink-0 overflow-hidden">
-              <img src="{{ $article['image'] ?? 'https://placehold.co/200x200/0B2545/FAF8F4?text=News' }}"
+              <img src="{{ \App\Services\FrontendLibrary::imageUrl($article['image'] ?? null, 'https://placehold.co/200x200/0B2545/FAF8F4?text=News') }}"
                    alt="{{ $article['title'] ?? 'News' }}"
                    loading="lazy"
                    class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />

@@ -1,7 +1,8 @@
 @php
     $aboutEyebrow = \App\Services\FrontendLibrary::get('about_eyebrow', 'ABOUT THE COLLEGE');
     $aboutHeading = \App\Services\FrontendLibrary::get('about_heading', 'A Tradition of Uncompromising Academic Standard');
-    $aboutImage = \App\Services\FrontendLibrary::get('about_image', 'https://placehold.co/800x1000/0B2545/FAF8F4?text=Principal+Portrait');
+    $aboutImageRaw = \App\Services\FrontendLibrary::get('about_image', 'https://placehold.co/800x1000/0B2545/FAF8F4?text=Principal+Portrait');
+    $aboutImage = \App\Services\FrontendLibrary::imageUrl($aboutImageRaw, 'https://placehold.co/800x1000/0B2545/FAF8F4?text=Principal+Portrait');
     $aboutImageAlt = \App\Services\FrontendLibrary::get('about_image_alt', 'Dr. Mrs. Adebisi Balogun Head of School');
     $aboutYearsBadge = \App\Services\FrontendLibrary::get('about_years_badge', '25');
     $aboutYearsLabel = \App\Services\FrontendLibrary::get('about_years_label', 'Years of Academic Legacy in Lagos');
@@ -18,39 +19,41 @@
     <div class="mb-12">
       <div class="flex items-center gap-3">
         <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent">
-          01 &mdash; {{ $aboutEyebrow }}
+          {{ $sectionNumber ?? '01' }} &mdash; {{ $aboutEyebrow }}
         </span>
         <span class="flex-grow h-[1px] bg-rule"></span>
       </div>
     </div>
 
-    <!-- Asymmetric 12-Column Grid: Image cols 1–6, Text cols 8–12 -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+    <!-- Asymmetric Grid: Image cols 1–6 (if present), Text cols 8–12 (or full width if no image) -->
+    <div class="grid grid-cols-1 {{ !empty($aboutImage) ? 'lg:grid-cols-12 gap-12 lg:gap-8 items-center' : 'max-w-3xl' }}">
       
-      <!-- Left: Portrait / Image Column (Cols 1-6) -->
-      <div class="lg:col-span-6 relative">
-        <div class="relative border border-rule bg-white p-2">
-          <img src="{{ $aboutImage }}"
-               alt="{{ $aboutImageAlt }}"
-               loading="lazy"
-               class="w-full h-[440px] sm:h-[540px] object-cover object-top" />
-          
-          <!-- Editorial Caption Card -->
-          @if(!empty($aboutYearsBadge))
-            <div class="absolute -bottom-6 -right-4 sm:right-6 bg-ink text-paper p-6 border border-accent/40 max-w-[240px]">
-              <span class="block font-serif text-3xl sm:text-4xl font-semibold text-accent leading-none">
-                {{ $aboutYearsBadge }}+
-              </span>
-              <span class="block text-xs font-sans uppercase tracking-wider text-white/80 mt-1 leading-snug">
-                {{ $aboutYearsLabel }}
-              </span>
-            </div>
-          @endif
+      @if(!empty($aboutImage))
+        <!-- Left: Portrait / Image Column (Cols 1-6) -->
+        <div class="lg:col-span-6 relative">
+          <div class="relative border border-rule bg-white p-2">
+            <img src="{{ $aboutImage }}"
+                 alt="{{ $aboutImageAlt }}"
+                 loading="lazy"
+                 class="w-full h-[440px] sm:h-[540px] object-cover object-top" />
+            
+            <!-- Editorial Caption Card -->
+            @if(!empty($aboutYearsBadge))
+              <div class="absolute -bottom-6 -right-4 sm:right-6 bg-ink text-paper p-6 border border-accent/40 max-w-[240px]">
+                <span class="block font-serif text-3xl sm:text-4xl font-semibold text-accent leading-none">
+                  {{ $aboutYearsBadge }}+
+                </span>
+                <span class="block text-xs font-sans uppercase tracking-wider text-white/80 mt-1 leading-snug">
+                  {{ $aboutYearsLabel }}
+                </span>
+              </div>
+            @endif
+          </div>
         </div>
-      </div>
+      @endif
 
-      <!-- Right: Narrative & Welcome (Cols 8-12, col 7 is empty gap) -->
-      <div class="lg:col-span-5 lg:col-start-8 space-y-6">
+      <!-- Right: Narrative & Welcome -->
+      <div class="{{ !empty($aboutImage) ? 'lg:col-span-5 lg:col-start-8' : '' }} space-y-6">
         
         <h2 class="font-serif font-semibold text-ink tracking-tight leading-[1.15]" style="font-size: clamp(2rem, 4vw, 3rem);">
           {{ $aboutHeading }}

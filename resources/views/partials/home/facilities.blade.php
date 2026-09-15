@@ -61,7 +61,7 @@
     <div class="mb-16">
       <div class="flex items-center gap-3">
         <span class="text-xs uppercase tracking-[0.2em] font-sans font-bold text-accent">
-          05 &mdash; {{ $facilitiesEyebrow }}
+          {{ $sectionNumber ?? '05' }} &mdash; {{ $facilitiesEyebrow }}
         </span>
         <span class="flex-grow h-[1px] bg-rule"></span>
       </div>
@@ -80,12 +80,13 @@
       @foreach($facilitiesItems as $index => $fac)
         @php
             $spanClass = $index === 0 ? 'col-span-12 md:col-span-8 md:row-span-2' : 'col-span-12 md:col-span-4';
+            $facImgUrl = \App\Services\FrontendLibrary::imageUrl($fac['image'] ?? '');
         @endphp
-        <div @click="openZoom('{{ addslashes($fac['title'] ?? '') }}', '{{ addslashes($fac['desc'] ?? '') }}', '{{ $fac['image'] ?? '' }}')"
+        <div @click="openZoom('{{ addslashes($fac['title'] ?? '') }}', '{{ addslashes($fac['desc'] ?? '') }}', '{{ $facImgUrl }}')"
              class="{{ $spanClass }} relative group cursor-pointer border border-rule bg-white p-2 overflow-hidden">
           
           <div class="relative w-full {{ $index === 0 ? 'h-[360px] sm:h-[480px] md:h-full min-h-[380px]' : 'h-[240px]' }} overflow-hidden">
-            <img src="{{ $fac['image'] ?? '' }}"
+            <img src="{{ $facImgUrl }}"
                  alt="{{ $fac['title'] ?? 'Campus Facility' }}"
                  loading="lazy"
                  class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" />

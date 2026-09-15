@@ -71,28 +71,38 @@ class FrontendLibrary
     }
 
     /**
-     * Retrieve a frontend content string or value by key, falling back to default.
+     * Retrieve a frontend content string or value by key, falling back to default when unseeded.
      */
     public static function get(string $key, $default = null)
     {
         $all = self::loadAllContents();
 
-        if (array_key_exists($key, $all) && $all[$key] !== null && $all[$key] !== '') {
-            return $all[$key];
+        if (array_key_exists($key, $all)) {
+            return $all[$key] ?? $default;
         }
 
         return $default;
     }
 
     /**
-     * Retrieve and decode a JSON array/repeater content value, falling back to default.
+     * Retrieve and decode a JSON array/repeater content value, falling back to default when unseeded.
      */
     public static function getJson(string $key, array $default = []): array
     {
-        $value = self::get($key);
+        $all = self::loadAllContents();
 
-        if ($value === null || $value === '') {
+        if (! array_key_exists($key, $all)) {
             return $default;
+        }
+
+        $value = $all[$key];
+
+        if ($value === null) {
+            return $default;
+        }
+
+        if ($value === '' || $value === '[]') {
+            return [];
         }
 
         if (is_array($value)) {
@@ -101,12 +111,12 @@ class FrontendLibrary
 
         if (is_string($value)) {
             $decoded = json_decode($value, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && !empty($decoded)) {
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 return $decoded;
             }
         }
 
-        return $default;
+        return [];
     }
 
     /**
@@ -116,10 +126,8 @@ class FrontendLibrary
     {
         $all = self::loadAllSettings();
 
-        $value = $all[$key] ?? null;
-
-        if ($value !== null && $value !== '') {
-            return $value;
+        if (array_key_exists($key, $all) && $all[$key] !== null) {
+            return $all[$key];
         }
 
         if ($key === 'school_name') {
@@ -131,6 +139,50 @@ class FrontendLibrary
         }
 
         return $default;
+    }
+
+    /**
+     * Resolve an image path to a full public URL, supporting uploaded files, external URLs, and fallbacks.
+     *
+     * @param string|array|null $path
+     */
+    public static function imageUrl($path, ?string $default = null): ?string
+    {
+        if (empty($path)) {
+            return $default;
+        }
+
+        if (is_array($path)) {
+            $first = reset($path);
+            return is_string($first) ? self::imageUrl($first, $default) : $default;
+        }
+
+        if (! is_string($path)) {
+            return $default;
+        }
+
+        // If it's already a full URL or data URI
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '//') || str_starts_with($path, 'data:')) {
+            return $path;
+        }
+
+        // If stored as a JSON array or object string by Filament FileUpload
+        if (str_starts_with($path, '[') || str_starts_with($path, '{')) {
+            $decoded = json_decode($path, true);
+            if (is_array($decoded) && ! empty($decoded)) {
+                $first = reset($decoded);
+                if (is_string($first)) {
+                    return self::imageUrl($first, $default);
+                }
+            }
+        }
+
+        try {
+            $disk = config('filesystems.upload_disk', 'public');
+            return \Illuminate\Support\Facades\Storage::disk($disk)->url($path);
+        } catch (\Throwable) {
+            return asset('storage/' . ltrim($path, '/'));
+        }
     }
 
     /**
