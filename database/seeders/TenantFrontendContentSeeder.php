@@ -7,16 +7,15 @@ use App\Models\Setting;
 use App\Services\FrontendLibrary;
 use Illuminate\Database\Seeder;
 
-class TenantFrontendContentSeeder extends Seeder
-{
+class TenantFrontendContentSeeder extends Seeder {
     /**
-     * Seed frontend_contents and settings tables with per-tenant defaults.
-     *
-     * // TODO: switch to firstOrCreate before first production tenant
-     */
-    public function run(): void
-    {
-        $schoolName = tenant('name') ?? 'Apex Crown College';
+    * Seed frontend_contents and settings tables with per-tenant defaults.
+    *
+    * // TODO: switch to firstOrCreate before first production tenant
+    */
+
+    public function run(): void {
+        $schoolName = tenant( 'name' ) ?? 'Apex Crown College';
 
         // 1. Core Settings
         $settings = [
@@ -39,10 +38,10 @@ class TenantFrontendContentSeeder extends Seeder
             'footer_social_x'         => null,
         ];
 
-        foreach ($settings as $key => $value) {
+        foreach ( $settings as $key => $value ) {
             Setting::updateOrCreate(
-                ['key' => $key],
-                ['value' => $value]
+                [ 'key' => $key ],
+                [ 'value' => $value ]
             );
         }
 
@@ -97,7 +96,7 @@ class TenantFrontendContentSeeder extends Seeder
             'features_intro'             => 'A deliberate blend of academic depth, moral discipline, and technological literacy structured to cultivate leaders.',
             'features_cta_text'          => 'Review Full Curriculum',
             'features_cta_link'          => '#academics',
-            'features_items'             => json_encode([
+            'features_items'             => json_encode( [
                 [
                     'title' => 'Integrated Dual Curriculum',
                     'desc'  => 'Simultaneous mastery of the Nigerian National Curriculum (WAEC & NECO) alongside British Cambridge Checkpoint and IGCSE examinations.',
@@ -122,12 +121,12 @@ class TenantFrontendContentSeeder extends Seeder
                     'title' => 'Oratory, Athletics & Cultural Life',
                     'desc'  => 'Weekly parliamentary debating, orchestral music tuition, Model United Nations, and championship track and field athletics.',
                 ],
-            ]),
+            ] ),
 
             // 03 Outcomes / Stats
             'stats_eyebrow'              => 'EXAMINATION OUTCOMES',
-            'stats_heading'              => 'Ten-Year Record of Scholastic Excellence',
-            'stats_items'                => json_encode([
+            Latest Happenings Across Beta School            'stats_heading'              => 'Ten-Year Record of Scholastic Excellence',
+            'stats_items'                => json_encode( [
                 [
                     'value'  => '100%',
                     'label'  => 'WAEC Pass Rate',
@@ -148,29 +147,29 @@ class TenantFrontendContentSeeder extends Seeder
                     'label'  => 'University Placement',
                     'detail' => 'Direct admissions into premier universities across Nigeria, the UK, US, and Canada',
                 ],
-            ]),
+            ] ),
             'stats_destinations_label'   => 'Representative Matriculations:',
-            'stats_destinations'         => json_encode([
+            'stats_destinations'         => json_encode( [
                 'University of Ibadan',
                 'University of Lagos',
                 'Covenant University',
                 'Imperial College London',
                 'University of Toronto',
                 'University of Manchester',
-            ]),
+            ] ),
 
             // 04 Curriculum / Academics
             'academics_eyebrow'          => 'CURRICULUM & PROGRAMMES',
             'academics_heading'          => 'Structured Pathways for Secondary Scholars',
             'academics_intro'            => 'A comprehensive curriculum designed to build foundational mastery in the junior years and deep specialization in the senior years.',
-            'academics_tracks'           => json_encode([
+            'academics_tracks'           => json_encode( [
                 [
                     'code'     => 'JSS 1 — JSS 3',
                     'name'     => 'Junior Secondary School',
                     'ages'     => 'Ages 10 — 13 Years',
                     'certs'    => 'BECE & Cambridge Checkpoint',
                     'desc'     => 'Focuses on foundational intellectual development: computational thinking, language mastery, basic science, and cultural appreciation.',
-                    'subjects' => ['General Mathematics', 'English & Literature', 'Basic Science & Tech', 'Coding Basics', 'French & Languages', 'Business Studies'],
+                    'subjects' => [ 'General Mathematics', 'English & Literature', 'Basic Science & Tech', 'Coding Basics', 'French & Languages', 'Business Studies' ],
                 ],
                 [
                     'code'     => 'SSS 1 — SSS 3',
@@ -178,7 +177,7 @@ class TenantFrontendContentSeeder extends Seeder
                     'ages'     => 'Ages 13 — 17 Years',
                     'certs'    => 'WAEC, NECO, IGCSE & JAMB',
                     'desc'     => 'Rigorous scientific inquiry for aspiring medical doctors, software architects, agricultural biotechnologists, and structural engineers.',
-                    'subjects' => ['Further Mathematics', 'Physics & Chemistry', 'Biology & Agric', 'Technical Drawing', 'Data Processing', 'Weekly Practical Labs'],
+                    'subjects' => [ 'Further Mathematics', 'Physics & Chemistry', 'Biology & Agric', 'Technical Drawing', 'Data Processing', 'Weekly Practical Labs' ],
                 ],
                 [
                     'code'     => 'SSS 1 — SSS 3',
@@ -186,14 +185,14 @@ class TenantFrontendContentSeeder extends Seeder
                     'ages'     => 'Ages 13 — 17 Years',
                     'certs'    => 'WAEC, NECO, IGCSE & JAMB',
                     'desc'     => 'For future jurists, economists, chartered accountants, diplomats, and business leaders with intensive essay and analysis training.',
-                    'subjects' => ['Literature in English', 'Government & History', 'Financial Accounting', 'Economics & Commerce', 'Visual Arts & Music', 'Debating Society'],
+                    'subjects' => [ 'Literature in English', 'Government & History', 'Financial Accounting', 'Economics & Commerce', 'Visual Arts & Music', 'Debating Society' ],
                 ],
-            ]),
+            ] ),
 
             // 05 Facilities
             'facilities_eyebrow'         => 'CAMPUS INFRASTRUCTURE',
             'facilities_heading'         => 'Purpose-Built Learning & Living Environments',
-            'facilities_items'           => json_encode([
+            'facilities_items'           => json_encode( [
                 [
                     'title'    => 'Advanced Science Laboratories',
                     'category' => 'ACADEMIC',
@@ -230,12 +229,12 @@ class TenantFrontendContentSeeder extends Seeder
                     'desc'     => '800-seat theater hall for assemblies, orchestral recitals, and graduation valedictions.',
                     'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Auditorium+Studio',
                 ],
-            ]),
+            ] ),
 
             // 06 Bulletin & Announcements
             'news_eyebrow'               => 'BULLETIN & CALENDAR',
             'news_heading'               => 'Recent Announcements & Key Dates',
-            'news_articles'              => json_encode([
+            'news_articles'              => json_encode( [
                 [
                     'title'    => '2026/2027 First Batch National Entrance Examination & Scholarship Screening',
                     'category' => 'ADMISSIONS',
@@ -257,13 +256,13 @@ class TenantFrontendContentSeeder extends Seeder
                     'summary'  => 'Senior secondary scholars present functional solar micro-inverter designs, automated irrigation models, and AI chatbot demonstrators to university visiting professors.',
                     'image'    => 'https://placehold.co/200x200/0B2545/FAF8F4?text=STEM+Expo',
                 ],
-            ]),
+            ] ),
 
             // 07 Perspectives / Testimonials
             'testimonials_eyebrow'       => 'VOICES OF PARENTS & ALUMNI',
             'testimonials_heading'       => 'Perspectives on an Apex Crown Education',
             'testimonials_intro'         => 'Reflections from parents, guardians, and alumni who have experienced the transformative impact of our community.',
-            'testimonials_items'         => json_encode([
+            'testimonials_items'         => json_encode( [
                 [
                     'quote'  => 'Enrolling our children at Apex Crown College was the most consequential educational choice we made. Beyond their straight A1s in WAEC, the depth of their poise, moral conviction, and critical thinking is extraordinary.',
                     'author' => 'Chief & Dr. (Mrs.) Olumide Adeleke',
@@ -279,18 +278,18 @@ class TenantFrontendContentSeeder extends Seeder
                     'author' => 'Alhaji Mansur Danjuma',
                     'role'   => 'Parent of SSS 3 Scholar & PTA Executive',
                 ],
-            ]),
+            ] ),
 
             // Admissions Call to Action
             'admissions_cta_eyebrow'        => 'ADMISSIONS 2026 / 2027',
             'admissions_cta_heading'        => 'Enroll Your Child in a Tradition of Distinction',
             'admissions_cta_subtitle'       => 'Applications are now being received for JSS 1 and limited transfer vacancies into JSS 2 and SSS 1. Day and Full-Boarding options available.',
-            'admissions_cta_steps'          => json_encode([
-                ['num' => '01', 'title' => 'Obtain Form', 'desc' => 'Complete the online application or purchase the dossier at the campus Registry.'],
-                ['num' => '02', 'title' => 'Entrance Assessment', 'desc' => 'Candidate attends the written examination in Mathematics, English, and Aptitude.'],
-                ['num' => '03', 'title' => 'Admission Offer', 'desc' => 'Successful applicants receive formal letters of admission within 5 working days.'],
-                ['num' => '04', 'title' => 'Resumption & Induction', 'desc' => 'Scholars check in for the matriculation orientation and academic commencement.'],
-            ]),
+            'admissions_cta_steps'          => json_encode( [
+                [ 'num' => '01', 'title' => 'Obtain Form', 'desc' => 'Complete the online application or purchase the dossier at the campus Registry.' ],
+                [ 'num' => '02', 'title' => 'Entrance Assessment', 'desc' => 'Candidate attends the written examination in Mathematics, English, and Aptitude.' ],
+                [ 'num' => '03', 'title' => 'Admission Offer', 'desc' => 'Successful applicants receive formal letters of admission within 5 working days.' ],
+                [ 'num' => '04', 'title' => 'Resumption & Induction', 'desc' => 'Scholars check in for the matriculation orientation and academic commencement.' ],
+            ] ),
             'admissions_cta_primary_btn'    => 'Begin Online Application',
             'admissions_cta_primary_link'   => '#contact',
             'admissions_cta_secondary_btn'  => 'Download Prospectus (PDF)',
@@ -303,9 +302,9 @@ class TenantFrontendContentSeeder extends Seeder
             'contact_address'                => 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria',
             'contact_address_label'          => 'Campus Address',
             'contact_phone_label'            => 'Telephone',
-            'contact_additional_phones'      => json_encode(['+234 812 345 6789']),
+            'contact_additional_phones'      => json_encode( [ '+234 812 345 6789' ] ),
             'contact_email_label'            => 'Registry Email',
-            'contact_additional_emails'      => json_encode(['info@apexcrown.edu.ng']),
+            'contact_additional_emails'      => json_encode( [ 'info@apexcrown.edu.ng' ] ),
             'contact_visiting_hours_label'   => 'Admissions Hours',
             'contact_visiting_hours'         => 'Monday – Friday: 8:00 AM – 4:00 PM | Saturday: 9:00 AM – 1:00 PM',
             'contact_form_title'             => 'Admissions Prospectus Inquiry',
@@ -315,12 +314,12 @@ class TenantFrontendContentSeeder extends Seeder
             'contact_form_email_label'       => 'Email Address *',
             'contact_form_grade_label'       => 'Class Level of Interest *',
             'contact_form_grade_placeholder' => 'Select Candidate Grade',
-            'contact_form_classes'           => json_encode([
-                ['value' => 'jss1', 'label' => 'Junior Secondary 1 (Entry)'],
-                ['value' => 'jss2', 'label' => 'Junior Secondary 2 (Transfer)'],
-                ['value' => 'sss1', 'label' => 'Senior Secondary 1 (Sciences)'],
-                ['value' => 'sss1-arts', 'label' => 'Senior Secondary 1 (Arts & Commercial)'],
-            ]),
+            'contact_form_classes'           => json_encode( [
+                [ 'value' => 'jss1', 'label' => 'Junior Secondary 1 (Entry)' ],
+                [ 'value' => 'jss2', 'label' => 'Junior Secondary 2 (Transfer)' ],
+                [ 'value' => 'sss1', 'label' => 'Senior Secondary 1 (Sciences)' ],
+                [ 'value' => 'sss1-arts', 'label' => 'Senior Secondary 1 (Arts & Commercial)' ],
+            ] ),
             'contact_form_notes_label'       => 'Prospective Scholar Notes / Questions',
             'contact_form_success_title'     => 'Inquiry Received',
             'contact_form_success_desc'      => 'Thank you for inquiring about Apex Crown College. The Admissions Office has received your details and will get in touch shortly.',
@@ -344,13 +343,13 @@ class TenantFrontendContentSeeder extends Seeder
             'footer_directions_link'         => '#contact',
         ];
 
-        foreach ($contents as $key => $value) {
+        foreach ( $contents as $key => $value ) {
             FrontendContent::updateOrCreate(
-                ['key' => $key],
-                ['value' => $value]
+                [ 'key' => $key ],
+                [ 'value' => $value ]
             );
         }
 
-        FrontendLibrary::flush(tenant('id'));
+        FrontendLibrary::flush( tenant( 'id' ) );
     }
 }

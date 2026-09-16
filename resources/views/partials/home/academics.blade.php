@@ -4,33 +4,33 @@
     $academicsIntro = \App\Services\FrontendLibrary::get('academics_intro', 'A comprehensive curriculum designed to build foundational mastery in the junior years and deep specialization in the senior years.');
     $academicsTracks = \App\Services\FrontendLibrary::getJson('academics_tracks', [
         [
-            'code'     => 'JSS 1 — JSS 3',
-            'name'     => 'Junior Secondary School',
-            'ages'     => 'Ages 10 — 13 Years',
-            'certs'    => 'BECE & Cambridge Checkpoint',
-            'desc'     => 'Focuses on foundational intellectual development: computational thinking, language mastery, basic science, and cultural appreciation.',
-            'subjects' => ['General Mathematics', 'English & Literature', 'Basic Science & Tech', 'Coding Basics', 'French & Languages', 'Business Studies'],
+            'code'     => 'CRECHE • NURSERY • KG',
+            'name'     => 'Preschool & Playgroup',
+            'ages'     => 'Ages 18 Mo — 5 Yrs',
+            'certs'    => 'Early Years Foundation Stage (EYFS)',
+            'desc'     => 'A warm, stimulating environment fostering social confidence, early phonics (Jolly Phonics), sensory discovery, and foundational cognitive readiness.',
+            'subjects' => ['Jolly Phonics & Pre-Reading', 'Early Numeracy & Shapes', 'Sensory Exploration & Play', 'Rhymes & Creative Arts', 'Fine Motor Skills & Etiquette', 'French & Music Intro'],
         ],
         [
-            'code'     => 'SSS 1 — SSS 3',
-            'name'     => 'Senior Sciences & Technology',
-            'ages'     => 'Ages 13 — 17 Years',
-            'certs'    => 'WAEC, NECO, IGCSE & JAMB',
-            'desc'     => 'Rigorous scientific inquiry for aspiring medical doctors, software architects, agricultural biotechnologists, and structural engineers.',
-            'subjects' => ['Further Mathematics', 'Physics & Chemistry', 'Biology & Agric', 'Technical Drawing', 'Data Processing', 'Weekly Practical Labs'],
+            'code'     => 'BASIC 1 — BASIC 6',
+            'name'     => 'Primary Basic School',
+            'ages'     => 'Ages 5 — 11 Years',
+            'certs'    => 'National Common Entrance & CAS',
+            'desc'     => 'A blended British-Nigerian curriculum building solid competencies in computational thinking, quantitative reasoning, basic science, coding, and articulate communication.',
+            'subjects' => ['Mathematics & Quantitative', 'English & Verbal Reasoning', 'Basic Science & Technology', 'Coding & Computer Studies', 'French & Civic Education', 'Agricultural Science'],
         ],
         [
-            'code'     => 'SSS 1 — SSS 3',
-            'name'     => 'Senior Arts & Commercial Studies',
-            'ages'     => 'Ages 13 — 17 Years',
-            'certs'    => 'WAEC, NECO, IGCSE & JAMB',
-            'desc'     => 'For future jurists, economists, chartered accountants, diplomats, and business leaders with intensive essay and analysis training.',
-            'subjects' => ['Literature in English', 'Government & History', 'Financial Accounting', 'Economics & Commerce', 'Visual Arts & Music', 'Debating Society'],
+            'code'     => 'JSS 1 — SSS 3',
+            'name'     => 'Secondary College',
+            'ages'     => 'Ages 11 — 17 Years',
+            'certs'    => 'WAEC, NECO, BECE & JAMB',
+            'desc'     => 'Rigorous junior and senior secondary education preparing scholars for university excellence with specialized tracks in Sciences, Commercial Studies, and Humanities.',
+            'subjects' => ['Mathematics & Further Maths', 'Physics, Chemistry & Biology', 'Literature & Government', 'Financial Accounting & Commerce', 'Technical Drawing & Data Proc.', 'Weekly Practical Labs'],
         ],
     ]);
 @endphp
 
-<!-- ====== 04 — Curriculum & Programmes (Editorial Prospectus) ====== -->
+<!-- ====== 04 — Academic Divisions & Programmes (Editorial Prospectus) ====== -->
 <section id="academics" class="py-24 md:py-32 bg-paper">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     
@@ -58,8 +58,8 @@
       </div>
     </div>
 
-    <!-- 3 Programme Cards: Hairline borders, White card fill, Sharp corners -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Programme Cards Grid: Hairline borders, White card fill, Sharp corners -->
+    <div class="grid {{ count($academicsTracks) === 4 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' : (count($academicsTracks) === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 lg:grid-cols-3') }} gap-8">
       
       @foreach($academicsTracks as $track)
         <div class="bg-white border border-rule p-8 sm:p-10 flex flex-col justify-between space-y-8 rounded-none">
