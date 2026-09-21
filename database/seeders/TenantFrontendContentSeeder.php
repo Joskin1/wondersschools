@@ -3,295 +3,353 @@
 namespace Database\Seeders;
 
 use App\Models\FrontendContent;
+use App\Models\Setting;
+use App\Services\FrontendLibrary;
 use Illuminate\Database\Seeder;
 
-class TenantFrontendContentSeeder extends Seeder
-{
+class TenantFrontendContentSeeder extends Seeder {
     /**
-     * Seed the frontend_contents table with per-tenant defaults.
-     *
-     * Uses firstOrCreate so re-running never overwrites admin customisations.
-     * Keys mirror exactly what FrontendLibrary::get() is called with in views.
-     */
-    public function run(): void
-    {
-        $name = tenant('name') ?? 'Our School';
+    * Seed frontend_contents and settings tables with per-tenant defaults.
+    *
+    * // TODO: switch to firstOrCreate before first production tenant
+    */
 
-        $defaults = [
+    public function run(): void {
+        $schoolName = tenant( 'name' ) ?? 'Apex Crown College';
 
-            // ── Home: Hero ───────────────────────────────────────────────────
-            'hero_images'           => '[]',
-            'hero_tagline'          => "Welcome to {$name}",
-            'hero_heading'          => 'A Foundation That',
-            'hero_heading_highlight'=> 'Builds Futures.',
-            'hero_description'      => "We cultivate thinkers, leaders, and compassionate citizens in a secure, nurturing environment.",
-            'hero_cta_primary'      => 'Explore Our Campus',
-            'hero_cta_secondary'    => 'Admissions Open',
-
-            // ── Home: About / Introduction ───────────────────────────────────
-            'about_intro_welcome'   => "Welcome to Our School",
-            'about_intro_heading'   => 'Nurturing Young Minds for a Brighter Tomorrow',
-            'about_intro_text'      => 'We provide a private co-educational environment with a broad-based curriculum that develops the whole child — intellectually, emotionally, and morally.',
-            'about_intro_mission'   => 'To foster critical thinking, global readiness, and character development in every child.',
-            'about_intro_read_more' => 'Read More',
-
-            // ── Home: About Pillar Images ────────────────────────────────────
-            'pillar_1_label' => 'Science Laboratory',
-            'pillar_1_image' => null,
-            'pillar_2_label' => 'Practical Work',
-            'pillar_2_image' => null,
-            'pillar_3_label' => 'Information Technology',
-            'pillar_3_image' => null,
-            'pillar_4_label' => 'Creative Arts',
-            'pillar_4_image' => null,
-
-            // ── Home: Trust Strip ────────────────────────────────────────────
-            'trust_1' => 'Verified Curriculum',
-            'trust_2' => 'Experienced Educators',
-            'trust_3' => 'Secure Campus',
-            'trust_4' => 'Proven Results',
-
-            // ── Home: Feature Grid (4 Pillars) ──────────────────────────────
-            'why_us_heading'    => 'What We Do',
-            'why_us_subheading' => 'Building excellence through innovation and care.',
-
-            'feature_1_title'       => 'Effective Teaching',
-            'feature_1_description' => 'Unique instructional methods powered by digital infrastructure for seamless online and offline learning.',
-            'feature_1_icon'        => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
-            'feature_2_title'       => 'Arts & Creativity',
-            'feature_2_description' => 'Bringing imagination to reality through creative arts, music, and expressive programs.',
-            'feature_2_icon'        => 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
-            'feature_3_title'       => 'Practical Sciences',
-            'feature_3_description' => 'Hands-on, experiment-driven science tracks matching theory with laboratory experience.',
-            'feature_3_icon'        => 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
-            'feature_4_title'       => 'Coding & Tech',
-            'feature_4_description' => 'Integrated IT training with computing skills embedded directly into the daily learning pattern.',
-            'feature_4_icon'        => 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
-
-            // ── Legacy bento keys (kept for backward compat) ─────────────────
-            'bento_1_title'       => 'Academic Excellence',
-            'bento_1_description' => 'Our curriculum is designed to challenge and inspire. We focus on building a strong foundation in literacy, numeracy, and critical thinking.',
-            'bento_2_title'       => 'Holistic Development',
-            'bento_2_description' => 'We nurture the whole child. From sports to arts, we provide opportunities for students to explore their passions and talents.',
-            'bento_3_title'       => 'Community & Values',
-            'bento_3_description' => 'We instill strong moral values and a sense of community. Our students learn to be respectful, responsible, and kind.',
-
-            // ── Home: Statistics ─────────────────────────────────────────────
-            'stat_1_value' => '15+',
-            'stat_1_label' => 'Years of Excellence',
-            'stat_2_value' => '500+',
-            'stat_2_label' => 'Happy Students',
-            'stat_3_value' => '50+',
-            'stat_3_label' => 'Expert Staff',
-            'stat_4_value' => '100%',
-            'stat_4_label' => 'Parent Satisfaction',
-
-            // ── Home: News Section ───────────────────────────────────────────
-            'news_heading'               => 'School Life',
-            'news_subheading'            => 'A Place Your Child Can Thrive.',
-            'news_view_all_label'        => 'View All',
-            'news_badge_label'           => 'News',
-            'news_read_more_label'       => 'Read More',
-            'news_empty_text'            => 'No news updates available at the moment.',
-            'news_view_all_mobile_label' => 'View All News',
-
-            // ── Home: Leadership Section ─────────────────────────────────────
-            'leadership_heading'    => 'Our Commitment',
-            'leadership_subheading' => 'Experienced Hands, Nurturing Hearts.',
-
-            // ── Home: Final CTA Strip ─────────────────────────────────────────
-            'cta_heading'     => 'Ready to Join Our Family?',
-            'cta_description' => 'Give your child the foundation they deserve. Join our growing family today.',
-            'cta_enrol'       => 'Enrol Now',
-            'cta_tour'        => 'Book a Tour',
-            'cta_whatsapp'    => 'Chat on WhatsApp',
-
-            // ── Portal URLs ──────────────────────────────────────────────────
-            'student_portal_url'  => null,
-            'staff_portal_url'    => null,
-            'common_entrance_url' => null,
-
-            // ── Footer Social Links ──────────────────────────────────────────
+        // 1. Core Settings
+        $settings = [
+            'school_name'             => $schoolName,
+            'school_short_name'       => 'AC',
+            'school_motto'            => 'Excellence, Character & Leadership',
+            'school_established'      => '2001',
+            'school_phone'            => '+234 800 123 4567',
+            'school_email'            => 'admissions@apexcrown.edu.ng',
+            'school_address'          => 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria',
+            'primary_color'           => '#0B2545',
+            'secondary_color'         => '#1E293B',
+            'accent_color'            => '#C8A951',
+            'student_portal_url'      => '/student/login',
+            'staff_portal_url'        => '/teacher/login',
+            'admin_portal_url'        => '/admin/login',
             'footer_social_facebook'  => null,
             'footer_social_instagram' => null,
             'footer_social_linkedin'  => null,
             'footer_social_x'         => null,
-
-            // ── About Page ───────────────────────────────────────────────────
-            'about_hero_title'    => 'We Build Foundations That Last.',
-            'about_hero_subtitle' => $name,
-            'about_description'   => "{$name} is dedicated to providing a high-quality, nurturing, and secure educational environment. Our approach is simple: we focus on the <strong>whole child</strong>—intellectually, emotionally, and morally—to ensure they thrive in every aspect of life.",
-
-            'about_mission_title' => 'Our Mission',
-            'about_mission_text'  => 'To deliver secure, well-planned education that fosters creativity, academic mastery, and strong character development.',
-            'about_vision_title' => 'Our Vision',
-            'about_vision_text'  => 'To be the most trusted educational brand known for foundational excellence, transparency, and dependable long-term student success.',
-
-            'about_core_values_title' => 'Our Core Values',
-            'core_value_1'            => 'Integrity of Instruction',
-            'core_value_2'            => 'Student-Centric Nurturing',
-            'core_value_3'            => 'Strategic Curriculum Delivery',
-            'core_value_4'            => 'Transparent Parent Partnership',
-            'core_value_5'            => 'Long-term Value Creation',
-
-            'about_leadership_title'    => 'Meet Our Leadership',
-            'about_leadership_subtitle' => 'The dedicated team guiding our school.',
-            'about_leadership_empty'    => 'Leadership team information coming soon.',
-
-            // ── Academics Page ────────────────────────────────────────────────
-            'advantage_hero_title'    => 'The Academic Advantage',
-            'advantage_hero_subtitle' => 'A Foundation That Outlasts Trends.',
-            'advantage_intro'         => "A child's future is defined by the quality of their foundation. At {$name}, our curriculum is strategically designed not just to meet required standards, but to <strong>exceed them</strong>.",
-
-            'learning_levels_title'    => 'Structured Learning Levels',
-            'learning_levels_subtitle' => 'Tailored approaches for every stage of development.',
-            'eyfs_title'         => 'Early Years Foundation Stage (EYFS)',
-            'eyfs_focus_label'   => 'Focus',
-            'eyfs_focus_text'    => 'Play-based learning, sensory exploration, and developing early literacy and numeracy.',
-            'eyfs_outcome_label' => 'Key Outcome',
-            'eyfs_outcome_text'  => 'Building curiosity, fine motor skills, and social-emotional readiness.',
-            'primary_title'         => 'Primary School Programme',
-            'primary_focus_label'   => 'Focus',
-            'primary_focus_text'    => 'Mastery of core subjects (Numeracy, Literacy, Science) combined with integrated studies (STEM, Coding Introduction).',
-            'primary_outcome_label' => 'Key Outcome',
-            'primary_outcome_text'  => 'Fostering independence, research skills, and strong problem-solving abilities.',
-            'subjects_title'    => 'Subject Highlights: Building Mastery',
-            'subjects_subtitle' => 'Our approach to key subject areas.',
-            'subject_literacy_title' => 'Literacy & Communication',
-            'subject_literacy_text'  => 'We emphasize reading for comprehension and creative writing.',
-            'subject_numeracy_title' => 'Numeracy & Logic',
-            'subject_numeracy_text'  => 'We use hands-on, conceptual learning to build strong mathematical reasoning.',
-            'subject_stem_title' => 'Integrated Science (STEM)',
-            'subject_stem_text'  => 'Science is taught through practical experimentation and inquiry.',
-            'subject_character_title' => 'Character & Ethics',
-            'subject_character_text'  => 'Robust training in core values, empathy, leadership, and responsibility.',
         ];
 
-        $groups = [
-            'hero_images'            => 'home.hero',
-            'hero_tagline'           => 'home.hero',
-            'hero_heading'           => 'home.hero',
-            'hero_heading_highlight' => 'home.hero',
-            'hero_description'       => 'home.hero',
-            'hero_cta_primary'       => 'home.hero',
-            'hero_cta_secondary'     => 'home.hero',
-            'about_intro_welcome'    => 'home.about',
-            'about_intro_heading'    => 'home.about',
-            'about_intro_text'       => 'home.about',
-            'about_intro_mission'    => 'home.about',
-            'about_intro_read_more'  => 'home.about',
-            'pillar_1_label'         => 'home.pillars',
-            'pillar_1_image'         => 'home.pillars',
-            'pillar_2_label'         => 'home.pillars',
-            'pillar_2_image'         => 'home.pillars',
-            'pillar_3_label'         => 'home.pillars',
-            'pillar_3_image'         => 'home.pillars',
-            'pillar_4_label'         => 'home.pillars',
-            'pillar_4_image'         => 'home.pillars',
-            'trust_1'                => 'home.trust',
-            'trust_2'                => 'home.trust',
-            'trust_3'                => 'home.trust',
-            'trust_4'                => 'home.trust',
-            'why_us_heading'         => 'home.features',
-            'why_us_subheading'      => 'home.features',
-            'feature_1_title'        => 'home.features',
-            'feature_1_description'  => 'home.features',
-            'feature_1_icon'         => 'home.features',
-            'feature_2_title'        => 'home.features',
-            'feature_2_description'  => 'home.features',
-            'feature_2_icon'         => 'home.features',
-            'feature_3_title'        => 'home.features',
-            'feature_3_description'  => 'home.features',
-            'feature_3_icon'         => 'home.features',
-            'feature_4_title'        => 'home.features',
-            'feature_4_description'  => 'home.features',
-            'feature_4_icon'         => 'home.features',
-            'bento_1_title'          => 'home.why',
-            'bento_1_description'    => 'home.why',
-            'bento_2_title'          => 'home.why',
-            'bento_2_description'    => 'home.why',
-            'bento_3_title'          => 'home.why',
-            'bento_3_description'    => 'home.why',
-            'stat_1_value'           => 'home.stats',
-            'stat_1_label'           => 'home.stats',
-            'stat_2_value'           => 'home.stats',
-            'stat_2_label'           => 'home.stats',
-            'stat_3_value'           => 'home.stats',
-            'stat_3_label'           => 'home.stats',
-            'stat_4_value'           => 'home.stats',
-            'stat_4_label'           => 'home.stats',
-            'news_heading'               => 'home.news',
-            'news_subheading'            => 'home.news',
-            'news_view_all_label'        => 'home.news',
-            'news_badge_label'           => 'home.news',
-            'news_read_more_label'       => 'home.news',
-            'news_empty_text'            => 'home.news',
-            'news_view_all_mobile_label' => 'home.news',
-            'leadership_heading'     => 'home.leadership',
-            'leadership_subheading'  => 'home.leadership',
-            'cta_heading'            => 'home.cta',
-            'cta_description'        => 'home.cta',
-            'cta_enrol'              => 'home.cta',
-            'cta_tour'               => 'home.cta',
-            'cta_whatsapp'           => 'home.cta',
-            'student_portal_url'     => 'portals',
-            'staff_portal_url'       => 'portals',
-            'common_entrance_url'    => 'portals',
-            'footer_social_facebook' => 'footer.social',
-            'footer_social_instagram'=> 'footer.social',
-            'footer_social_linkedin' => 'footer.social',
-            'footer_social_x'        => 'footer.social',
-            'about_hero_title'       => 'about',
-            'about_hero_subtitle'    => 'about',
-            'about_description'      => 'about',
-            'about_mission_title'    => 'about.mission',
-            'about_mission_text'     => 'about.mission',
-            'about_vision_title'     => 'about.vision',
-            'about_vision_text'      => 'about.vision',
-            'about_core_values_title'=> 'about.values',
-            'core_value_1'           => 'about.values',
-            'core_value_2'           => 'about.values',
-            'core_value_3'           => 'about.values',
-            'core_value_4'           => 'about.values',
-            'core_value_5'           => 'about.values',
-            'about_leadership_title'    => 'about.leadership',
-            'about_leadership_subtitle' => 'about.leadership',
-            'about_leadership_empty'    => 'about.leadership',
-            'advantage_hero_title'    => 'academics',
-            'advantage_hero_subtitle' => 'academics',
-            'advantage_intro'         => 'academics',
-            'learning_levels_title'   => 'academics.levels',
-            'learning_levels_subtitle'=> 'academics.levels',
-            'eyfs_title'              => 'academics.eyfs',
-            'eyfs_focus_label'        => 'academics.eyfs',
-            'eyfs_focus_text'         => 'academics.eyfs',
-            'eyfs_outcome_label'      => 'academics.eyfs',
-            'eyfs_outcome_text'       => 'academics.eyfs',
-            'primary_title'           => 'academics.primary',
-            'primary_focus_label'     => 'academics.primary',
-            'primary_focus_text'      => 'academics.primary',
-            'primary_outcome_label'   => 'academics.primary',
-            'primary_outcome_text'    => 'academics.primary',
-            'subjects_title'          => 'academics.subjects',
-            'subjects_subtitle'       => 'academics.subjects',
-            'subject_literacy_title'  => 'academics.subjects',
-            'subject_literacy_text'   => 'academics.subjects',
-            'subject_numeracy_title'  => 'academics.subjects',
-            'subject_numeracy_text'   => 'academics.subjects',
-            'subject_stem_title'      => 'academics.subjects',
-            'subject_stem_text'       => 'academics.subjects',
-            'subject_character_title' => 'academics.subjects',
-            'subject_character_text'  => 'academics.subjects',
-        ];
-
-        foreach ($defaults as $key => $value) {
-            FrontendContent::firstOrCreate(
-                ['key' => $key],
-                [
-                    'group' => $groups[$key] ?? null,
-                    'value' => $value,
-                ]
+        foreach ( $settings as $key => $value ) {
+            Setting::updateOrCreate(
+                [ 'key' => $key ],
+                [ 'value' => $value ]
             );
         }
+
+        // 2. Frontend Contents
+        $contents = [
+            // Top Announcement Bar & Navigation
+            'topbar_badge'               => 'Admissions 2026/2027',
+            'topbar_text'                => 'Entrance examination and transfer enrollment now open.',
+            'nav_about_label'            => 'About',
+            'nav_features_label'         => 'Distinctives',
+            'nav_academics_label'        => 'Curriculum',
+            'nav_stats_label'            => 'Outcomes',
+            'nav_facilities_label'       => 'Campus',
+            'nav_news_label'             => 'Bulletin',
+            'nav_contact_label'          => 'Contact',
+            'nav_portals_label'          => 'Portals',
+            'portal_student_label'       => 'Student Portal',
+            'portal_staff_label'         => 'Faculty Portal',
+            'portal_admin_label'         => 'Administration',
+            'portal_student_label_short' => 'Student',
+            'portal_staff_label_short'   => 'Faculty',
+            'portal_admin_label_short'   => 'Admin',
+            'header_cta_text'            => 'Admissions',
+            'header_cta_link'            => '#admissions',
+
+            // Hero Section
+            'hero_badge'                 => '2026 / 2027 Academic Session',
+            'hero_title'                 => 'Nurturing Intellectual Depth & Moral Leadership',
+            'hero_subtitle'              => 'An accredited British-Nigerian secondary institution committed to scholastic rigor, scientific inquiry, and the formation of character.',
+            'hero_image'                 => 'https://placehold.co/1920x1080/0B2545/FAF8F4?text=Apex+Crown+College+Scholars+Lagos',
+            'hero_image_alt'             => 'Apex Crown College Scholars Lagos',
+            'hero_primary_cta_text'      => 'Apply for Admission',
+            'hero_primary_cta_link'      => '#admissions',
+            'hero_secondary_cta_text'    => 'Explore Prospectus',
+            'hero_secondary_cta_link'    => '#about',
+            'hero_scroll_label'          => 'Scroll to explore prospectus',
+
+            // 01 About Section
+            'about_eyebrow'              => 'ABOUT THE COLLEGE',
+            'about_heading'              => 'A Tradition of Uncompromising Academic Standard',
+            'about_image'                => 'https://placehold.co/800x1000/0B2545/FAF8F4?text=Principal+Portrait',
+            'about_image_alt'            => 'Dr. Mrs. Adebisi Balogun Head of School',
+            'about_years_badge'          => '25',
+            'about_years_label'          => 'Years of Academic Legacy in Lagos',
+            'about_body'                 => '<p>Founded in 2001, Apex Crown College synthesizes the rigorous Nigerian National Basic & Senior Secondary Curriculum with Cambridge Assessment International standards. We believe secondary education is not simply an examination preparatory phase, but the crucible where character, intellectual curiosity, and self-governance are forged.</p><p>Our dedicated tutorial masters, modern science laboratories, and immersive pastoral mentorship ensure every student discovers their latent gifts and matures into an articulate, disciplined contributor to national and global society.</p>',
+            'about_principal_name'       => 'Dr. (Mrs.) Adebisi Balogun',
+            'about_principal_title'      => 'B.Sc, M.Ed, Ph.D. — Principal & Head of School',
+
+            // 02 Distinctives Section
+            'features_eyebrow'           => 'DISTINCTIVES',
+            'features_heading'           => 'The Pillars of an Apex Crown Education',
+            'features_intro'             => 'A deliberate blend of academic depth, moral discipline, and technological literacy structured to cultivate leaders.',
+            'features_cta_text'          => 'Review Full Curriculum',
+            'features_cta_link'          => '#academics',
+            'features_items'             => json_encode( [
+                [
+                    'title' => 'Integrated Dual Curriculum',
+                    'desc'  => 'Simultaneous mastery of the Nigerian National Curriculum (WAEC & NECO) alongside British Cambridge Checkpoint and IGCSE examinations.',
+                ],
+                [
+                    'title' => 'Individualized Tutorial Mentorship',
+                    'desc'  => 'Strict 1:12 faculty-to-student ratio ensuring individualized attention, customized academic interventions, and dedicated pastoral tutors.',
+                ],
+                [
+                    'title' => 'Applied STEM & Computational Thinking',
+                    'desc'  => 'Purpose-built laboratories for physics, chemistry, biology, agricultural science, and dedicated robotics/coding suites.',
+                ],
+                [
+                    'title' => 'Moral Formation & Character Discipline',
+                    'desc'  => 'Uncompromising emphasis on integrity, punctuality, self-respect, civic responsibility, and community service.',
+                ],
+                [
+                    'title' => 'Comprehensive Boarding & Pastoral Care',
+                    'desc'  => 'Modern, secure air-conditioned dormitories with round-the-clock power, resident housemasters, and multi-course nutritional dining.',
+                ],
+                [
+                    'title' => 'Oratory, Athletics & Cultural Life',
+                    'desc'  => 'Weekly parliamentary debating, orchestral music tuition, Model United Nations, and championship track and field athletics.',
+                ],
+            ] ),
+
+            // 03 Outcomes / Stats
+            'stats_eyebrow'              => 'EXAMINATION OUTCOMES',
+            'stats_heading'              => 'Ten-Year Record of Scholastic Excellence',
+            'stats_items'                => json_encode( [
+                [
+                    'value'  => '100%',
+                    'label'  => 'WAEC Pass Rate',
+                    'detail' => '5+ credits including English & Maths (10-year consecutive record)',
+                ],
+                [
+                    'value'  => '94.8%',
+                    'label'  => 'A1 - B3 Distinctions',
+                    'detail' => 'Achieved across Mathematics, Further Math, Physics, and Chemistry',
+                ],
+                [
+                    'value'  => '312',
+                    'label'  => 'Average JAMB UTME',
+                    'detail' => 'With the top candidate achieving 358 in the 2025 UTME session',
+                ],
+                [
+                    'value'  => '98%',
+                    'label'  => 'University Placement',
+                    'detail' => 'Direct admissions into premier universities across Nigeria, the UK, US, and Canada',
+                ],
+            ] ),
+            'stats_destinations_label'   => 'Representative Matriculations:',
+            'stats_destinations'         => json_encode( [
+                'University of Ibadan',
+                'University of Lagos',
+                'Covenant University',
+                'Imperial College London',
+                'University of Toronto',
+                'University of Manchester',
+            ] ),
+
+            // 04 Curriculum / Academics
+            'academics_eyebrow'          => 'CURRICULUM & PROGRAMMES',
+            'academics_heading'          => 'Structured Pathways for Secondary Scholars',
+            'academics_intro'            => 'A comprehensive curriculum designed to build foundational mastery in the junior years and deep specialization in the senior years.',
+            'academics_tracks'           => json_encode( [
+                [
+                    'code'     => 'JSS 1 — JSS 3',
+                    'name'     => 'Junior Secondary School',
+                    'ages'     => 'Ages 10 — 13 Years',
+                    'certs'    => 'BECE & Cambridge Checkpoint',
+                    'desc'     => 'Focuses on foundational intellectual development: computational thinking, language mastery, basic science, and cultural appreciation.',
+                    'subjects' => [ 'General Mathematics', 'English & Literature', 'Basic Science & Tech', 'Coding Basics', 'French & Languages', 'Business Studies' ],
+                ],
+                [
+                    'code'     => 'SSS 1 — SSS 3',
+                    'name'     => 'Senior Sciences & Technology',
+                    'ages'     => 'Ages 13 — 17 Years',
+                    'certs'    => 'WAEC, NECO, IGCSE & JAMB',
+                    'desc'     => 'Rigorous scientific inquiry for aspiring medical doctors, software architects, agricultural biotechnologists, and structural engineers.',
+                    'subjects' => [ 'Further Mathematics', 'Physics & Chemistry', 'Biology & Agric', 'Technical Drawing', 'Data Processing', 'Weekly Practical Labs' ],
+                ],
+                [
+                    'code'     => 'SSS 1 — SSS 3',
+                    'name'     => 'Senior Arts & Commercial Studies',
+                    'ages'     => 'Ages 13 — 17 Years',
+                    'certs'    => 'WAEC, NECO, IGCSE & JAMB',
+                    'desc'     => 'For future jurists, economists, chartered accountants, diplomats, and business leaders with intensive essay and analysis training.',
+                    'subjects' => [ 'Literature in English', 'Government & History', 'Financial Accounting', 'Economics & Commerce', 'Visual Arts & Music', 'Debating Society' ],
+                ],
+            ] ),
+
+            // 05 Facilities
+            'facilities_eyebrow'         => 'CAMPUS INFRASTRUCTURE',
+            'facilities_heading'         => 'Purpose-Built Learning & Living Environments',
+            'facilities_items'           => json_encode( [
+                [
+                    'title'    => 'Advanced Science Laboratories',
+                    'category' => 'ACADEMIC',
+                    'desc'     => 'Dedicated biology, chemistry, and physics laboratories fully fitted with modern glassware, fume hoods, and analytical instrumentation.',
+                    'image'    => 'https://placehold.co/1000x800/0B2545/FAF8F4?text=Science+Laboratories+Apex+Crown',
+                ],
+                [
+                    'title'    => 'Digital ICT & AI Suites',
+                    'category' => 'TECHNOLOGY',
+                    'desc'     => 'High-speed gigabit workstations, interactive smartboards, and robotics hardware kits.',
+                    'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Digital+ICT+Suites',
+                ],
+                [
+                    'title'    => 'E-Library & Study Commons',
+                    'category' => 'RESEARCH',
+                    'desc'     => 'Over 15,000 bound volumes complemented by digital JSTOR and Britannica research terminals.',
+                    'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=E-Library+Commons',
+                ],
+                [
+                    'title'    => 'Sports Arena & Athletic Complex',
+                    'category' => 'ATHLETICS',
+                    'desc'     => 'Standard football pitch, outdoor basketball and tennis courts, and all-weather track.',
+                    'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Sports+Complex',
+                ],
+                [
+                    'title'    => 'Residential Hostels & Dining',
+                    'category' => 'RESIDENTIAL',
+                    'desc'     => 'Air-conditioned boarding houses with 24/7 power backup, resident house parents, and dining hall.',
+                    'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Boarding+Hostels',
+                ],
+                [
+                    'title'    => 'Acoustic Auditorium & Music Studio',
+                    'category' => 'CULTURE',
+                    'desc'     => '800-seat theater hall for assemblies, orchestral recitals, and graduation valedictions.',
+                    'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Auditorium+Studio',
+                ],
+            ] ),
+
+            // 06 Bulletin & Announcements
+            'news_eyebrow'               => 'BULLETIN & CALENDAR',
+            'news_heading'               => 'Recent Announcements & Key Dates',
+            'news_articles'              => json_encode( [
+                [
+                    'title'    => '2026/2027 First Batch National Entrance Examination & Scholarship Screening',
+                    'category' => 'ADMISSIONS',
+                    'date'     => 'Saturday, 18 April 2026',
+                    'summary'  => 'Prospective candidates for JSS 1 and transfer classes will sit for Mathematics, English Language, and General Aptitude screening. Top 5 candidates receive merit tuition scholarships.',
+                    'image'    => 'https://placehold.co/200x200/0B2545/FAF8F4?text=Exam+Entry',
+                ],
+                [
+                    'title'    => '24th Annual Inter-House Athletics & March-Past Championship',
+                    'category' => 'ATHLETICS',
+                    'date'     => 'Friday, 27 March 2026',
+                    'summary'  => 'Emerald, Ruby, Sapphire, and Topaz houses compete for track, field, and cultural march-past honors. Parents, guardians, and alumni are cordially invited to the Main Sports Arena.',
+                    'image'    => 'https://placehold.co/200x200/0B2545/FAF8F4?text=Sports',
+                ],
+                [
+                    'title'    => 'Annual Young Innovators STEM & Robotics Public Exhibition',
+                    'category' => 'ACADEMICS',
+                    'date'     => 'Wednesday, 13 May 2026',
+                    'summary'  => 'Senior secondary scholars present functional solar micro-inverter designs, automated irrigation models, and AI chatbot demonstrators to university visiting professors.',
+                    'image'    => 'https://placehold.co/200x200/0B2545/FAF8F4?text=STEM+Expo',
+                ],
+            ] ),
+
+            // 07 Perspectives / Testimonials
+            'testimonials_eyebrow'       => 'VOICES OF PARENTS & ALUMNI',
+            'testimonials_heading'       => 'Perspectives on an Apex Crown Education',
+            'testimonials_intro'         => 'Reflections from parents, guardians, and alumni who have experienced the transformative impact of our community.',
+            'testimonials_items'         => json_encode( [
+                [
+                    'quote'  => 'Enrolling our children at Apex Crown College was the most consequential educational choice we made. Beyond their straight A1s in WAEC, the depth of their poise, moral conviction, and critical thinking is extraordinary.',
+                    'author' => 'Chief & Dr. (Mrs.) Olumide Adeleke',
+                    'role'   => 'Parents of 2024 Valedictorians',
+                ],
+                [
+                    'quote'  => 'The discipline instilled during my boarding years at Apex Crown was decisive. When I entered Medical College at the University of Ibadan, I realized I had already developed the study stamina and leadership habits needed to thrive.',
+                    'author' => 'Dr. Favour Chidera Eze',
+                    'role'   => 'Medical Practitioner, UCH — Alumna (Class of 2018)',
+                ],
+                [
+                    'quote'  => 'The tutorial masters possess an uncommon dedication. When my son required deeper coaching in Further Mathematics, his tutor organized after-hours clinics until he mastered every calculus theorem.',
+                    'author' => 'Alhaji Mansur Danjuma',
+                    'role'   => 'Parent of SSS 3 Scholar & PTA Executive',
+                ],
+            ] ),
+
+            // Admissions Call to Action
+            'admissions_cta_eyebrow'        => 'ADMISSIONS 2026 / 2027',
+            'admissions_cta_heading'        => 'Enroll Your Child in a Tradition of Distinction',
+            'admissions_cta_subtitle'       => 'Applications are now being received for JSS 1 and limited transfer vacancies into JSS 2 and SSS 1. Day and Full-Boarding options available.',
+            'admissions_cta_steps'          => json_encode( [
+                [ 'num' => '01', 'title' => 'Obtain Form', 'desc' => 'Complete the online application or purchase the dossier at the campus Registry.' ],
+                [ 'num' => '02', 'title' => 'Entrance Assessment', 'desc' => 'Candidate attends the written examination in Mathematics, English, and Aptitude.' ],
+                [ 'num' => '03', 'title' => 'Admission Offer', 'desc' => 'Successful applicants receive formal letters of admission within 5 working days.' ],
+                [ 'num' => '04', 'title' => 'Resumption & Induction', 'desc' => 'Scholars check in for the matriculation orientation and academic commencement.' ],
+            ] ),
+            'admissions_cta_primary_btn'    => 'Begin Online Application',
+            'admissions_cta_primary_link'   => '#contact',
+            'admissions_cta_secondary_btn'  => 'Download Prospectus (PDF)',
+            'admissions_cta_secondary_link' => '#contact',
+
+            // 08 Campus Visitation & Inquiry Form
+            'contact_eyebrow'                => 'CAMPUS VISITATION & INQUIRY',
+            'contact_heading'                => 'Schedule a Guided Tour or Speak with Admissions',
+            'contact_intro'                  => 'Our Admissions Registry receives families for private consultations and campus walkthroughs by appointment.',
+            'contact_address'                => 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria',
+            'contact_address_label'          => 'Campus Address',
+            'contact_phone_label'            => 'Telephone',
+            'contact_additional_phones'      => json_encode( [ '+234 812 345 6789' ] ),
+            'contact_email_label'            => 'Registry Email',
+            'contact_additional_emails'      => json_encode( [ 'info@apexcrown.edu.ng' ] ),
+            'contact_visiting_hours_label'   => 'Admissions Hours',
+            'contact_visiting_hours'         => 'Monday – Friday: 8:00 AM – 4:00 PM | Saturday: 9:00 AM – 1:00 PM',
+            'contact_form_title'             => 'Admissions Prospectus Inquiry',
+            'contact_form_desc'              => 'Submit your inquiry and our admissions counsellor will respond within one business day.',
+            'contact_form_name_label'        => 'Parent / Guardian Name *',
+            'contact_form_phone_label'       => 'Telephone Number *',
+            'contact_form_email_label'       => 'Email Address *',
+            'contact_form_grade_label'       => 'Class Level of Interest *',
+            'contact_form_grade_placeholder' => 'Select Candidate Grade',
+            'contact_form_classes'           => json_encode( [
+                [ 'value' => 'jss1', 'label' => 'Junior Secondary 1 (Entry)' ],
+                [ 'value' => 'jss2', 'label' => 'Junior Secondary 2 (Transfer)' ],
+                [ 'value' => 'sss1', 'label' => 'Senior Secondary 1 (Sciences)' ],
+                [ 'value' => 'sss1-arts', 'label' => 'Senior Secondary 1 (Arts & Commercial)' ],
+            ] ),
+            'contact_form_notes_label'       => 'Prospective Scholar Notes / Questions',
+            'contact_form_success_title'     => 'Inquiry Received',
+            'contact_form_success_desc'      => 'Thank you for inquiring about Apex Crown College. The Admissions Office has received your details and will get in touch shortly.',
+
+            // Footer & Colophon
+            'footer_edition_label'           => 'Prospectus Edition',
+            'footer_description'             => 'An accredited British-Nigerian secondary school dedicated to academic brilliance, moral character, and global leadership.',
+            'footer_accreditations'          => 'Accredited by WAEC, NECO & Cambridge International.',
+            'footer_col2_heading'            => 'Prospectus',
+            'footer_col3_heading'            => 'Registry & Portals',
+            'footer_col4_heading'            => 'Campus Registry',
+            'footer_exam_link_label'         => 'Entrance Examination Dates',
+            'footer_exam_link_url'           => '#admissions',
+            'footer_tuition_link_label'      => 'Tuition & Scholarships',
+            'footer_tuition_link_url'        => '#admissions',
+            'footer_privacy_label'           => 'Privacy Policy',
+            'footer_privacy_link'            => '#about',
+            'footer_terms_label'             => 'Terms of Enrollment',
+            'footer_terms_link'              => '#about',
+            'footer_directions_label'        => 'Campus Directions',
+            'footer_directions_link'         => '#contact',
+        ];
+
+        foreach ( $contents as $key => $value ) {
+            FrontendContent::updateOrCreate(
+                [ 'key' => $key ],
+                [ 'value' => $value ]
+            );
+        }
+
+        FrontendLibrary::flush( tenant( 'id' ) );
     }
 }

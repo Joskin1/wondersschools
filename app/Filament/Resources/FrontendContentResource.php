@@ -25,19 +25,34 @@ class FrontendContentResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->role === 'sudo';
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->role === 'sudo';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->role === 'sudo';
+    }
+
     public static function getNavigationGroup(): ?string
     {
-        return 'Website';
+        return 'System';
     }
 
     public static function getNavigationLabel(): string
     {
-        return 'Frontend Content';
+        return 'Advanced Content Keys';
     }
 
     public static function getNavigationSort(): ?int
     {
-        return 1;
+        return 99;
     }
 
     public static function form(Schema $schema): Schema
@@ -47,7 +62,8 @@ class FrontendContentResource extends Resource
             if (! $key) return false;
             return str_ends_with($key, '_image') || 
                    str_ends_with($key, '_logo') || 
-                   $key === 'hero_images' || 
+                   $key === 'hero_image' || 
+                   $key === 'about_image' || 
                    $key === 'site_logo';
         };
 
@@ -57,10 +73,22 @@ class FrontendContentResource extends Resource
             if (! $key) return false;
             return str_contains($key, 'description') || 
                    str_contains($key, 'text') || 
-                   str_contains($key, 'mission') || 
-                   str_contains($key, 'vision') || 
+                   str_contains($key, 'intro') || 
+                   str_contains($key, 'subtitle') || 
                    str_contains($key, 'body') || 
-                   str_contains($key, 'icon');
+                   str_contains($key, 'desc') || 
+                   str_contains($key, 'detail') || 
+                   str_contains($key, 'summary') || 
+                   str_contains($key, 'quote') || 
+                   str_contains($key, 'items') || 
+                   str_contains($key, 'tracks') || 
+                   str_contains($key, 'articles') || 
+                   str_contains($key, 'steps') || 
+                   str_contains($key, 'classes') || 
+                   str_contains($key, 'destinations') || 
+                   str_contains($key, 'phones') || 
+                   str_contains($key, 'emails') || 
+                   str_contains($key, 'hours');
         };
 
         $isTextInput = function (callable $get) use ($isImage, $isTextarea) {
@@ -73,125 +101,137 @@ class FrontendContentResource extends Resource
                     ->required()
                     ->searchable()
                     ->options([
-                        'hero_images' => 'Hero Images (JSON Slider Array)',
-                        'hero_tagline' => 'Hero Tagline',
-                        'hero_heading' => 'Hero Heading Part 1',
-                        'hero_heading_highlight' => 'Hero Heading Part 2 (Highlight)',
-                        'hero_description' => 'Hero Description',
-                        'hero_cta_primary' => 'Hero Primary CTA Button',
-                        'hero_cta_secondary' => 'Hero Secondary CTA Button',
-                        
-                        'about_intro_welcome' => 'About Welcome Badge',
-                        'about_intro_heading' => 'About Intro Heading',
-                        'about_intro_text' => 'About Intro Text',
-                        'about_intro_mission' => 'About Intro Mission',
-                        'about_intro_read_more' => 'About Read More Button',
-                        
-                        'pillar_1_label' => 'Pillar 1: Label',
-                        'pillar_1_image' => 'Pillar 1: Image',
-                        'pillar_2_label' => 'Pillar 2: Label',
-                        'pillar_2_image' => 'Pillar 2: Image',
-                        'pillar_3_label' => 'Pillar 3: Label',
-                        'pillar_3_image' => 'Pillar 3: Image',
-                        'pillar_4_label' => 'Pillar 4: Label',
-                        'pillar_4_image' => 'Pillar 4: Image',
-                        
-                        'trust_1' => 'Trust Strip Badge 1',
-                        'trust_2' => 'Trust Strip Badge 2',
-                        'trust_3' => 'Trust Strip Badge 3',
-                        'trust_4' => 'Trust Strip Badge 4',
-                        
-                        'why_us_heading' => 'Why Us Section Heading',
-                        'why_us_subheading' => 'Why Us Section Subheading',
-                        
-                        'feature_1_title' => 'Feature 1: Title',
-                        'feature_1_description' => 'Feature 1: Description',
-                        'feature_1_icon' => 'Feature 1: SVG Icon Path',
-                        'feature_2_title' => 'Feature 2: Title',
-                        'feature_2_description' => 'Feature 2: Description',
-                        'feature_2_icon' => 'Feature 2: SVG Icon Path',
-                        'feature_3_title' => 'Feature 3: Title',
-                        'feature_3_description' => 'Feature 3: Description',
-                        'feature_3_icon' => 'Feature 3: SVG Icon Path',
-                        'feature_4_title' => 'Feature 4: Title',
-                        'feature_4_description' => 'Feature 4: Description',
-                        'feature_4_icon' => 'Feature 4: SVG Icon Path',
-                        
-                        'stat_1_value' => 'Stat 1: Value',
-                        'stat_1_label' => 'Stat 1: Label',
-                        'stat_2_value' => 'Stat 2: Value',
-                        'stat_2_label' => 'Stat 2: Label',
-                        'stat_3_value' => 'Stat 3: Value',
-                        'stat_3_label' => 'Stat 3: Label',
-                        'stat_4_value' => 'Stat 4: Value',
-                        'stat_4_label' => 'Stat 4: Label',
-                        
-                        'news_heading' => 'News Section Heading',
-                        'news_subheading' => 'News Section Subheading',
-                        'news_view_all_label' => 'News View All Button',
-                        'news_badge_label' => 'News Post Badge Text',
-                        'news_read_more_label' => 'News Read More Button',
-                        'news_empty_text' => 'News Empty State Text',
-                        'news_view_all_mobile_label' => 'News View All Mobile Button',
-                        
-                        'cta_heading' => 'CTA Section Heading',
-                        'cta_description' => 'CTA Section Description',
-                        'cta_enrol' => 'CTA Enrol Button',
-                        'cta_tour' => 'CTA Book Tour Button',
-                        'cta_whatsapp' => 'CTA WhatsApp Button',
-                        
-                        'student_portal_url' => 'Student Portal URL',
-                        'staff_portal_url' => 'Staff Portal URL',
-                        'common_entrance_url' => 'Common Entrance URL',
-                        
-                        'footer_social_facebook' => 'Footer Facebook URL',
-                        'footer_social_instagram' => 'Footer Instagram URL',
-                        'footer_social_linkedin' => 'Footer LinkedIn URL',
-                        'footer_social_x' => 'Footer X/Twitter URL',
-                        
-                        'about_hero_title' => 'About Page: Hero Title',
-                        'about_hero_subtitle' => 'About Page: Hero Subtitle',
-                        'about_description' => 'About Page: Description (HTML allowed)',
-                        'about_mission_title' => 'About Page: Mission Title',
-                        'about_mission_text' => 'About Page: Mission Description',
-                        'about_vision_title' => 'About Page: Vision Title',
-                        'about_vision_text' => 'About Page: Vision Description',
-                        'about_core_values_title' => 'About Page: Core Values Title',
-                        'core_value_1' => 'Core Value 1',
-                        'core_value_2' => 'Core Value 2',
-                        'core_value_3' => 'Core Value 3',
-                        'core_value_4' => 'Core Value 4',
-                        'core_value_5' => 'Core Value 5',
-                        
-                        'about_leadership_title' => 'About Page: Leadership Title',
-                        'about_leadership_subtitle' => 'About Page: Leadership Subtitle',
-                        'about_leadership_empty' => 'About Page: Leadership Empty State',
-                        
-                        'advantage_hero_title' => 'Academics Page: Hero Title',
-                        'advantage_hero_subtitle' => 'Academics Page: Hero Subtitle',
-                        'advantage_intro' => 'Academics Page: Introduction Text (HTML allowed)',
-                        'learning_levels_title' => 'Academics Page: Learning Levels Title',
-                        'learning_levels_subtitle' => 'Academics Page: Learning Levels Subtitle',
-                        'eyfs_title' => 'Academics Page: EYFS Title',
-                        'eyfs_focus_label' => 'Academics Page: EYFS Focus Label',
-                        'eyfs_focus_text' => 'Academics Page: EYFS Focus Description',
-                        'eyfs_outcome_label' => 'Academics Page: EYFS Outcome Label',
-                        'eyfs_outcome_text' => 'Academics Page: EYFS Outcome Description',
-                        'primary_title' => 'Academics Page: Primary School Title',
-                        'primary_focus_label' => 'Academics Page: Primary Focus Label',
-                        'primary_focus_text' => 'Academics Page: Primary Focus Description',
-                        'primary_outcome_label' => 'Academics Page: Primary Outcome Label',
-                        'primary_outcome_text' => 'Academics Page: Primary Outcome Description',
-                        'subjects_title' => 'Academics Page: Subjects Title',
-                        'subjects_subtitle' => 'Academics Page: Subjects Subtitle',
-                        'subject_literacy_title' => 'Academics Page: Subject Literacy Title',
-                        'subject_literacy_text' => 'Academics Page: Subject Literacy Description',
-                        'subject_numeracy_title' => 'Academics Page: Subject Numeracy Title',
-                        'subject_numeracy_text' => 'Academics Page: Subject Numeracy Description',
-                        'subject_stem_title' => 'Academics Page: Subject STEM Title',
-                        'subject_stem_text' => 'Academics Page: Subject STEM Description',
-                        'subject_character_title' => 'Academics Page: Subject Character Title',
-                        'subject_character_text' => 'Academics Page: Subject Character Description',
+                        // Topbar & Nav
+                        'topbar_badge' => 'Top Bar Session Badge',
+                        'topbar_text' => 'Top Bar Announcement Text',
+                        'nav_about_label' => 'Nav: About',
+                        'nav_features_label' => 'Nav: Distinctives',
+                        'nav_academics_label' => 'Nav: Curriculum',
+                        'nav_stats_label' => 'Nav: Outcomes',
+                        'nav_facilities_label' => 'Nav: Campus',
+                        'nav_news_label' => 'Nav: Bulletin',
+                        'nav_contact_label' => 'Nav: Contact',
+                        'nav_portals_label' => 'Nav: Portals Dropdown Label',
+                        'portal_student_label' => 'Portal: Student Full Label',
+                        'portal_staff_label' => 'Portal: Faculty Full Label',
+                        'portal_admin_label' => 'Portal: Admin Full Label',
+                        'portal_student_label_short' => 'Portal: Student Short Label (Mobile)',
+                        'portal_staff_label_short' => 'Portal: Faculty Short Label (Mobile)',
+                        'portal_admin_label_short' => 'Portal: Admin Short Label (Mobile)',
+                        'header_cta_text' => 'Header CTA Button Text',
+                        'header_cta_link' => 'Header CTA Button Link',
+
+                        // Hero Section
+                        'hero_badge' => 'Hero: Academic Badge',
+                        'hero_title' => 'Hero: Main Heading',
+                        'hero_subtitle' => 'Hero: Subtitle',
+                        'hero_image' => 'Hero: Background Photograph',
+                        'hero_image_alt' => 'Hero: Background Image Alt Text',
+                        'hero_primary_cta_text' => 'Hero: Primary CTA Text',
+                        'hero_primary_cta_link' => 'Hero: Primary CTA Link',
+                        'hero_secondary_cta_text' => 'Hero: Secondary CTA Text',
+                        'hero_secondary_cta_link' => 'Hero: Secondary CTA Link',
+                        'hero_scroll_label' => 'Hero: Scroll Prompt Text',
+
+                        // 01 About Section
+                        'about_eyebrow' => 'About: Eyebrow Label',
+                        'about_heading' => 'About: Main Heading',
+                        'about_image' => 'About: Portrait Photograph',
+                        'about_image_alt' => 'About: Portrait Alt Text',
+                        'about_years_badge' => 'About: Years Legacy Numeral',
+                        'about_years_label' => 'About: Years Legacy Caption',
+                        'about_body' => 'About: Prose Narrative (HTML RichEditor)',
+                        'about_principal_name' => 'About: Principal Full Name',
+                        'about_principal_title' => 'About: Principal Official Title',
+
+                        // 02 Distinctives
+                        'features_eyebrow' => 'Features: Eyebrow Label',
+                        'features_heading' => 'Features: Main Heading',
+                        'features_intro' => 'Features: Intro Narrative',
+                        'features_cta_text' => 'Features: Curriculum CTA Text',
+                        'features_cta_link' => 'Features: Curriculum CTA Link',
+                        'features_items' => 'Features: Pillars Repeater (JSON Array)',
+
+                        // 03 Outcomes
+                        'stats_eyebrow' => 'Stats: Eyebrow Label',
+                        'stats_heading' => 'Stats: Main Heading',
+                        'stats_items' => 'Stats: Outcomes Repeater (JSON Array)',
+                        'stats_destinations_label' => 'Stats: Destinations Footnote Label',
+                        'stats_destinations' => 'Stats: University Destinations List (JSON Array)',
+
+                        // 04 Academics
+                        'academics_eyebrow' => 'Academics: Eyebrow Label',
+                        'academics_heading' => 'Academics: Main Heading',
+                        'academics_intro' => 'Academics: Intro Narrative',
+                        'academics_tracks' => 'Academics: Division Tracks Repeater (JSON Array)',
+
+                        // 05 Facilities
+                        'facilities_eyebrow' => 'Facilities: Eyebrow Label',
+                        'facilities_heading' => 'Facilities: Main Heading',
+                        'facilities_items' => 'Facilities: Campus Items Repeater (JSON Array)',
+
+                        // 06 News
+                        'news_eyebrow' => 'News: Eyebrow Label',
+                        'news_heading' => 'News: Main Heading',
+                        'news_articles' => 'News: Recent Announcements Repeater (JSON Array)',
+
+                        // 07 Testimonials
+                        'testimonials_eyebrow' => 'Testimonials: Eyebrow Label',
+                        'testimonials_heading' => 'Testimonials: Main Heading',
+                        'testimonials_intro' => 'Testimonials: Intro Narrative',
+                        'testimonials_items' => 'Testimonials: Quotes Repeater (JSON Array)',
+
+                        // Admissions CTA
+                        'admissions_cta_eyebrow' => 'Admissions: CTA Eyebrow',
+                        'admissions_cta_heading' => 'Admissions: CTA Main Heading',
+                        'admissions_cta_subtitle' => 'Admissions: CTA Subtitle',
+                        'admissions_cta_steps' => 'Admissions: 4-Step Protocol Repeater (JSON Array)',
+                        'admissions_cta_primary_btn' => 'Admissions: Primary Button Text',
+                        'admissions_cta_primary_link' => 'Admissions: Primary Button Link',
+                        'admissions_cta_secondary_btn' => 'Admissions: Secondary Button Text',
+                        'admissions_cta_secondary_link' => 'Admissions: Secondary Button Link',
+
+                        // Contact & Inquiry
+                        'contact_eyebrow' => 'Contact: Eyebrow Label',
+                        'contact_heading' => 'Contact: Main Heading',
+                        'contact_intro' => 'Contact: Intro Narrative',
+                        'contact_address' => 'Contact: Campus Address Block',
+                        'contact_address_label' => 'Contact: Address Header Label',
+                        'contact_phone_label' => 'Contact: Phone Header Label',
+                        'contact_additional_phones' => 'Contact: Additional Phones (JSON Array)',
+                        'contact_email_label' => 'Contact: Email Header Label',
+                        'contact_additional_emails' => 'Contact: Additional Emails (JSON Array)',
+                        'contact_visiting_hours_label' => 'Contact: Visiting Hours Header Label',
+                        'contact_visiting_hours' => 'Contact: Admissions Visiting Hours',
+                        'contact_form_title' => 'Contact: Inquiry Form Title',
+                        'contact_form_desc' => 'Contact: Inquiry Form Description',
+                        'contact_form_name_label' => 'Contact: Form Parent Name Label',
+                        'contact_form_phone_label' => 'Contact: Form Phone Label',
+                        'contact_form_email_label' => 'Contact: Form Email Label',
+                        'contact_form_grade_label' => 'Contact: Form Grade Select Label',
+                        'contact_form_grade_placeholder' => 'Contact: Form Grade Placeholder',
+                        'contact_form_classes' => 'Contact: Grade Options (JSON Array)',
+                        'contact_form_notes_label' => 'Contact: Form Notes Label',
+                        'contact_form_success_title' => 'Contact: Inquiry Success Title',
+                        'contact_form_success_desc' => 'Contact: Inquiry Success Message',
+
+                        // Footer
+                        'footer_edition_label' => 'Footer: Prospectus Edition Label',
+                        'footer_description' => 'Footer: Mission Summary Description',
+                        'footer_accreditations' => 'Footer: Accreditations Footnote',
+                        'footer_col2_heading' => 'Footer: Column 2 Title',
+                        'footer_col3_heading' => 'Footer: Column 3 Title',
+                        'footer_col4_heading' => 'Footer: Column 4 Title',
+                        'footer_exam_link_label' => 'Footer: Exam Link Label',
+                        'footer_exam_link_url' => 'Footer: Exam Link URL',
+                        'footer_tuition_link_label' => 'Footer: Tuition Link Label',
+                        'footer_tuition_link_url' => 'Footer: Tuition Link URL',
+                        'footer_privacy_label' => 'Footer: Privacy Policy Label',
+                        'footer_privacy_link' => 'Footer: Privacy Policy Link',
+                        'footer_terms_label' => 'Footer: Terms Label',
+                        'footer_terms_link' => 'Footer: Terms Link',
+                        'footer_directions_label' => 'Footer: Directions Label',
+                        'footer_directions_link' => 'Footer: Directions Link',
                     ])
                     ->unique(FrontendContent::class, 'key', ignoreRecord: true)
                     ->columnSpanFull()
@@ -200,120 +240,114 @@ class FrontendContentResource extends Resource
                     ->live(onBlur: true)
                     ->afterStateUpdated(function (callable $set, $state) {
                         $groups = [
-                            'hero_images'            => 'home.hero',
-                            'hero_tagline'           => 'home.hero',
-                            'hero_heading'           => 'home.hero',
-                            'hero_heading_highlight' => 'home.hero',
-                            'hero_description'       => 'home.hero',
-                            'hero_cta_primary'       => 'home.hero',
-                            'hero_cta_secondary'     => 'home.hero',
-                            'about_intro_welcome'    => 'home.about',
-                            'about_intro_heading'    => 'home.about',
-                            'about_intro_text'       => 'home.about',
-                            'about_intro_mission'    => 'home.about',
-                            'about_intro_read_more'  => 'home.about',
-                            'pillar_1_label'         => 'home.pillars',
-                            'pillar_1_image'         => 'home.pillars',
-                            'pillar_2_label'         => 'home.pillars',
-                            'pillar_2_image'         => 'home.pillars',
-                            'pillar_3_label'         => 'home.pillars',
-                            'pillar_3_image'         => 'home.pillars',
-                            'pillar_4_label'         => 'home.pillars',
-                            'pillar_4_image'         => 'home.pillars',
-                            'trust_1'                => 'home.trust',
-                            'trust_2'                => 'home.trust',
-                            'trust_3'                => 'home.trust',
-                            'trust_4'                => 'home.trust',
-                            'why_us_heading'         => 'home.features',
-                            'why_us_subheading'      => 'home.features',
-                            'feature_1_title'        => 'home.features',
-                            'feature_1_description'  => 'home.features',
-                            'feature_1_icon'         => 'home.features',
-                            'feature_2_title'        => 'home.features',
-                            'feature_2_description'  => 'home.features',
-                            'feature_2_icon'         => 'home.features',
-                            'feature_3_title'        => 'home.features',
-                            'feature_3_description'  => 'home.features',
-                            'feature_3_icon'         => 'home.features',
-                            'feature_4_title'        => 'home.features',
-                            'feature_4_description'  => 'home.features',
-                            'feature_4_icon'         => 'home.features',
-                            'bento_1_title'          => 'home.why',
-                            'bento_1_description'    => 'home.why',
-                            'bento_2_title'          => 'home.why',
-                            'bento_2_description'    => 'home.why',
-                            'bento_3_title'          => 'home.why',
-                            'bento_3_description'    => 'home.why',
-                            'stat_1_value'           => 'home.stats',
-                            'stat_1_label'           => 'home.stats',
-                            'stat_2_value'           => 'home.stats',
-                            'stat_2_label'           => 'home.stats',
-                            'stat_3_value'           => 'home.stats',
-                            'stat_3_label'           => 'home.stats',
-                            'stat_4_value'           => 'home.stats',
-                            'stat_4_label'           => 'home.stats',
+                            'topbar_badge'               => 'home.topbar',
+                            'topbar_text'                => 'home.topbar',
+                            'nav_about_label'            => 'home.nav',
+                            'nav_features_label'         => 'home.nav',
+                            'nav_academics_label'        => 'home.nav',
+                            'nav_stats_label'            => 'home.nav',
+                            'nav_facilities_label'       => 'home.nav',
+                            'nav_news_label'             => 'home.nav',
+                            'nav_contact_label'          => 'home.nav',
+                            'nav_portals_label'          => 'home.nav',
+                            'portal_student_label'       => 'home.portals',
+                            'portal_staff_label'         => 'home.portals',
+                            'portal_admin_label'         => 'home.portals',
+                            'portal_student_label_short' => 'home.portals',
+                            'portal_staff_label_short'   => 'home.portals',
+                            'portal_admin_label_short'   => 'home.portals',
+                            'header_cta_text'            => 'home.header',
+                            'header_cta_link'            => 'home.header',
+                            'hero_badge'                 => 'home.hero',
+                            'hero_title'                 => 'home.hero',
+                            'hero_subtitle'              => 'home.hero',
+                            'hero_image'                 => 'home.hero',
+                            'hero_image_alt'             => 'home.hero',
+                            'hero_primary_cta_text'      => 'home.hero',
+                            'hero_primary_cta_link'      => 'home.hero',
+                            'hero_secondary_cta_text'    => 'home.hero',
+                            'hero_secondary_cta_link'    => 'home.hero',
+                            'hero_scroll_label'          => 'home.hero',
+                            'about_eyebrow'              => 'home.about',
+                            'about_heading'              => 'home.about',
+                            'about_image'                => 'home.about',
+                            'about_image_alt'            => 'home.about',
+                            'about_years_badge'          => 'home.about',
+                            'about_years_label'          => 'home.about',
+                            'about_body'                 => 'home.about',
+                            'about_principal_name'       => 'home.about',
+                            'about_principal_title'      => 'home.about',
+                            'features_eyebrow'           => 'home.features',
+                            'features_heading'           => 'home.features',
+                            'features_intro'             => 'home.features',
+                            'features_cta_text'          => 'home.features',
+                            'features_cta_link'          => 'home.features',
+                            'features_items'             => 'home.features',
+                            'stats_eyebrow'              => 'home.stats',
+                            'stats_heading'              => 'home.stats',
+                            'stats_items'                => 'home.stats',
+                            'stats_destinations_label'   => 'home.stats',
+                            'stats_destinations'         => 'home.stats',
+                            'academics_eyebrow'          => 'home.academics',
+                            'academics_heading'          => 'home.academics',
+                            'academics_intro'            => 'home.academics',
+                            'academics_tracks'           => 'home.academics',
+                            'facilities_eyebrow'         => 'home.facilities',
+                            'facilities_heading'         => 'home.facilities',
+                            'facilities_items'           => 'home.facilities',
+                            'news_eyebrow'               => 'home.news',
                             'news_heading'               => 'home.news',
-                            'news_subheading'            => 'home.news',
-                            'news_view_all_label'        => 'home.news',
-                            'news_badge_label'           => 'home.news',
-                            'news_read_more_label'       => 'home.news',
-                            'news_empty_text'            => 'home.news',
-                            'news_view_all_mobile_label' => 'home.news',
-                            'leadership_heading'     => 'home.leadership',
-                            'leadership_subheading'  => 'home.leadership',
-                            'cta_heading'            => 'home.cta',
-                            'cta_description'        => 'home.cta',
-                            'cta_enrol'              => 'home.cta',
-                            'cta_tour'               => 'home.cta',
-                            'cta_whatsapp'           => 'home.cta',
-                            'student_portal_url'     => 'portals',
-                            'staff_portal_url'       => 'portals',
-                            'common_entrance_url'    => 'portals',
-                            'footer_social_facebook' => 'footer.social',
-                            'footer_social_instagram'=> 'footer.social',
-                            'footer_social_linkedin' => 'footer.social',
-                            'footer_social_x'        => 'footer.social',
-                            'about_hero_title'       => 'about',
-                            'about_hero_subtitle'    => 'about',
-                            'about_description'      => 'about',
-                            'about_mission_title'    => 'about.mission',
-                            'about_mission_text'     => 'about.mission',
-                            'about_vision_title'     => 'about.vision',
-                            'about_vision_text'      => 'about.vision',
-                            'about_core_values_title'=> 'about.values',
-                            'core_value_1'           => 'about.values',
-                            'core_value_2'           => 'about.values',
-                            'core_value_3'           => 'about.values',
-                            'core_value_4'           => 'about.values',
-                            'core_value_5'           => 'about.values',
-                            'about_leadership_title'    => 'about.leadership',
-                            'about_leadership_subtitle' => 'about.leadership',
-                            'about_leadership_empty'    => 'about.leadership',
-                            'advantage_hero_title'    => 'academics',
-                            'advantage_hero_subtitle' => 'academics',
-                            'advantage_intro'         => 'academics',
-                            'learning_levels_title'   => 'academics.levels',
-                            'learning_levels_subtitle'=> 'academics.levels',
-                            'eyfs_title'              => 'academics.eyfs',
-                            'eyfs_focus_label'        => 'academics.eyfs',
-                            'eyfs_focus_text'         => 'academics.eyfs',
-                            'eyfs_outcome_label'      => 'academics.eyfs',
-                            'eyfs_outcome_text'       => 'academics.eyfs',
-                            'primary_title'           => 'academics.primary',
-                            'primary_focus_label'     => 'academics.primary',
-                            'primary_focus_text'      => 'academics.primary',
-                            'primary_outcome_label'   => 'academics.primary',
-                            'primary_outcome_text'    => 'academics.primary',
-                            'subjects_title'          => 'academics.subjects',
-                            'subjects_subtitle'       => 'academics.subjects',
-                            'subject_literacy_title'  => 'academics.subjects',
-                            'subject_literacy_text'   => 'academics.subjects',
-                            'subject_numeracy_title'  => 'academics.subjects',
-                            'subject_numeracy_text'   => 'academics.subjects',
-                            'subject_stem_title'      => 'academics.subjects',
-                            'subject_stem_text'       => 'academics.subjects',
-                            'subject_character_title' => 'academics.subjects',
-                            'subject_character_text'  => 'academics.subjects',
+                            'news_articles'              => 'home.news',
+                            'testimonials_eyebrow'       => 'home.testimonials',
+                            'testimonials_heading'       => 'home.testimonials',
+                            'testimonials_intro'         => 'home.testimonials',
+                            'testimonials_items'         => 'home.testimonials',
+                            'admissions_cta_eyebrow'        => 'home.admissions',
+                            'admissions_cta_heading'        => 'home.admissions',
+                            'admissions_cta_subtitle'       => 'home.admissions',
+                            'admissions_cta_steps'          => 'home.admissions',
+                            'admissions_cta_primary_btn'    => 'home.admissions',
+                            'admissions_cta_primary_link'   => 'home.admissions',
+                            'admissions_cta_secondary_btn'  => 'home.admissions',
+                            'admissions_cta_secondary_link' => 'home.admissions',
+                            'contact_eyebrow'                => 'home.contact',
+                            'contact_heading'                => 'home.contact',
+                            'contact_intro'                  => 'home.contact',
+                            'contact_address'                => 'home.contact',
+                            'contact_address_label'          => 'home.contact',
+                            'contact_phone_label'            => 'home.contact',
+                            'contact_additional_phones'      => 'home.contact',
+                            'contact_email_label'            => 'home.contact',
+                            'contact_additional_emails'      => 'home.contact',
+                            'contact_visiting_hours_label'   => 'home.contact',
+                            'contact_visiting_hours'         => 'home.contact',
+                            'contact_form_title'             => 'home.contact',
+                            'contact_form_desc'              => 'home.contact',
+                            'contact_form_name_label'        => 'home.contact',
+                            'contact_form_phone_label'       => 'home.contact',
+                            'contact_form_email_label'       => 'home.contact',
+                            'contact_form_grade_label'       => 'home.contact',
+                            'contact_form_grade_placeholder' => 'home.contact',
+                            'contact_form_classes'           => 'home.contact',
+                            'contact_form_notes_label'       => 'home.contact',
+                            'contact_form_success_title'     => 'home.contact',
+                            'contact_form_success_desc'      => 'home.contact',
+                            'footer_edition_label'           => 'home.footer',
+                            'footer_description'             => 'home.footer',
+                            'footer_accreditations'          => 'home.footer',
+                            'footer_col2_heading'            => 'home.footer',
+                            'footer_col3_heading'            => 'home.footer',
+                            'footer_col4_heading'            => 'home.footer',
+                            'footer_exam_link_label'         => 'home.footer',
+                            'footer_exam_link_url'           => 'home.footer',
+                            'footer_tuition_link_label'      => 'home.footer',
+                            'footer_tuition_link_url'        => 'home.footer',
+                            'footer_privacy_label'           => 'home.footer',
+                            'footer_privacy_link'            => 'home.footer',
+                            'footer_terms_label'             => 'home.footer',
+                            'footer_terms_link'              => 'home.footer',
+                            'footer_directions_label'        => 'home.footer',
+                            'footer_directions_link'         => 'home.footer',
                         ];
                         if (isset($groups[$state])) {
                             $set('group', $groups[$state]);
@@ -335,10 +369,10 @@ class FrontendContentResource extends Resource
                     ->dehydrated(fn ($state, $component) => $component->isVisible()),
 
                 Textarea::make('value_textarea')
-                    ->label('Value (Long Text)')
+                    ->label('Value (Long Text / JSON / HTML)')
                     ->rows(6)
                     ->columnSpanFull()
-                    ->helperText('Supports HTML for rich text fields rendered with {!! !!}')
+                    ->helperText('Supports HTML or JSON content for repeaters/arrays.')
                     ->visible($isTextarea)
                     ->dehydrated(fn ($state, $component) => $component->isVisible()),
 

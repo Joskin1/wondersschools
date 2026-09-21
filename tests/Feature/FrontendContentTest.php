@@ -128,90 +128,73 @@ describe('FrontendContent model', function () {
 
 describe('Home page dynamic content', function () {
 
+    beforeEach(function () {
+        (new \Database\Seeders\TenantFrontendContentSeeder())->run();
+        FrontendLibrary::flush();
+    });
+
     it('shows the tenant school name from settings', function () {
-        Setting::create(['key' => 'school_name', 'value' => 'Wonders Kiddies Foundation Schools']);
+        Setting::updateOrCreate(['key' => 'school_name'], ['value' => 'Wonders Kiddies Foundation Schools']);
+        FrontendLibrary::flush();
 
         get('/')->assertSee('Wonders Kiddies Foundation Schools');
     });
 
     it('shows a custom hero heading when stored in frontend_contents', function () {
-        FrontendContent::create([
-            'key'   => 'hero_heading',
-            'group' => 'home.hero',
-            'value' => 'Welcome to Sunrise Academy',
-        ]);
+        FrontendContent::updateOrCreate(
+            ['key' => 'hero_title'],
+            ['group' => 'home.hero', 'value' => 'Welcome to Sunrise Academy']
+        );
+        FrontendLibrary::flush();
 
         get('/')->assertSee('Welcome to Sunrise Academy');
     });
 
     it('shows the default heading when no database record exists', function () {
         get('/')
-            ->assertSee('A Foundation That')
-            ->assertSee('Builds Futures.');
+            ->assertSee('Nurturing Intellectual Depth & Moral Leadership');
     });
 
-    it('shows custom heading highlight when overridden', function () {
-        FrontendContent::create([
-            'key'   => 'hero_heading_highlight',
-            'group' => 'home.hero',
-            'value' => 'Shapes Champions.',
-        ]);
+    it('shows custom hero badge when overridden', function () {
+        FrontendContent::updateOrCreate(
+            ['key' => 'hero_badge'],
+            ['group' => 'home.hero', 'value' => '2026 / 2027 Academic Session']
+        );
+        FrontendLibrary::flush();
 
-        get('/')->assertSee('Shapes Champions.');
+        get('/')->assertSee('2026 / 2027 Academic Session');
     });
 
     it('shows default pillar labels', function () {
         get('/')
-            ->assertSee('Science Laboratory')
-            ->assertSee('Practical Work')
-            ->assertSee('Information Technology')
-            ->assertSee('Creative Arts');
-    });
-
-    it('reflects updated pillar label', function () {
-        FrontendContent::create([
-            'key'   => 'pillar_1_label',
-            'group' => 'home.pillars',
-            'value' => 'Accredited Lab',
-        ]);
-
-        get('/')->assertSee('Accredited Lab');
+            ->assertSee('Integrated Dual Curriculum')
+            ->assertSee('Individualized Tutorial Mentorship')
+            ->assertSee('Applied STEM & Computational Thinking')
+            ->assertSee('Moral Formation & Character Discipline');
     });
 
     it('shows default Why Us heading', function () {
-        get('/')->assertSee('What We Do');
+        get('/')->assertSee('DISTINCTIVES');
     });
 
     it('shows default stats labels', function () {
         get('/')
-            ->assertSee('Years of Excellence')
-            ->assertSee('Happy Students')
-            ->assertSee('Expert Staff');
-    });
-
-    it('shows custom stat value when overridden', function () {
-        FrontendContent::create([
-            'key'   => 'stat_1_value',
-            'group' => 'home.stats',
-            'value' => '20+',
-        ]);
-
-        get('/')->assertSee('20+');
+            ->assertSee('100%')
+            ->assertSee('WAEC Pass Rate');
     });
 
     it('shows default CTA buttons', function () {
         get('/')
-            ->assertSee('Explore Our Campus')
-            ->assertSee('Enrol Now')
-            ->assertSee('Chat on WhatsApp');
+            ->assertSee('Apply for Admission')
+            ->assertSee('Explore Prospectus');
     });
 
-    it('shows updated CTA enrol text', function () {
-        FrontendContent::create([
-            'key'   => 'cta_enrol',
-            'group' => 'home.cta',
-            'value' => 'Apply Today',
-        ]);
+    it('shows updated CTA button text', function () {
+        FrontendContent::updateOrCreate(
+            ['key' => 'hero_primary_cta_text'],
+            ['group' => 'home.hero', 'value' => 'Apply Today']
+        );
+        FrontendLibrary::flush();
 
         get('/')->assertSee('Apply Today');
     });
@@ -325,4 +308,93 @@ describe('Content isolation', function () {
 
         expect($result)->toBe('Default School Name');
     });
+
+    it('immediately invalidates cache on FrontendContent update via observer', function () {
+        $record = FrontendContent::create([
+            'key'   => 'hero_title',
+            'group' => 'home.hero',
+            'value' => 'Initial Title',
+        ]);
+
+        // Cold load -> cached
+        expect(FrontendLibrary::get('hero_title'))->toBe('Initial Title');
+
+        // Update record -> observer flushes cache
+        $record->update(['value' => 'Updated Academic Title']);
+
+        // Next read returns new value immediately
+        expect(FrontendLibrary::get('hero_title'))->toBe('Updated Academic Title');
+    });
+
+    it('immediately invalidates cache on Setting update via observer', function () {
+        Setting::create([
+            'key'   => 'school_phone',
+            'value' => '+234 800 000 0000',
+        ]);
+
+        expect(FrontendLibrary::getSetting('school_phone'))->toBe('+234 800 000 0000');
+
+        Setting::where('key', 'school_phone')->update(['value' => '+234 811 111 1111']);
+        // Trigger model saved event for observer
+        Setting::where('key', 'school_phone')->first()->touch();
+
+        expect(FrontendLibrary::getSetting('school_phone'))->toBe('+234 811 111 1111');
+    });
+
+    it('decodes JSON repeaters via getJson with fallback', function () {
+        FrontendContent::create([
+            'key'   => 'features_items',
+            'value' => json_encode([['title' => 'Pillar 1', 'desc' => 'Description 1']]),
+        ]);
+
+        $items = FrontendLibrary::getJson('features_items', []);
+        expect($items)->toHaveCount(1)
+            ->and($items[0]['title'])->toBe('Pillar 1');
+
+        $emptyFallback = FrontendLibrary::getJson('missing_items', [['title' => 'Default']]);
+        expect($emptyFallback)->toHaveCount(1)
+            ->and($emptyFallback[0]['title'])->toBe('Default');
+    });
+
+    it('seeds all defaults via TenantFrontendContentSeeder', function () {
+        $seeder = new \Database\Seeders\TenantFrontendContentSeeder();
+        $seeder->run();
+
+        expect(Setting::count())->toBe(17);
+        expect(FrontendContent::count())->toBe(108);
+        expect(FrontendLibrary::get('hero_badge'))->toBe('2026 / 2027 Academic Session');
+        expect(FrontendLibrary::get('hero_title'))->toBe('Nurturing Intellectual Depth & Moral Leadership');
+        expect(FrontendLibrary::get('about_body'))->toContain('Founded in 2001');
+        expect(FrontendLibrary::getSetting('school_short_name'))->toBe('AC');
+    });
+
+    it('executes at most 2 queries for all frontend contents and settings on page load', function () {
+        (new \Database\Seeders\TenantFrontendContentSeeder())->run();
+
+        // Flush in-memory and persistent cache to simulate cold request
+        FrontendLibrary::flush();
+
+        \Illuminate\Support\Facades\DB::enableQueryLog();
+
+        get('/');
+
+        $queries = collect(\Illuminate\Support\Facades\DB::getQueryLog());
+        $contentQueries = $queries->filter(function ($query) {
+            return str_contains($query['query'], 'frontend_contents') || str_contains($query['query'], 'settings');
+        });
+
+        // Exactly 1 query for frontend_contents and 1 query for settings
+        expect($contentQueries->count())->toBeLessThanOrEqual(2);
+
+        // Warm request -> 0 queries for frontend_contents and settings
+        \Illuminate\Support\Facades\DB::flushQueryLog();
+        get('/');
+        $warmQueries = collect(\Illuminate\Support\Facades\DB::getQueryLog());
+        $warmContentQueries = $warmQueries->filter(function ($query) {
+            return str_contains($query['query'], 'frontend_contents') || str_contains($query['query'], 'settings');
+        });
+
+        expect($warmContentQueries->count())->toBe(0);
+    });
 });
+

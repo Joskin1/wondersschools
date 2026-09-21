@@ -31,5 +31,6 @@ Thumbs.db
 # PRD / planning documents — keep README.md tracked
 /*.md
 !/README.md
+!/ContentInventory.md
 
 /storage/app/vendor-templates

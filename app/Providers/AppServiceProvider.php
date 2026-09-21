@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\FrontendContent;
+use App\Models\Setting;
+use App\Observers\FrontendContentObserver;
+use App\Observers\SettingObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        FrontendContent::observe(FrontendContentObserver::class);
+        Setting::observe(SettingObserver::class);
     }
 }
