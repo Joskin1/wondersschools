@@ -20,7 +20,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div class="flex items-start gap-3">
                     <div class="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 shrink-0">
-                        <x-heroicon-o-shield-check class="w-5 h-5" />
+                        <x-heroicon-o-shield-check class="w-5 h-5" style="width: 20px; height: 20px; min-width: 20px; max-width: 20px; display: inline-block;" />
                     </div>
                     <div>
                         <h4 class="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
@@ -38,7 +38,7 @@
                         @click="dismissBanner()"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 rounded-lg shadow-sm transition"
                     >
-                        <x-heroicon-m-check class="w-4 h-4" />
+                        <x-heroicon-m-check class="w-4 h-4" style="width: 16px; height: 16px; min-width: 16px; max-width: 16px; display: inline-block;" />
                         Keep & Continue
                     </button>
                     <button
@@ -46,7 +46,7 @@
                         @click="discardDraft()"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 bg-red-100/70 hover:bg-red-200/80 dark:bg-red-950/50 dark:hover:bg-red-900/60 rounded-lg transition"
                     >
-                        <x-heroicon-m-trash class="w-4 h-4 text-red-600 dark:text-red-400" />
+                        <x-heroicon-m-trash class="w-4 h-4 text-red-600 dark:text-red-400" style="width: 16px; height: 16px; min-width: 16px; max-width: 16px; display: inline-block;" />
                         Discard Draft
                     </button>
                 </div>
@@ -60,7 +60,7 @@
             <!-- Offline state -->
             <template x-if="isOffline">
                 <span class="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/50">
-                    <x-heroicon-o-signal-slash class="w-3.5 h-3.5" />
+                    <x-heroicon-o-signal-slash class="w-3.5 h-3.5" style="width: 14px; height: 14px; min-width: 14px; max-width: 14px; display: inline-block;" />
                     <span>Offline mode active — work safely saved to this device</span>
                 </span>
             </template>
@@ -79,7 +79,7 @@
             <!-- Default idle protection status -->
             <template x-if="!isOffline && !showSavedIndicator">
                 <span class="inline-flex items-center gap-1.5 text-gray-400 dark:text-gray-500">
-                    <x-heroicon-o-shield-check class="w-3.5 h-3.5" />
+                    <x-heroicon-o-shield-check class="w-3.5 h-3.5" style="width: 14px; height: 14px; min-width: 14px; max-width: 14px; display: inline-block;" />
                     <span>Auto-draft protection active</span>
                 </span>
             </template>
