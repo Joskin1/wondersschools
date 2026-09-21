@@ -88,6 +88,92 @@ class LessonDocxParserService
     }
 
     /**
+     * Validate whether a .docx file strictly follows the Lesson Note template format.
+     *
+     * @param  string  $filePath
+     * @return array{valid: bool, errors: string[]}
+     */
+    public function validateLessonNoteTemplate(string $filePath): array
+    {
+        try {
+            $sections = $this->extractSections($filePath, self::LESSON_NOTE_SECTIONS);
+        } catch (\Throwable $e) {
+            return [
+                'valid' => false,
+                'errors' => ['Could not read the uploaded document. Please ensure it is a valid .docx file.'],
+            ];
+        }
+
+        $errors = [];
+        $title = $this->getSingleLine($sections, 'TOPIC') ?: $this->getSingleLine($sections, 'TITLE');
+        $content = $this->getRichText($sections, 'LESSON NOTE CONTENT');
+
+        if (empty($title)) {
+            $errors[] = 'Missing lesson topic/title under the "TITLE" or "TOPIC" section header.';
+        }
+
+        if (empty($content)) {
+            $errors[] = 'Missing lesson content under the "LESSON NOTE CONTENT" section header.';
+        }
+
+        if (!empty($errors)) {
+            return [
+                'valid' => false,
+                'errors' => array_merge(
+                    ['The uploaded document does not follow the official Lesson Note template format.'],
+                    $errors,
+                    ['Please download the official template, fill in your content, and upload again.']
+                ),
+            ];
+        }
+
+        return ['valid' => true, 'errors' => []];
+    }
+
+    /**
+     * Validate whether a .docx file strictly follows the Lesson Plan template format.
+     *
+     * @param  string  $filePath
+     * @return array{valid: bool, errors: string[]}
+     */
+    public function validateLessonPlanTemplate(string $filePath): array
+    {
+        try {
+            $sections = $this->extractSections($filePath, self::LESSON_PLAN_SECTIONS);
+        } catch (\Throwable $e) {
+            return [
+                'valid' => false,
+                'errors' => ['Could not read the uploaded document. Please ensure it is a valid .docx file.'],
+            ];
+        }
+
+        $errors = [];
+        $topic = $this->getSingleLine($sections, 'TOPIC') ?: $this->getSingleLine($sections, 'TITLE');
+        $content = $this->getRichText($sections, 'CONTENT');
+
+        if (empty($topic)) {
+            $errors[] = 'Missing lesson topic under the "TOPIC" section header.';
+        }
+
+        if (empty($content)) {
+            $errors[] = 'Missing lesson content under the "CONTENT" section header.';
+        }
+
+        if (!empty($errors)) {
+            return [
+                'valid' => false,
+                'errors' => array_merge(
+                    ['The uploaded document does not follow the official Lesson Plan template format.'],
+                    $errors,
+                    ['Please download the official template, fill in your content, and upload again.']
+                ),
+            ];
+        }
+
+        return ['valid' => true, 'errors' => []];
+    }
+
+    /**
      * Parse a Lesson Note .docx file and return structured data.
      *
      * @param  string  $filePath  Absolute path to the .docx file

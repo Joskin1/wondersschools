@@ -318,4 +318,145 @@ class LessonPlanWorkflowTest extends TestCase
         $plan->teachingMethods()->sync([$teachMethod->id, $secondMethod->id]);
         $this->assertCount(2, $plan->fresh()->teachingMethods);
     }
+
+    public function test_submit_pair_for_review_fails_when_paired_lesson_note_missing(): void
+    {
+        $plan = LessonPlan::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 7,
+            'status' => 'draft',
+            'topic' => 'Week 7 Topic',
+        ]);
+
+        $service = app(LessonSubmissionService::class);
+        $result = $service->submitPairForReview($plan);
+
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('No Lesson Note found for Week 7', $result['message']);
+        $this->assertEquals('draft', $plan->fresh()->status);
+    }
+
+    public function test_submit_pair_for_review_succeeds_when_paired_lesson_note_exists(): void
+    {
+        Notification::fake();
+
+        $note = LessonNote::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 8,
+            'status' => 'draft',
+            'learning_objectives' => ['Objective 1'],
+        ]);
+
+        $version = LessonNoteVersion::create([
+            'lesson_note_id' => $note->id,
+            'submission_type' => 'written',
+            'title' => 'Week 8 Note',
+            'content' => '<p>Week 8 content</p>',
+            'file_name' => 'Week 8 Note',
+            'file_size' => 100,
+            'file_hash' => 'hash_8',
+            'uploaded_by' => $this->teacher->id,
+            'status' => 'draft',
+        ]);
+        $note->update(['latest_version_id' => $version->id]);
+
+        $plan = LessonPlan::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 8,
+            'status' => 'draft',
+            'topic' => 'Week 8 Topic',
+        ]);
+
+        $service = app(LessonSubmissionService::class);
+        $result = $service->submitPairForReview($plan);
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals('pending', $plan->fresh()->status);
+        $this->assertEquals('pending', $note->fresh()->status);
+        $this->assertEquals('pending', $version->fresh()->status);
+
+        Notification::assertSentTo(
+            $this->admin,
+            LessonSubmissionReady::class,
+            function ($notification) use ($note, $plan) {
+                return $notification->lessonNote->id === $note->id
+                    && $notification->lessonPlan->id === $plan->id;
+            }
+        );
+    }
+
+    public function test_admin_can_download_lesson_plan_and_lesson_note_pdf(): void
+    {
+        $note = LessonNote::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 9,
+            'status' => 'pending',
+            'learning_objectives' => ['Learn about atoms'],
+        ]);
+
+        $version = LessonNoteVersion::create([
+            'lesson_note_id' => $note->id,
+            'submission_type' => 'written',
+            'title' => 'Atomic Structure',
+            'content' => '<p>Protons, neutrons, and electrons.</p>',
+            'file_name' => 'Atomic Structure',
+            'file_size' => 150,
+            'file_hash' => 'hash_9',
+            'uploaded_by' => $this->teacher->id,
+            'status' => 'pending',
+        ]);
+        $note->update(['latest_version_id' => $version->id]);
+
+        $plan = LessonPlan::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 9,
+            'status' => 'pending',
+            'topic' => 'Atomic Structure',
+            'content' => '<p>Plan content for atomic structure.</p>',
+        ]);
+
+        // Admin downloads note PDF
+        $responseNote = $this->actingAs($this->admin)
+            ->get(route('admin.lesson-note.pdf', $note));
+        $responseNote->assertOk();
+        $responseNote->assertHeader('content-type', 'application/pdf');
+
+        // Admin downloads plan PDF
+        $responsePlan = $this->actingAs($this->admin)
+            ->get(route('admin.lesson-plan.pdf', $plan));
+        $responsePlan->assertOk();
+        $responsePlan->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_template_validation_service(): void
+    {
+        $parser = app(\App\Services\LessonDocxParserService::class);
+
+        // Non-existent file
+        $res = $parser->validateLessonNoteTemplate('/non/existent/file.docx');
+        $this->assertFalse($res['valid']);
+
+        $resPlan = $parser->validateLessonPlanTemplate('/non/existent/file.docx');
+        $this->assertFalse($resPlan['valid']);
+    }
 }

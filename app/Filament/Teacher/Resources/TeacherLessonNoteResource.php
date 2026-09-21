@@ -124,34 +124,17 @@ class TeacherLessonNoteResource extends Resource
                     ]),
 
                 Section::make('Lesson Note Content')
-                    ->description('Choose whether to upload a document or write your lesson note online.')
+                    ->description('Choose whether to write your lesson note online or upload a filled template (.docx).')
                     ->schema([
                         Radio::make('submission_type')
-                            ->label('Submission Format')
+                            ->label('Creation Method')
                             ->options([
-                                'file' => '📄 Upload Document (PDF, DOC, DOCX)',
                                 'written' => '📝 Write Lesson Note Online',
                                 'template' => '📥 Upload from Template (.docx)',
                             ])
-                            ->default('file')
+                            ->default('written')
                             ->live()
                             ->required(),
-
-                        // File Upload Option
-                        FileUpload::make('file')
-                            ->label('Lesson Note File')
-                            ->disk('public')
-                            ->directory('lesson-note-uploads/temp')
-                            ->acceptedFileTypes([
-                                'application/pdf',
-                                'application/msword',
-                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                            ])
-                            ->maxSize(10240)
-                            ->required(fn ($get) => $get('submission_type') === 'file' || empty($get('submission_type')))
-                            ->visible(fn ($get) => $get('submission_type') === 'file' || empty($get('submission_type')))
-                            ->helperText('PDF, DOC, or DOCX. Maximum 10MB.')
-                            ->columnSpanFull(),
 
                         // Template Upload Option
                         FileUpload::make('template_file')
@@ -165,7 +148,7 @@ class TeacherLessonNoteResource extends Resource
                             ->maxSize(10240)
                             ->required(fn ($get) => $get('submission_type') === 'template')
                             ->visible(fn ($get) => $get('submission_type') === 'template')
-                            ->helperText('Upload your completed Lesson_Note_Template.docx. The system will automatically extract the title, learning objectives, and content.')
+                            ->helperText('Upload your completed Lesson_Note_Template.docx. The system will extract the title, learning objectives, and content into the database.')
                             ->columnSpanFull(),
 
                         // Written Option
@@ -204,7 +187,7 @@ class TeacherLessonNoteResource extends Resource
                             ->multiple()
                             ->reorderable()
                             ->image()
-                            ->maxSize(5120) // 5MB per image as requested
+                            ->maxSize(5120)
                             ->disk(config('filesystems.upload_disk', 'public'))
                             ->directory('lesson-notes/images')
                             ->visible(fn ($get) => $get('submission_type') === 'written')
@@ -257,9 +240,18 @@ class TeacherLessonNoteResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
+                        'draft' => 'gray',
                         'pending' => 'warning',
                         'approved' => 'success',
                         'rejected' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'draft' => 'Draft',
+                        'pending' => 'Pending Review',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        default => ucfirst($state),
                     }),
 
                 Tables\Columns\TextColumn::make('latestVersion.admin_comment')
@@ -268,14 +260,15 @@ class TeacherLessonNoteResource extends Resource
                     ->placeholder('No feedback yet'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Submitted')
+                    ->label('Created')
                     ->dateTime('M d, Y')
                     ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Pending',
+                        'draft' => 'Draft',
+                        'pending' => 'Pending Review',
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
                     ]),
@@ -288,180 +281,9 @@ class TeacherLessonNoteResource extends Resource
                     )),
             ])
             ->actions([
-                EditAction::make()
-                    ->label('Edit')
-                    ->icon('heroicon-o-pencil')
-                    ->visible(fn (LessonNote $record): bool => $record->canBeEditedByTeacher()),
-
-                Action::make('reupload')
-                    ->label('Re-submit')
-                    ->icon('heroicon-o-arrow-path')
-                    ->color('warning')
-                    ->visible(fn (LessonNote $record) => $record->status === 'rejected')
-                    ->form([
-                        Radio::make('submission_type')
-                            ->label('Submission Format')
-                            ->options([
-                                'file' => '📄 Upload Document (PDF, DOC, DOCX)',
-                                'written' => '📝 Write Lesson Note Online',
-                                'template' => '📥 Upload from Template (.docx)',
-                            ])
-                            ->default(fn (LessonNote $record) => $record->latestVersion?->isWritten() ? 'written' : 'file')
-                            ->live()
-                            ->required(),
-
-                        FileUpload::make('file')
-                            ->label('New Document File')
-                            ->disk('public')
-                            ->directory('lesson-note-uploads/temp')
-                            ->acceptedFileTypes([
-                                'application/pdf',
-                                'application/msword',
-                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                            ])
-                            ->maxSize(10240)
-                            ->required(fn ($get) => $get('submission_type') === 'file')
-                            ->visible(fn ($get) => $get('submission_type') === 'file'),
-
-                        FileUpload::make('template_file')
-                            ->label('Filled Lesson Note Template (.docx)')
-                            ->disk('public')
-                            ->directory('lesson-note-uploads/temp')
-                            ->acceptedFileTypes([
-                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                'application/msword',
-                            ])
-                            ->maxSize(10240)
-                            ->required(fn ($get) => $get('submission_type') === 'template')
-                            ->visible(fn ($get) => $get('submission_type') === 'template')
-                            ->helperText('Upload your completed Lesson_Note_Template.docx.'),
-
-                        TextInput::make('title')
-                            ->label('Lesson Topic / Title')
-                            ->default(fn (LessonNote $record) => $record->latestVersion?->title)
-                            ->required(fn ($get) => $get('submission_type') === 'written')
-                            ->visible(fn ($get) => $get('submission_type') === 'written'),
-
-                        RichEditor::make('content')
-                            ->label('Lesson Note Body')
-                            ->default(fn (LessonNote $record) => $record->latestVersion?->content)
-                            ->required(fn ($get) => $get('submission_type') === 'written')
-                            ->visible(fn ($get) => $get('submission_type') === 'written'),
-
-                        FileUpload::make('images')
-                            ->label('Supporting Diagrams / Images (Optional)')
-                            ->helperText('Maximum 5MB per image.')
-                            ->multiple()
-                            ->reorderable()
-                            ->image()
-                            ->maxSize(5120)
-                            ->disk(config('filesystems.upload_disk', 'public'))
-                            ->directory('lesson-notes/images')
-                            ->default(fn (LessonNote $record) => $record->latestVersion?->images)
-                            ->visible(fn ($get) => $get('submission_type') === 'written'),
-                    ])
-                    ->action(function (LessonNote $record, array $data) {
-                        $submissionType = $data['submission_type'] ?? 'file';
-
-                        if ($submissionType === 'template') {
-                            $templatePath = $data['template_file'];
-                            $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($templatePath);
-
-                            try {
-                                $parsed = app(\App\Services\LessonDocxParserService::class)->parseLessonNote($fullPath);
-                                \Illuminate\Support\Facades\Storage::disk('public')->delete($templatePath);
-
-                                $title = $parsed['title'] ?: 'Written Lesson Note';
-                                $content = $parsed['content'] ?: '<p>No content extracted.</p>';
-                                $objectives = !empty($parsed['learning_objectives']) ? $parsed['learning_objectives'] : $record->learning_objectives;
-
-                                $record->update([
-                                    'learning_objectives' => $objectives,
-                                    'status' => 'pending',
-                                ]);
-
-                                $version = \App\Models\LessonNoteVersion::create([
-                                    'lesson_note_id' => $record->id,
-                                    'submission_type' => 'written',
-                                    'title' => $title,
-                                    'learning_objectives' => $objectives,
-                                    'content' => $content,
-                                    'file_name' => $title . ' (Week ' . $record->week_number . ')',
-                                    'file_size' => strlen($content),
-                                    'file_hash' => hash('sha256', $content),
-                                    'uploaded_by' => auth()->id(),
-                                    'mime_type' => 'text/html',
-                                    'status' => 'pending',
-                                ]);
-
-                                $record->update(['latest_version_id' => $version->id]);
-
-                                Notification::make()
-                                    ->title('Lesson note re-submitted')
-                                    ->body('Your updated lesson note from template has been submitted for review.')
-                                    ->success()
-                                    ->send();
-                            } catch (\Throwable $e) {
-                                Notification::make()
-                                    ->title('Failed to parse template')
-                                    ->body($e->getMessage())
-                                    ->danger()
-                                    ->send();
-                            }
-                        } elseif ($submissionType === 'written') {
-                            $version = \App\Models\LessonNoteVersion::create([
-                                'lesson_note_id' => $record->id,
-                                'submission_type' => 'written',
-                                'title' => $data['title'] ?? null,
-                                'content' => $data['content'] ?? null,
-                                'images' => $data['images'] ?? null,
-                                'file_name' => ($data['title'] ?? 'Written Lesson Note') . ' (Week ' . $record->week_number . ')',
-                                'file_size' => strlen($data['content'] ?? ''),
-                                'file_hash' => hash('sha256', ($data['content'] ?? '') . json_encode($data['images'] ?? [])),
-                                'uploaded_by' => auth()->id(),
-                                'mime_type' => 'text/html',
-                                'status' => 'pending',
-                            ]);
-
-                            $record->update([
-                                'latest_version_id' => $version->id,
-                                'status' => 'pending',
-                            ]);
-
-                            Notification::make()
-                                ->title('Lesson note re-submitted')
-                                ->body('Your updated written lesson note has been submitted for review.')
-                                ->success()
-                                ->send();
-                        } else {
-                            $filePath = $data['file'];
-                            $fileName = basename($filePath);
-
-                            $record->update(['status' => 'pending']);
-
-                            ProcessLessonNoteUpload::dispatch(
-                                $record->id,
-                                $filePath,
-                                $fileName,
-                                auth()->id()
-                            );
-
-                            Notification::make()
-                                ->title('New version uploaded')
-                                ->body('Your corrected lesson note is being processed.')
-                                ->success()
-                                ->send();
-                        }
-                    }),
-
-                Action::make('download')
-                    ->label('Download')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->url(fn (LessonNote $record) => $record->latestVersion?->getDownloadUrl())
-                    ->openUrlInNewTab()
-                    ->visible(fn (LessonNote $record) => $record->latestVersion?->isFile() && $record->latestVersion?->file_path !== null),
-
                 ViewAction::make(),
+                EditAction::make()
+                    ->visible(fn (LessonNote $record): bool => $record->canBeEditedByTeacher()),
             ])
             ->defaultSort('created_at', 'desc');
     }

@@ -132,6 +132,14 @@ class LessonNote extends Model
     }
 
     /**
+     * Scope to get draft lesson notes.
+     */
+    public function scopeDraft($query)
+    {
+        return $query->where('status', 'draft');
+    }
+
+    /**
      * Scope to get pending lesson notes.
      */
     public function scopePending($query)
@@ -220,7 +228,7 @@ class LessonNote extends Model
      */
     public function canBeEditedByTeacher(): bool
     {
-        if ($this->status === 'rejected') {
+        if (in_array($this->status, ['draft', 'rejected'])) {
             return true;
         }
 

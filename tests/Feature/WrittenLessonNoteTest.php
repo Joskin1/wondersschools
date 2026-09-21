@@ -87,7 +87,7 @@ class WrittenLessonNoteTest extends TestCase
             ->first();
 
         $this->assertNotNull($lessonNote);
-        $this->assertEquals('pending', $lessonNote->status);
+        $this->assertEquals('draft', $lessonNote->status);
         $this->assertNotNull($lessonNote->latest_version_id);
 
         // Assert LessonNoteVersion created with written content

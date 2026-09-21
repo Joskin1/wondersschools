@@ -241,12 +241,25 @@ class LessonNoteResource extends Resource
                     ->options(Session::all()->pluck('name', 'id')),
             ])
             ->actions([
-                Action::make('download')
-                    ->label('Download')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->url(fn (LessonNote $record) => $record->latestVersion?->getDownloadUrl() ?: '#')
+                ViewAction::make('review')
+                    ->label('Review')
+                    ->icon('heroicon-o-eye')
+                    ->color('primary'),
+
+                Action::make('note_pdf')
+                    ->label('Note PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->url(fn (LessonNote $record) => route('admin.lesson-note.pdf', $record))
+                    ->openUrlInNewTab(),
+
+                Action::make('plan_pdf')
+                    ->label('Plan PDF')
+                    ->icon('heroicon-o-clipboard-document-list')
+                    ->color('gray')
+                    ->url(fn (LessonNote $record) => $record->getPairedLessonPlan() ? route('admin.lesson-plan.pdf', $record->getPairedLessonPlan()) : '#')
                     ->openUrlInNewTab()
-                    ->visible(fn (LessonNote $record) => $record->latestVersion !== null && $record->latestVersion->isFile() && !empty($record->latestVersion->file_path)),
+                    ->visible(fn (LessonNote $record) => $record->getPairedLessonPlan() !== null),
 
                 Action::make('approve')
                     ->label('Approve')
@@ -276,7 +289,8 @@ class LessonNoteResource extends Resource
                         );
 
                         Notification::make()
-                            ->title('Lesson Note Approved')
+                            ->title('Lesson Submission Approved')
+                            ->body('Both Lesson Note and Lesson Plan have been approved.')
                             ->success()
                             ->send();
                     })
@@ -312,16 +326,12 @@ class LessonNoteResource extends Resource
                         );
 
                         Notification::make()
-                            ->title('Lesson Note Rejected')
+                            ->title('Lesson Submission Rejected')
+                            ->body('Both Lesson Note and Lesson Plan have been marked rejected.')
                             ->warning()
                             ->send();
                     })
                     ->visible(fn (LessonNote $record) => $record->status === 'pending'),
-
-                ViewAction::make('review')
-                    ->label('Review submission')
-                    ->icon('heroicon-o-eye')
-                    ->color('primary'),
             ])
             ->bulkActions([
                 BulkAction::make('bulk_approve')

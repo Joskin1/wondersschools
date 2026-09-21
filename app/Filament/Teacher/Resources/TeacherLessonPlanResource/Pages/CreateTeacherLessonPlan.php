@@ -211,8 +211,21 @@ class CreateTeacherLessonPlan extends CreateRecord
                     $uploadedPath = $data['template_file'];
                     $fullPath = Storage::disk('public')->path($uploadedPath);
 
+                    $parser = app(LessonDocxParserService::class);
+                    $validation = $parser->validateLessonPlanTemplate($fullPath);
+
+                    if (!$validation['valid']) {
+                        Storage::disk('public')->delete($uploadedPath);
+                        Notification::make()
+                            ->title('Invalid Template Format')
+                            ->body(implode(' ', $validation['errors']))
+                            ->danger()
+                            ->persistent()
+                            ->send();
+                        return;
+                    }
+
                     try {
-                        $parser = app(LessonDocxParserService::class);
                         $plan = $parser->createLessonPlanFromDocx(
                             teacherId: auth()->id(),
                             subjectId: (int) $data['subject_id'],
@@ -236,6 +249,7 @@ class CreateTeacherLessonPlan extends CreateRecord
 
                         $this->redirect(TeacherLessonPlanResource::getUrl('edit', ['record' => $plan]));
                     } catch (\Throwable $e) {
+                        Storage::disk('public')->delete($uploadedPath);
                         Notification::make()
                             ->title('Failed to parse template')
                             ->body($e->getMessage())

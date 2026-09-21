@@ -52,6 +52,8 @@ class FormDraftManagerTest extends TestCase
             'session_id' => $this->session->id,
             'term_id' => $this->term->id,
         ]);
+
+        \Filament\Facades\Filament::setCurrentPanel(\Filament\Facades\Filament::getPanel('teacher'));
     }
 
     public function test_create_lesson_note_page_renders_form_draft_manager(): void

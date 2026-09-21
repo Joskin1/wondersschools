@@ -62,6 +62,24 @@ Route::get('/student/lesson-notes/{lessonNote}/lesson-plan.pdf', [\App\Http\Cont
     ->middleware('auth')
     ->name('student.lesson-plan.pdf');
 
+// Admin Lesson Note & Plan PDF Download (auth-protected)
+Route::get('/admin/lesson-notes/{lessonNote}/pdf', [\App\Http\Controllers\LessonNotePdfController::class, 'download'])
+    ->middleware('auth')
+    ->name('admin.lesson-note.pdf');
+
+Route::get('/admin/lesson-plans/{lessonPlan}/pdf', [\App\Http\Controllers\LessonPlanPdfController::class, 'downloadPlan'])
+    ->middleware('auth')
+    ->name('admin.lesson-plan.pdf');
+
+// Teacher Lesson Note & Plan PDF Download (auth-protected)
+Route::get('/teacher/lesson-notes/{lessonNote}/pdf', [\App\Http\Controllers\LessonNotePdfController::class, 'download'])
+    ->middleware('auth')
+    ->name('teacher.lesson-note.pdf');
+
+Route::get('/teacher/lesson-plans/{lessonPlan}/pdf', [\App\Http\Controllers\LessonPlanPdfController::class, 'downloadPlan'])
+    ->middleware('auth')
+    ->name('teacher.lesson-plan.pdf');
+
 // Lesson Template Downloads (auth-protected)
 Route::get('/teacher/templates/lesson-plan', [\App\Http\Controllers\LessonTemplateController::class, 'lessonPlanTemplate'])
     ->middleware('auth')

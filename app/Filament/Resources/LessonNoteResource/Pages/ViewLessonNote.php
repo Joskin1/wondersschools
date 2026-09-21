@@ -35,12 +35,27 @@ class ViewLessonNote extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('download_note_pdf')
+                ->label('Download Note PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('gray')
+                ->url(fn () => route('admin.lesson-note.pdf', $this->record))
+                ->openUrlInNewTab(),
+
+            Actions\Action::make('download_plan_pdf')
+                ->label('Download Plan PDF')
+                ->icon('heroicon-o-clipboard-document-list')
+                ->color('gray')
+                ->url(fn () => $this->record->getPairedLessonPlan() ? route('admin.lesson-plan.pdf', $this->record->getPairedLessonPlan()) : '#')
+                ->openUrlInNewTab()
+                ->visible(fn () => $this->record->getPairedLessonPlan() !== null),
+
             Actions\Action::make('download')
                 ->label('Download File')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->url(fn () => $this->record->latestVersion?->getDownloadUrl() ?: '#')
                 ->openUrlInNewTab()
-                ->color('primary')
+                ->color('gray')
                 ->visible(fn () => $this->record->latestVersion !== null
                     && $this->record->latestVersion->isFile()
                     && !empty($this->record->latestVersion->file_path)),
