@@ -125,7 +125,7 @@ class TenantFrontendContentSeeder extends Seeder {
 
             // 03 Outcomes / Stats
             'stats_eyebrow'              => 'EXAMINATION OUTCOMES',
-            Latest Happenings Across Beta School            'stats_heading'              => 'Ten-Year Record of Scholastic Excellence',
+            'stats_heading'              => 'Ten-Year Record of Scholastic Excellence',
             'stats_items'                => json_encode( [
                 [
                     'value'  => '100%',

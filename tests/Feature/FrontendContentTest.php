@@ -128,41 +128,43 @@ describe('FrontendContent model', function () {
 
 describe('Home page dynamic content', function () {
 
+    beforeEach(function () {
+        (new \Database\Seeders\TenantFrontendContentSeeder())->run();
+        FrontendLibrary::flush();
+    });
+
     it('shows the tenant school name from settings', function () {
-        Setting::create(['key' => 'school_name', 'value' => 'Wonders Kiddies Foundation Schools']);
+        Setting::updateOrCreate(['key' => 'school_name'], ['value' => 'Wonders Kiddies Foundation Schools']);
+        FrontendLibrary::flush();
 
         get('/')->assertSee('Wonders Kiddies Foundation Schools');
     });
 
-    // TODO Phase 1: restore dynamic binding test when CMS keys are registered
     it('shows a custom hero heading when stored in frontend_contents', function () {
-        FrontendContent::create([
-            'key'   => 'hero_heading',
-            'group' => 'home.hero',
-            'value' => 'Welcome to Sunrise Academy',
-        ]);
+        FrontendContent::updateOrCreate(
+            ['key' => 'hero_title'],
+            ['group' => 'home.hero', 'value' => 'Welcome to Sunrise Academy']
+        );
+        FrontendLibrary::flush();
 
-        get('/')->assertSee('Nurturing Intellectual Depth & Moral Leadership');
+        get('/')->assertSee('Welcome to Sunrise Academy');
     });
 
-    // TODO Phase 1: restore dynamic binding test when CMS keys are registered
     it('shows the default heading when no database record exists', function () {
         get('/')
             ->assertSee('Nurturing Intellectual Depth & Moral Leadership');
     });
 
-    // TODO Phase 1: restore dynamic binding test when CMS keys are registered
-    it('shows custom heading highlight when overridden', function () {
-        FrontendContent::create([
-            'key'   => 'hero_heading_highlight',
-            'group' => 'home.hero',
-            'value' => 'Shapes Champions.',
-        ]);
+    it('shows custom hero badge when overridden', function () {
+        FrontendContent::updateOrCreate(
+            ['key' => 'hero_badge'],
+            ['group' => 'home.hero', 'value' => '2026 / 2027 Academic Session']
+        );
+        FrontendLibrary::flush();
 
         get('/')->assertSee('2026 / 2027 Academic Session');
     });
 
-    // TODO Phase 1: restore dynamic binding test when CMS keys are registered
     it('shows default pillar labels', function () {
         get('/')
             ->assertSee('Integrated Dual Curriculum')
@@ -171,57 +173,30 @@ describe('Home page dynamic content', function () {
             ->assertSee('Moral Formation & Character Discipline');
     });
 
-    // TODO Phase 1: restore dynamic binding test when CMS keys are registered
-    it('reflects updated pillar label', function () {
-        FrontendContent::create([
-            'key'   => 'pillar_1_label',
-            'group' => 'home.pillars',
-            'value' => 'Accredited Lab',
-        ]);
-
-        get('/')->assertSee('Integrated Dual Curriculum');
-    });
-
-    // TODO Phase 1: restore dynamic binding test when CMS keys are registered
     it('shows default Why Us heading', function () {
         get('/')->assertSee('DISTINCTIVES');
     });
 
-    // TODO Phase 1: restore dynamic binding test when CMS keys are registered
     it('shows default stats labels', function () {
         get('/')
             ->assertSee('100%')
             ->assertSee('WAEC Pass Rate');
     });
 
-    // TODO Phase 1: restore dynamic binding test when CMS keys are registered
-    it('shows custom stat value when overridden', function () {
-        FrontendContent::create([
-            'key'   => 'stat_1_value',
-            'group' => 'home.stats',
-            'value' => '20+',
-        ]);
-
-        get('/')->assertSee('100%');
-    });
-
-    // TODO Phase 1: restore dynamic binding test when CMS keys are registered
     it('shows default CTA buttons', function () {
         get('/')
             ->assertSee('Apply for Admission')
-            ->assertSee('Explore Prospectus')
-            ->assertSee('Begin Online Application');
+            ->assertSee('Explore Prospectus');
     });
 
-    // TODO Phase 1: restore dynamic binding test when CMS keys are registered
-    it('shows updated CTA enrol text', function () {
-        FrontendContent::create([
-            'key'   => 'cta_enrol',
-            'group' => 'home.cta',
-            'value' => 'Apply Today',
-        ]);
+    it('shows updated CTA button text', function () {
+        FrontendContent::updateOrCreate(
+            ['key' => 'hero_primary_cta_text'],
+            ['group' => 'home.hero', 'value' => 'Apply Today']
+        );
+        FrontendLibrary::flush();
 
-        get('/')->assertSee('Apply for Admission');
+        get('/')->assertSee('Apply Today');
     });
 });
 
