@@ -19,7 +19,7 @@
       <!-- Left: Portrait / Image Column (Cols 1-6) -->
       <div class="lg:col-span-6 relative">
         <div class="relative border border-[#E5E0D8] bg-white p-2">
-          <img src="{{ $school['about']['image'] ?? 'https://placehold.co/800x1000/0B2545/FAF8F4?text=Principal+Portrait' }}"
+          <img src="{{ $school['about']['image'] ?? 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80' }}"
                alt="{{ $school['about']['principal_name'] ?? 'Principal' }}"
                loading="lazy"
                class="w-full h-[440px] sm:h-[540px] object-cover object-top" />

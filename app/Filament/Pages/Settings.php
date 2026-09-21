@@ -291,16 +291,19 @@ class Settings extends Page
                                             ColorPicker::make('primary_color')
                                                 ->label('Primary Color (Ink)')
                                                 ->required()
+                                                ->live(debounce: 250)
                                                 ->helperText('Authoritative dark ink for headings, dark bands, and footer.'),
 
                                             ColorPicker::make('secondary_color')
                                                 ->label('Secondary Color (Support)')
                                                 ->required()
+                                                ->live(debounce: 250)
                                                 ->helperText('Muted slate tone for subtitles and subtle UI accents.'),
 
                                             ColorPicker::make('accent_color')
                                                 ->label('Accent Color (Gold Role)')
                                                 ->required()
+                                                ->live(debounce: 250)
                                                 ->helperText('Warm gold for eyebrows, CTA buttons, and stat numerals.'),
                                         ]),
 

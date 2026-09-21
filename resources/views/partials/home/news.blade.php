@@ -7,21 +7,21 @@
             'category' => 'ADMISSIONS',
             'date'     => 'Saturday, 18 April 2026',
             'summary'  => 'Prospective candidates for JSS 1 and transfer classes will sit for Mathematics, English Language, and General Aptitude screening. Top 5 candidates receive merit tuition scholarships.',
-            'image'    => 'https://placehold.co/200x200/0B2545/FAF8F4?text=Exam+Entry',
+            'image'    => 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=400&q=80',
         ],
         [
             'title'    => '24th Annual Inter-House Athletics & March-Past Championship',
             'category' => 'ATHLETICS',
             'date'     => 'Friday, 27 March 2026',
             'summary'  => 'Emerald, Ruby, Sapphire, and Topaz houses compete for track, field, and cultural march-past honors. Parents, guardians, and alumni are cordially invited to the Main Sports Arena.',
-            'image'    => 'https://placehold.co/200x200/0B2545/FAF8F4?text=Sports',
+            'image'    => 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=400&q=80',
         ],
         [
             'title'    => 'Annual Young Innovators STEM & Robotics Public Exhibition',
             'category' => 'ACADEMICS',
             'date'     => 'Wednesday, 13 May 2026',
             'summary'  => 'Senior secondary scholars present functional solar micro-inverter designs, automated irrigation models, and AI chatbot demonstrators to university visiting professors.',
-            'image'    => 'https://placehold.co/200x200/0B2545/FAF8F4?text=STEM+Expo',
+            'image'    => 'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=400&q=80',
         ],
     ]);
 @endphp
@@ -56,7 +56,7 @@
           <!-- Small Square Thumbnail on the Left (Cols 1-2) -->
           <div class="md:col-span-2">
             <div class="w-24 h-24 sm:w-28 sm:h-28 border border-rule bg-white p-1 flex-shrink-0 overflow-hidden">
-              <img src="{{ \App\Services\FrontendLibrary::imageUrl($article['image'] ?? null, 'https://placehold.co/200x200/0B2545/FAF8F4?text=News') }}"
+              <img src="{{ \App\Services\FrontendLibrary::imageUrl($article['image'] ?? null, 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=400&q=80') }}"
                    alt="{{ $article['title'] ?? 'News' }}"
                    loading="lazy"
                    class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />

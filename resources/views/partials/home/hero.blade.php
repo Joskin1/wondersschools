@@ -10,7 +10,7 @@
         $heroSlides[] = \App\Services\FrontendLibrary::imageUrl($img);
     }
 
-    $heroImageAlt = \App\Services\FrontendLibrary::get('hero_image_alt', (\App\Services\FrontendLibrary::getSetting('school_name', 'Apex Crown College') . ' Scholars Lagos'));
+    $heroImageAlt = \App\Services\FrontendLibrary::get('hero_image_alt', (\App\Services\FrontendLibrary::getSetting('school_name', 'Living Spring') . ' Scholars Lagos'));
     $heroBadge = \App\Services\FrontendLibrary::get('hero_badge', '2026 / 2027 Academic Session');
     $heroTitle = \App\Services\FrontendLibrary::get('hero_title', 'Nurturing Intellectual Depth & Moral Leadership');
     $heroSubtitle = \App\Services\FrontendLibrary::get('hero_subtitle', 'An accredited British-Nigerian secondary institution committed to scholastic rigor, scientific inquiry, and the formation of character.');
@@ -19,7 +19,7 @@
     $heroSecondaryCtaText = \App\Services\FrontendLibrary::get('hero_secondary_cta_text', 'Explore Prospectus');
     $heroSecondaryCtaLink = \App\Services\FrontendLibrary::get('hero_secondary_cta_link', '#about');
     $heroScrollLabel = \App\Services\FrontendLibrary::get('hero_scroll_label', 'Scroll to explore prospectus');
-    $heroLocation = \App\Services\FrontendLibrary::getSetting('school_address', 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria');
+    $heroLocation = \App\Services\FrontendLibrary::getSetting('school_address', 'Plot 14 - 18, Education Boulevard, Lagos State, Nigeria');
 @endphp
 
 <!-- ====== Hero Section (Ivy League Prospectus Editorial with Image Slider) ====== -->

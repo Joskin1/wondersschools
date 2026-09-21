@@ -4,7 +4,7 @@
   
   <!-- Full-bleed background photograph with left-to-right Ink gradient overlay -->
   <div class="absolute inset-0 z-0">
-    <img src="{{ $school['hero']['image'] ?? 'https://placehold.co/1920x1080/0B2545/FAF8F4?text=Apex+Crown+Scholars' }}"
+    <img src="{{ $school['hero']['image'] ?? 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1920&q=80' }}"
          alt="{{ $school['name'] ?? 'College' }} Campus"
          class="w-full h-full object-cover object-center" />
     <div class="absolute inset-0 bg-gradient-to-r from-[#0B2545] via-[#0B2545]/85 md:via-[#0B2545]/70 to-[#0B2545]/30"></div>

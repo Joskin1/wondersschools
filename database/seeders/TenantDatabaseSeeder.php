@@ -201,27 +201,44 @@ class TenantDatabaseSeeder extends Seeder
             ['category' => 'Classroom Activities',  'caption' => 'Student Engagement'],
         ];
 
+        $galleryPhotos = [
+            'Cultural Dance Performance' => 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
+            'Class of 2024' => 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80',
+            'Learning in Action' => 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80',
+            'Student Engagement' => 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=800&q=80',
+        ];
+
         foreach ($featured as $attrs) {
             GalleryImage::firstOrCreate(
                 ['caption' => $attrs['caption']],
                 [
                     'category' => $attrs['category'],
-                    'image'    => 'https://placehold.co/600x400',
+                    'image'    => $galleryPhotos[$attrs['caption']] ?? 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80',
                 ]
             );
         }
 
         $categories = ['Sports Day', 'Graduation', 'Field Trips', 'Classroom Activities', 'Art Exhibition', 'Cultural Day'];
+        $samplePhotos = [
+            'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=800&q=80',
+        ];
 
+        $photoIndex = 0;
         foreach ($categories as $category) {
             foreach (['Highlights', 'Moments'] as $suffix) {
                 GalleryImage::firstOrCreate(
                     ['caption' => "{$category} {$suffix}"],
                     [
                         'category' => $category,
-                        'image' => 'https://placehold.co/600x400',
+                        'image' => $samplePhotos[$photoIndex % count($samplePhotos)],
                     ]
                 );
+                $photoIndex++;
             }
         }
     }

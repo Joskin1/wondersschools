@@ -6,37 +6,37 @@
             'title'    => 'Advanced Science Laboratories',
             'category' => 'ACADEMIC',
             'desc'     => 'Dedicated biology, chemistry, and physics laboratories fully fitted with modern glassware, fume hoods, and analytical instrumentation.',
-            'image'    => 'https://placehold.co/1000x800/0B2545/FAF8F4?text=Science+Laboratories+Apex+Crown',
+            'image'    => 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1200&q=80',
         ],
         [
             'title'    => 'Digital ICT & AI Suites',
             'category' => 'TECHNOLOGY',
             'desc'     => 'High-speed gigabit workstations, interactive smartboards, and robotics hardware kits.',
-            'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Digital+ICT+Suites',
+            'image'    => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
         ],
         [
             'title'    => 'E-Library & Study Commons',
             'category' => 'RESEARCH',
             'desc'     => 'Over 15,000 bound volumes complemented by digital JSTOR and Britannica research terminals.',
-            'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=E-Library+Commons',
+            'image'    => 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800&q=80',
         ],
         [
             'title'    => 'Sports Arena & Athletic Complex',
             'category' => 'ATHLETICS',
             'desc'     => 'Standard football pitch, outdoor basketball and tennis courts, and all-weather track.',
-            'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Sports+Complex',
+            'image'    => 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
         ],
         [
             'title'    => 'Residential Hostels & Dining',
             'category' => 'RESIDENTIAL',
             'desc'     => 'Air-conditioned boarding houses with 24/7 power backup, resident house parents, and dining hall.',
-            'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Boarding+Hostels',
+            'image'    => 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80',
         ],
         [
             'title'    => 'Acoustic Auditorium & Music Studio',
             'category' => 'CULTURE',
             'desc'     => '800-seat theater hall for assemblies, orchestral recitals, and graduation valedictions.',
-            'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Auditorium+Studio',
+            'image'    => 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
         ],
     ]);
 @endphp

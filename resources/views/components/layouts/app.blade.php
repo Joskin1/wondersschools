@@ -1,9 +1,15 @@
 @php
-    $schoolName = \App\Services\FrontendLibrary::getSetting('school_name', 'Apex Crown College');
-    $schoolShortName = \App\Services\FrontendLibrary::getSetting('school_short_name', 'AC');
+    $tenantName = function_exists('tenant') && tenant('name') ? tenant('name') : null;
+    $tenantId = function_exists('tenant') && tenant('id') ? tenant('id') : null;
+    $defaultSchoolName = $tenantName ?? 'Apex Crown College';
+    $defaultShortName = $tenantName ? strtoupper(substr($tenantName, 0, 2)) : 'AC';
+    $defaultEmail = $tenantId ? "admissions@{$tenantId}.edu.ng" : 'admissions@apexcrown.edu.ng';
+
+    $schoolName = \App\Services\FrontendLibrary::getSetting('school_name', $defaultSchoolName);
+    $schoolShortName = \App\Services\FrontendLibrary::getSetting('school_short_name', $defaultShortName);
     $schoolEstablished = \App\Services\FrontendLibrary::getSetting('school_established', '2001');
     $schoolPhone = \App\Services\FrontendLibrary::getSetting('school_phone', '+234 800 123 4567');
-    $schoolEmail = \App\Services\FrontendLibrary::getSetting('school_email', 'admissions@apexcrown.edu.ng');
+    $schoolEmail = \App\Services\FrontendLibrary::getSetting('school_email', $defaultEmail);
     $schoolAddress = \App\Services\FrontendLibrary::getSetting('school_address', 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria');
     $schoolLogo = \App\Services\FrontendLibrary::getSetting('school_logo');
 

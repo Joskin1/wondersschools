@@ -1,12 +1,13 @@
 @php
+    $schoolName = \App\Services\FrontendLibrary::getSetting('school_name', 'Living Spring');
     $aboutEyebrow = \App\Services\FrontendLibrary::get('about_eyebrow', 'ABOUT THE COLLEGE');
     $aboutHeading = \App\Services\FrontendLibrary::get('about_heading', 'A Tradition of Uncompromising Academic Standard');
-    $aboutImageRaw = \App\Services\FrontendLibrary::get('about_image', 'https://placehold.co/800x1000/0B2545/FAF8F4?text=Principal+Portrait');
-    $aboutImage = \App\Services\FrontendLibrary::imageUrl($aboutImageRaw, 'https://placehold.co/800x1000/0B2545/FAF8F4?text=Principal+Portrait');
+    $aboutImageRaw = \App\Services\FrontendLibrary::get('about_image', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop');
+    $aboutImage = \App\Services\FrontendLibrary::imageUrl($aboutImageRaw, 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop');
     $aboutImageAlt = \App\Services\FrontendLibrary::get('about_image_alt', 'Dr. Mrs. Adebisi Balogun Head of School');
     $aboutYearsBadge = \App\Services\FrontendLibrary::get('about_years_badge', '25');
     $aboutYearsLabel = \App\Services\FrontendLibrary::get('about_years_label', 'Years of Academic Legacy in Lagos');
-    $aboutBody = \App\Services\FrontendLibrary::get('about_body', '<p>Founded in 2001, Apex Crown College synthesizes the rigorous Nigerian National Basic & Senior Secondary Curriculum with Cambridge Assessment International standards. We believe secondary education is not simply an examination preparatory phase, but the crucible where character, intellectual curiosity, and self-governance are forged.</p><p>Our dedicated tutorial masters, modern science laboratories, and immersive pastoral mentorship ensure every student discovers their latent gifts and matures into an articulate, disciplined contributor to national and global society.</p>');
+    $aboutBody = \App\Services\FrontendLibrary::get('about_body', "<p>Founded in 2001, {$schoolName} synthesizes the rigorous Nigerian National Basic & Senior Secondary Curriculum with Cambridge Assessment International standards. We believe secondary education is not simply an examination preparatory phase, but the crucible where character, intellectual curiosity, and self-governance are forged.</p><p>Our dedicated tutorial masters, modern science laboratories, and immersive pastoral mentorship ensure every student discovers their latent gifts and matures into an articulate, disciplined contributor to national and global society.</p>");
     $aboutPrincipalName = \App\Services\FrontendLibrary::get('about_principal_name', 'Dr. (Mrs.) Adebisi Balogun');
     $aboutPrincipalTitle = \App\Services\FrontendLibrary::get('about_principal_title', 'B.Sc, M.Ed, Ph.D. — Principal & Head of School');
 @endphp

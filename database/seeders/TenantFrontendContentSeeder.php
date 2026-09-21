@@ -15,20 +15,23 @@ class TenantFrontendContentSeeder extends Seeder {
     */
 
     public function run(): void {
-        $schoolName = tenant( 'name' ) ?? 'Apex Crown College';
+        $schoolName = tenant( 'name' ) ?? (Setting::where('key', 'school_name')->value('value') ?? 'Apex Crown College');
+        $schoolSlug = \Illuminate\Support\Str::slug($schoolName);
+        $article = in_array(strtolower($schoolName[0] ?? ''), ['a', 'e', 'i', 'o', 'u']) ? 'an' : 'a';
+        $shortenedBrand = $schoolName === 'Apex Crown College' ? 'Apex Crown' : $schoolName;
 
-        // 1. Core Settings
+        // 1. Core Settings (preserve existing user customizations if present)
         $settings = [
             'school_name'             => $schoolName,
-            'school_short_name'       => 'AC',
-            'school_motto'            => 'Excellence, Character & Leadership',
-            'school_established'      => '2001',
-            'school_phone'            => '+234 800 123 4567',
-            'school_email'            => 'admissions@apexcrown.edu.ng',
-            'school_address'          => 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria',
-            'primary_color'           => '#0B2545',
-            'secondary_color'         => '#1E293B',
-            'accent_color'            => '#C8A951',
+            'school_short_name'       => Setting::where('key', 'school_short_name')->value('value') ?? ($schoolName === 'Apex Crown College' ? 'AC' : strtoupper(substr($schoolName, 0, 2))),
+            'school_motto'            => Setting::where('key', 'school_motto')->value('value') ?? 'Excellence, Character & Leadership',
+            'school_established'      => Setting::where('key', 'school_established')->value('value') ?? '2001',
+            'school_phone'            => Setting::where('key', 'school_phone')->value('value') ?? '+234 800 123 4567',
+            'school_email'            => Setting::where('key', 'school_email')->value('value') ?? ("admissions@{$schoolSlug}.edu.ng"),
+            'school_address'          => Setting::where('key', 'school_address')->value('value') ?? 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria',
+            'primary_color'           => Setting::where('key', 'primary_color')->value('value') ?? '#0B2545',
+            'secondary_color'         => Setting::where('key', 'secondary_color')->value('value') ?? '#1E293B',
+            'accent_color'            => Setting::where('key', 'accent_color')->value('value') ?? '#C8A951',
             'student_portal_url'      => '/student/login',
             'staff_portal_url'        => '/teacher/login',
             'admin_portal_url'        => '/admin/login',
@@ -71,8 +74,8 @@ class TenantFrontendContentSeeder extends Seeder {
             'hero_badge'                 => '2026 / 2027 Academic Session',
             'hero_title'                 => 'Nurturing Intellectual Depth & Moral Leadership',
             'hero_subtitle'              => 'An accredited British-Nigerian secondary institution committed to scholastic rigor, scientific inquiry, and the formation of character.',
-            'hero_image'                 => 'https://placehold.co/1920x1080/0B2545/FAF8F4?text=Apex+Crown+College+Scholars+Lagos',
-            'hero_image_alt'             => 'Apex Crown College Scholars Lagos',
+            'hero_image'                 => 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1920&auto=format&fit=crop',
+            'hero_image_alt'             => "{$schoolName} Scholars Lagos",
             'hero_primary_cta_text'      => 'Apply for Admission',
             'hero_primary_cta_link'      => '#admissions',
             'hero_secondary_cta_text'    => 'Explore Prospectus',
@@ -82,17 +85,17 @@ class TenantFrontendContentSeeder extends Seeder {
             // 01 About Section
             'about_eyebrow'              => 'ABOUT THE COLLEGE',
             'about_heading'              => 'A Tradition of Uncompromising Academic Standard',
-            'about_image'                => 'https://placehold.co/800x1000/0B2545/FAF8F4?text=Principal+Portrait',
+            'about_image'                => 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop',
             'about_image_alt'            => 'Dr. Mrs. Adebisi Balogun Head of School',
             'about_years_badge'          => '25',
             'about_years_label'          => 'Years of Academic Legacy in Lagos',
-            'about_body'                 => '<p>Founded in 2001, Apex Crown College synthesizes the rigorous Nigerian National Basic & Senior Secondary Curriculum with Cambridge Assessment International standards. We believe secondary education is not simply an examination preparatory phase, but the crucible where character, intellectual curiosity, and self-governance are forged.</p><p>Our dedicated tutorial masters, modern science laboratories, and immersive pastoral mentorship ensure every student discovers their latent gifts and matures into an articulate, disciplined contributor to national and global society.</p>',
+            'about_body'                 => "<p>Founded in 2001, {$schoolName} synthesizes the rigorous Nigerian National Basic & Senior Secondary Curriculum with Cambridge Assessment International standards. We believe secondary education is not simply an examination preparatory phase, but the crucible where character, intellectual curiosity, and self-governance are forged.</p><p>Our dedicated tutorial masters, modern science laboratories, and immersive pastoral mentorship ensure every student discovers their latent gifts and matures into an articulate, disciplined contributor to national and global society.</p>",
             'about_principal_name'       => 'Dr. (Mrs.) Adebisi Balogun',
             'about_principal_title'      => 'B.Sc, M.Ed, Ph.D. — Principal & Head of School',
 
             // 02 Distinctives Section
             'features_eyebrow'           => 'DISTINCTIVES',
-            'features_heading'           => 'The Pillars of an Apex Crown Education',
+            'features_heading'           => "The Pillars of {$article} {$shortenedBrand} Education",
             'features_intro'             => 'A deliberate blend of academic depth, moral discipline, and technological literacy structured to cultivate leaders.',
             'features_cta_text'          => 'Review Full Curriculum',
             'features_cta_link'          => '#academics',
@@ -197,37 +200,37 @@ class TenantFrontendContentSeeder extends Seeder {
                     'title'    => 'Advanced Science Laboratories',
                     'category' => 'ACADEMIC',
                     'desc'     => 'Dedicated biology, chemistry, and physics laboratories fully fitted with modern glassware, fume hoods, and analytical instrumentation.',
-                    'image'    => 'https://placehold.co/1000x800/0B2545/FAF8F4?text=Science+Laboratories+Apex+Crown',
+                    'image'    => 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=1000&auto=format&fit=crop',
                 ],
                 [
                     'title'    => 'Digital ICT & AI Suites',
                     'category' => 'TECHNOLOGY',
                     'desc'     => 'High-speed gigabit workstations, interactive smartboards, and robotics hardware kits.',
-                    'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Digital+ICT+Suites',
+                    'image'    => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop',
                 ],
                 [
                     'title'    => 'E-Library & Study Commons',
                     'category' => 'RESEARCH',
                     'desc'     => 'Over 15,000 bound volumes complemented by digital JSTOR and Britannica research terminals.',
-                    'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=E-Library+Commons',
+                    'image'    => 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=800&auto=format&fit=crop',
                 ],
                 [
                     'title'    => 'Sports Arena & Athletic Complex',
                     'category' => 'ATHLETICS',
                     'desc'     => 'Standard football pitch, outdoor basketball and tennis courts, and all-weather track.',
-                    'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Sports+Complex',
+                    'image'    => 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=800&auto=format&fit=crop',
                 ],
                 [
                     'title'    => 'Residential Hostels & Dining',
                     'category' => 'RESIDENTIAL',
                     'desc'     => 'Air-conditioned boarding houses with 24/7 power backup, resident house parents, and dining hall.',
-                    'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Boarding+Hostels',
+                    'image'    => 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800&auto=format&fit=crop',
                 ],
                 [
                     'title'    => 'Acoustic Auditorium & Music Studio',
                     'category' => 'CULTURE',
                     'desc'     => '800-seat theater hall for assemblies, orchestral recitals, and graduation valedictions.',
-                    'image'    => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Auditorium+Studio',
+                    'image'    => 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=800&auto=format&fit=crop',
                 ],
             ] ),
 
@@ -240,36 +243,36 @@ class TenantFrontendContentSeeder extends Seeder {
                     'category' => 'ADMISSIONS',
                     'date'     => 'Saturday, 18 April 2026',
                     'summary'  => 'Prospective candidates for JSS 1 and transfer classes will sit for Mathematics, English Language, and General Aptitude screening. Top 5 candidates receive merit tuition scholarships.',
-                    'image'    => 'https://placehold.co/200x200/0B2545/FAF8F4?text=Exam+Entry',
+                    'image'    => 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=400&auto=format&fit=crop',
                 ],
                 [
                     'title'    => '24th Annual Inter-House Athletics & March-Past Championship',
                     'category' => 'ATHLETICS',
                     'date'     => 'Friday, 27 March 2026',
                     'summary'  => 'Emerald, Ruby, Sapphire, and Topaz houses compete for track, field, and cultural march-past honors. Parents, guardians, and alumni are cordially invited to the Main Sports Arena.',
-                    'image'    => 'https://placehold.co/200x200/0B2545/FAF8F4?text=Sports',
+                    'image'    => 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop',
                 ],
                 [
                     'title'    => 'Annual Young Innovators STEM & Robotics Public Exhibition',
                     'category' => 'ACADEMICS',
                     'date'     => 'Wednesday, 13 May 2026',
                     'summary'  => 'Senior secondary scholars present functional solar micro-inverter designs, automated irrigation models, and AI chatbot demonstrators to university visiting professors.',
-                    'image'    => 'https://placehold.co/200x200/0B2545/FAF8F4?text=STEM+Expo',
+                    'image'    => 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=400&auto=format&fit=crop',
                 ],
             ] ),
 
             // 07 Perspectives / Testimonials
             'testimonials_eyebrow'       => 'VOICES OF PARENTS & ALUMNI',
-            'testimonials_heading'       => 'Perspectives on an Apex Crown Education',
+            'testimonials_heading'       => "Perspectives on {$article} {$shortenedBrand} Education",
             'testimonials_intro'         => 'Reflections from parents, guardians, and alumni who have experienced the transformative impact of our community.',
             'testimonials_items'         => json_encode( [
                 [
-                    'quote'  => 'Enrolling our children at Apex Crown College was the most consequential educational choice we made. Beyond their straight A1s in WAEC, the depth of their poise, moral conviction, and critical thinking is extraordinary.',
+                    'quote'  => "Enrolling our children at {$schoolName} was the most consequential educational choice we made. Beyond their straight A1s in WAEC, the depth of their poise, moral conviction, and critical thinking is extraordinary.",
                     'author' => 'Chief & Dr. (Mrs.) Olumide Adeleke',
                     'role'   => 'Parents of 2024 Valedictorians',
                 ],
                 [
-                    'quote'  => 'The discipline instilled during my boarding years at Apex Crown was decisive. When I entered Medical College at the University of Ibadan, I realized I had already developed the study stamina and leadership habits needed to thrive.',
+                    'quote'  => "The discipline instilled during my boarding years at {$schoolName} was decisive. When I entered Medical College at the University of Ibadan, I realized I had already developed the study stamina and leadership habits needed to thrive.",
                     'author' => 'Dr. Favour Chidera Eze',
                     'role'   => 'Medical Practitioner, UCH — Alumna (Class of 2018)',
                 ],
@@ -299,12 +302,12 @@ class TenantFrontendContentSeeder extends Seeder {
             'contact_eyebrow'                => 'CAMPUS VISITATION & INQUIRY',
             'contact_heading'                => 'Schedule a Guided Tour or Speak with Admissions',
             'contact_intro'                  => 'Our Admissions Registry receives families for private consultations and campus walkthroughs by appointment.',
-            'contact_address'                => 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria',
+            'contact_address'                => Setting::where('key', 'school_address')->value('value') ?? 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria',
             'contact_address_label'          => 'Campus Address',
             'contact_phone_label'            => 'Telephone',
             'contact_additional_phones'      => json_encode( [ '+234 812 345 6789' ] ),
             'contact_email_label'            => 'Registry Email',
-            'contact_additional_emails'      => json_encode( [ 'info@apexcrown.edu.ng' ] ),
+            'contact_additional_emails'      => json_encode( [ "info@{$schoolSlug}.edu.ng" ] ),
             'contact_visiting_hours_label'   => 'Admissions Hours',
             'contact_visiting_hours'         => 'Monday – Friday: 8:00 AM – 4:00 PM | Saturday: 9:00 AM – 1:00 PM',
             'contact_form_title'             => 'Admissions Prospectus Inquiry',
@@ -322,11 +325,11 @@ class TenantFrontendContentSeeder extends Seeder {
             ] ),
             'contact_form_notes_label'       => 'Prospective Scholar Notes / Questions',
             'contact_form_success_title'     => 'Inquiry Received',
-            'contact_form_success_desc'      => 'Thank you for inquiring about Apex Crown College. The Admissions Office has received your details and will get in touch shortly.',
+            'contact_form_success_desc'      => "Thank you for inquiring about {$schoolName}. The Admissions Office has received your details and will get in touch shortly.",
 
             // Footer & Colophon
             'footer_edition_label'           => 'Prospectus Edition',
-            'footer_description'             => 'An accredited British-Nigerian secondary school dedicated to academic brilliance, moral character, and global leadership.',
+            'footer_description'             => "An accredited British-Nigerian secondary school dedicated to academic brilliance, moral character, and global leadership.",
             'footer_accreditations'          => 'Accredited by WAEC, NECO & Cambridge International.',
             'footer_col2_heading'            => 'Prospectus',
             'footer_col3_heading'            => 'Registry & Portals',

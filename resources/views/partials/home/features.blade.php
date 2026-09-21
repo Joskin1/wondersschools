@@ -1,6 +1,9 @@
 @php
+    $tenantName = function_exists('tenant') && tenant('name') ? tenant('name') : null;
+    $defaultSchoolName = $tenantName ?? 'Our';
+
     $featuresEyebrow = \App\Services\FrontendLibrary::get('features_eyebrow', 'DISTINCTIVES');
-    $featuresHeading = \App\Services\FrontendLibrary::get('features_heading', 'The Pillars of an Apex Crown Education');
+    $featuresHeading = \App\Services\FrontendLibrary::get('features_heading', "The Pillars of a {$defaultSchoolName} Education");
     $featuresIntro = \App\Services\FrontendLibrary::get('features_intro', 'A deliberate blend of academic depth, moral discipline, and technological literacy structured to cultivate leaders.');
     $featuresCtaText = \App\Services\FrontendLibrary::get('features_cta_text', 'Review Full Curriculum');
     $featuresCtaLink = \App\Services\FrontendLibrary::get('features_cta_link', '#academics');

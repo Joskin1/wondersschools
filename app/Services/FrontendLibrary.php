@@ -131,6 +131,9 @@ class FrontendLibrary
         }
 
         if ($key === 'school_name') {
+            if (function_exists('tenant') && tenant('name')) {
+                return tenant('name');
+            }
             return config('app.name') ?? $default;
         }
 

@@ -1,15 +1,18 @@
 @php
+    $tenantName = function_exists('tenant') && tenant('name') ? tenant('name') : null;
+    $defaultSchoolName = $tenantName ?? 'Our';
+
     $testimonialsEyebrow = \App\Services\FrontendLibrary::get('testimonials_eyebrow', 'VOICES OF PARENTS & ALUMNI');
-    $testimonialsHeading = \App\Services\FrontendLibrary::get('testimonials_heading', 'Perspectives on an Apex Crown Education');
+    $testimonialsHeading = \App\Services\FrontendLibrary::get('testimonials_heading', "Perspectives on a {$defaultSchoolName} Education");
     $testimonialsIntro = \App\Services\FrontendLibrary::get('testimonials_intro', 'Reflections from parents, guardians, and alumni who have experienced the transformative impact of our community.');
     $testimonialsItems = \App\Services\FrontendLibrary::getJson('testimonials_items', [
         [
-            'quote'  => 'Enrolling our children at Apex Crown College was the most consequential educational choice we made. Beyond their straight A1s in WAEC, the depth of their poise, moral conviction, and critical thinking is extraordinary.',
+            'quote'  => "Enrolling our children at {$defaultSchoolName} was the most consequential educational choice we made. Beyond their straight A1s in WAEC, the depth of their poise, moral conviction, and critical thinking is extraordinary.",
             'author' => 'Chief & Dr. (Mrs.) Olumide Adeleke',
             'role'   => 'Parents of 2024 Valedictorians',
         ],
         [
-            'quote'  => 'The discipline instilled during my boarding years at Apex Crown was decisive. When I entered Medical College at the University of Ibadan, I realized I had already developed the study stamina and leadership habits needed to thrive.',
+            'quote'  => "The discipline instilled during my boarding years at {$defaultSchoolName} was decisive. When I entered Medical College at the University of Ibadan, I realized I had already developed the study stamina and leadership habits needed to thrive.",
             'author' => 'Dr. Favour Chidera Eze',
             'role'   => 'Medical Practitioner, UCH — Alumna (Class of 2018)',
         ],

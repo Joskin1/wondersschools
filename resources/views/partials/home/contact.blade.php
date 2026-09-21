@@ -1,4 +1,10 @@
 @php
+    $tenantName = function_exists('tenant') && tenant('name') ? tenant('name') : null;
+    $tenantId = function_exists('tenant') && tenant('id') ? tenant('id') : null;
+    $defaultSchoolName = $tenantName ?? 'Apex Crown College';
+    $defaultEmail = $tenantId ? "admissions@{$tenantId}.edu.ng" : 'admissions@apexcrown.edu.ng';
+    $defaultInfoEmail = $tenantId ? "info@{$tenantId}.edu.ng" : 'info@apexcrown.edu.ng';
+
     $contactEyebrow = \App\Services\FrontendLibrary::get('contact_eyebrow', 'CAMPUS VISITATION & INQUIRY');
     $contactHeading = \App\Services\FrontendLibrary::get('contact_heading', 'Schedule a Guided Tour or Speak with Admissions');
     $contactIntro = \App\Services\FrontendLibrary::get('contact_intro', 'Our Admissions Registry receives families for private consultations and campus walkthroughs by appointment.');
@@ -11,8 +17,8 @@
     $allPhones = array_filter(array_unique(array_merge([$primaryPhone], $additionalPhones)));
 
     $contactEmailLabel = \App\Services\FrontendLibrary::get('contact_email_label', 'Registry Email');
-    $primaryEmail = \App\Services\FrontendLibrary::getSetting('school_email', 'admissions@apexcrown.edu.ng');
-    $additionalEmails = \App\Services\FrontendLibrary::getJson('contact_additional_emails', ['info@apexcrown.edu.ng']);
+    $primaryEmail = \App\Services\FrontendLibrary::getSetting('school_email', $defaultEmail);
+    $additionalEmails = \App\Services\FrontendLibrary::getJson('contact_additional_emails', [$defaultInfoEmail]);
     $allEmails = array_filter(array_unique(array_merge([$primaryEmail], $additionalEmails)));
 
     $contactVisitingHoursLabel = \App\Services\FrontendLibrary::get('contact_visiting_hours_label', 'Admissions Hours');
@@ -33,7 +39,7 @@
     ]);
     $contactFormNotesLabel = \App\Services\FrontendLibrary::get('contact_form_notes_label', 'Prospective Scholar Notes / Questions');
     $contactFormSuccessTitle = \App\Services\FrontendLibrary::get('contact_form_success_title', 'Inquiry Received');
-    $contactFormSuccessDesc = \App\Services\FrontendLibrary::get('contact_form_success_desc', 'Thank you for inquiring about Apex Crown College. The Admissions Office has received your details and will get in touch shortly.');
+    $contactFormSuccessDesc = \App\Services\FrontendLibrary::get('contact_form_success_desc', "Thank you for inquiring about {$defaultSchoolName}. The Admissions Office has received your details and will get in touch shortly.");
 @endphp
 
 <!-- ====== 08 — Campus Visitation & Inquiry (Editorial Form) ====== -->

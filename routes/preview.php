@@ -28,7 +28,7 @@ if (App::environment('local')) {
                 'badge' => '2026 / 2027 Academic Session',
                 'title' => 'Nurturing Intellectual Depth & Moral Leadership',
                 'subtitle' => 'An accredited British-Nigerian secondary institution committed to scholastic rigor, scientific inquiry, and the formation of character.',
-                'image' => 'https://placehold.co/1920x1080/0B2545/FAF8F4?text=Apex+Crown+College+Scholars+Lagos',
+                'image' => 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1920&q=80',
                 'primary_cta_text' => 'Apply for Admission',
                 'primary_cta_link' => '#admissions',
                 'secondary_cta_text' => 'Explore Prospectus',
@@ -46,7 +46,7 @@ if (App::environment('local')) {
                 ],
                 'principal_name' => 'Dr. (Mrs.) Adebisi Balogun',
                 'principal_title' => 'B.Sc, M.Ed, Ph.D. — Principal & Head of School',
-                'image' => 'https://placehold.co/800x1000/0B2545/FAF8F4?text=Dr.+Mrs.+Adebisi+Balogun+Head+of+School',
+                'image' => 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80',
                 'years_badge' => '25',
                 'years_label' => 'Years of Academic Legacy in Lagos',
             ],
@@ -172,42 +172,42 @@ if (App::environment('local')) {
                         'title' => 'Advanced Science Laboratories',
                         'desc' => 'Dedicated biology, chemistry, and physics laboratories fully fitted with modern glassware, fume hoods, and analytical instrumentation.',
                         'category' => 'ACADEMIC',
-                        'image' => 'https://placehold.co/1000x800/0B2545/FAF8F4?text=Science+Laboratories+Apex+Crown',
+                        'image' => 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1200&q=80',
                         'span' => 'col-span-12 md:col-span-8 md:row-span-2',
                     ],
                     [
                         'title' => 'Digital ICT & AI Suites',
                         'desc' => 'High-speed gigabit workstations, interactive smartboards, and robotics hardware kits.',
                         'category' => 'TECHNOLOGY',
-                        'image' => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Digital+ICT+Suites',
+                        'image' => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80',
                         'span' => 'col-span-12 md:col-span-4',
                     ],
                     [
                         'title' => 'E-Library & Study Commons',
                         'desc' => 'Over 15,000 bound volumes complemented by digital JSTOR and Britannica research terminals.',
                         'category' => 'RESEARCH',
-                        'image' => 'https://placehold.co/600x400/0B2545/FAF8F4?text=E-Library+Commons',
+                        'image' => 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800&q=80',
                         'span' => 'col-span-12 md:col-span-4',
                     ],
                     [
                         'title' => 'Sports Arena & Athletic Complex',
                         'desc' => 'Standard football pitch, outdoor basketball and tennis courts, and all-weather track.',
                         'category' => 'ATHLETICS',
-                        'image' => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Sports+Complex',
+                        'image' => 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
                         'span' => 'col-span-12 md:col-span-4',
                     ],
                     [
                         'title' => 'Residential Hostels & Dining',
                         'desc' => 'Air-conditioned boarding houses with 24/7 power backup, resident house parents, and dining hall.',
                         'category' => 'RESIDENTIAL',
-                        'image' => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Boarding+Hostels',
+                        'image' => 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80',
                         'span' => 'col-span-12 md:col-span-4',
                     ],
                     [
                         'title' => 'Acoustic Auditorium & Music Studio',
                         'desc' => '800-seat theater hall for assemblies, orchestral recitals, and graduation valedictions.',
                         'category' => 'CULTURE',
-                        'image' => 'https://placehold.co/600x400/0B2545/FAF8F4?text=Auditorium+Studio',
+                        'image' => 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
                         'span' => 'col-span-12 md:col-span-4',
                     ],
                 ]
@@ -224,21 +224,21 @@ if (App::environment('local')) {
                         'category' => 'ADMISSIONS',
                         'date' => 'Saturday, 18 April 2026',
                         'summary' => 'Prospective candidates for JSS 1 and transfer classes will sit for Mathematics, English Language, and General Aptitude screening. Top 5 candidates receive merit tuition scholarships.',
-                        'image' => 'https://placehold.co/200x200/0B2545/FAF8F4?text=Exam+Entry'
+                        'image' => 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=400&q=80'
                     ],
                     [
                         'title' => '24th Annual Inter-House Athletics & March-Past Championship',
                         'category' => 'ATHLETICS',
                         'date' => 'Friday, 27 March 2026',
                         'summary' => 'Emerald, Ruby, Sapphire, and Topaz houses compete for track, field, and cultural march-past honors. Parents, guardians, and alumni are cordially invited to the Main Sports Arena.',
-                        'image' => 'https://placehold.co/200x200/0B2545/FAF8F4?text=Sports'
+                        'image' => 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=400&q=80'
                     ],
                     [
                         'title' => 'Annual Young Innovators STEM & Robotics Public Exhibition',
                         'category' => 'ACADEMICS',
                         'date' => 'Wednesday, 13 May 2026',
                         'summary' => 'Senior secondary scholars present functional solar micro-inverter designs, automated irrigation models, and AI chatbot demonstrators to university visiting professors.',
-                        'image' => 'https://placehold.co/200x200/0B2545/FAF8F4?text=STEM+Expo'
+                        'image' => 'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=400&q=80'
                     ]
                 ]
             ],
