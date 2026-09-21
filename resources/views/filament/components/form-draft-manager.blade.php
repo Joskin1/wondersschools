@@ -112,7 +112,6 @@
                     isSubmitting: false,
                     isOffline: !navigator.onLine,
                     saveTimeout: null,
-                    cloudSyncInterval: null,
                     bannerDismissed: false,
 
                     init() {
@@ -121,7 +120,6 @@
                         this.setupNetworkListeners();
                         this.setupBeforeUnload();
                         this.setupSubmitListener();
-                        this.setupCloudSync();
 
                         window.addEventListener('form-submitted-clear-draft', (e) => {
                             if (!e.detail?.key || e.detail.key === this.storageKey) {
@@ -400,24 +398,6 @@
                         }
                     },
 
-                    setupCloudSync() {
-                        this.cloudSyncInterval = setInterval(() => {
-                            this.triggerCloudDraftSync();
-                        }, 60000);
-                    },
-
-                    triggerCloudDraftSync() {
-                        if (!this.hasUnsavedChanges || this.isSubmitting || this.isOffline) return;
-
-                        try {
-                            if (typeof this.$wire !== 'undefined' && typeof this.$wire.autoSaveDraft === 'function') {
-                                this.$wire.autoSaveDraft();
-                            }
-                        } catch (e) {
-                            console.debug('Silent cloud draft sync bypassed', e);
-                        }
-                    },
-
                     setupBeforeUnload() {
                         window.addEventListener('beforeunload', (event) => {
                             if (this.hasUnsavedChanges && !this.isSubmitting) {
@@ -447,9 +427,6 @@
                     clearDraftOnSubmit() {
                         this.hasUnsavedChanges = false;
                         this.isSubmitting = true;
-                        if (this.cloudSyncInterval) {
-                            clearInterval(this.cloudSyncInterval);
-                        }
                         try {
                             localStorage.removeItem(this.storageKey);
                         } catch (e) {}
