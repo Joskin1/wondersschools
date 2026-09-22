@@ -43,21 +43,34 @@ class LessonSubmissionService
     /**
      * Submit both Lesson Plan and paired Lesson Note for review.
      */
-    public function submitPairForReview(LessonPlan $plan): array
+    public function submitPairForReview(LessonPlan|LessonNote $trigger): array
     {
-        $note = LessonNote::where('teacher_id', $plan->teacher_id)
-            ->where('subject_id', $plan->subject_id)
-            ->where('classroom_id', $plan->classroom_id)
-            ->where('session_id', $plan->session_id)
-            ->where('term_id', $plan->term_id)
-            ->where('week_number', $plan->week_number)
-            ->first();
+        if ($trigger instanceof LessonPlan) {
+            $plan = $trigger;
+            $note = LessonNote::where('teacher_id', $plan->teacher_id)
+                ->where('subject_id', $plan->subject_id)
+                ->where('classroom_id', $plan->classroom_id)
+                ->where('session_id', $plan->session_id)
+                ->where('term_id', $plan->term_id)
+                ->where('week_number', $plan->week_number)
+                ->first();
 
-        if (!$note) {
-            return [
-                'success' => false,
-                'message' => "No Lesson Note found for Week {$plan->week_number}. Please create and save your Lesson Note for this week before submitting for review.",
-            ];
+            if (!$note) {
+                return [
+                    'success' => false,
+                    'message' => "No Lesson Note found for Week {$plan->week_number}. Please create and save your Lesson Note for this week before submitting for review.",
+                ];
+            }
+        } else {
+            $note = $trigger;
+            $plan = $note->getPairedLessonPlan();
+
+            if (!$plan) {
+                return [
+                    'success' => false,
+                    'message' => "No Lesson Plan found for Week {$note->week_number}. Please create and save your Lesson Plan for this week before submitting for review.",
+                ];
+            }
         }
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($plan, $note) {

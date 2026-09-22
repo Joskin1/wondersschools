@@ -504,6 +504,12 @@ class TeacherLessonPlanResource extends Resource
         ];
     }
 
+    public static function canEdit($record): bool
+    {
+        return $record->teacher_id === auth()->id()
+            && in_array($record->status, ['draft', 'rejected']);
+    }
+
     public static function canDelete($record): bool
     {
         return false;

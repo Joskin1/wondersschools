@@ -184,21 +184,23 @@ class LessonNote extends Model
      */
     public function approve(?string $comment = null, ?int $reviewerId = null): void
     {
-        $this->update(['status' => 'approved']);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($comment, $reviewerId) {
+            $this->update(['status' => 'approved']);
 
-        if ($this->latestVersion) {
-            $this->latestVersion->update([
-                'status' => 'approved',
-                'admin_comment' => $comment,
-                'reviewed_by' => $reviewerId,
-                'reviewed_at' => now(),
-            ]);
-        }
+            if ($this->latestVersion) {
+                $this->latestVersion->update([
+                    'status' => 'approved',
+                    'admin_comment' => $comment,
+                    'reviewed_by' => $reviewerId,
+                    'reviewed_at' => now(),
+                ]);
+            }
 
-        $pairedPlan = $this->getPairedLessonPlan();
-        if ($pairedPlan) {
-            $pairedPlan->approve($comment, $reviewerId);
-        }
+            $pairedPlan = $this->getPairedLessonPlan();
+            if ($pairedPlan) {
+                $pairedPlan->approve($comment, $reviewerId);
+            }
+        });
     }
 
     /**
@@ -206,21 +208,23 @@ class LessonNote extends Model
      */
     public function reject(?string $comment = null, ?int $reviewerId = null): void
     {
-        $this->update(['status' => 'rejected']);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($comment, $reviewerId) {
+            $this->update(['status' => 'rejected']);
 
-        if ($this->latestVersion) {
-            $this->latestVersion->update([
-                'status' => 'rejected',
-                'admin_comment' => $comment,
-                'reviewed_by' => $reviewerId,
-                'reviewed_at' => now(),
-            ]);
-        }
+            if ($this->latestVersion) {
+                $this->latestVersion->update([
+                    'status' => 'rejected',
+                    'admin_comment' => $comment,
+                    'reviewed_by' => $reviewerId,
+                    'reviewed_at' => now(),
+                ]);
+            }
 
-        $pairedPlan = $this->getPairedLessonPlan();
-        if ($pairedPlan) {
-            $pairedPlan->reject($comment, $reviewerId);
-        }
+            $pairedPlan = $this->getPairedLessonPlan();
+            if ($pairedPlan) {
+                $pairedPlan->reject($comment, $reviewerId);
+            }
+        });
     }
 
     /**
@@ -228,17 +232,7 @@ class LessonNote extends Model
      */
     public function canBeEditedByTeacher(): bool
     {
-        if (in_array($this->status, ['draft', 'rejected'])) {
-            return true;
-        }
-
-        if ($this->status !== 'pending') {
-            return false;
-        }
-
-        $pairedPlan = $this->getPairedLessonPlan();
-
-        return $pairedPlan === null || $pairedPlan->status === 'draft';
+        return in_array($this->status, ['draft', 'rejected']);
     }
 
     /**

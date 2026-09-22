@@ -73,18 +73,7 @@ class ViewLessonNote extends ViewRecord
                         ->helperText('This comment will be visible to the teacher'),
                 ])
                 ->action(function (array $data) {
-                    $lessonPlan = $this->record->getPairedLessonPlan();
-
-                    if (!$lessonPlan || $lessonPlan->status !== 'pending') {
-                        Notification::make()
-                            ->title('Cannot Approve')
-                            ->body('A paired Lesson Plan in pending status is required before approving this submission.')
-                            ->danger()
-                            ->send();
-                        return;
-                    }
-
-                    // approve() on LessonNote cascades to LessonPlan
+                    // approve() on LessonNote cascades to paired LessonPlan in DB transaction
                     $this->record->approve($data['comment'] ?? null, auth()->id());
 
                     $this->record->teacher->notify(new LessonNoteReviewed(
@@ -102,14 +91,13 @@ class ViewLessonNote extends ViewRecord
 
                     Notification::make()
                         ->title('Submission Approved')
-                        ->body('The teacher has been notified. Both Lesson Note and Lesson Plan are now approved.')
+                        ->body('The teacher has been notified. The lesson submission is now approved.')
                         ->success()
                         ->send();
 
                     $this->redirect($this->getResource()::getUrl('index'));
                 })
-                ->visible(fn () => $this->record->status === 'pending'
-                    && $this->record->getPairedLessonPlan()?->status === 'pending'),
+                ->visible(fn () => $this->record->status === 'pending'),
 
             Actions\Action::make('reject')
                 ->label('Reject')

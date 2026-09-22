@@ -284,6 +284,33 @@ class TeacherLessonNoteResource extends Resource
                 ViewAction::make(),
                 EditAction::make()
                     ->visible(fn (LessonNote $record): bool => $record->canBeEditedByTeacher()),
+                Action::make('submit_for_review')
+                    ->label('Submit for Review')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Submit for Admin Review?')
+                    ->modalDescription('Both this Lesson Note and the corresponding Lesson Plan for this week will be submitted for admin review.')
+                    ->visible(fn (LessonNote $record) => in_array($record->status, ['draft', 'rejected']))
+                    ->action(function (LessonNote $record) {
+                        $result = app(\App\Services\LessonSubmissionService::class)->submitPairForReview($record);
+
+                        if (!$result['success']) {
+                            Notification::make()
+                                ->title('Cannot Submit for Review')
+                                ->body($result['message'])
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                            return;
+                        }
+
+                        Notification::make()
+                            ->title('Submitted for Review')
+                            ->body($result['message'])
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->defaultSort('created_at', 'desc');
     }

@@ -35,6 +35,13 @@ class LessonNoteResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('status', '!=', 'draft')
+            ->with(['teacher', 'subject', 'classroom', 'latestVersion']);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -151,38 +158,15 @@ class LessonNoteResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
-                        'draft' => 'gray',
                         'pending' => 'warning',
                         'approved' => 'success',
                         'rejected' => 'danger',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'draft' => 'Draft',
                         'pending' => 'Pending Review',
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
-                        default => ucfirst($state ?? ''),
-                    }),
-
-                Tables\Columns\TextColumn::make('lesson_plan_status')
-                    ->label('Lesson Plan')
-                    ->state(fn (LessonNote $record): string => $record->getPairedLessonPlan()?->status ?? 'missing')
-                    ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
-                        'draft' => 'gray',
-                        'pending' => 'warning',
-                        'approved' => 'success',
-                        'rejected' => 'danger',
-                        'missing' => 'gray',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'draft' => 'Draft',
-                        'pending' => 'Pending Review',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                        'missing' => 'Missing',
                         default => ucfirst($state ?? ''),
                     }),
 
@@ -248,7 +232,7 @@ class LessonNoteResource extends Resource
 
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'pending' => 'Pending',
+                        'pending' => 'Pending Review',
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
                     ])
@@ -308,12 +292,11 @@ class LessonNoteResource extends Resource
 
                         Notification::make()
                             ->title('Lesson Submission Approved')
-                            ->body('Both Lesson Note and Lesson Plan have been approved.')
+                            ->body('The lesson submission has been approved.')
                             ->success()
                             ->send();
                     })
-                    ->visible(fn (LessonNote $record) => $record->status === 'pending'
-                        && $record->getPairedLessonPlan()?->status === 'pending'),
+                    ->visible(fn (LessonNote $record) => $record->status === 'pending'),
 
                 Action::make('reject')
                     ->label('Reject')
