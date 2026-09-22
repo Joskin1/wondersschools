@@ -147,15 +147,17 @@ class StudentResource extends Resource
 
                         return 'Pending';
                     })
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (?string $state): string => match ($state) {
                         'Active' => 'success',
                         'Awaiting Activation' => 'warning',
                         'Pending' => 'gray',
+                        default => 'gray',
                     })
-                    ->icon(fn (string $state): string => match ($state) {
+                    ->icon(fn (?string $state): string => match ($state) {
                         'Active' => 'heroicon-o-check-circle',
                         'Awaiting Activation' => 'heroicon-o-clock',
                         'Pending' => 'heroicon-o-ellipsis-horizontal-circle',
+                        default => 'heroicon-o-question-mark-circle',
                     }),
 
                 TextColumn::make('enrollments.classroom.name')

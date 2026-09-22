@@ -150,23 +150,41 @@ class LessonNoteResource extends Resource
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (?string $state): string => match ($state) {
+                        'draft' => 'gray',
                         'pending' => 'warning',
                         'approved' => 'success',
                         'rejected' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'draft' => 'Draft',
+                        'pending' => 'Pending Review',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        default => ucfirst($state ?? ''),
                     }),
 
                 Tables\Columns\TextColumn::make('lesson_plan_status')
                     ->label('Lesson Plan')
                     ->state(fn (LessonNote $record): string => $record->getPairedLessonPlan()?->status ?? 'missing')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (?string $state): string => match ($state) {
+                        'draft' => 'gray',
                         'pending' => 'warning',
                         'approved' => 'success',
                         'rejected' => 'danger',
+                        'missing' => 'gray',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'draft' => 'Draft',
+                        'pending' => 'Pending Review',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        'missing' => 'Missing',
+                        default => ucfirst($state ?? ''),
+                    }),
 
                 Tables\Columns\TextColumn::make('latestVersion.file_name')
                     ->label('Note / Topic')

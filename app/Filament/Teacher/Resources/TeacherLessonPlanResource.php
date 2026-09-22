@@ -418,17 +418,19 @@ class TeacherLessonPlanResource extends Resource
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (?string $state): string => match ($state) {
                         'draft'    => 'gray',
                         'pending'  => 'warning',
                         'approved' => 'success',
                         'rejected' => 'danger',
+                        default    => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'draft'    => 'Draft',
                         'pending'  => 'Pending Review',
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
+                        default    => ucfirst($state ?? ''),
                     }),
 
                 Tables\Columns\TextColumn::make('admin_comment')

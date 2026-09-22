@@ -78,10 +78,11 @@ class InquiryResource extends Resource
                     ->searchable(),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn (?string $state): string => match ($state) {
                         'pending' => 'gray',
                         'reviewed' => 'info',
                         'contacted' => 'success',
+                        default => 'gray',
                     }),
                 TextColumn::make('created_at')
                     ->dateTime()
