@@ -132,7 +132,7 @@
                     </div>
                 </div>
                 <a
-                    href="{{ $downloadUrl }}"
+                    href="{{ $downloadUrl }}{{ str_contains($downloadUrl, '?') ? '&' : '?' }}download=1"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="fi-btn fi-btn-size-md relative grid-flow-col items-center justify-center font-semibold outline-none transition duration-75 focus-visible:ring-2 rounded-lg fi-btn-color-primary bg-primary-600 text-white hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400 px-4 py-2 text-sm inline-flex gap-1.5"

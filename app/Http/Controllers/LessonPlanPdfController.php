@@ -21,7 +21,7 @@ class LessonPlanPdfController extends Controller
         return $this->downloadPlan($request, $plan);
     }
 
-    public function downloadPlan(Request $request, LessonPlan $plan)
+    public function downloadPlan(Request $request, LessonPlan $lessonPlan)
     {
         $user = Auth::user();
 
@@ -29,26 +29,34 @@ class LessonPlanPdfController extends Controller
             abort(401);
         }
 
+        // Resilient fallback in case route model binding didn't resolve due to parameter name variations
+        if (! $lessonPlan->exists) {
+            $routeParam = $request->route('lessonPlan') ?? $request->route('plan') ?? $request->route('id');
+            if ($routeParam) {
+                $lessonPlan = $routeParam instanceof LessonPlan ? $routeParam : LessonPlan::findOrFail($routeParam);
+            }
+        }
+
         if ($user->role === 'student') {
-            if ($plan->status !== 'approved') {
+            if ($lessonPlan->status !== 'approved') {
                 abort(403, 'Only approved lesson plans can be viewed by students.');
             }
 
             $student = $user->student;
             $enrollment = $student?->currentEnrollment();
 
-            if (! $enrollment || $plan->classroom_id !== $enrollment->classroom_id) {
+            if (! $enrollment || $lessonPlan->classroom_id !== $enrollment->classroom_id) {
                 abort(403, 'Access denied.');
             }
         } elseif ($user->role === 'teacher') {
-            if ($plan->teacher_id !== $user->id && ! in_array($user->role, ['admin', 'sudo'], true)) {
+            if ($lessonPlan->teacher_id !== $user->id && ! in_array($user->role, ['admin', 'sudo'], true)) {
                 abort(403, 'You do not have permission to download this lesson plan.');
             }
         } elseif (! in_array($user->role, ['admin', 'sudo'], true)) {
             abort(403, 'Unauthorized.');
         }
 
-        $plan->load([
+        $lessonPlan->load([
             'teacher',
             'subject',
             'classroom',
@@ -63,7 +71,7 @@ class LessonPlanPdfController extends Controller
         $schoolName = $settings['school_name'] ?? config('app.name', 'School Portal');
 
         $pdf = Pdf::loadView('pdf.lesson-plan', [
-            'plan' => $plan,
+            'plan' => $lessonPlan,
             'school_name' => $schoolName,
             'school_logo' => $settings['school_logo'] ?? null,
             'school_address' => $settings['school_address'] ?? null,
@@ -71,11 +79,14 @@ class LessonPlanPdfController extends Controller
             'brand_color' => $settings['primary_color'] ?? '#1a365d',
         ])->setPaper('a4', 'portrait');
 
+        $subjectName = str_replace([' ', '/', '\\', '&', '+'], '_', $lessonPlan->subject?->name ?? 'Subject');
+        $className = str_replace([' ', '/', '\\', '&', '+'], '_', $lessonPlan->classroom?->name ?? 'Class');
+
         $filename = sprintf(
-            '%s_%s_Week_%d_Lesson_Plan.pdf',
-            str_replace(' ', '_', $plan->subject?->name ?? 'Subject'),
-            str_replace(' ', '_', $plan->classroom?->name ?? 'Class'),
-            $plan->week_number
+            '%s_Week_%d_%s_Lesson_Plan.pdf',
+            $subjectName,
+            $lessonPlan->week_number,
+            $className
         );
 
         return $pdf->download($filename);

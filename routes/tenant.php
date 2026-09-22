@@ -80,6 +80,11 @@ Route::get('/teacher/lesson-plans/{lessonPlan}/pdf', [\App\Http\Controllers\Less
     ->middleware('auth')
     ->name('teacher.lesson-plan.pdf');
 
+// Lesson Note Version File Stream / Download (auth-protected)
+Route::get('/lesson-notes/version/{version}/file', [\App\Http\Controllers\LessonNoteFileController::class, 'show'])
+    ->middleware('auth')
+    ->name('tenant.lesson-note.file');
+
 // Lesson Template Downloads (auth-protected)
 Route::get('/teacher/templates/lesson-plan', [\App\Http\Controllers\LessonTemplateController::class, 'lessonPlanTemplate'])
     ->middleware('auth')

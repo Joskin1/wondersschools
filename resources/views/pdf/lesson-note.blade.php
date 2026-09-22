@@ -8,14 +8,14 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         @page {
-            margin: 18mm 15mm 18mm 15mm;
+            margin: 16mm 14mm 16mm 14mm;
         }
 
         body {
             font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
             font-size: 11px;
-            color: #222222;
-            line-height: 1.5;
+            color: #1f2937;
+            line-height: 1.6;
             position: relative;
         }
 
@@ -26,9 +26,9 @@
             left: 5%;
             width: 90%;
             text-align: center;
-            opacity: 0.06;
+            opacity: 0.05;
             transform: rotate(-35deg);
-            font-size: 52px;
+            font-size: 48px;
             font-weight: bold;
             color: #000000;
             text-transform: uppercase;
@@ -72,13 +72,13 @@
         .school-motto {
             font-size: 10px;
             font-style: italic;
-            color: #555555;
+            color: #4b5563;
             margin-bottom: 2px;
         }
 
         .school-address {
             font-size: 9px;
-            color: #777777;
+            color: #6b7280;
         }
 
         /* ── Meta Banner ──────────────────────────────────────────────────────── */
@@ -88,7 +88,7 @@
             padding: 6px 12px;
             font-size: 11px;
             font-weight: bold;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             border-radius: 3px;
         }
 
@@ -97,39 +97,47 @@
             border-collapse: collapse;
             margin-bottom: 14px;
             background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
+            border: 1px solid #d1d5db;
         }
 
         .meta-grid td {
             padding: 6px 10px;
-            font-size: 10px;
-            border-bottom: 1px solid #edf2f7;
+            font-size: 10.5px;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .meta-grid td.label {
             font-weight: bold;
-            color: #4a5568;
-            width: 20%;
+            color: #4b5563;
+            width: 18%;
         }
 
         .meta-grid td.val {
-            color: #1a202c;
-            width: 30%;
+            color: #111827;
+            width: 32%;
         }
 
         /* ── Topic Banner ─────────────────────────────────────────────────────── */
         .topic-box {
-            background-color: #f1f5f9;
+            background-color: #f3f4f6;
             border-left: 4px solid {{ $brand_color }};
-            padding: 8px 12px;
+            padding: 10px 14px;
             margin-bottom: 14px;
+        }
+
+        .topic-label {
+            font-size: 9px;
+            font-weight: bold;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
         }
 
         .topic-title {
             font-size: 14px;
             font-weight: bold;
-            color: #1e293b;
+            color: #111827;
         }
 
         /* ── Section Titles ───────────────────────────────────────────────────── */
@@ -137,55 +145,133 @@
             font-size: 12px;
             font-weight: bold;
             color: {{ $brand_color }};
-            border-bottom: 1px solid #cbd5e1;
-            padding-bottom: 3px;
-            margin-top: 14px;
-            margin-bottom: 8px;
+            border-bottom: 1.5px solid #cbd5e1;
+            padding-bottom: 4px;
+            margin-top: 16px;
+            margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .objectives-list {
-            padding-left: 20px;
-            margin-bottom: 12px;
+            padding-left: 22px;
+            margin-bottom: 14px;
         }
 
         .objectives-list li {
-            font-size: 10.5px;
-            color: #334155;
-            margin-bottom: 4px;
+            font-size: 11px;
+            color: #374151;
+            margin-bottom: 5px;
+            line-height: 1.5;
         }
 
         /* ── Content ──────────────────────────────────────────────────────────── */
         .lesson-content {
-            font-size: 10.5px;
-            color: #334155;
-            line-height: 1.6;
-            margin-bottom: 14px;
+            font-size: 11px;
+            color: #374151;
+            line-height: 1.7;
+            margin-bottom: 16px;
         }
 
         .lesson-content p {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
-        .lesson-content h1, .lesson-content h2, .lesson-content h3 {
-            color: #1e293b;
+        .lesson-content h1 {
+            font-size: 15px;
+            font-weight: bold;
+            color: #111827;
+            margin-top: 14px;
+            margin-bottom: 6px;
+        }
+
+        .lesson-content h2 {
+            font-size: 13px;
+            font-weight: bold;
+            color: #111827;
+            margin-top: 12px;
+            margin-bottom: 5px;
+        }
+
+        .lesson-content h3, .lesson-content h4 {
+            font-size: 12px;
+            font-weight: bold;
+            color: #111827;
             margin-top: 10px;
             margin-bottom: 4px;
         }
 
         .lesson-content ul, .lesson-content ol {
-            padding-left: 20px;
-            margin-bottom: 8px;
+            padding-left: 22px;
+            margin-bottom: 10px;
+        }
+
+        .lesson-content li {
+            margin-bottom: 4px;
+        }
+
+        .lesson-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+        }
+
+        .lesson-content th, .lesson-content td {
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+            font-size: 10.5px;
+            text-align: left;
+        }
+
+        .lesson-content th {
+            background-color: #f3f4f6;
+            font-weight: bold;
+        }
+
+        .lesson-content blockquote {
+            border-left: 3px solid #9ca3af;
+            padding-left: 12px;
+            margin: 10px 0;
+            font-style: italic;
+            color: #4b5563;
+        }
+
+        /* ── Images ───────────────────────────────────────────────────────────── */
+        .diagram-grid {
+            margin-top: 12px;
+            margin-bottom: 16px;
+        }
+
+        .diagram-item {
+            display: inline-block;
+            width: 48%;
+            margin-right: 2%;
+            margin-bottom: 10px;
+            vertical-align: top;
+            border: 1px solid #d1d5db;
+            padding: 6px;
+            background-color: #f9fafb;
+            text-align: center;
+        }
+
+        .diagram-item img {
+            max-width: 100%;
+            max-height: 180px;
+        }
+
+        .diagram-caption {
+            font-size: 9.5px;
+            color: #6b7280;
+            margin-top: 4px;
         }
 
         /* ── Footer ───────────────────────────────────────────────────────────── */
         .footer {
-            margin-top: 20px;
-            border-top: 1px solid #e2e8f0;
+            margin-top: 24px;
+            border-top: 1px solid #e5e7eb;
             padding-top: 8px;
             font-size: 9px;
-            color: #94a3b8;
+            color: #9ca3af;
             text-align: center;
         }
     </style>
@@ -199,12 +285,12 @@
 
     {{-- School Header --}}
     <div class="header">
-        @if(!empty($school_logo))
+        @if(!empty($school_logo) && file_exists(public_path('storage/' . $school_logo)))
             <div class="header-logo-cell">
                 <img src="{{ public_path('storage/' . $school_logo) }}" alt="Logo" style="max-height: 55px; max-width: 55px;">
             </div>
         @endif
-        <div class="header-text-cell" style="{{ empty($school_logo) ? 'padding-right: 0; width: 100%;' : '' }}">
+        <div class="header-text-cell" style="{{ empty($school_logo) || !file_exists(public_path('storage/' . $school_logo)) ? 'padding-right: 0; width: 100%;' : '' }}">
             <div class="school-name">{{ $school_name }}</div>
             @if(!empty($school_motto))
                 <div class="school-motto">&ldquo;{{ $school_motto }}&rdquo;</div>
@@ -228,7 +314,7 @@
             <td class="val">{{ $lesson_note->classroom->name ?? '—' }}</td>
         </tr>
         <tr>
-            <td class="label">Academic Session:</td>
+            <td class="label">Session:</td>
             <td class="val">{{ $lesson_note->session->name ?? '—' }}</td>
             <td class="label">Term:</td>
             <td class="val">{{ $lesson_note->term->name ?? '—' }}</td>
@@ -243,18 +329,22 @@
 
     {{-- Topic Box --}}
     <div class="topic-box">
+        <div class="topic-label">Lesson Topic</div>
         <div class="topic-title">{{ $title }}</div>
     </div>
 
     {{-- Learning Objectives (if present) --}}
     @if(!empty($objectives) && count($objectives) > 0)
         <div class="section-heading">Learning Objectives</div>
-        <p style="font-size: 10px; font-style: italic; color: #64748b; margin-bottom: 6px;">
+        <p style="font-size: 10.5px; font-style: italic; color: #4b5563; margin-bottom: 6px;">
             At the end of the lesson, students should be able to:
         </p>
         <ol class="objectives-list">
             @foreach((array)$objectives as $objective)
-                <li>{{ is_array($objective) ? ($objective['objective'] ?? '') : $objective }}</li>
+                @php($objText = is_array($objective) ? ($objective['objective'] ?? '') : $objective)
+                @if(!empty(trim($objText)))
+                    <li>{{ $objText }}</li>
+                @endif
             @endforeach
         </ol>
     @endif
@@ -269,9 +359,22 @@
         @endif
     </div>
 
+    {{-- Optional Attached Diagrams & Images --}}
+    @if(!empty($image_urls) && count($image_urls) > 0)
+        <div class="section-heading">Attached Diagrams & Illustrations</div>
+        <div class="diagram-grid">
+            @foreach($image_urls as $idx => $imgUrl)
+                <div class="diagram-item">
+                    <img src="{{ $imgUrl }}" alt="Figure {{ $idx + 1 }}">
+                    <div class="diagram-caption">Figure {{ $idx + 1 }}</div>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     {{-- Footer --}}
     <div class="footer">
-        Generated from {{ $school_name }} Student Portal &bull; Approved Academic Lesson Note
+        {{ $school_name }} &bull; Academic Lesson Note &bull; Week {{ $lesson_note->week_number }}
     </div>
 
 </body>

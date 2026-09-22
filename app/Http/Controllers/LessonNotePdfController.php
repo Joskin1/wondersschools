@@ -18,6 +18,14 @@ class LessonNotePdfController extends Controller
             abort(401);
         }
 
+        // Resilient fallback in case route model binding didn't resolve
+        if (! $lessonNote->exists) {
+            $routeParam = $request->route('lessonNote') ?? $request->route('note') ?? $request->route('id');
+            if ($routeParam) {
+                $lessonNote = $routeParam instanceof LessonNote ? $routeParam : LessonNote::findOrFail($routeParam);
+            }
+        }
+
         // Authorization check
         if ($user->role === 'student') {
             $student = $user->student;
@@ -44,6 +52,30 @@ class LessonNotePdfController extends Controller
         $lessonNote->load(['teacher', 'subject', 'classroom', 'session', 'term', 'latestVersion']);
         $latestVersion = $lessonNote->latestVersion;
 
+        $subjectName = str_replace([' ', '/', '\\', '&', '+'], '_', $lessonNote->subject->name ?? 'Subject');
+        $className = str_replace([' ', '/', '\\', '&', '+'], '_', $lessonNote->classroom->name ?? 'Class');
+
+        $filename = sprintf(
+            '%s_Week_%d_%s_Lesson_Note.pdf',
+            $subjectName,
+            $lessonNote->week_number,
+            $className
+        );
+
+        // If the teacher uploaded an actual PDF file, deliver the real PDF directly
+        if ($latestVersion && $latestVersion->isFile() && !empty($latestVersion->file_path)) {
+            $fileController = new LessonNoteFileController();
+            $method = new \ReflectionMethod(LessonNoteFileController::class, 'resolveFilePath');
+            $method->setAccessible(true);
+            $absolutePath = $method->invoke($fileController, $latestVersion->file_path);
+
+            if ($absolutePath && file_exists($absolutePath) && strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION)) === 'pdf') {
+                return response()->download($absolutePath, $filename, [
+                    'Content-Type' => 'application/pdf',
+                ]);
+            }
+        }
+
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
         $schoolName = $settings['school_name'] ?? config('app.name', 'School Portal');
@@ -69,13 +101,6 @@ class LessonNotePdfController extends Controller
 
         $pdf = Pdf::loadView('pdf.lesson-note', $data)
             ->setPaper('a4', 'portrait');
-
-        $filename = sprintf(
-            '%s_%s_Week_%d_Lesson_Note.pdf',
-            str_replace(' ', '_', $lessonNote->subject->name ?? 'Subject'),
-            str_replace(' ', '_', $lessonNote->classroom->name ?? 'Class'),
-            $lessonNote->week_number
-        );
 
         return $pdf->download($filename);
     }

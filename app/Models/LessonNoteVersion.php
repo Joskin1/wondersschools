@@ -119,6 +119,10 @@ class LessonNoteVersion extends Model
         }
 
         try {
+            if (\Illuminate\Support\Facades\Route::has('tenant.lesson-note.file')) {
+                return route('tenant.lesson-note.file', ['version' => $this->id]);
+            }
+
             return Storage::disk('lesson_notes')->temporaryUrl(
                 $this->file_path,
                 now()->addMinutes($expirationMinutes)
