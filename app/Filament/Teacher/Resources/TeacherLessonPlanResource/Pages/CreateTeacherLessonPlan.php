@@ -345,8 +345,13 @@ class CreateTeacherLessonPlan extends CreateRecord
             $data['key_vocabulary'] = implode(', ', $data['key_vocabulary']);
         }
 
-        if (isset($data['topic']) && !isset($data['title'])) {
+        if (isset($data['topic'])) {
+            $data['topic'] = \App\Models\LessonPlan::formatTopic($data['topic']);
             $data['title'] = $data['topic'];
+        }
+
+        if (isset($data['sub_topic'])) {
+            $data['sub_topic'] = \App\Models\LessonPlan::formatSubTopic($data['sub_topic']);
         }
 
         unset($data['draft_manager']);

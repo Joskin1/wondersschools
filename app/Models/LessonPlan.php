@@ -48,6 +48,58 @@ class LessonPlan extends Model
         'reviewed_at' => 'datetime',
     ];
 
+    /**
+     * Format a topic so it is strictly all uppercase.
+     */
+    public static function formatTopic(?string $topic): ?string
+    {
+        if ($topic === null || trim((string) $topic) === '') {
+            return null;
+        }
+
+        return mb_strtoupper(trim((string) $topic));
+    }
+
+    /**
+     * Format a subtopic so its first letter is capitalized.
+     */
+    public static function formatSubTopic(?string $subTopic): ?string
+    {
+        if ($subTopic === null || trim((string) $subTopic) === '') {
+            return null;
+        }
+
+        $trimmed = trim((string) $subTopic);
+        $alphaOnly = preg_replace('/[^a-zA-Z]/', '', $trimmed);
+
+        // If entered in ALL CAPS, convert to lowercase first so only first letter is capital
+        if (!empty($alphaOnly) && ctype_upper($alphaOnly)) {
+            $trimmed = mb_strtolower($trimmed);
+        }
+
+        return ucfirst($trimmed);
+    }
+
+    public function setTopicAttribute($value): void
+    {
+        $formatted = self::formatTopic($value);
+        $this->attributes['topic'] = $formatted;
+
+        if (empty($this->attributes['title']) && !empty($formatted)) {
+            $this->attributes['title'] = $formatted;
+        }
+    }
+
+    public function setTitleAttribute($value): void
+    {
+        $this->attributes['title'] = self::formatTopic($value);
+    }
+
+    public function setSubTopicAttribute($value): void
+    {
+        $this->attributes['sub_topic'] = self::formatSubTopic($value);
+    }
+
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');

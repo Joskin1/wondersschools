@@ -154,9 +154,12 @@ class TeacherLessonNoteResource extends Resource
                         // Written Option
                         TextInput::make('title')
                             ->label('Lesson Topic / Title')
-                            ->placeholder('e.g. Introduction to Photosynthesis & Plant Nutrition')
+                            ->placeholder('e.g. INTRODUCTION TO PHOTOSYNTHESIS & PLANT NUTRITION')
                             ->required(fn ($get) => $get('submission_type') === 'written')
                             ->visible(fn ($get) => $get('submission_type') === 'written')
+                            ->dehydrateStateUsing(fn ($state) => $state ? mb_strtoupper(trim($state)) : null)
+                            ->extraInputAttributes(['style' => 'text-transform: uppercase'])
+                            ->helperText('Main topic for this lesson note (saved in ALL CAPS).')
                             ->columnSpanFull(),
 
                         RichEditor::make('content')

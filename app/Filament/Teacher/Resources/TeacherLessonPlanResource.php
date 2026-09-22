@@ -107,16 +107,19 @@ class TeacherLessonPlanResource extends Resource
                         Grid::make(2)->schema([
                             TextInput::make('topic')
                                 ->label('Topic')
-                                ->placeholder('e.g. Introduction to Photosynthesis')
+                                ->placeholder('e.g. INTRODUCTION TO PHOTOSYNTHESIS')
                                 ->required()
                                 ->maxLength(255)
-                                ->helperText('Main topic for this lesson plan.'),
+                                ->dehydrateStateUsing(fn ($state) => \App\Models\LessonPlan::formatTopic($state))
+                                ->extraInputAttributes(['style' => 'text-transform: uppercase'])
+                                ->helperText('Main topic for this lesson plan (saved in ALL CAPS).'),
 
                             TextInput::make('sub_topic')
                                 ->label('Sub-Topic (Optional)')
-                                ->placeholder('e.g. Light & Dark Reactions of Photosynthesis')
+                                ->placeholder('e.g. Light & dark reactions of photosynthesis')
                                 ->maxLength(255)
-                                ->helperText('Specific sub-topic or focus area for this lesson.'),
+                                ->dehydrateStateUsing(fn ($state) => \App\Models\LessonPlan::formatSubTopic($state))
+                                ->helperText('Specific sub-topic or focus area (first letter capitalized).'),
                         ]),
 
                         Grid::make(2)->schema([

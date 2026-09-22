@@ -30,6 +30,14 @@ class LessonNote extends Model
     ];
 
     /**
+     * Ensure title / topic is always stored in ALL CAPS.
+     */
+    public function setTitleAttribute($value): void
+    {
+        $this->attributes['title'] = $value !== null && trim((string) $value) !== '' ? mb_strtoupper(trim((string) $value)) : null;
+    }
+
+    /**
      * Find the paired Lesson Plan for the same academic context.
      */
     public function getPairedLessonPlan(): ?LessonPlan

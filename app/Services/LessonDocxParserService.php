@@ -66,10 +66,13 @@ class LessonDocxParserService
             ?: $this->getSingleLine($sections, 'SUB TOPIC') 
             ?: $this->getSingleLine($sections, 'SUB_TOPIC');
 
+        $formattedTopic = \App\Models\LessonPlan::formatTopic($topic);
+        $formattedSubTopic = \App\Models\LessonPlan::formatSubTopic($subTopic);
+
         return [
-            'topic' => $topic,
-            'sub_topic' => $subTopic,
-            'title' => $topic,
+            'topic' => $formattedTopic,
+            'sub_topic' => $formattedSubTopic,
+            'title' => $formattedTopic,
             'time' => $this->getSingleLine($sections, 'TIME / DURATION'),
             'section' => $this->getSingleLine($sections, 'SECTION / PERIOD'),
             'learning_objectives' => $this->getNumberedList($sections, 'LEARNING OBJECTIVES'),
@@ -186,9 +189,10 @@ class LessonDocxParserService
         $sections = $this->extractSections($filePath, self::LESSON_NOTE_SECTIONS);
 
         $title = $this->getSingleLine($sections, 'TOPIC') ?: $this->getSingleLine($sections, 'TITLE');
+        $formattedTitle = !empty($title) ? mb_strtoupper(trim($title)) : null;
 
         return [
-            'title' => $title,
+            'title' => $formattedTitle,
             'learning_objectives' => $this->getNumberedList($sections, 'LEARNING OBJECTIVES'),
             'content' => $this->getRichText($sections, 'LESSON NOTE CONTENT'),
         ];

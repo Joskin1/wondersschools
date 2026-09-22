@@ -49,6 +49,14 @@ class LessonNoteVersion extends Model
     ];
 
     /**
+     * Ensure title is always stored in ALL CAPS.
+     */
+    public function setTitleAttribute($value): void
+    {
+        $this->attributes['title'] = $value !== null && trim((string) $value) !== '' ? mb_strtoupper(trim((string) $value)) : null;
+    }
+
+    /**
      * Check if this version is a written note.
      */
     public function isWritten(): bool

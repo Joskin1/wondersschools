@@ -149,9 +149,13 @@ class CreateTeacherLessonNote extends CreateRecord
             }
             $this->templateFilePath = $templateFile;
         } else {
-            $this->writtenTitle = $data['title'] ?? null;
+            $this->writtenTitle = !empty($data['title']) ? mb_strtoupper(trim($data['title'])) : null;
             $this->writtenContent = $data['content'] ?? null;
             $this->writtenImages = $data['images'] ?? null;
+        }
+
+        if (!empty($this->writtenTitle)) {
+            $this->writtenTitle = mb_strtoupper(trim($this->writtenTitle));
         }
 
         if (isset($data['learning_objectives']) && is_array($data['learning_objectives'])) {
