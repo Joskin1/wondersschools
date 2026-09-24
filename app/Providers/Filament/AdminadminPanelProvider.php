@@ -92,6 +92,7 @@ class AdminadminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \App\Http\Middleware\CheckUnreadReleaseNotesMiddleware::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
