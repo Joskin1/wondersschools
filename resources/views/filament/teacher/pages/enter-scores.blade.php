@@ -77,7 +77,32 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
+                        {{-- Export & Import Actions when classroom is selected --}}
+                        @if ($this->classroom_id && $this->session_id && $this->term_id)
+                            {{-- Export Group --}}
+                            <div style="display: flex; align-items: center; gap: 0.375rem;">
+                                @if ($this->subject_id)
+                                    <button type="button" wire:click="exportCurrentSubject" wire:loading.attr="disabled" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.45rem 0.75rem; border-radius: 0.75rem; background: #059669; color: white; font-size: 0.75rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'" title="Download Excel template for this subject">
+                                        <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                        <span>Export Subject (.xlsx)</span>
+                                    </button>
+                                @endif
+
+                                <button type="button" wire:click="exportClassSubjects" wire:loading.attr="disabled" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.45rem 0.75rem; border-radius: 0.75rem; background: #0f766e; color: white; font-size: 0.75rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#115e59'" onmouseout="this.style.background='#0f766e'" title="Download one Excel sheet for all subjects you teach in this class">
+                                    <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <span>Export Class (.xlsx)</span>
+                                </button>
+                            </div>
+
+                            {{-- Import Excel Button --}}
+                            <label for="excel-score-upload" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.45rem 0.75rem; border-radius: 0.75rem; background: #4338ca; color: white; font-size: 0.75rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#3730a3'" onmouseout="this.style.background='#4338ca'">
+                                <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                <span>Import Excel</span>
+                                <input type="file" id="excel-score-upload" wire:model="uploadFile" accept=".xlsx,.xls,.csv" style="display: none;">
+                            </label>
+                        @endif
+
                         @if ($this->loaded && !empty($students))
                             @if ($this->isSubjectPublished)
                                 <span style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; background: #d1fae5; color: #065f46;" class="dark:bg-emerald-950 dark:text-emerald-300">
@@ -95,9 +120,9 @@
                             </button>
                         @endif
 
-                        <div wire:loading wire:target="session_id,term_id,classroom_id,subject_id" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #6366f1; font-weight: 700;">
+                        <div wire:loading wire:target="session_id,term_id,classroom_id,subject_id,uploadFile,exportCurrentSubject,exportClassSubjects" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #6366f1; font-weight: 700;">
                             <svg style="width: 16px; height: 16px;" class="animate-spin" fill="none" viewBox="0 0 24 24"><circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                            Loading scorecard...
+                            Processing...
                         </div>
                     </div>
                 </div>
@@ -447,5 +472,172 @@
             </div>
         @endif
 
+        {{-- ── Step 3: Interactive Staging & Correction Modal ────────────────── --}}
+        @if ($showImportModal && !empty($stagingData))
+            <div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); padding: 1rem;">
+                <div style="width: 100%; max-width: 95vw; height: 90vh; background: white; border-radius: 1.25rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(148,163,184,0.2);" class="dark:bg-slate-900 dark:border-slate-800">
+                    
+                    {{-- Modal Header --}}
+                    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(148,163,184,0.2); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; background: #f8fafc;" class="dark:bg-slate-800/60">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="display: flex; height: 2.5rem; width: 2.5rem; align-items: center; justify-content: center; border-radius: 0.75rem; background: rgba(99,102,241,0.1); color: #4f46e5;">
+                                <svg style="width: 20px; height: 20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 1.125rem; font-weight: 900; color: #0f172a;" class="dark:text-white">Review & Import Scores Preview</h3>
+                                <p style="font-size: 0.75rem; color: #64748b;">Review parsed marks. You can correct any errors directly in the table before saving.</p>
+                            </div>
+                        </div>
+
+                        {{-- Summary Badges --}}
+                        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.625rem;">
+                            <span style="font-size: 0.75rem; font-weight: 800; padding: 0.35rem 0.75rem; border-radius: 9999px; background: #f1f5f9; color: #334155;" class="dark:bg-slate-800 dark:text-slate-300">
+                                {{ $stagingData['total_students'] ?? 0 }} Students
+                            </span>
+
+                            <span style="font-size: 0.75rem; font-weight: 800; padding: 0.35rem 0.75rem; border-radius: 9999px; background: #f1f5f9; color: #334155;" class="dark:bg-slate-800 dark:text-slate-300">
+                                {{ count($stagingData['subjects'] ?? []) }} Subject(s)
+                            </span>
+
+                            <span style="font-size: 0.75rem; font-weight: 800; padding: 0.35rem 0.75rem; border-radius: 9999px; background: #e0e7ff; color: #3730a3;" class="dark:bg-indigo-950 dark:text-indigo-300">
+                                {{ $stagingData['total_scores_count'] ?? 0 }} Scores Found
+                            </span>
+
+                            @if (($stagingData['total_errors'] ?? 0) > 0)
+                                <span style="font-size: 0.75rem; font-weight: 800; padding: 0.35rem 0.75rem; border-radius: 9999px; background: #fee2e2; color: #991b1b; display: inline-flex; align-items: center; gap: 0.375rem;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    {{ $stagingData['total_errors'] }} error(s) to resolve
+                                </span>
+                            @else
+                                <span style="font-size: 0.75rem; font-weight: 800; padding: 0.35rem 0.75rem; border-radius: 9999px; background: #d1fae5; color: #065f46; display: inline-flex; align-items: center; gap: 0.375rem;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    All Scores Valid
+                                </span>
+                            @endif
+
+                            <button type="button" wire:click="closeImportModal" style="display: flex; align-items: center; justify-content: center; height: 2rem; width: 2rem; border-radius: 0.5rem; color: #64748b; background: transparent; border: none; cursor: pointer;" onmouseover="this.style.background='rgba(148,163,184,0.1)'" onmouseout="this.style.background='transparent'">
+                                <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Modal Body: Scrollable Spreadsheet Table --}}
+                    <div style="flex: 1 1 0%; overflow: auto; padding: 1rem 1.5rem;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
+                            <thead>
+                                {{-- Row 1: Group headers --}}
+                                <tr>
+                                    <th colspan="3" style="position: sticky; top: 0; left: 0; z-index: 30; background: #f1f5f9; padding: 0.625rem 0.75rem; font-weight: 900; font-size: 0.75rem; text-transform: uppercase; color: #334155; border: 1px solid #cbd5e1;" class="dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700">
+                                        STUDENT INFORMATION
+                                    </th>
+                                    @foreach ($stagingData['subjects'] as $subj)
+                                        <th colspan="{{ count($subj['score_heads']) }}" style="position: sticky; top: 0; z-index: 20; background: #e0e7ff; padding: 0.625rem 0.75rem; font-weight: 900; font-size: 0.75rem; text-transform: uppercase; color: #1e1b4b; border: 1px solid #cbd5e1; text-align: center;" class="dark:bg-indigo-950 dark:text-indigo-200 dark:border-slate-700">
+                                            {{ $subj['name'] }}
+                                        </th>
+                                    @endforeach
+                                </tr>
+
+                                {{-- Row 2: Sub-headers --}}
+                                <tr>
+                                    <th style="position: sticky; top: 32px; left: 0; z-index: 30; background: #e2e8f0; width: 3.5rem; padding: 0.5rem 0.625rem; font-weight: 800; font-size: 0.7rem; color: #475569; border: 1px solid #cbd5e1; text-align: center;" class="dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">S/N</th>
+                                    <th style="position: sticky; top: 32px; left: 3.5rem; z-index: 30; background: #e2e8f0; width: 8rem; padding: 0.5rem 0.625rem; font-weight: 800; font-size: 0.7rem; color: #475569; border: 1px solid #cbd5e1;" class="dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">Adm No</th>
+                                    <th style="position: sticky; top: 32px; left: 11.5rem; z-index: 30; background: #e2e8f0; width: 14rem; padding: 0.5rem 0.625rem; font-weight: 800; font-size: 0.7rem; color: #475569; border: 1px solid #cbd5e1;" class="dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">Full Name</th>
+
+                                    @foreach ($stagingData['subjects'] as $subj)
+                                        @foreach ($subj['score_heads'] as $sh)
+                                            <th style="position: sticky; top: 32px; z-index: 20; background: #eef2ff; min-width: 7.5rem; padding: 0.5rem 0.625rem; font-weight: 800; font-size: 0.7rem; color: #312e81; border: 1px solid #cbd5e1; text-align: center;" class="dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-slate-700">
+                                                <div>{{ $sh['name'] }}</div>
+                                                <div style="font-size: 0.65rem; color: #6366f1; font-weight: 700;">(Max: {{ $sh['effective_max'] }})</div>
+                                            </th>
+                                        @endforeach
+                                    @endforeach
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach ($stagingData['students'] as $sIndex => $student)
+                                    <tr style="{{ !empty($student['has_error']) ? 'background: rgba(254, 242, 242, 0.4);' : '' }}">
+                                        {{-- S/N --}}
+                                        <td style="position: sticky; left: 0; background: white; border: 1px solid #e2e8f0; padding: 0.5rem 0.625rem; text-align: center; font-weight: 700; color: #64748b;" class="dark:bg-slate-900 dark:border-slate-800">
+                                            {{ $loop->iteration }}
+                                        </td>
+
+                                        {{-- Admission No --}}
+                                        <td style="position: sticky; left: 3.5rem; background: white; border: 1px solid #e2e8f0; padding: 0.5rem 0.625rem; font-weight: 700; font-family: monospace; color: #334155;" class="dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300">
+                                            {{ $student['admission_number'] }}
+                                        </td>
+
+                                        {{-- Full Name --}}
+                                        <td style="position: sticky; left: 11.5rem; background: white; border: 1px solid #e2e8f0; padding: 0.5rem 0.625rem; font-weight: 800; color: #0f172a;" class="dark:bg-slate-900 dark:border-slate-800 dark:text-white">
+                                            {{ $student['full_name'] }}
+                                            @if (!empty($student['unmatched']))
+                                                <span style="display: block; font-size: 0.65rem; color: #dc2626; font-weight: 700;">⚠️ Student not found in class</span>
+                                            @endif
+                                        </td>
+
+                                        {{-- Score Cells --}}
+                                        @foreach ($stagingData['subjects'] as $subj)
+                                            @foreach ($subj['score_heads'] as $sh)
+                                                @php
+                                                    $scoreKey = $sh['key'];
+                                                    $cellData = $student['scores'][$scoreKey] ?? ['value' => '', 'error' => null, 'effective_max' => $sh['effective_max']];
+                                                    $hasCellError = !empty($cellData['error']);
+                                                @endphp
+                                                <td style="border: 1px solid #e2e8f0; padding: 0.375rem; text-align: center; {{ $hasCellError ? 'background: #fef2f2;' : '' }}" class="dark:border-slate-800">
+                                                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.125rem;">
+                                                        <input
+                                                            type="text"
+                                                            value="{{ $cellData['value'] }}"
+                                                            wire:change="updateStagingScore({{ $sIndex }}, '{{ $scoreKey }}', $event.target.value)"
+                                                            style="width: 3.5rem; text-align: center; font-size: 0.8125rem; font-weight: 800; padding: 0.25rem 0.375rem; border-radius: 0.375rem; border: 1px solid {{ $hasCellError ? '#ef4444' : '#cbd5e1' }}; background: {{ $hasCellError ? '#fff' : 'transparent' }}; color: {{ $hasCellError ? '#b91c1c' : '#0f172a' }}; transition: all 0.15s;"
+                                                            class="dark:text-white dark:border-slate-700"
+                                                            placeholder="—"
+                                                        />
+
+                                                        @if ($hasCellError)
+                                                            <span style="font-size: 0.625rem; color: #dc2626; font-weight: 800; line-height: 1.1; max-width: 6.5rem; text-align: center;">
+                                                                {{ $cellData['error'] }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            @endforeach
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Modal Footer --}}
+                    <div style="padding: 1rem 1.5rem; border-top: 1px solid rgba(148,163,184,0.2); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; background: #f8fafc;" class="dark:bg-slate-800/60">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #64748b;">
+                            <svg style="width: 16px; height: 16px; color: #6366f1;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Click on any cell to edit. Corrections take effect instantly in the preview.</span>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <button type="button" wire:click="closeImportModal" style="padding: 0.5rem 1rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background: white; color: #475569; font-size: 0.8125rem; font-weight: 800; cursor: pointer;" class="dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                                Cancel
+                            </button>
+
+                            @if (($stagingData['total_errors'] ?? 0) > 0)
+                                <button type="button" disabled style="padding: 0.5rem 1.25rem; border-radius: 0.75rem; border: none; background: #94a3b8; color: white; font-size: 0.8125rem; font-weight: 800; cursor: not-allowed; opacity: 0.65;">
+                                    Fix {{ $stagingData['total_errors'] }} Error(s) to Import
+                                </button>
+                            @else
+                                <button type="button" wire:click="confirmImport" wire:loading.attr="disabled" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.25rem; border-radius: 0.75rem; border: none; background: #4f46e5; color: white; font-size: 0.8125rem; font-weight: 800; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+                                    <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    Confirm & Save All Scores
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        @endif
+
     </div>
 </x-filament-panels::page>
+

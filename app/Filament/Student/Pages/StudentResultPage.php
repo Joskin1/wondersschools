@@ -23,6 +23,8 @@ class StudentResultPage extends Page
 
     protected static ?string $title = 'My Results';
 
+    protected static ?string $slug = 'my-results';
+
     protected static ?int $navigationSort = 1;
 
     protected string $view = 'filament.student.pages.student-result-page';

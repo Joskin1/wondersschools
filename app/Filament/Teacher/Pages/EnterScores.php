@@ -16,13 +16,17 @@ use App\Models\TeacherSubjectAssignment;
 use App\Models\Term;
 use App\Models\TermResult;
 use App\Services\ResultCalculationService;
+use App\Services\ScoreSpreadsheetService;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Livewire\WithFileUploads;
 
 class EnterScores extends Page
 {
+    use WithFileUploads;
+
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-pencil-square';
 
     protected static string | \UnitEnum | null $navigationGroup = 'Results';
@@ -53,6 +57,12 @@ class EnterScores extends Page
 
     public bool  $loaded          = false;
     public bool  $structureExists = false;
+
+    // ── Staging & Import state ────────────────────────────────────────────────
+
+    public $uploadFile = null;
+    public bool $showImportModal = false;
+    public array $stagingData = [];
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -476,6 +486,291 @@ class EnterScores extends Page
             ->exists();
     }
 
+    // ── Excel Export & Import Actions ─────────────────────────────────────────
+
+    public function exportCurrentSubject()
+    {
+        if (! $this->session_id || ! $this->term_id || ! $this->classroom_id || ! $this->subject_id) {
+            Notification::make()->title('Please select session, term, classroom, and subject first.')->warning()->send();
+            return null;
+        }
+
+        $user = Auth::user();
+        if (! $this->canEnterScoresFor($user, $this->subject_id, $this->classroom_id, $this->session_id, $this->term_id)) {
+            Notification::make()->title('Unauthorized action.')->danger()->send();
+            return null;
+        }
+
+        try {
+            $service = app(ScoreSpreadsheetService::class);
+            $tempPath = $service->exportToTempFile(
+                $this->classroom_id,
+                [$this->subject_id],
+                $this->session_id,
+                $this->term_id,
+                $user->id
+            );
+
+            $classroom = Classroom::find($this->classroom_id);
+            $subject   = Subject::find($this->subject_id);
+            $session   = Session::find($this->session_id);
+            $term      = Term::find($this->term_id);
+
+            $cleanClass = preg_replace('/[^A-Za-z0-9_\-]/', '_', $classroom?->name ?? 'Class');
+            $cleanSubj  = preg_replace('/[^A-Za-z0-9_\-]/', '_', $subject?->name ?? 'Subject');
+            $cleanTerm  = preg_replace('/[^A-Za-z0-9_\-]/', '_', $term?->name ?? 'Term');
+            $cleanSess  = preg_replace('/[^A-Za-z0-9_\-]/', '_', $session?->name ?? 'Session');
+
+            $fileName = "ScoreSheet_{$cleanClass}_{$cleanSubj}_{$cleanTerm}_{$cleanSess}.xlsx";
+
+            return response()->download($tempPath, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ])->deleteFileAfterSend(true);
+        } catch (\Throwable $e) {
+            Notification::make()->title('Export Failed')->body($e->getMessage())->danger()->send();
+            return null;
+        }
+    }
+
+    public function exportClassSubjects()
+    {
+        if (! $this->session_id || ! $this->term_id || ! $this->classroom_id) {
+            Notification::make()->title('Please select session, term, and classroom first.')->warning()->send();
+            return null;
+        }
+
+        $user = Auth::user();
+        $authorizedSubjectIds = $this->authorizedSubjects->pluck('id')->toArray();
+
+        if (empty($authorizedSubjectIds)) {
+            Notification::make()->title('No assigned subjects found for you in this class.')->warning()->send();
+            return null;
+        }
+
+        try {
+            $service = app(ScoreSpreadsheetService::class);
+            $tempPath = $service->exportToTempFile(
+                $this->classroom_id,
+                $authorizedSubjectIds,
+                $this->session_id,
+                $this->term_id,
+                $user->id
+            );
+
+            $classroom = Classroom::find($this->classroom_id);
+            $session   = Session::find($this->session_id);
+            $term      = Term::find($this->term_id);
+
+            $cleanClass = preg_replace('/[^A-Za-z0-9_\-]/', '_', $classroom?->name ?? 'Class');
+            $cleanTerm  = preg_replace('/[^A-Za-z0-9_\-]/', '_', $term?->name ?? 'Term');
+            $cleanSess  = preg_replace('/[^A-Za-z0-9_\-]/', '_', $session?->name ?? 'Session');
+
+            $fileName = "ScoreSheet_{$cleanClass}_AllSubjects_{$cleanTerm}_{$cleanSess}.xlsx";
+
+            return response()->download($tempPath, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ])->deleteFileAfterSend(true);
+        } catch (\Throwable $e) {
+            Notification::make()->title('Export Failed')->body($e->getMessage())->danger()->send();
+            return null;
+        }
+    }
+
+    public function updatedUploadFile(): void
+    {
+        if (! $this->uploadFile) {
+            return;
+        }
+
+        if (! $this->session_id || ! $this->term_id || ! $this->classroom_id) {
+            Notification::make()->title('Please select session, term, and classroom first.')->warning()->send();
+            $this->uploadFile = null;
+            return;
+        }
+
+        $isFinalized = TermResult::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->where('is_finalized', true)
+            ->exists();
+
+        if ($isFinalized) {
+            Notification::make()->title('Cannot import: Term results are already finalized for this class.')->danger()->send();
+            $this->uploadFile = null;
+            return;
+        }
+
+        $this->validate([
+            'uploadFile' => 'required|file|max:10240',
+        ]);
+
+        try {
+            $authorizedSubjectIds = $this->authorizedSubjects->pluck('id')->toArray();
+            $service = app(ScoreSpreadsheetService::class);
+            $filePath = $this->uploadFile->getRealPath();
+
+            $this->stagingData = $service->parseAndValidate(
+                $filePath,
+                $this->classroom_id,
+                $authorizedSubjectIds,
+                $this->session_id,
+                $this->term_id
+            );
+
+            $this->showImportModal = true;
+        } catch (\Throwable $e) {
+            Notification::make()->title('Import Parsing Failed')->body($e->getMessage())->danger()->send();
+        } finally {
+            $this->uploadFile = null;
+        }
+    }
+
+    public function updateStagingScore(int $studentIndex, string $scoreKey, $value): void
+    {
+        if (! isset($this->stagingData['students'][$studentIndex]['scores'][$scoreKey])) {
+            return;
+        }
+
+        $cell = &$this->stagingData['students'][$studentIndex]['scores'][$scoreKey];
+        $effectiveMax = (float) $cell['effective_max'];
+        $cleanVal = trim((string) $value);
+
+        if ($cleanVal === '') {
+            $cell['value'] = '';
+            $cell['error'] = null;
+        } elseif (! is_numeric($cleanVal)) {
+            $cell['value'] = $cleanVal;
+            $cell['error'] = 'Must be a number.';
+        } else {
+            $num = (float) $cleanVal;
+            if ($num < 0) {
+                $cell['value'] = (string) $num;
+                $cell['error'] = 'Cannot be negative.';
+            } elseif ($num > $effectiveMax) {
+                $cell['value'] = (string) $num;
+                $cell['error'] = "Exceeds max of {$effectiveMax}.";
+            } else {
+                $cell['value'] = (string) $num;
+                $cell['error'] = null;
+            }
+        }
+
+        // Recalculate row error status
+        $rowHasError = false;
+        if (! empty($this->stagingData['students'][$studentIndex]['unmatched'])) {
+            $rowHasError = true;
+        }
+        foreach ($this->stagingData['students'][$studentIndex]['scores'] as $s) {
+            if (! empty($s['error'])) {
+                $rowHasError = true;
+                break;
+            }
+        }
+        $this->stagingData['students'][$studentIndex]['has_error'] = $rowHasError;
+
+        // Recalculate total errors & valid scores
+        $totalErrors = 0;
+        $totalScores = 0;
+        foreach ($this->stagingData['students'] as $st) {
+            if (! empty($st['unmatched'])) {
+                $totalErrors++;
+            }
+            foreach ($st['scores'] as $sc) {
+                if (! empty($sc['error'])) {
+                    $totalErrors++;
+                }
+                if ($sc['value'] !== '' && empty($sc['error'])) {
+                    $totalScores++;
+                }
+            }
+        }
+
+        $this->stagingData['total_errors'] = $totalErrors;
+        $this->stagingData['total_scores_count'] = $totalScores;
+    }
+
+    public function confirmImport(): void
+    {
+        if (empty($this->stagingData) || ($this->stagingData['total_errors'] ?? 0) > 0) {
+            Notification::make()->title('Please fix all errors before importing.')->danger()->send();
+            return;
+        }
+
+        $user = Auth::user();
+        $isFinalized = TermResult::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->where('is_finalized', true)
+            ->exists();
+
+        if ($isFinalized) {
+            Notification::make()->title('Term results are finalized.')->danger()->send();
+            return;
+        }
+
+        $now = now();
+        $records = [];
+        foreach ($this->stagingData['students'] as $student) {
+            $studentId = $student['student_id'];
+            if (! $studentId) {
+                continue;
+            }
+
+            foreach ($student['scores'] as $score) {
+                $val = $score['value'];
+                if ($val === '' || $val === null) {
+                    continue;
+                }
+
+                $records[] = [
+                    'student_id'    => (int) $studentId,
+                    'classroom_id'  => (int) $this->classroom_id,
+                    'subject_id'    => (int) $score['subject_id'],
+                    'score_head_id' => (int) $score['score_head_id'],
+                    'session_id'    => (int) $this->session_id,
+                    'term_id'       => (int) $this->term_id,
+                    'teacher_id'    => (int) $user->id,
+                    'score'         => (float) $val,
+                    'created_at'    => $now,
+                    'updated_at'    => $now,
+                ];
+            }
+        }
+
+        $savedCount = count($records);
+        if (! empty($records)) {
+            DB::transaction(function () use ($records) {
+                foreach (array_chunk($records, 200) as $chunk) {
+                    Score::upsert(
+                        $chunk,
+                        ['student_id', 'subject_id', 'score_head_id', 'session_id', 'term_id'],
+                        ['classroom_id', 'teacher_id', 'score', 'updated_at']
+                    );
+                }
+            });
+        }
+
+        $studentsCount = count($this->stagingData['students']);
+        $this->showImportModal = false;
+        $this->stagingData = [];
+        $this->uploadFile = null;
+
+        $this->loadScores();
+
+        Notification::make()
+            ->title('Scores imported successfully!')
+            ->body("Saved {$savedCount} score entries across {$studentsCount} students.")
+            ->success()
+            ->send();
+    }
+
+    public function closeImportModal(): void
+    {
+        $this->showImportModal = false;
+        $this->stagingData = [];
+        $this->uploadFile = null;
+    }
+
     private function clearScoreState(): void
     {
         $this->students       = [];
@@ -485,3 +780,4 @@ class EnterScores extends Page
         $this->structureExists = false;
     }
 }
+
