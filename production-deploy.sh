@@ -29,14 +29,18 @@ set -a
 source .env
 set +a
 
-echo "=== 3. Setting up MySQL Database and User ==="
-sudo mysql -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE:-Wonder}\`;"
-if [ -n "${DB_PASSWORD:-}" ]; then
-    sudo mysql -e "CREATE USER IF NOT EXISTS '${DB_USERNAME:-Wonder_user}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-    sudo mysql -e "GRANT ALL PRIVILEGES ON *.* TO '${DB_USERNAME:-Wonder_user}'@'localhost' WITH GRANT OPTION;"
-    sudo mysql -e "FLUSH PRIVILEGES;"
+echo "=== 3. Setting up Database ==="
+if [ "${DB_CONNECTION:-mysql}" = "mysql" ]; then
+    sudo mysql -e "CREATE DATABASE IF NOT EXISTS \`${DB_DATABASE:-Wonder}\`;"
+    if [ -n "${DB_PASSWORD:-}" ]; then
+        sudo mysql -e "CREATE USER IF NOT EXISTS '${DB_USERNAME:-Wonder_user}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+        sudo mysql -e "GRANT ALL PRIVILEGES ON *.* TO '${DB_USERNAME:-Wonder_user}'@'localhost' WITH GRANT OPTION;"
+        sudo mysql -e "FLUSH PRIVILEGES;"
+    else
+        echo "DB_PASSWORD is not set. Skipping database user creation."
+    fi
 else
-    echo "DB_PASSWORD is not set. Skipping database user creation."
+    echo "DB_CONNECTION=${DB_CONNECTION} — skipping MySQL setup (database managed externally)."
 fi
 
 echo "=== 4. Configuring system mail sender ==="
@@ -138,7 +142,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 
 echo "=== 9. Requesting SSL Certificate ==="
-sudo certbot --nginx -d wonderlandlord.duckdns.org -d livingsspring.duckdns.org -d betaschool.duckdns.org --redirect --non-interactive --agree-tos -m admin@livingsspring.duckdns.org || echo "Certbot check complete."
+sudo certbot --nginx --expand -d wonderlandlord.duckdns.org -d livingsspring.duckdns.org -d betaschool.duckdns.org --redirect --non-interactive --agree-tos -m admin@livingsspring.duckdns.org || echo "Certbot check complete."
 
 echo "=== DEPLOYMENT COMPLETE! ==="
 echo "Tenant URL: https://livingsspring.duckdns.org"
