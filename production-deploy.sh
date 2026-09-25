@@ -65,6 +65,10 @@ fi
 echo "=== 5. Installing Composer Dependencies ==="
 CACHE_STORE=file composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
+echo "=== 5b. Building Frontend Assets ==="
+npm ci --production=false
+npm run build
+
 if ! grep -q '^APP_KEY=base64:' .env; then
     php artisan key:generate --force
 fi
@@ -72,6 +76,22 @@ php artisan config:clear
 
 echo "=== 6. Running Migrations ==="
 php artisan migrate --force
+
+echo "=== 6b. Provisioning Tenants ==="
+php artisan tinker --execute="
+use App\Models\Tenant;
+use Stancl\Tenancy\Database\Models\Domain;
+
+// Existing: Livingsspring School
+\$t1 = Tenant::firstOrCreate(['id' => 'livingsspring'], ['name' => 'Livingsspring School']);
+Domain::firstOrCreate(['domain' => 'livingsspring.duckdns.org'], ['tenant_id' => \$t1->id]);
+echo \"Tenant livingsspring: {\$t1->id} (status: {\$t1->status})\n\";
+
+// New: BETA School
+\$t2 = Tenant::firstOrCreate(['id' => 'beta'], ['name' => 'BETA School']);
+Domain::firstOrCreate(['domain' => 'betaschool.duckdns.org'], ['tenant_id' => \$t2->id]);
+echo \"Tenant beta: {\$t2->id} (status: {\$t2->status})\n\";
+"
 
 echo "=== 7. Setting Permissions & Storage Link ==="
 php artisan storage:link || true
@@ -83,7 +103,7 @@ cat << 'NGINXEOF' | sudo tee /etc/nginx/sites-available/wonder > /dev/null
 server {
     listen 80;
     listen [::]:80;
-    server_name wonderlandlord.duckdns.org livingsspring.duckdns.org;
+    server_name wonderlandlord.duckdns.org livingsspring.duckdns.org betaschool.duckdns.org;
     root /var/www/Wonder/public;
 
     add_header X-Frame-Options "SAMEORIGIN";
@@ -118,8 +138,10 @@ sudo nginx -t
 sudo systemctl reload nginx
 
 echo "=== 9. Requesting SSL Certificate ==="
-sudo certbot --nginx -d wonderlandlord.duckdns.org -d livingsspring.duckdns.org --redirect --non-interactive --agree-tos -m admin@livingsspring.duckdns.org || echo "Certbot check complete."
+sudo certbot --nginx -d wonderlandlord.duckdns.org -d livingsspring.duckdns.org -d betaschool.duckdns.org --redirect --non-interactive --agree-tos -m admin@livingsspring.duckdns.org || echo "Certbot check complete."
 
 echo "=== DEPLOYMENT COMPLETE! ==="
 echo "Tenant URL: https://livingsspring.duckdns.org"
 echo "Admin Portal: https://livingsspring.duckdns.org/admin"
+echo "BETA School: https://betaschool.duckdns.org"
+echo "BETA Admin:  https://betaschool.duckdns.org/admin"
