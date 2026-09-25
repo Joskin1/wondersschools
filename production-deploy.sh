@@ -107,7 +107,7 @@ cat << 'NGINXEOF' | sudo tee /etc/nginx/sites-available/wonder > /dev/null
 server {
     listen 80;
     listen [::]:80;
-    server_name wonderlandlord.duckdns.org livingsspring.duckdns.org betaschool.duckdns.org;
+    server_name livingsspring.duckdns.org betaschool.duckdns.org;
     root /var/www/Wonder/public;
 
     add_header X-Frame-Options "SAMEORIGIN";
@@ -142,7 +142,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 
 echo "=== 9. Requesting SSL Certificate ==="
-sudo certbot --nginx --expand -d wonderlandlord.duckdns.org -d livingsspring.duckdns.org -d betaschool.duckdns.org --redirect --non-interactive --agree-tos -m admin@livingsspring.duckdns.org || echo "Certbot check complete."
+sudo certbot --nginx --expand -d livingsspring.duckdns.org -d betaschool.duckdns.org --redirect --non-interactive --agree-tos -m admin@livingsspring.duckdns.org || echo "Certbot check complete."
 
 echo "=== DEPLOYMENT COMPLETE! ==="
 echo "Tenant URL: https://livingsspring.duckdns.org"
