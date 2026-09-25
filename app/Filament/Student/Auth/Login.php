@@ -51,6 +51,6 @@ class Login extends BaseLogin
 
     public function getHeading(): string
     {
-        return Filament::getCurrentPanel()?->getBrandName() ?? 'Student Portal';
+        return 'Sign in to Student Portal';
     }
 }

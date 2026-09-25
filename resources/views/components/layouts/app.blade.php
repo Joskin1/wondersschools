@@ -204,14 +204,26 @@
           </a>
 
           <!-- Desktop Navigation Links -->
-          <nav class="hidden lg:flex items-center gap-8 text-xs font-sans font-medium tracking-wider uppercase text-ink/80">
-            <a href="#about" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navAboutLabel }}</a>
-            <a href="#features" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navFeaturesLabel }}</a>
-            <a href="#academics" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navAcademicsLabel }}</a>
-            <a href="#stats" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navStatsLabel }}</a>
-            <a href="#facilities" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navFacilitiesLabel }}</a>
-            <a href="#news" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navNewsLabel }}</a>
-            <a href="#contact" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navContactLabel }}</a>
+          @php
+            $isHome = request()->routeIs('home');
+            $aboutUrl = $isHome ? '#about' : route('about');
+            $featuresUrl = $isHome ? '#features' : url('/#features');
+            $academicsUrl = $isHome ? '#academics' : route('academics');
+            $statsUrl = $isHome ? '#stats' : url('/#stats');
+            $facilitiesUrl = $isHome ? '#facilities' : route('gallery');
+            $newsUrl = $isHome ? '#news' : route('news');
+            $contactUrl = $isHome ? '#contact' : route('contact');
+            $admissionsUrl = $isHome ? '#admissions' : route('admissions');
+          @endphp
+
+          <nav class="hidden lg:flex items-center gap-7 text-xs font-sans font-medium tracking-wider uppercase text-ink/80">
+            <a href="{{ $aboutUrl }}" class="{{ request()->routeIs('about') ? 'text-accent font-bold border-b-2 border-accent pb-0.5' : 'hover:text-ink hover:underline underline-offset-8 transition' }}">{{ $navAboutLabel }}</a>
+            <a href="{{ $featuresUrl }}" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navFeaturesLabel }}</a>
+            <a href="{{ $academicsUrl }}" class="{{ request()->routeIs('academics') ? 'text-accent font-bold border-b-2 border-accent pb-0.5' : 'hover:text-ink hover:underline underline-offset-8 transition' }}">{{ $navAcademicsLabel }}</a>
+            <a href="{{ $statsUrl }}" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navStatsLabel }}</a>
+            <a href="{{ $facilitiesUrl }}" class="{{ request()->routeIs('gallery') ? 'text-accent font-bold border-b-2 border-accent pb-0.5' : 'hover:text-ink hover:underline underline-offset-8 transition' }}">{{ $navFacilitiesLabel }}</a>
+            <a href="{{ $newsUrl }}" class="{{ request()->routeIs('news*') ? 'text-accent font-bold border-b-2 border-accent pb-0.5' : 'hover:text-ink hover:underline underline-offset-8 transition' }}">{{ $navNewsLabel }}</a>
+            <a href="{{ $contactUrl }}" class="{{ request()->routeIs('contact') ? 'text-accent font-bold border-b-2 border-accent pb-0.5' : 'hover:text-ink hover:underline underline-offset-8 transition' }}">{{ $navContactLabel }}</a>
           </nav>
 
           <!-- Action Buttons -->
@@ -234,7 +246,7 @@
 
             <!-- Primary CTA -->
             @if(!empty($headerCtaText))
-              <a href="{{ $headerCtaLink }}"
+              <a href="{{ $isHome ? $headerCtaLink : route('admissions') }}"
                  class="px-6 py-2.5 text-xs font-sans uppercase tracking-widest font-semibold bg-accent text-[color:var(--accent-contrast)] hover:bg-accent-hover transition rounded-none">
                 {{ $headerCtaText }}
               </a>
@@ -265,13 +277,13 @@
           </div>
         @endif
         <nav class="flex flex-col space-y-3 text-xs uppercase tracking-widest text-ink font-semibold">
-          <a @click="mobileOpen = false" href="#about" class="py-1">{{ $navAboutLabel }}</a>
-          <a @click="mobileOpen = false" href="#features" class="py-1">{{ $navFeaturesLabel }}</a>
-          <a @click="mobileOpen = false" href="#academics" class="py-1">{{ $navAcademicsLabel }}</a>
-          <a @click="mobileOpen = false" href="#stats" class="py-1">{{ $navStatsLabel }}</a>
-          <a @click="mobileOpen = false" href="#facilities" class="py-1">{{ $navFacilitiesLabel }}</a>
-          <a @click="mobileOpen = false" href="#news" class="py-1">{{ $navNewsLabel }}</a>
-          <a @click="mobileOpen = false" href="#contact" class="py-1">{{ $navContactLabel }}</a>
+          <a @click="mobileOpen = false" href="{{ $aboutUrl }}" class="py-1 {{ request()->routeIs('about') ? 'text-accent font-bold' : '' }}">{{ $navAboutLabel }}</a>
+          <a @click="mobileOpen = false" href="{{ $featuresUrl }}" class="py-1">{{ $navFeaturesLabel }}</a>
+          <a @click="mobileOpen = false" href="{{ $academicsUrl }}" class="py-1 {{ request()->routeIs('academics') ? 'text-accent font-bold' : '' }}">{{ $navAcademicsLabel }}</a>
+          <a @click="mobileOpen = false" href="{{ $statsUrl }}" class="py-1">{{ $navStatsLabel }}</a>
+          <a @click="mobileOpen = false" href="{{ $facilitiesUrl }}" class="py-1 {{ request()->routeIs('gallery') ? 'text-accent font-bold' : '' }}">{{ $navFacilitiesLabel }}</a>
+          <a @click="mobileOpen = false" href="{{ $newsUrl }}" class="py-1 {{ request()->routeIs('news*') ? 'text-accent font-bold' : '' }}">{{ $navNewsLabel }}</a>
+          <a @click="mobileOpen = false" href="{{ $contactUrl }}" class="py-1 {{ request()->routeIs('contact') ? 'text-accent font-bold' : '' }}">{{ $navContactLabel }}</a>
         </nav>
         <div class="pt-4 border-t border-rule flex flex-col gap-2">
           <div class="grid grid-cols-3 gap-2 text-center text-[11px] uppercase tracking-wider font-semibold">
@@ -280,7 +292,7 @@
             <a href="{{ $adminPortalUrl }}" class="py-2 border border-rule text-ink">{{ $portalAdminLabelShort }}</a>
           </div>
           @if(!empty($headerCtaText))
-            <a @click="mobileOpen = false" href="{{ $headerCtaLink }}" class="w-full text-center py-3 bg-accent text-[color:var(--accent-contrast)] text-xs uppercase tracking-widest font-bold">
+            <a @click="mobileOpen = false" href="{{ $isHome ? $headerCtaLink : route('admissions') }}" class="w-full text-center py-3 bg-accent text-[color:var(--accent-contrast)] text-xs uppercase tracking-widest font-bold">
               {{ $headerCtaText }}
             </a>
           @endif

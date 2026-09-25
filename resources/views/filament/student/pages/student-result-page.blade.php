@@ -64,8 +64,13 @@
             box-shadow: 0 0 0 3px rgba(99,102,241,.15);
         }
         .dark .sr-filter-group select {
-            background: #374151; border-color: #4b5563; color: #f3f4f6;
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-position: right 0.75rem center;
+            background-repeat: no-repeat;
+            background-size: 1rem;
         }
 
         /* Hero Stats Bar */

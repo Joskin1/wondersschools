@@ -52,7 +52,7 @@ class StudentResource extends Resource
                 Select::make('classroom_id')
                     ->label('Classroom')
                     ->required()
-                    ->relationship('enrollments.classroom', 'name')
+                    ->options(fn () => \App\Models\Classroom::pluck('name', 'id'))
                     ->searchable()
                     ->preload()
                     ->helperText('Select the classroom for this student.'),
@@ -60,7 +60,7 @@ class StudentResource extends Resource
                 Select::make('session_id')
                     ->label('Academic Session')
                     ->required()
-                    ->options(Session::pluck('name', 'id'))
+                    ->options(fn () => Session::pluck('name', 'id'))
                     ->default(fn () => Session::where('is_active', true)->first()?->id)
                     ->searchable()
                     ->helperText('Select the academic session for enrollment.'),
@@ -226,6 +226,12 @@ class StudentResource extends Resource
             'import' => Pages\ImportStudents::route('/import'),
             'view' => Pages\ViewStudent::route('/{record}'),
         ];
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['enrollments.classroom', 'enrollments.session', 'user']);
     }
 
     public static function canDelete($record): bool
