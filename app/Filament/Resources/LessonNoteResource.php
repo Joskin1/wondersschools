@@ -246,7 +246,9 @@ class LessonNoteResource extends Resource
                 ViewAction::make('review')
                     ->label('Review')
                     ->icon('heroicon-o-eye')
-                    ->color('primary'),
+                    ->color('primary')
+                    ->url(fn (LessonNote $record): string => static::getUrl('view', ['record' => $record]))
+                    ->openUrlInNewTab(),
 
                 Action::make('note_pdf')
                     ->label('Note PDF')
