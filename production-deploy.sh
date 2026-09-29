@@ -89,17 +89,17 @@ use Stancl\Tenancy\Database\Models\Domain;
 // Existing: Livingsspring School
 \$t1 = Tenant::firstOrCreate(['id' => 'livingsspring'], ['name' => 'Livingsspring School']);
 Domain::firstOrCreate(['domain' => 'livingsspring.duckdns.org'], ['tenant_id' => \$t1->id]);
-echo \"Tenant livingsspring: {\$t1->id} (status: {\$t1->status})\n\";
+echo \"Tenant livingsspring: {\$t1->id}\n\";
 
 // Existing: BETA School
 \$t2 = Tenant::firstOrCreate(['id' => 'beta'], ['name' => 'BETA School']);
 Domain::firstOrCreate(['domain' => 'betaschool.duckdns.org'], ['tenant_id' => \$t2->id]);
-echo \"Tenant beta: {\$t2->id} (status: {\$t2->status})\n\";
+echo \"Tenant beta: {\$t2->id}\n\";
 
 // New: Cathedral Church of Our Saviour College
 \$t3 = Tenant::firstOrCreate(['id' => 'cathedral'], ['name' => 'Cathedral Church of Our Saviour College']);
 Domain::firstOrCreate(['domain' => 'cathedral-college.duckdns.org'], ['tenant_id' => \$t3->id]);
-echo \"Tenant cathedral: {\$t3->id} (status: {\$t3->status})\n\";
+echo \"Tenant cathedral: {\$t3->id}\n\";
 "
 
 echo "=== 6c. Seeding Tenant Content ==="
