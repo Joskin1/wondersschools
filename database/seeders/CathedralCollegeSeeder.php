@@ -20,7 +20,7 @@ class CathedralCollegeSeeder extends Seeder
         $motto      = 'Knowledge, Character and the Fear of God';
         $phone      = '+234 803 300 4567';
         $email      = 'admissions@cathedralcollege.edu.ng';
-        $address    = 'Cathedral Grounds, Ijasi, Ijebu-Ode, Ogun State, Nigeria';
+        $address    = 'Cathedral Grounds, Ejinrin Road, Ijebu-Ode, Ogun State, Nigeria';
         $established= '1998';
 
         // ── 1. Landlord Tenant & Domain Configuration ────────────────────────
@@ -153,7 +153,7 @@ class CathedralCollegeSeeder extends Seeder
                 ],
                 [
                     'title' => 'Secure & Nurturing Day Campus',
-                    'desc'  => 'A serene, secure learning environment in Ijasi with close parent-teacher communication, modern health bay, and disciplined supervision.',
+                    'desc'  => 'A serene, secure learning environment on Ejinrin Road with close parent-teacher communication, modern health bay, and disciplined supervision.',
                 ],
             ]),
 
@@ -334,7 +334,7 @@ class CathedralCollegeSeeder extends Seeder
                 [
                     'num'   => '01',
                     'title' => 'Obtain Application Form',
-                    'desc'  => 'Pick up an admission package from the Cathedral College Registry at Ijasi, Ijebu-Ode, or complete the online inquiry form below.',
+                    'desc'  => 'Pick up an admission package from the Cathedral College Registry on Ejinrin Road, Ijebu-Ode, or complete the online inquiry form below.',
                 ],
                 [
                     'num'   => '02',
