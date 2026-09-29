@@ -86,6 +86,8 @@ php artisan tinker --execute="
 use App\Models\Tenant;
 use Stancl\Tenancy\Database\Models\Domain;
 
+config(['tenancy.auto_seed_tenants' => true]);
+
 // Existing: Livingsspring School
 \$t1 = Tenant::firstOrCreate(['id' => 'livingsspring'], ['name' => 'Livingsspring School']);
 Domain::firstOrCreate(['domain' => 'livingsspring.duckdns.org'], ['tenant_id' => \$t1->id]);
@@ -97,7 +99,12 @@ Domain::firstOrCreate(['domain' => 'betaschool.duckdns.org'], ['tenant_id' => \$
 echo \"Tenant beta: {\$t2->id}\n\";
 
 // New: Cathedral Church of Our Saviour College
-\$t3 = Tenant::firstOrCreate(['id' => 'cathedral'], ['name' => 'Cathedral Church of Our Saviour College']);
+\$t3 = Tenant::find('cathedral');
+if (! \$t3) {
+    \$t3 = Tenant::create(['id' => 'cathedral', 'name' => 'Cathedral Church of Our Saviour College']);
+} elseif (\$t3->status !== \App\Enums\TenantStatus::Active) {
+    \App\Jobs\Tenancy\ProvisionTenantJob::dispatchSync(\$t3);
+}
 Domain::firstOrCreate(['domain' => 'cathedral-college.duckdns.org'], ['tenant_id' => \$t3->id]);
 echo \"Tenant cathedral: {\$t3->id}\n\";
 "
