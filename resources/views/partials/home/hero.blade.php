@@ -35,7 +35,7 @@
                  }
              }
          }"
-         class="relative min-h-[88vh] flex flex-col justify-between overflow-hidden bg-ink text-[color:var(--ink-contrast)]">
+         class="relative min-h-[90vh] sm:min-h-[88vh] flex flex-col justify-between overflow-hidden bg-ink text-[color:var(--ink-contrast)]">
   
   <!-- Full-bleed background photograph slider with left-to-right Ink gradient overlay -->
   <div class="absolute inset-0 z-0 overflow-hidden">
@@ -69,43 +69,43 @@
   <div></div>
 
   <!-- Text block in the lower-left third -->
-  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 w-full">
-    <div class="max-w-3xl space-y-6">
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-24 w-full">
+    <div class="max-w-3xl space-y-4 sm:space-y-6">
       
       <!-- Eyebrow -->
       @if(!empty($heroBadge))
-        <div class="flex items-center gap-3">
-          <span class="w-8 h-[1px] bg-accent"></span>
-          <span class="text-xs uppercase tracking-[0.25em] text-accent font-sans font-semibold">
+        <div class="flex items-center gap-2.5 sm:gap-3">
+          <span class="w-6 sm:w-8 h-[1px] bg-accent"></span>
+          <span class="text-[11px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.25em] text-accent font-sans font-semibold">
             {{ $heroBadge }}
           </span>
         </div>
       @endif
 
       <!-- Heading -->
-      <h1 class="font-serif font-semibold text-white tracking-tight leading-[1.05]" style="font-size: clamp(2.75rem, 6vw, 4.75rem);">
+      <h1 class="font-serif font-semibold text-white tracking-tight leading-[1.1] break-words" style="font-size: clamp(1.65rem, 5vw, 4.25rem);">
         {{ $heroTitle }}
       </h1>
 
       <!-- One-sentence sub (strictly <= 62ch) -->
       @if(!empty($heroSubtitle))
-        <p class="text-base sm:text-lg text-paper/90 max-w-[62ch] font-sans font-normal leading-[1.7]">
+        <p class="text-sm sm:text-base md:text-lg text-paper/90 max-w-[62ch] font-sans font-normal leading-[1.7]">
           {{ $heroSubtitle }}
         </p>
       @endif
 
       <!-- Rectangular Buttons -->
-      <div class="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+      <div class="pt-2 sm:pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
         @if(!empty($heroPrimaryCtaText))
           <a href="{{ $heroPrimaryCtaLink }}"
-             class="px-8 py-4 uppercase text-xs sm:text-sm tracking-wider font-sans font-semibold bg-accent text-[color:var(--accent-contrast)] hover:bg-accent-hover transition text-center rounded-none shadow-none">
+             class="px-7 sm:px-8 py-3.5 sm:py-4 uppercase text-xs sm:text-sm tracking-wider font-sans font-semibold bg-accent text-[color:var(--accent-contrast)] hover:bg-accent-hover transition text-center rounded-none shadow-none">
             {{ $heroPrimaryCtaText }}
           </a>
         @endif
 
         @if(!empty($heroSecondaryCtaText))
           <a href="{{ $heroSecondaryCtaLink }}"
-             class="px-8 py-4 uppercase text-xs sm:text-sm tracking-wider font-sans font-semibold border border-white/40 text-white bg-transparent hover:bg-white hover:text-ink transition text-center rounded-none shadow-none">
+             class="px-7 sm:px-8 py-3.5 sm:py-4 uppercase text-xs sm:text-sm tracking-wider font-sans font-semibold border border-white/40 text-white bg-transparent hover:bg-white hover:text-ink transition text-center rounded-none shadow-none">
             {{ $heroSecondaryCtaText }}
           </a>
         @endif
@@ -115,10 +115,10 @@
   </div>
 
   <!-- Bottom Scroll Indicator, Slider Dots & Location -->
-  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 w-full flex items-center justify-between text-xs font-sans tracking-widest text-white/60 uppercase">
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-5 sm:pb-6 w-full flex flex-wrap items-center justify-between gap-3 text-xs font-sans tracking-widest text-white/60 uppercase">
     <div class="flex items-center gap-2">
       <span class="w-2 h-2 rounded-full border border-white/40 animate-bounce"></span>
-      <span>{{ $heroScrollLabel }}</span>
+      <span class="text-[11px] sm:text-xs">{{ $heroScrollLabel }}</span>
     </div>
 
     <!-- Slider Dot Controls -->
@@ -127,13 +127,13 @@
         @foreach($heroSlides as $idx => $slide)
           <button @click="currentSlide = {{ $idx }}"
                   class="h-1.5 transition-all duration-300 rounded-full"
-                  :class="currentSlide === {{ $idx }} ? 'w-8 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'"
+                  :class="currentSlide === {{ $idx }} ? 'w-7 sm:w-8 bg-accent' : 'w-2 bg-white/40 hover:bg-white/70'"
                   aria-label="Slide {{ $idx + 1 }}"></button>
         @endforeach
       </div>
     @endif
 
-    <div class="hidden sm:block">
+    <div class="hidden md:block">
       <span>{{ $heroLocation }}</span>
     </div>
   </div>

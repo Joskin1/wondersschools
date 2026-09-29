@@ -169,6 +169,10 @@ class FrontendLibrary
             return $path;
         }
 
+        if (str_starts_with($path, '/images/') || str_starts_with($path, '/build/') || str_starts_with($path, '/storage/')) {
+            return $path;
+        }
+
         // If stored as a JSON array or object string by Filament FileUpload
         if (str_starts_with($path, '[') || str_starts_with($path, '{')) {
             $decoded = json_decode($path, true);

@@ -36,15 +36,15 @@
             <img src="{{ $aboutImage }}"
                  alt="{{ $aboutImageAlt }}"
                  loading="lazy"
-                 class="w-full h-[440px] sm:h-[540px] object-cover object-top" />
+                 class="w-full h-[360px] sm:h-[540px] object-cover object-top" />
             
             <!-- Editorial Caption Card -->
             @if(!empty($aboutYearsBadge))
-              <div class="absolute -bottom-6 -right-4 sm:right-6 bg-ink text-paper p-6 border border-accent/40 max-w-[240px]">
-                <span class="block font-serif text-3xl sm:text-4xl font-semibold text-accent leading-none">
+              <div class="absolute -bottom-4 right-2 sm:-bottom-6 sm:right-6 bg-ink text-paper p-4 sm:p-6 border border-accent/40 max-w-[200px] sm:max-w-[240px] shadow-lg">
+                <span class="block font-serif text-2xl sm:text-4xl font-semibold text-accent leading-none">
                   {{ $aboutYearsBadge }}+
                 </span>
-                <span class="block text-xs font-sans uppercase tracking-wider text-white/80 mt-1 leading-snug">
+                <span class="block text-[11px] sm:text-xs font-sans uppercase tracking-wider text-white/80 mt-1 leading-snug">
                   {{ $aboutYearsLabel }}
                 </span>
               </div>

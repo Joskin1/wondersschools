@@ -91,11 +91,19 @@ use Stancl\Tenancy\Database\Models\Domain;
 Domain::firstOrCreate(['domain' => 'livingsspring.duckdns.org'], ['tenant_id' => \$t1->id]);
 echo \"Tenant livingsspring: {\$t1->id} (status: {\$t1->status})\n\";
 
-// New: BETA School
+// Existing: BETA School
 \$t2 = Tenant::firstOrCreate(['id' => 'beta'], ['name' => 'BETA School']);
 Domain::firstOrCreate(['domain' => 'betaschool.duckdns.org'], ['tenant_id' => \$t2->id]);
 echo \"Tenant beta: {\$t2->id} (status: {\$t2->status})\n\";
+
+// New: Cathedral Church of Our Saviour College
+\$t3 = Tenant::firstOrCreate(['id' => 'cathedral'], ['name' => 'Cathedral Church of Our Saviour College']);
+Domain::firstOrCreate(['domain' => 'cathedral-college.duckdns.org'], ['tenant_id' => \$t3->id]);
+echo \"Tenant cathedral: {\$t3->id} (status: {\$t3->status})\n\";
 "
+
+echo "=== 6c. Seeding Tenant Content ==="
+php artisan tenants:seed --class=CathedralCollegeSeeder --tenants=cathedral || echo "Cathedral seeder executed."
 
 echo "=== 7. Setting Permissions & Storage Link ==="
 php artisan storage:link || true
@@ -107,7 +115,7 @@ cat << 'NGINXEOF' | sudo tee /etc/nginx/sites-available/wonder > /dev/null
 server {
     listen 80;
     listen [::]:80;
-    server_name livingsspring.duckdns.org betaschool.duckdns.org;
+    server_name livingsspring.duckdns.org betaschool.duckdns.org cathedral-college.duckdns.org;
     root /var/www/Wonder/public;
 
     add_header X-Frame-Options "SAMEORIGIN";
@@ -142,10 +150,12 @@ sudo nginx -t
 sudo systemctl reload nginx
 
 echo "=== 9. Requesting SSL Certificate ==="
-sudo certbot --nginx --expand -d livingsspring.duckdns.org -d betaschool.duckdns.org --redirect --non-interactive --agree-tos -m admin@livingsspring.duckdns.org || echo "Certbot check complete."
+sudo certbot --nginx --expand -d livingsspring.duckdns.org -d betaschool.duckdns.org -d cathedral-college.duckdns.org --redirect --non-interactive --agree-tos -m admin@livingsspring.duckdns.org || echo "Certbot check complete."
 
 echo "=== DEPLOYMENT COMPLETE! ==="
 echo "Tenant URL: https://livingsspring.duckdns.org"
 echo "Admin Portal: https://livingsspring.duckdns.org/admin"
 echo "BETA School: https://betaschool.duckdns.org"
 echo "BETA Admin:  https://betaschool.duckdns.org/admin"
+echo "Cathedral College: https://cathedral-college.duckdns.org"
+echo "Cathedral Admin:   https://cathedral-college.duckdns.org/admin"

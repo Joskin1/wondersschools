@@ -13,6 +13,18 @@
     $schoolAddress = \App\Services\FrontendLibrary::getSetting('school_address', 'Plot 14 - 18, Apex Boulevard, Lekki Phase 1, Lagos State, Nigeria');
     $schoolLogo = \App\Services\FrontendLibrary::getSetting('school_logo');
 
+    $defaultCity = 'Lagos';
+    if (str_contains($schoolAddress, 'Ijebu-Ode')) {
+        $defaultCity = 'Ijebu-Ode';
+    } elseif (str_contains($schoolAddress, 'Abuja')) {
+        $defaultCity = 'Abuja';
+    } elseif (str_contains($schoolAddress, 'Ibadan')) {
+        $defaultCity = 'Ibadan';
+    } elseif (str_contains($schoolAddress, 'Port Harcourt')) {
+        $defaultCity = 'Port Harcourt';
+    }
+    $schoolCity = \App\Services\FrontendLibrary::getSetting('school_city', $defaultCity);
+
     $primaryColor = \App\Services\FrontendLibrary::getSetting('primary_color', '#0B2545');
     $secondaryColor = \App\Services\FrontendLibrary::getSetting('secondary_color', '#1e293b');
     $accentColor = \App\Services\FrontendLibrary::getSetting('accent_color', '#C8A951');
@@ -76,7 +88,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? ($schoolName . ' | Admissions Prospectus 2026/2027') }}</title>
-    <meta name="description" content="{{ $metaDescription ?? ('Official admissions prospectus of ' . $schoolName . '. A premier British-Nigerian secondary institution in Lagos.') }}">
+    <meta name="description" content="{{ $metaDescription ?? ('Official admissions prospectus of ' . $schoolName . '. A premier British-Nigerian secondary institution in ' . $schoolCity . '.') }}">
     
     <link rel="icon" href="{{ $faviconUrl }}">
     <link rel="shortcut icon" href="{{ $faviconUrl }}">
@@ -146,17 +158,17 @@
     </style>
 </head>
 
-<body class="bg-paper text-body antialiased selection:bg-accent selection:text-ink">
+<body class="bg-paper text-body antialiased selection:bg-accent selection:text-ink overflow-x-hidden">
 
     <!-- ====== Prospectus Header / Navigation ====== -->
     <header x-data="{ scrolled: false, mobileOpen: false, portalsOpen: false }"
             @scroll.window="scrolled = (window.pageYOffset > 30)"
             :class="scrolled ? 'bg-paper/95 backdrop-blur-md shadow-sm border-b border-rule' : 'bg-paper border-b border-rule'"
-            class="sticky top-0 z-50 transition-all duration-300">
+            class="sticky top-0 z-50 transition-all duration-300 w-full">
       
       <!-- Top Academic Session Notice -->
       @if(!empty($topbarBadge) || !empty($topbarText))
-        <div class="bg-ink text-paper text-[11px] sm:text-xs py-2 px-4 border-b border-ink/20">
+        <div class="bg-ink text-paper text-[11px] sm:text-xs py-2 px-4 border-b border-ink/20 w-full">
           <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-1">
             <div class="flex items-center gap-2">
               <span class="inline-block w-1.5 h-1.5 rounded-full bg-accent"></span>
@@ -181,24 +193,24 @@
       @endif
 
       <!-- Main Navigation Bar -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between py-4 lg:py-5">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div class="flex items-center justify-between py-3.5 sm:py-4 lg:py-5 gap-3 w-full">
           
           <!-- Crest & School Name -->
-          <a href="{{ route('home') }}" class="flex items-center gap-3.5 group">
+          <a href="{{ route('home') }}" class="flex items-center gap-2 sm:gap-3.5 group min-w-0 max-w-[calc(100%-60px)] xl:max-w-none flex-1 xl:flex-initial overflow-hidden">
             @if($logoUrl)
-              <img src="{{ $logoUrl }}" alt="{{ $schoolName }}" class="w-10 h-10 object-contain border border-ink p-0.5 bg-paper" />
+              <img src="{{ $logoUrl }}" alt="{{ $schoolName }}" style="width: 40px; height: 40px; object-fit: contain;" class="w-9 h-9 sm:w-10 sm:h-10 object-contain border border-ink p-0.5 bg-paper flex-shrink-0" />
             @else
-              <div class="w-10 h-10 border border-ink bg-ink text-accent flex items-center justify-center font-serif text-lg font-semibold tracking-wider">
+              <div class="w-10 h-10 min-w-[40px] border border-accent/60 bg-ink text-accent flex items-center justify-center font-serif text-[10px] sm:text-xs font-bold tracking-tight px-1 flex-shrink-0 leading-none shadow-sm">
                 {{ $schoolShortName }}
               </div>
             @endif
-            <div>
-              <span class="block font-serif text-lg sm:text-xl font-semibold tracking-tight text-ink leading-none">
+            <div class="min-w-0 pr-1 flex-1 overflow-hidden">
+              <span class="block font-serif text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-semibold tracking-tight text-ink leading-tight truncate xl:whitespace-normal">
                 {{ $schoolName }}
               </span>
-              <span class="block text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-accent mt-1 font-sans font-medium">
-                Lagos &bull; Est. {{ $schoolEstablished }}
+              <span class="block text-[8.5px] sm:text-[10px] uppercase tracking-[0.16em] text-accent mt-0.5 font-sans font-medium truncate">
+                {{ $schoolCity }} &bull; Est. {{ $schoolEstablished }}
               </span>
             </div>
           </a>
@@ -216,7 +228,7 @@
             $admissionsUrl = $isHome ? '#admissions' : route('admissions');
           @endphp
 
-          <nav class="hidden lg:flex items-center gap-7 text-xs font-sans font-medium tracking-wider uppercase text-ink/80">
+          <nav class="hidden xl:flex items-center gap-4 2xl:gap-6 text-xs font-sans font-medium tracking-wider uppercase text-ink/80 whitespace-nowrap flex-shrink-0">
             <a href="{{ $aboutUrl }}" class="{{ request()->routeIs('about') ? 'text-accent font-bold border-b-2 border-accent pb-0.5' : 'hover:text-ink hover:underline underline-offset-8 transition' }}">{{ $navAboutLabel }}</a>
             <a href="{{ $featuresUrl }}" class="hover:text-ink hover:underline underline-offset-8 transition">{{ $navFeaturesLabel }}</a>
             <a href="{{ $academicsUrl }}" class="{{ request()->routeIs('academics') ? 'text-accent font-bold border-b-2 border-accent pb-0.5' : 'hover:text-ink hover:underline underline-offset-8 transition' }}">{{ $navAcademicsLabel }}</a>
@@ -226,13 +238,13 @@
             <a href="{{ $contactUrl }}" class="{{ request()->routeIs('contact') ? 'text-accent font-bold border-b-2 border-accent pb-0.5' : 'hover:text-ink hover:underline underline-offset-8 transition' }}">{{ $navContactLabel }}</a>
           </nav>
 
-          <!-- Action Buttons -->
-          <div class="hidden sm:flex items-center gap-3">
-            <!-- Portals Dropdown -->
-            <div class="relative" @click.outside="portalsOpen = false">
+          <!-- Action Buttons & Toggle -->
+          <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <!-- Portals Dropdown (Desktop & Tablet) -->
+            <div class="relative hidden sm:block" @click.outside="portalsOpen = false">
               <button @click="portalsOpen = !portalsOpen"
                       type="button"
-                      class="px-4 py-2.5 text-xs font-sans uppercase tracking-wider font-semibold border border-ink/30 text-ink hover:border-ink transition flex items-center gap-1.5 rounded-none">
+                      class="px-3.5 py-2 text-xs font-sans uppercase tracking-wider font-semibold border border-ink/30 text-ink hover:border-ink transition flex items-center gap-1.5 rounded-none whitespace-nowrap">
                 <span>{{ $navPortalsLabel }}</span>
                 <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
               </button>
@@ -244,57 +256,109 @@
               </div>
             </div>
 
-            <!-- Primary CTA -->
+            <!-- Primary CTA (Desktop & Tablet) -->
             @if(!empty($headerCtaText))
               <a href="{{ $isHome ? $headerCtaLink : route('admissions') }}"
-                 class="px-6 py-2.5 text-xs font-sans uppercase tracking-widest font-semibold bg-accent text-[color:var(--accent-contrast)] hover:bg-accent-hover transition rounded-none">
+                 class="hidden sm:inline-block px-5 py-2 text-xs font-sans uppercase tracking-widest font-semibold bg-accent text-[color:var(--accent-contrast)] hover:bg-accent-hover transition rounded-none whitespace-nowrap shadow-sm">
                 {{ $headerCtaText }}
               </a>
             @endif
-          </div>
 
-          <!-- Mobile Menu Toggle -->
-          <button @click="mobileOpen = !mobileOpen"
-                  type="button"
-                  class="lg:hidden p-2 text-ink focus:outline-none"
-                  aria-label="Toggle Menu">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path x-show="!mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
-              <path x-show="mobileOpen" x-cloak stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
+            <!-- Mobile Menu Toggle Button -->
+            <button @click="mobileOpen = !mobileOpen"
+                    type="button"
+                    class="xl:hidden p-2 text-ink hover:bg-ink/5 border border-ink/20 focus:outline-none flex items-center justify-center rounded-none"
+                    aria-label="Toggle Menu">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path x-show="!mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16"/>
+                <path x-show="mobileOpen" x-cloak stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
 
         </div>
       </div>
 
-      <!-- Mobile Drawer -->
+      <!-- Mobile Drawer with Smooth Animation -->
       <div x-show="mobileOpen" x-cloak
-           class="lg:hidden bg-paper border-b border-rule px-6 py-6 space-y-4">
+           x-transition:enter="transition ease-out duration-200"
+           x-transition:enter-start="opacity-0 -translate-y-2"
+           x-transition:enter-end="opacity-100 translate-y-0"
+           x-transition:leave="transition ease-in duration-150"
+           x-transition:leave-start="opacity-100 translate-y-0"
+           x-transition:leave-end="opacity-0 -translate-y-2"
+           class="xl:hidden bg-paper border-b border-rule px-4 sm:px-6 py-5 space-y-4 max-h-[85vh] overflow-y-auto shadow-xl">
+        
         @if(!empty($topbarText))
-          <div class="text-[11px] text-body/80 border-b border-rule pb-3 flex items-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0"></span>
+          <div class="text-[11px] text-body/90 border-b border-rule pb-3 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-accent flex-shrink-0"></span>
             <span>{{ $topbarText }}</span>
           </div>
         @endif
-        <nav class="flex flex-col space-y-3 text-xs uppercase tracking-widest text-ink font-semibold">
-          <a @click="mobileOpen = false" href="{{ $aboutUrl }}" class="py-1 {{ request()->routeIs('about') ? 'text-accent font-bold' : '' }}">{{ $navAboutLabel }}</a>
-          <a @click="mobileOpen = false" href="{{ $featuresUrl }}" class="py-1">{{ $navFeaturesLabel }}</a>
-          <a @click="mobileOpen = false" href="{{ $academicsUrl }}" class="py-1 {{ request()->routeIs('academics') ? 'text-accent font-bold' : '' }}">{{ $navAcademicsLabel }}</a>
-          <a @click="mobileOpen = false" href="{{ $statsUrl }}" class="py-1">{{ $navStatsLabel }}</a>
-          <a @click="mobileOpen = false" href="{{ $facilitiesUrl }}" class="py-1 {{ request()->routeIs('gallery') ? 'text-accent font-bold' : '' }}">{{ $navFacilitiesLabel }}</a>
-          <a @click="mobileOpen = false" href="{{ $newsUrl }}" class="py-1 {{ request()->routeIs('news*') ? 'text-accent font-bold' : '' }}">{{ $navNewsLabel }}</a>
-          <a @click="mobileOpen = false" href="{{ $contactUrl }}" class="py-1 {{ request()->routeIs('contact') ? 'text-accent font-bold' : '' }}">{{ $navContactLabel }}</a>
+
+        <nav class="flex flex-col divide-y divide-rule/60 text-xs uppercase tracking-widest text-ink font-semibold">
+          <a @click="mobileOpen = false" href="{{ $aboutUrl }}" class="py-3 px-1 flex items-center justify-between hover:text-accent transition {{ request()->routeIs('about') ? 'text-accent font-bold' : '' }}">
+            <span>{{ $navAboutLabel }}</span>
+            <span class="text-accent">&rarr;</span>
+          </a>
+          <a @click="mobileOpen = false" href="{{ $featuresUrl }}" class="py-3 px-1 flex items-center justify-between hover:text-accent transition">
+            <span>{{ $navFeaturesLabel }}</span>
+            <span class="text-accent">&rarr;</span>
+          </a>
+          <a @click="mobileOpen = false" href="{{ $academicsUrl }}" class="py-3 px-1 flex items-center justify-between hover:text-accent transition {{ request()->routeIs('academics') ? 'text-accent font-bold' : '' }}">
+            <span>{{ $navAcademicsLabel }}</span>
+            <span class="text-accent">&rarr;</span>
+          </a>
+          <a @click="mobileOpen = false" href="{{ $statsUrl }}" class="py-3 px-1 flex items-center justify-between hover:text-accent transition">
+            <span>{{ $navStatsLabel }}</span>
+            <span class="text-accent">&rarr;</span>
+          </a>
+          <a @click="mobileOpen = false" href="{{ $facilitiesUrl }}" class="py-3 px-1 flex items-center justify-between hover:text-accent transition {{ request()->routeIs('gallery') ? 'text-accent font-bold' : '' }}">
+            <span>{{ $navFacilitiesLabel }}</span>
+            <span class="text-accent">&rarr;</span>
+          </a>
+          <a @click="mobileOpen = false" href="{{ $newsUrl }}" class="py-3 px-1 flex items-center justify-between hover:text-accent transition {{ request()->routeIs('news*') ? 'text-accent font-bold' : '' }}">
+            <span>{{ $navNewsLabel }}</span>
+            <span class="text-accent">&rarr;</span>
+          </a>
+          <a @click="mobileOpen = false" href="{{ $contactUrl }}" class="py-3 px-1 flex items-center justify-between hover:text-accent transition {{ request()->routeIs('contact') ? 'text-accent font-bold' : '' }}">
+            <span>{{ $navContactLabel }}</span>
+            <span class="text-accent">&rarr;</span>
+          </a>
         </nav>
-        <div class="pt-4 border-t border-rule flex flex-col gap-2">
-          <div class="grid grid-cols-3 gap-2 text-center text-[11px] uppercase tracking-wider font-semibold">
-            <a href="{{ $studentPortalUrl }}" class="py-2 border border-rule text-ink">{{ $portalStudentLabelShort }}</a>
-            <a href="{{ $staffPortalUrl }}" class="py-2 border border-rule text-ink">{{ $portalStaffLabelShort }}</a>
-            <a href="{{ $adminPortalUrl }}" class="py-2 border border-rule text-ink">{{ $portalAdminLabelShort }}</a>
+
+        <div class="pt-3 border-t border-rule space-y-3">
+          <!-- Portals Fast Selector -->
+          <div>
+            <span class="text-[10px] uppercase tracking-wider text-body/70 font-semibold block mb-2">School Portals</span>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs uppercase tracking-wider font-semibold">
+              <a href="{{ $studentPortalUrl }}" class="py-2.5 px-1 border border-ink/20 bg-white text-ink hover:border-accent hover:text-accent transition">{{ $portalStudentLabelShort }}</a>
+              <a href="{{ $staffPortalUrl }}" class="py-2.5 px-1 border border-ink/20 bg-white text-ink hover:border-accent hover:text-accent transition">{{ $portalStaffLabelShort }}</a>
+              <a href="{{ $adminPortalUrl }}" class="py-2.5 px-1 border border-ink/20 bg-white text-ink hover:border-accent hover:text-accent transition">{{ $portalAdminLabelShort }}</a>
+            </div>
           </div>
+
+          <!-- Direct Admissions Action Button -->
           @if(!empty($headerCtaText))
-            <a @click="mobileOpen = false" href="{{ $isHome ? $headerCtaLink : route('admissions') }}" class="w-full text-center py-3 bg-accent text-[color:var(--accent-contrast)] text-xs uppercase tracking-widest font-bold">
-              {{ $headerCtaText }}
+            <a @click="mobileOpen = false" href="{{ $isHome ? $headerCtaLink : route('admissions') }}" class="block w-full text-center py-3.5 bg-accent text-[color:var(--accent-contrast)] text-xs uppercase tracking-widest font-bold shadow hover:bg-accent-hover transition">
+              {{ $headerCtaText }} &mdash; Apply Now
             </a>
+          @endif
+
+          <!-- Quick Contact Call Desk on Mobile -->
+          @if(!empty($schoolPhone) || !empty($schoolEmail))
+            <div class="pt-2 flex flex-col gap-1.5 text-xs text-body/80 font-sans">
+              @if(!empty($schoolPhone))
+                <a href="tel:{{ $schoolPhone }}" class="flex items-center gap-2 text-ink hover:text-accent transition">
+                  <span class="text-accent font-bold">Call:</span> {{ $schoolPhone }}
+                </a>
+              @endif
+              @if(!empty($schoolEmail))
+                <a href="mailto:{{ $schoolEmail }}" class="flex items-center gap-2 text-ink hover:text-accent transition">
+                  <span class="text-accent font-bold">Email:</span> {{ $schoolEmail }}
+                </a>
+              @endif
+            </div>
           @endif
         </div>
       </div>
