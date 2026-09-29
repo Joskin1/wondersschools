@@ -145,6 +145,67 @@ class FrontendLibrary
     }
 
     /**
+     * Get the active visual website theme/template identifier.
+     * Supports query parameter override (?theme=modern) for instant live preview/demos,
+     * database setting (`layout_style`), and config fallback.
+     */
+    public static function getTheme(): string
+    {
+        // 1. Query param override for live sales/demo previews (e.g. ?theme=modern)
+        if (request()->has('theme')) {
+            $requested = strtolower(trim((string) request()->query('theme')));
+            $validThemes = array_keys(self::getAvailableThemes());
+            if (in_array($requested, $validThemes, true)) {
+                return $requested;
+            }
+        }
+
+        // 2. Setting from database / tenant configuration
+        $rawTheme = self::getSetting('layout_style', 'editorial');
+        $rawTheme = strtolower(trim((string) $rawTheme));
+
+        // 3. Normalize legacy aliases
+        return match ($rawTheme) {
+            'standard', 'editorial' => 'editorial',
+            'compact', 'modern'     => 'modern',
+            'centered', 'classic'   => 'classic',
+            default                 => array_key_exists($rawTheme, self::getAvailableThemes()) ? $rawTheme : 'editorial',
+        };
+    }
+
+    /**
+     * Get all registered website themes with descriptive metadata.
+     * New themes can easily be added here and in resources/views/themes/{theme_id}/
+     */
+    public static function getAvailableThemes(): array
+    {
+        return [
+            'editorial' => [
+                'id'          => 'editorial',
+                'name'        => 'Ivy League Editorial',
+                'tagline'     => 'Prestigious, Sharp, Chapter Numerals',
+                'description' => 'Authoritative Oxbridge/Ivy League prospectus style with sharp geometry, numbered chapters, and high-contrast serif typography.',
+                'badge'       => 'Default / Classical',
+            ],
+            'modern' => [
+                'id'          => 'modern',
+                'name'        => 'Contemporary Modern Campus',
+                'tagline'     => 'Vibrant, Rounded Cards, Dynamic Flow',
+                'description' => 'Fresh, tech-forward academy design with soft rounded cards, floating glass stat badges, and interactive track tags.',
+                'badge'       => 'Popular / Modern',
+            ],
+            'classic' => [
+                'id'          => 'classic',
+                'name'        => 'Stately Heritage Academy',
+                'tagline'     => 'Balanced, Centered Elegance, Structured Cards',
+                'description' => 'Balanced, dignified presentation with crest monogram hero, noble framed borders, and classical honor roll grid.',
+                'badge'       => 'Distinguished / Balanced',
+            ],
+        ];
+    }
+
+
+    /**
      * Resolve an image path to a full public URL, supporting uploaded files, external URLs, and fallbacks.
      *
      * @param string|array|null $path
