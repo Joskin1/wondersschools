@@ -316,7 +316,7 @@ it('sends TenantAdminCreated to the correct recipient', function () {
         new TenantAdminCreated($user, 'SentPass789', 'http://mail.test/admin/login')
     );
 
-    Mail::assertSent(TenantAdminCreated::class, fn ($m) => $m->hasTo('recipient@mail.test'));
+    Mail::assertQueued(TenantAdminCreated::class, fn ($m) => $m->hasTo('recipient@mail.test'));
 });
 
 it('does not send TenantAdminCreated when no login URL is available', function () {

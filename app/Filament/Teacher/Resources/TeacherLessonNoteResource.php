@@ -124,31 +124,36 @@ class TeacherLessonNoteResource extends Resource
                     ]),
 
                 Section::make('Lesson Note Content')
-                    ->description('Choose whether to write your lesson note online or upload a filled template (.docx).')
+                    ->description('Choose whether to write your lesson note online or upload any document (.docx, .pdf, .txt, .md).')
                     ->schema([
                         Radio::make('submission_type')
                             ->label('Creation Method')
                             ->options([
                                 'written' => '📝 Write Lesson Note Online',
-                                'template' => '📥 Upload from Template (.docx)',
+                                'template' => '📁 Upload Any Document (.docx, .doc, .pdf, .txt, .md)',
                             ])
                             ->default('written')
                             ->live()
                             ->required(),
 
-                        // Template Upload Option
+                        // Document Upload Option
                         FileUpload::make('template_file')
-                            ->label('Filled Lesson Note Template (.docx)')
-                            ->disk('public')
+                            ->label('Lesson Note Document (.docx, .doc, .pdf, .txt, .md)')
+                            ->disk('local')
                             ->directory('lesson-note-uploads/temp')
                             ->acceptedFileTypes([
                                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                 'application/msword',
+                                'application/pdf',
+                                'text/plain',
+                                'text/markdown',
+                                'application/rtf',
+                                'text/rtf',
                             ])
                             ->maxSize(10240)
                             ->required(fn ($get) => $get('submission_type') === 'template')
                             ->visible(fn ($get) => $get('submission_type') === 'template')
-                            ->helperText('Upload your completed Lesson_Note_Template.docx. The system will extract the title, learning objectives, and content into the database.')
+                            ->helperText('Upload your lesson note file in any format (.docx, .doc, .pdf, .txt, .md). The system will automatically extract the topic, learning objectives, and structured markdown content into the database.')
                             ->columnSpanFull(),
 
                         // Written Option

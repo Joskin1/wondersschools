@@ -68,7 +68,7 @@ class ManageTenantAdmins extends ManageRecords
 
         // 5. Email credentials — only when a domain is configured.
         if ($loginUrl) {
-            Mail::to($user->email)->send(
+            Mail::to($user->email)->queue(
                 new TenantAdminCreated($user, $plainPassword, $loginUrl)
             );
             $assignment->update(['credentials_sent_at' => now()]);

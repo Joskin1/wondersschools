@@ -109,4 +109,19 @@ describe('Single Post Page', function () {
         get('/news/99999')
             ->assertNotFound();
     });
+
+    it('renders dynamic school name and initials in post institutional signature', function () {
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'school_name'],
+            ['value' => 'Cathedral College Lagos']
+        );
+
+        $post = Post::factory()->create();
+
+        get("/news/{$post->slug}")
+            ->assertOk()
+            ->assertSee('Cathedral College Lagos')
+            ->assertSee('CC')
+            ->assertDontSee('Wonder Kiddies Foundation Schools');
+    });
 });

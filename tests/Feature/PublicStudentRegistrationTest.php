@@ -71,4 +71,18 @@ class PublicStudentRegistrationTest extends TestCase
         $this->assertEquals('student', $user->role);
         $this->assertFalse($user->isActive());
     }
+
+    public function test_student_registration_is_rate_limited(): void
+    {
+        $component = Livewire::test(PublicStudentRegistrationForm::class);
+
+        // First 5 attempts should pass the rate limit check
+        for ($i = 0; $i < 5; $i++) {
+            $component->call('submit');
+        }
+
+        // 6th attempt should be blocked by rate limiting with notification
+        $component->call('submit')
+            ->assertNotified('Too many registration attempts');
+    }
 }

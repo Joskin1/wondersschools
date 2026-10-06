@@ -64,14 +64,18 @@
                 {!! $post->body !!}
             </div>
 
+            @php
+                $postSchoolName = \App\Services\FrontendLibrary::getSetting('school_name', config('app.name', 'School'));
+                $postInitials = collect(explode(' ', $postSchoolName))->filter()->map(fn($w) => mb_substr($w, 0, 1))->take(2)->implode('');
+            @endphp
             <!-- Author & Institutional Signature -->
             <div class="mt-16 pt-8 border-t border-[var(--rule)] flex flex-col sm:flex-row items-center justify-between gap-6 bg-[var(--paper)] p-6 sm:p-8 rounded-2xl border">
                 <div class="flex items-center gap-4 text-center sm:text-left">
                     <div class="w-12 h-12 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] flex items-center justify-center font-serif font-bold text-lg flex-shrink-0">
-                        WK
+                        {{ $postInitials ?: 'SC' }}
                     </div>
                     <div>
-                        <h4 class="font-bold text-[var(--ink)] text-sm">Wonder Kiddies Foundation Schools</h4>
+                        <h4 class="font-bold text-[var(--ink)] text-sm">{{ $postSchoolName }}</h4>
                         <p class="text-xs text-[var(--support)]">Office of Communications &amp; Institutional Registry</p>
                     </div>
                 </div>

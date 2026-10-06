@@ -91,7 +91,7 @@ class LessonDocxTest extends TestCase
 
         @unlink($tempPath);
 
-        $this->assertEquals('Introduction to Photosynthesis', $parsed['title']);
+        $this->assertEquals('INTRODUCTION TO PHOTOSYNTHESIS', $parsed['title']);
         $this->assertEquals('45 minutes', $parsed['time']);
         $this->assertEquals('Period 2', $parsed['section']);
         $this->assertEquals(['Understand photosynthesis', 'Identify raw materials'], $parsed['learning_objectives']);
@@ -133,7 +133,7 @@ class LessonDocxTest extends TestCase
 
         @unlink($tempPath);
 
-        $this->assertEquals('Plant Cells and Structure', $parsed['title']);
+        $this->assertEquals('PLANT CELLS AND STRUCTURE', $parsed['title']);
         $this->assertEquals(['Identify cell wall', 'Differentiate plant and animal cells'], $parsed['learning_objectives']);
         $this->assertStringContainsString('rigid outer cell wall', $parsed['content']);
         $this->assertStringContainsString('contain chloroplasts', $parsed['content']);
@@ -192,8 +192,8 @@ class LessonDocxTest extends TestCase
 
         @unlink($tempPath);
 
-        $this->assertEquals('Cellular Respiration', $parsed['topic']);
-        $this->assertEquals('Cellular Respiration', $parsed['title']);
+        $this->assertEquals('CELLULAR RESPIRATION', $parsed['topic']);
+        $this->assertEquals('CELLULAR RESPIRATION', $parsed['title']);
         $this->assertEquals('Aerobic vs Anaerobic Pathways', $parsed['sub_topic']);
         $this->assertEquals('40 minutes', $parsed['time']);
         $this->assertEquals(['Understand ATP generation'], $parsed['learning_objectives']);

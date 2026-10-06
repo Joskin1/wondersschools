@@ -37,10 +37,11 @@ class ResultPdfController extends Controller
         // Validate term belongs to session
         $term = Term::where('id', $termId)->where('session_id', $sessionId)->firstOrFail();
 
-        // Get term result (scoped to this student)
+        // Get term result (scoped to this student and must be finalized)
         $termResult = TermResult::where('student_id', $student->id)
             ->where('session_id', $sessionId)
             ->where('term_id', $termId)
+            ->where('is_finalized', true)
             ->firstOrFail();
 
         // Enrollment for class info
@@ -161,8 +162,8 @@ class ResultPdfController extends Controller
         $data = [
             'student'      => [
                 'name'   => $student->full_name,
-                'gender' => $student->profile?->gender ?? '-',
-                'dob'    => $student->profile?->date_of_birth?->format('d/m/Y') ?? '-',
+                'gender' => $student->gender ?? '-',
+                'dob'    => $student->date_of_birth?->format('d/m/Y') ?? '-',
             ],
             'classroom'        => $enrollment?->classroom?->name ?? '-',
             'session_name'     => $session?->name ?? '-',

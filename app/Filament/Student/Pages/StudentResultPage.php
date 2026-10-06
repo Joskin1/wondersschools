@@ -274,8 +274,8 @@ class StudentResultPage extends Page
         $this->resultData = [
             'student' => [
                 'name' => $student->full_name,
-                'gender' => $student->profile?->gender ?? '-',
-                'dob' => $student->profile?->date_of_birth?->format('d/m/Y') ?? '-',
+                'gender' => $student->gender ?? '-',
+                'dob' => $student->date_of_birth?->format('d/m/Y') ?? '-',
             ],
             'classroom' => $enrollment?->classroom?->name ?? '-',
             'session_name' => $session?->name ?? '-',

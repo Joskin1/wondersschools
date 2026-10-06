@@ -91,7 +91,7 @@ class LessonPlanWorkflowTest extends TestCase
             'id' => $lessonPlan->id,
             'week_number' => 3,
             'status' => 'draft',
-            'title' => 'Linear Equations',
+            'title' => 'LINEAR EQUATIONS',
         ]);
 
         $this->assertCount(1, $lessonPlan->referenceMaterials);
@@ -303,7 +303,7 @@ class LessonPlanWorkflowTest extends TestCase
         $plan->instructionalMaterials()->sync([$instMaterial->id]);
         $plan->teachingMethods()->sync([$teachMethod->id]);
 
-        $this->assertEquals('Optics and Light Refraction', $plan->topic);
+        $this->assertEquals('OPTICS AND LIGHT REFRACTION', $plan->topic);
         $this->assertEquals('Total Internal Reflection', $plan->sub_topic);
         $this->assertCount(1, $plan->referenceMaterials);
         $this->assertCount(1, $plan->instructionalMaterials);

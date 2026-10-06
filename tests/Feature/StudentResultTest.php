@@ -135,6 +135,11 @@ describe('Student Result Page rendering and filtering', function () {
             'is_finalized'     => 1,
         ]);
 
+        $this->student->update([
+            'gender'        => 'female',
+            'date_of_birth' => '2012-05-15',
+        ]);
+
         $this->actingAs($this->user);
 
         Livewire::test(StudentResultPage::class)
@@ -142,7 +147,85 @@ describe('Student Result Page rendering and filtering', function () {
             ->set('term_id', $this->term->id)
             ->assertSet('loaded', true)
             ->assertSee('Download PDF')
+            ->assertSet('resultData.student.gender', 'female')
+            ->assertSet('resultData.student.dob', '15/05/2012')
             ->assertSet('resultData.term_result.average', 93.75)
             ->assertSet('resultData.term_result.grade', 'A');
+    });
+});
+
+describe('Student Result PDF Download', function () {
+    it('blocks downloading PDF for unfinalized/draft term results with 404', function () {
+        TermResult::create([
+            'student_id'       => $this->student->id,
+            'session_id'       => $this->session->id,
+            'term_id'          => $this->term->id,
+            'classroom_id'     => $this->classroom->id,
+            'subjects_count'   => 1,
+            'grand_total'      => 80,
+            'average'          => 80,
+            'overall_position' => 1,
+            'grade'            => 'B',
+            'is_finalized'     => 0, // DRAFT / UNFINALIZED
+        ]);
+
+        $this->actingAs($this->user);
+
+        $response = $this->get(route('student.result-pdf', [
+            'session_id' => $this->session->id,
+            'term_id'    => $this->term->id,
+        ]));
+
+        $response->assertNotFound();
+    });
+
+    it('allows downloading PDF when result is finalized', function () {
+        TermResult::create([
+            'student_id'       => $this->student->id,
+            'session_id'       => $this->session->id,
+            'term_id'          => $this->term->id,
+            'classroom_id'     => $this->classroom->id,
+            'subjects_count'   => 1,
+            'grand_total'      => 80,
+            'average'          => 80,
+            'overall_position' => 1,
+            'grade'            => 'B',
+            'is_finalized'     => 1, // FINALIZED
+        ]);
+
+        $this->actingAs($this->user);
+
+        $response = $this->get(route('student.result-pdf', [
+            'session_id' => $this->session->id,
+            'term_id'    => $this->term->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+    });
+
+    it('blocks students from downloading another students finalized result', function () {
+        TermResult::create([
+            'student_id'       => $this->otherStudent->id,
+            'session_id'       => $this->session->id,
+            'term_id'          => $this->term->id,
+            'classroom_id'     => $this->classroom->id,
+            'subjects_count'   => 1,
+            'grand_total'      => 80,
+            'average'          => 80,
+            'overall_position' => 1,
+            'grade'            => 'B',
+            'is_finalized'     => 1,
+        ]);
+
+        // Logged in as $this->user (not otherStudent)
+        $this->actingAs($this->user);
+
+        $response = $this->get(route('student.result-pdf', [
+            'session_id' => $this->session->id,
+            'term_id'    => $this->term->id,
+        ]));
+
+        $response->assertNotFound();
     });
 });

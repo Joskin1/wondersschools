@@ -87,7 +87,7 @@ class FormDraftManagerTest extends TestCase
             'session_id' => $this->session->id,
             'term_id' => $this->term->id,
             'week_number' => 1,
-            'status' => 'pending',
+            'status' => 'draft',
             'learning_objectives' => ['Understand cell structure'],
         ]);
 

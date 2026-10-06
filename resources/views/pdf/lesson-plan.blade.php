@@ -255,7 +255,7 @@
         $rich = function ($value) {
             if ($value === null || $value === '') return '';
             $str = (string) $value;
-            return $str !== strip_tags($str) ? $str : nl2br(e($str));
+            return $str !== strip_tags($str) ? clean($str) : nl2br(e($str));
         };
 
         $vocabList = $plan->key_vocabulary

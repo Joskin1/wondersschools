@@ -95,7 +95,7 @@ class WrittenLessonNoteTest extends TestCase
         $this->assertNotNull($version);
         $this->assertTrue($version->isWritten());
         $this->assertEquals('written', $version->submission_type);
-        $this->assertEquals('Introduction to Plant Nutrition', $version->title);
+        $this->assertEquals('INTRODUCTION TO PLANT NUTRITION', $version->title);
         $this->assertStringContainsString('photosynthesis', $version->content);
         $this->assertCount(2, $version->images);
         $this->assertCount(2, $version->getImageUrls());
@@ -135,7 +135,7 @@ class WrittenLessonNoteTest extends TestCase
         $version = LessonNoteVersion::create([
             'lesson_note_id' => $note->id,
             'submission_type' => 'written',
-            'title' => 'Sample Written Topic',
+            'title' => 'SAMPLE WRITTEN TOPIC',
             'content' => '<p>Some written content here</p>',
             'file_path' => null,
             'uploaded_by' => $this->teacher->id,
@@ -154,7 +154,7 @@ class WrittenLessonNoteTest extends TestCase
             'record' => $note->id,
         ])
             ->assertSuccessful()
-            ->assertSee('Sample Written Topic')
+            ->assertSee('SAMPLE WRITTEN TOPIC')
             ->assertSee('Some written content here');
     }
 }

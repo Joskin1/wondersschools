@@ -73,7 +73,7 @@
                         @if($latestVersion->created_at)<span><strong>Submitted:</strong> {{ $latestVersion->created_at->format('M d, Y') }}</span>@endif
                     </div>
                 </header>
-                <div class="note-document__content">{!! $latestVersion->content !!}</div>
+                <div class="note-document__content">{!! clean($latestVersion->content) !!}</div>
             </article>
 
             {{-- Optional Attached Diagrams & Images --}}

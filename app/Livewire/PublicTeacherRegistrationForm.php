@@ -5,6 +5,9 @@ namespace App\Livewire;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Services\BrandingService;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
+use DanHarrin\LivewireRateLimiting\WithRateLimiting;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
@@ -12,7 +15,7 @@ use Livewire\WithFileUploads;
 
 class PublicTeacherRegistrationForm extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, WithRateLimiting;
 
     public string $name = '';
     public string $email = '';
@@ -59,6 +62,18 @@ class PublicTeacherRegistrationForm extends Component
 
     public function submit(): void
     {
+        try {
+            $this->rateLimit(5);
+        } catch (TooManyRequestsException $exception) {
+            Notification::make()
+                ->title('Too many registration attempts')
+                ->body('Please wait ' . $exception->secondsUntilAvailable . ' seconds before trying again.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         $this->validate();
 
         $profilePicturePath = null;

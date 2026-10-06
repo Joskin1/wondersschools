@@ -12,8 +12,10 @@
         "filament/upgrade": "^5.0",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
+        "mews/purifier": "^3.4",
         "phpoffice/phpspreadsheet": "^5.9",
         "phpoffice/phpword": "^1.4",
+        "smalot/pdfparser": "^2.12",
         "stancl/tenancy": "^3.9",
         "stechstudio/filament-impersonate": "^5.0"
     },

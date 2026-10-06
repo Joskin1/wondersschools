@@ -51,41 +51,31 @@ class EditTeacherLessonNote extends EditRecord
             $templateFile = $data['template_file'] ?? null;
             if (!$templateFile) {
                 Notification::make()
-                    ->title('Template file required')
-                    ->body('Please upload your completed .docx template.')
+                    ->title('Document file required')
+                    ->body('Please upload your document file (.docx, .doc, .pdf, .txt, .md).')
                     ->danger()
                     ->send();
                 $this->halt();
             }
 
-            $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($templateFile);
-            $parser = app(\App\Services\LessonDocxParserService::class);
-            $validation = $parser->validateLessonNoteTemplate($fullPath);
+            $fullPath = \Illuminate\Support\Facades\Storage::disk('local')->path($templateFile);
+            $originalName = basename($templateFile);
 
-            if (!$validation['valid']) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($templateFile);
+            try {
+                $parser = app(\App\Services\DocumentMarkdownParserService::class);
+                $parsed = $parser->parse($fullPath, $originalName);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Storage::disk('local')->delete($templateFile);
                 Notification::make()
-                    ->title('Invalid Template Format')
-                    ->body(implode(' ', $validation['errors']))
+                    ->title('Failed to extract document text')
+                    ->body($e->getMessage())
                     ->danger()
                     ->persistent()
                     ->send();
                 $this->halt();
             }
 
-            try {
-                $parsed = $parser->parseLessonNote($fullPath);
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($templateFile);
-                Notification::make()
-                    ->title('Failed to read template')
-                    ->body($e->getMessage())
-                    ->danger()
-                    ->send();
-                $this->halt();
-            }
-
-            $this->writtenTitle = $parsed['title'] ?: 'Lesson Note';
+            $this->writtenTitle = $parsed['title'] ?: 'LESSON NOTE';
             $this->writtenContent = $parsed['content'] ?: '';
             if (!empty($parsed['learning_objectives'])) {
                 $data['learning_objectives'] = $parsed['learning_objectives'];
@@ -136,7 +126,7 @@ class EditTeacherLessonNote extends EditRecord
         ]);
 
         if (!empty($this->templateFilePath)) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->templateFilePath);
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($this->templateFilePath);
         }
 
         Notification::make()

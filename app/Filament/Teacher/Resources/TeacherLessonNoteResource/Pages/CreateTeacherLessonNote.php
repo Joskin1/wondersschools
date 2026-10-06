@@ -8,6 +8,7 @@ use App\Models\LessonNote;
 use App\Models\Session;
 use App\Models\TeacherSubjectAssignment;
 use App\Models\ClassTeacherAssignment;
+use App\Services\DocumentMarkdownParserService;
 use App\Services\LessonDocxParserService;
 use App\Services\LessonNoteCache;
 use App\Services\LessonSubmissionService;
@@ -108,41 +109,31 @@ class CreateTeacherLessonNote extends CreateRecord
             $templateFile = $data['template_file'] ?? null;
             if (!$templateFile) {
                 Notification::make()
-                    ->title('Template file required')
-                    ->body('Please upload your completed .docx template.')
+                    ->title('Document file required')
+                    ->body('Please upload your document file (.docx, .doc, .pdf, .txt, .md).')
                     ->danger()
                     ->send();
                 $this->halt();
             }
 
-            $fullPath = Storage::disk('public')->path($templateFile);
-            $parser = app(LessonDocxParserService::class);
-            $validation = $parser->validateLessonNoteTemplate($fullPath);
+            $fullPath = Storage::disk('local')->path($templateFile);
+            $originalName = basename($templateFile);
 
-            if (!$validation['valid']) {
-                Storage::disk('public')->delete($templateFile);
+            try {
+                $parser = app(DocumentMarkdownParserService::class);
+                $parsed = $parser->parse($fullPath, $originalName);
+            } catch (\Throwable $e) {
+                Storage::disk('local')->delete($templateFile);
                 Notification::make()
-                    ->title('Invalid Template Format')
-                    ->body(implode(' ', $validation['errors']))
+                    ->title('Failed to extract document text')
+                    ->body($e->getMessage())
                     ->danger()
                     ->persistent()
                     ->send();
                 $this->halt();
             }
 
-            try {
-                $parsed = $parser->parseLessonNote($fullPath);
-            } catch (\Throwable $e) {
-                Storage::disk('public')->delete($templateFile);
-                Notification::make()
-                    ->title('Failed to read template')
-                    ->body($e->getMessage())
-                    ->danger()
-                    ->send();
-                $this->halt();
-            }
-
-            $this->writtenTitle = $parsed['title'] ?: 'Lesson Note';
+            $this->writtenTitle = $parsed['title'] ?: 'LESSON NOTE';
             $this->writtenContent = $parsed['content'] ?: '';
             if (!empty($parsed['learning_objectives'])) {
                 $data['learning_objectives'] = $parsed['learning_objectives'];
@@ -193,7 +184,7 @@ class CreateTeacherLessonNote extends CreateRecord
         ]);
 
         if (!empty($this->templateFilePath)) {
-            Storage::disk('public')->delete($this->templateFilePath);
+            Storage::disk('local')->delete($this->templateFilePath);
         }
     }
 

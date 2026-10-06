@@ -103,10 +103,14 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function canAccessPanel(Panel $panel): bool
     {
+        // Under no circumstances may an impersonated session access the central sudo panel
+        if (\STS\FilamentImpersonate\Facades\Impersonation::isImpersonating() && $panel->getId() === 'sudo') {
+            return false;
+        }
+
         // Allow impersonated users to access the admin panel so the
-        // "Leave Impersonation" banner remains reachable even if the
-        // impersonated user would normally be denied.
-        if (\STS\FilamentImpersonate\Facades\Impersonation::isImpersonating()) {
+        // "Leave Impersonation" banner remains reachable when impersonating from admin
+        if (\STS\FilamentImpersonate\Facades\Impersonation::isImpersonating() && $panel->getId() === 'admin') {
             return true;
         }
 

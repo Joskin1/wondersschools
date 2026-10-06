@@ -240,7 +240,16 @@ class LessonNote extends Model
      */
     public function canBeEditedByTeacher(): bool
     {
-        return in_array($this->status, ['draft', 'rejected']);
+        if (in_array($this->status, ['draft', 'rejected'])) {
+            return true;
+        }
+
+        if ($this->status === 'pending') {
+            $plan = $this->getPairedLessonPlan();
+            return !$plan || $plan->status === 'draft';
+        }
+
+        return false;
     }
 
     /**

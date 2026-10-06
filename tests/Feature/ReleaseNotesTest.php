@@ -179,4 +179,25 @@ class ReleaseNotesTest extends TestCase
         $this->assertEquals(0, ReleaseNote::unreadFor($this->admin)->count());
         $this->assertEquals(0, $this->admin->unreadNotifications()->count());
     }
+
+    public function test_middleware_session_caches_release_notes_check(): void
+    {
+        $mockService = \Mockery::mock(ReleaseNoteNotificationService::class);
+        $mockService->shouldReceive('notifyUnreadReleases')
+            ->once() // Must only be called ONCE despite two consecutive requests
+            ->with($this->admin);
+
+        $middleware = new \App\Http\Middleware\CheckUnreadReleaseNotesMiddleware($mockService);
+
+        $session = app('session.store');
+        $request = \Illuminate\Http\Request::create('/admin');
+        $request->setUserResolver(fn () => $this->admin);
+        $request->setLaravelSession($session);
+
+        // First request - should call service
+        $middleware->handle($request, fn () => new \Symfony\Component\HttpFoundation\Response());
+
+        // Second request with same session - should be cached and NOT call service again
+        $middleware->handle($request, fn () => new \Symfony\Component\HttpFoundation\Response());
+    }
 }

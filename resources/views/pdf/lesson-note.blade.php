@@ -353,7 +353,7 @@
     <div class="section-heading">Lesson Content</div>
     <div class="lesson-content">
         @if(!empty($content))
-            {!! $content !!}
+            {!! clean($content) !!}
         @else
             <p>Please refer to the attached document for this lesson note.</p>
         @endif

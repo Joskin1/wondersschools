@@ -92,4 +92,18 @@ class PublicTeacherRegistrationTest extends TestCase
         $panel = \Filament\Facades\Filament::getPanel('teacher');
         $this->assertTrue($user->fresh()->canAccessPanel($panel));
     }
+
+    public function test_teacher_registration_is_rate_limited(): void
+    {
+        $component = \Livewire\Livewire::test(\App\Livewire\PublicTeacherRegistrationForm::class);
+
+        // First 5 attempts should pass the rate limit check (even if validation fails)
+        for ($i = 0; $i < 5; $i++) {
+            $component->call('submit');
+        }
+
+        // 6th attempt should be blocked by rate limiting with notification
+        $component->call('submit')
+            ->assertNotified('Too many registration attempts');
+    }
 }
