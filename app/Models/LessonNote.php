@@ -188,6 +188,47 @@ class LessonNote extends Model
     }
 
     /**
+     * Scope to only include lesson notes that have a paired lesson plan
+     * that is also ready (not in draft status, or matching a specific status).
+     */
+    public function scopeHasPairedLessonPlan($query, ?string $planStatus = null)
+    {
+        return $query->whereExists(function ($subQuery) use ($planStatus) {
+            $subQuery->selectRaw(1)
+                ->from('lesson_plans')
+                ->whereColumn('lesson_plans.teacher_id', 'lesson_notes.teacher_id')
+                ->whereColumn('lesson_plans.subject_id', 'lesson_notes.subject_id')
+                ->whereColumn('lesson_plans.classroom_id', 'lesson_notes.classroom_id')
+                ->whereColumn('lesson_plans.session_id', 'lesson_notes.session_id')
+                ->whereColumn('lesson_plans.term_id', 'lesson_notes.term_id')
+                ->whereColumn('lesson_plans.week_number', 'lesson_notes.week_number')
+                ->whereNull('lesson_plans.deleted_at');
+
+            if ($planStatus !== null) {
+                $subQuery->where('lesson_plans.status', $planStatus);
+            } else {
+                $subQuery->where('lesson_plans.status', '!=', 'draft');
+            }
+        });
+    }
+
+    /**
+     * Scope to only include lesson notes created via the template or written editor.
+     */
+    public function scopeBasedOnTemplate($query)
+    {
+        return $query->whereHas('latestVersion', function ($vQuery) {
+            $vQuery->where(function ($q) {
+                $q->where('submission_type', 'written')
+                    ->orWhere(function ($sq) {
+                        $sq->whereNotNull('content')
+                            ->where('content', '!=', '');
+                    });
+            });
+        });
+    }
+
+    /**
      * Approve this lesson note and any paired lesson plan.
      */
     public function approve(?string $comment = null, ?int $reviewerId = null): void

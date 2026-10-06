@@ -144,6 +144,17 @@ class WrittenLessonNoteTest extends TestCase
 
         $note->update(['latest_version_id' => $version->id]);
 
+        \App\Models\LessonPlan::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 1,
+            'status' => 'pending',
+            'title' => 'SAMPLE WRITTEN TOPIC',
+        ]);
+
         // Test List table page renders cleanly and sees record
         Livewire::test(\App\Filament\Resources\LessonNoteResource\Pages\ListLessonNotes::class)
             ->assertSuccessful()

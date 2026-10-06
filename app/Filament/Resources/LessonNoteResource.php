@@ -38,7 +38,9 @@ class LessonNoteResource extends Resource
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return parent::getEloquentQuery()
-            ->where('status', '!=', 'draft')
+            ->where('lesson_notes.status', '!=', 'draft')
+            ->basedOnTemplate()
+            ->hasPairedLessonPlan()
             ->with(['teacher', 'subject', 'classroom', 'latestVersion']);
     }
 
@@ -236,7 +238,16 @@ class LessonNoteResource extends Resource
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
                     ])
-                    ->default('pending'),
+                    ->default('pending')
+                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data) {
+                        $value = $data['value'] ?? null;
+                        if (!$value) {
+                            return $query;
+                        }
+
+                        return $query->where('lesson_notes.status', $value)
+                            ->hasPairedLessonPlan($value);
+                    }),
 
                 Tables\Filters\SelectFilter::make('session_id')
                     ->label('Session')
@@ -298,7 +309,8 @@ class LessonNoteResource extends Resource
                             ->success()
                             ->send();
                     })
-                    ->visible(fn (LessonNote $record) => $record->status === 'pending'),
+                    ->visible(fn (LessonNote $record) => $record->status === 'pending'
+                        && $record->getPairedLessonPlan()?->status === 'pending'),
 
                 Action::make('reject')
                     ->label('Reject')
@@ -334,7 +346,8 @@ class LessonNoteResource extends Resource
                             ->warning()
                             ->send();
                     })
-                    ->visible(fn (LessonNote $record) => $record->status === 'pending'),
+                    ->visible(fn (LessonNote $record) => $record->status === 'pending'
+                        && $record->getPairedLessonPlan()?->status === 'pending'),
             ])
             ->bulkActions([
                 BulkAction::make('bulk_approve')
@@ -344,7 +357,7 @@ class LessonNoteResource extends Resource
                     ->requiresConfirmation()
                     ->action(function ($records) {
                         foreach ($records as $record) {
-                            if ($record->status === 'pending') {
+                            if ($record->status === 'pending' && $record->getPairedLessonPlan()?->status === 'pending') {
                                 $record->approve('Bulk approved', auth()->id());
 
                                 $record->teacher->notify(new LessonNoteReviewed(
@@ -387,7 +400,11 @@ class LessonNoteResource extends Resource
         }
 
         try {
-            $pendingCount = static::getModel()::where('status', 'pending')->count();
+            $pendingCount = static::getModel()::query()
+                ->where('lesson_notes.status', 'pending')
+                ->basedOnTemplate()
+                ->hasPairedLessonPlan('pending')
+                ->count();
             return $pendingCount > 0 ? (string) $pendingCount : null;
         } catch (\Throwable $e) {
             return null;
@@ -401,7 +418,11 @@ class LessonNoteResource extends Resource
         }
 
         try {
-            $pendingCount = static::getModel()::where('status', 'pending')->count();
+            $pendingCount = static::getModel()::query()
+                ->where('lesson_notes.status', 'pending')
+                ->basedOnTemplate()
+                ->hasPairedLessonPlan('pending')
+                ->count();
             return $pendingCount > 0 ? 'warning' : null;
         } catch (\Throwable $e) {
             return null;

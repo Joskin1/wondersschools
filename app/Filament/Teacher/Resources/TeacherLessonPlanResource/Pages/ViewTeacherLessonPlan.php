@@ -28,17 +28,25 @@ class ViewTeacherLessonPlan extends ViewRecord
                 ->icon('heroicon-o-paper-airplane')
                 ->color('success')
                 ->requiresConfirmation()
-                ->modalHeading('Submit Lesson Plan for Admin Review?')
-                ->modalDescription('Once submitted, you will not be able to edit this lesson plan unless it is rejected.')
+                ->modalHeading('Submit for Admin Review?')
+                ->modalDescription('Both this Lesson Plan and the corresponding Lesson Note for this week will be submitted for admin review.')
                 ->visible(fn () => in_array($this->record->status, ['draft', 'rejected']))
                 ->action(function () {
-                    $this->record->update(['status' => 'pending']);
+                    $result = app(LessonSubmissionService::class)->submitPairForReview($this->record);
 
-                    app(LessonSubmissionService::class)->checkAndNotifyIfComplete($this->record);
+                    if (!$result['success']) {
+                        Notification::make()
+                            ->title('Cannot Submit for Review')
+                            ->body($result['message'])
+                            ->danger()
+                            ->persistent()
+                            ->send();
+                        return;
+                    }
 
                     Notification::make()
-                        ->title('Lesson Plan Submitted')
-                        ->body('Your lesson plan has been submitted for admin review.')
+                        ->title('Submitted for Review')
+                        ->body($result['message'])
                         ->success()
                         ->send();
 

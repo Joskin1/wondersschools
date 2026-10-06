@@ -97,7 +97,8 @@ class ViewLessonNote extends ViewRecord
 
                     $this->redirect($this->getResource()::getUrl('index'));
                 })
-                ->visible(fn () => $this->record->status === 'pending'),
+                ->visible(fn () => $this->record->status === 'pending'
+                    && $this->record->getPairedLessonPlan()?->status === 'pending'),
 
             Actions\Action::make('reject')
                 ->label('Reject')
@@ -137,7 +138,8 @@ class ViewLessonNote extends ViewRecord
 
                     $this->redirect($this->getResource()::getUrl('index'));
                 })
-                ->visible(fn () => $this->record->status === 'pending'),
+                ->visible(fn () => $this->record->status === 'pending'
+                    && $this->record->getPairedLessonPlan()?->status === 'pending'),
         ];
     }
 }

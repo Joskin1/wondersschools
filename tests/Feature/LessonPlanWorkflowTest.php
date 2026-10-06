@@ -114,6 +114,19 @@ class LessonPlanWorkflowTest extends TestCase
             'status' => 'pending',
         ]);
 
+        $noteVersion = LessonNoteVersion::create([
+            'lesson_note_id' => $lessonNote->id,
+            'submission_type' => 'written',
+            'title' => 'Week 4 Note',
+            'content' => '<p>Lesson note content</p>',
+            'file_name' => 'Week 4 Note',
+            'file_size' => 100,
+            'file_hash' => 'dummy_hash_4',
+            'uploaded_by' => $this->teacher->id,
+            'status' => 'pending',
+        ]);
+        $lessonNote->update(['latest_version_id' => $noteVersion->id]);
+
         $service = app(LessonSubmissionService::class);
 
         // Check completeness with only note
@@ -458,5 +471,146 @@ class LessonPlanWorkflowTest extends TestCase
 
         $resPlan = $parser->validateLessonPlanTemplate('/non/existent/file.docx');
         $this->assertFalse($resPlan['valid']);
+    }
+
+    public function test_admin_review_query_scopes_to_paired_template_submissions(): void
+    {
+        // 1. Orphan Lesson Note (no paired lesson plan) - like old 83 legacy items
+        $orphanNote = LessonNote::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 10,
+            'status' => 'pending',
+        ]);
+        $orphanVersion = LessonNoteVersion::create([
+            'lesson_note_id' => $orphanNote->id,
+            'submission_type' => 'written',
+            'title' => 'Orphan Note',
+            'content' => '<p>Orphan note content</p>',
+            'file_name' => 'Orphan Note',
+            'file_size' => 100,
+            'file_hash' => 'hash_orphan',
+            'uploaded_by' => $this->teacher->id,
+            'status' => 'pending',
+        ]);
+        $orphanNote->update(['latest_version_id' => $orphanVersion->id]);
+
+        // 2. Note with paired plan, but plan is in draft
+        $draftPlanNote = LessonNote::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 11,
+            'status' => 'pending',
+        ]);
+        $draftPlanVersion = LessonNoteVersion::create([
+            'lesson_note_id' => $draftPlanNote->id,
+            'submission_type' => 'written',
+            'title' => 'Draft Plan Note',
+            'content' => '<p>Content</p>',
+            'file_name' => 'Draft Plan Note',
+            'file_size' => 100,
+            'file_hash' => 'hash_draft_plan_note',
+            'uploaded_by' => $this->teacher->id,
+            'status' => 'pending',
+        ]);
+        $draftPlanNote->update(['latest_version_id' => $draftPlanVersion->id]);
+
+        LessonPlan::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 11,
+            'status' => 'draft',
+            'title' => 'Draft Plan',
+        ]);
+
+        // 3. Legacy file upload note (submission_type = 'file' and content = null)
+        $legacyFileNote = LessonNote::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 12,
+            'status' => 'pending',
+        ]);
+        $legacyFileVersion = LessonNoteVersion::create([
+            'lesson_note_id' => $legacyFileNote->id,
+            'submission_type' => 'file',
+            'file_name' => 'legacy_upload.pdf',
+            'file_size' => 500000,
+            'file_hash' => 'hash_legacy',
+            'uploaded_by' => $this->teacher->id,
+            'status' => 'pending',
+        ]);
+        $legacyFileNote->update(['latest_version_id' => $legacyFileVersion->id]);
+
+        LessonPlan::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 12,
+            'status' => 'pending',
+            'title' => 'Legacy Plan',
+        ]);
+
+        // 4. Valid template-based paired submission (both note and plan pending)
+        $validNote = LessonNote::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 13,
+            'status' => 'pending',
+        ]);
+        $validVersion = LessonNoteVersion::create([
+            'lesson_note_id' => $validNote->id,
+            'submission_type' => 'written',
+            'title' => 'Valid Template Note',
+            'content' => '<p>Valid template content</p>',
+            'file_name' => 'Valid Template Note',
+            'file_size' => 120,
+            'file_hash' => 'hash_valid',
+            'uploaded_by' => $this->teacher->id,
+            'status' => 'pending',
+        ]);
+        $validNote->update(['latest_version_id' => $validVersion->id]);
+
+        $validPlan = LessonPlan::create([
+            'teacher_id' => $this->teacher->id,
+            'subject_id' => $this->subject->id,
+            'classroom_id' => $this->classroom->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'week_number' => 13,
+            'status' => 'pending',
+            'title' => 'Valid Template Plan',
+        ]);
+
+        // Query Admin Review resource
+        $results = \App\Filament\Resources\LessonNoteResource::getEloquentQuery()->get();
+
+        $this->assertCount(1, $results);
+        $this->assertEquals($validNote->id, $results->first()->id);
+
+        // Check pending badge query counts only the 1 valid pending submission
+        $badgeCount = LessonNote::query()
+            ->where('lesson_notes.status', 'pending')
+            ->basedOnTemplate()
+            ->hasPairedLessonPlan('pending')
+            ->count();
+
+        $this->assertEquals(1, $badgeCount);
     }
 }
