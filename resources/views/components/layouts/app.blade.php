@@ -58,6 +58,10 @@
 
     $footerEditionLabel = \App\Services\FrontendLibrary::get('footer_edition_label', 'Prospectus Edition');
     $footerDescription = \App\Services\FrontendLibrary::get('footer_description', 'An accredited British-Nigerian secondary school dedicated to academic brilliance, moral character, and global leadership.');
+
+    $theme = \App\Services\FrontendLibrary::getTheme();
+    $isModern = ($theme === 'modern');
+    $btnRadius = $isModern ? 'rounded-full' : 'rounded-none';
     $footerAccreditations = \App\Services\FrontendLibrary::get('footer_accreditations', 'Accredited by WAEC, NECO & Cambridge International.');
     $footerCol2Heading = \App\Services\FrontendLibrary::get('footer_col2_heading', 'Prospectus');
     $footerCol3Heading = \App\Services\FrontendLibrary::get('footer_col3_heading', 'Registry & Portals');
@@ -158,7 +162,7 @@
     </style>
 </head>
 
-<body class="bg-paper text-body antialiased selection:bg-accent selection:text-ink overflow-x-hidden">
+<body class="bg-paper text-body antialiased selection:bg-accent selection:text-[color:var(--accent-contrast)] overflow-x-hidden theme-{{ $theme }}" data-theme="{{ $theme }}">
 
     <!-- ====== Prospectus Header / Navigation ====== -->
     <header x-data="{ scrolled: false, mobileOpen: false, portalsOpen: false }"
@@ -199,9 +203,9 @@
           <!-- Crest & School Name -->
           <a href="{{ route('home') }}" class="flex items-center gap-2 sm:gap-3.5 group min-w-0 max-w-[calc(100%-60px)] xl:max-w-none flex-1 xl:flex-initial overflow-hidden">
             @if($logoUrl)
-              <img src="{{ $logoUrl }}" alt="{{ $schoolName }}" style="width: 40px; height: 40px; object-fit: contain;" class="w-9 h-9 sm:w-10 sm:h-10 object-contain border border-ink p-0.5 bg-paper flex-shrink-0" />
+              <img src="{{ $logoUrl }}" alt="{{ $schoolName }}" style="width: 40px; height: 40px; object-fit: contain;" class="w-9 h-9 sm:w-10 sm:h-10 object-contain border border-ink p-0.5 bg-paper flex-shrink-0 {{ $isModern ? 'rounded-xl' : '' }}" />
             @else
-              <div class="w-10 h-10 min-w-[40px] border border-accent/60 bg-ink text-accent flex items-center justify-center font-serif text-[10px] sm:text-xs font-bold tracking-tight px-1 flex-shrink-0 leading-none shadow-sm">
+              <div class="w-10 h-10 min-w-[40px] border border-accent/60 bg-ink text-accent flex items-center justify-center font-serif text-[10px] sm:text-xs font-bold tracking-tight px-1 flex-shrink-0 leading-none shadow-sm {{ $isModern ? 'rounded-xl' : '' }}">
                 {{ $schoolShortName }}
               </div>
             @endif
@@ -244,12 +248,12 @@
             <div class="relative hidden sm:block" @click.outside="portalsOpen = false">
               <button @click="portalsOpen = !portalsOpen"
                       type="button"
-                      class="px-3.5 py-2 text-xs font-sans uppercase tracking-wider font-semibold border border-ink/30 text-ink hover:border-ink transition flex items-center gap-1.5 rounded-none whitespace-nowrap">
+                      class="px-3.5 py-2 text-xs font-sans uppercase tracking-wider font-semibold border border-ink/30 text-ink hover:border-ink transition flex items-center gap-1.5 {{ $btnRadius }} whitespace-nowrap">
                 <span>{{ $navPortalsLabel }}</span>
                 <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
               </button>
               <div x-show="portalsOpen" x-cloak
-                   class="absolute right-0 mt-1 w-48 bg-white border border-rule shadow-md py-1 z-50 rounded-none">
+                   class="absolute right-0 mt-1 w-48 bg-white border border-rule shadow-md py-1 z-50 {{ $isModern ? 'rounded-2xl' : 'rounded-none' }}">
                 <a href="{{ $studentPortalUrl }}" class="block px-4 py-2 text-xs font-sans text-ink hover:bg-paper transition">{{ $portalStudentLabel }}</a>
                 <a href="{{ $staffPortalUrl }}" class="block px-4 py-2 text-xs font-sans text-ink hover:bg-paper transition">{{ $portalStaffLabel }}</a>
                 <a href="{{ $adminPortalUrl }}" class="block px-4 py-2 text-xs font-sans text-ink hover:bg-paper transition">{{ $portalAdminLabel }}</a>
@@ -259,7 +263,7 @@
             <!-- Primary CTA (Desktop & Tablet) -->
             @if(!empty($headerCtaText))
               <a href="{{ $isHome ? $headerCtaLink : route('admissions') }}"
-                 class="hidden sm:inline-block px-5 py-2 text-xs font-sans uppercase tracking-widest font-semibold bg-accent text-[color:var(--accent-contrast)] hover:bg-accent-hover transition rounded-none whitespace-nowrap shadow-sm">
+                 class="hidden sm:inline-block px-5 py-2 text-xs font-sans uppercase tracking-widest font-semibold bg-accent text-[color:var(--accent-contrast)] hover:bg-accent-hover transition {{ $btnRadius }} whitespace-nowrap shadow-sm">
                 {{ $headerCtaText }}
               </a>
             @endif
@@ -267,7 +271,7 @@
             <!-- Mobile Menu Toggle Button -->
             <button @click="mobileOpen = !mobileOpen"
                     type="button"
-                    class="xl:hidden p-2 text-ink hover:bg-ink/5 border border-ink/20 focus:outline-none flex items-center justify-center rounded-none"
+                    class="xl:hidden p-2 text-ink hover:bg-ink/5 border border-ink/20 focus:outline-none flex items-center justify-center {{ $isModern ? 'rounded-xl' : 'rounded-none' }}"
                     aria-label="Toggle Menu">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path x-show="!mobileOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 6h16M4 12h16M4 18h16"/>

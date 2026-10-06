@@ -308,14 +308,14 @@ class Settings extends Page
                                         ]),
 
                                         Select::make('layout_style')
-                                            ->label('Layout Style')
+                                            ->label('Website UI Template / Theme')
                                             ->options([
-                                                'standard' => 'Ivy League Prospectus (Standard)',
-                                                'centered' => 'Centered Classic',
-                                                'compact'  => 'Compact Modern',
+                                                'editorial' => '🏛️ Ivy League Editorial (Prestigious, Sharp, Chapter Numerals)',
+                                                'modern'    => '🚀 Contemporary Modern Campus (Vibrant, Rounded Cards, Dynamic Flow)',
+                                                'classic'   => '👑 Stately Heritage Academy (Balanced, Centered Elegance, Structured Cards)',
                                             ])
-                                            ->default('standard')
-                                            ->helperText('Controls the overall page layout style.'),
+                                            ->default('editorial')
+                                            ->helperText('Choose the visual design template for your public school website. All your content, photos, and colors seamlessly power whichever template you select.'),
                                     ]),
                             ]),
 
