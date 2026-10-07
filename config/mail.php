@@ -120,4 +120,15 @@ return [
         'name' => env('MAIL_REPLY_TO_NAME', env('MAIL_FROM_NAME', 'Example')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Database Backup Recipient
+    |--------------------------------------------------------------------------
+    |
+    | Destination email address(es) for automated database disaster recovery
+    | backups. When empty, defaults to the landlord super admin (sudo) user.
+    |
+    */
+    'backup_recipient' => env('BACKUP_MAIL_RECIPIENT'),
+
 ];
