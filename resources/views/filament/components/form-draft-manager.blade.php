@@ -98,6 +98,7 @@
         const registerFormDraftManager = () => {
             if (window.Alpine && !window.Alpine._formDraftManagerRegistered) {
                 window.Alpine._formDraftManagerRegistered = true;
+
                 window.Alpine.data('formDraftManager', ({ storageKey, resourceName }) => ({
                     storageKey,
                     resourceName,
@@ -112,6 +113,7 @@
                     isSubmitting: false,
                     isOffline: !navigator.onLine,
                     saveTimeout: null,
+                    periodicInterval: null,
                     bannerDismissed: false,
 
                     init() {
@@ -126,6 +128,12 @@
                                 this.clearDraftOnSubmit();
                             }
                         });
+                    },
+
+                    destroy() {
+                        if (this.periodicInterval) {
+                            clearInterval(this.periodicInterval);
+                        }
                     },
 
                     setupNetworkListeners() {
@@ -165,7 +173,7 @@
                                 this.$nextTick(() => {
                                     setTimeout(() => {
                                         this.autoRestoreDraft();
-                                    }, 350);
+                                    }, 250);
                                 });
                             }
                         } catch (e) {
@@ -173,22 +181,41 @@
                         }
                     },
 
-                    autoRestoreDraft() {
+                    async autoRestoreDraft() {
                         if (!this.draftData) return;
 
                         try {
                             if (typeof this.$wire !== 'undefined') {
+                                // 1. Prepare clean data payload to batch set in Livewire atomically
+                                const currentLivewireData = this.$wire.get('data') || this.$wire.data || {};
+                                const mergedPayload = Object.assign({}, currentLivewireData);
+
                                 for (const [key, value] of Object.entries(this.draftData)) {
                                     if (value === null || typeof value === 'undefined' || key === 'draft_manager' || key === 'submission_status') continue;
-                                    try {
-                                        this.$wire.set('data.' + key, value);
-                                    } catch (err) {}
+                                    mergedPayload[key] = value;
+                                }
+
+                                // 2. Atomic single Livewire set call to prevent request drops/cancellations
+                                try {
+                                    await this.$wire.set('data', mergedPayload);
+                                } catch (e) {
+                                    // Fallback: set individual keys if root set fails
+                                    for (const [key, value] of Object.entries(this.draftData)) {
+                                        if (value === null || typeof value === 'undefined' || key === 'draft_manager' || key === 'submission_status') continue;
+                                        try {
+                                            this.$wire.set('data.' + key, value);
+                                        } catch (err) {}
+                                    }
                                 }
                             }
 
-                            setTimeout(() => {
-                                this.hydrateRichEditors(this.draftData);
-                            }, 200);
+                            // 3. Multi-stage TipTap rich editor hydration (with retries to ensure delayed components load)
+                            const hydrateTimes = [150, 400, 800, 1500];
+                            hydrateTimes.forEach(delay => {
+                                setTimeout(() => {
+                                    this.hydrateRichEditors(this.draftData);
+                                }, delay);
+                            });
 
                             this.isAutoRestored = true;
                             this.lastSavedTime = this.draftSavedAt;
@@ -203,25 +230,57 @@
 
                     hydrateRichEditors(data) {
                         const formElement = this.$el.closest('form') || document.querySelector('form.fi-form') || document.querySelector('form');
-                        if (!formElement) return;
+                        if (!formElement || !data) return;
 
-                        formElement.querySelectorAll('.fi-fo-rich-editor, [x-data*="richEditorFormComponent"]').forEach(editorWrapper => {
+                        // Find all rich editor containers and their Alpine components
+                        const richEditorElements = formElement.querySelectorAll('.fi-fo-rich-editor, [x-data*="richEditorFormComponent"], [x-load-src*="rich-editor"]');
+
+                        richEditorElements.forEach(el => {
                             try {
-                                const alpineData = window.Alpine ? Alpine.$data(editorWrapper) : null;
-                                if (!alpineData) return;
+                                // Traverse element and children to locate richEditorFormComponent Alpine data
+                                let alpineData = null;
+                                if (window.Alpine) {
+                                    if (typeof Alpine.$data === 'function') {
+                                        alpineData = Alpine.$data(el);
+                                        if (!alpineData?.statePath) {
+                                            const childWithData = el.querySelector('[x-data*="richEditorFormComponent"], [x-load-src*="rich-editor"]');
+                                            if (childWithData) {
+                                                alpineData = Alpine.$data(childWithData);
+                                            }
+                                        }
+                                    }
+                                }
 
-                                const statePath = alpineData.statePath || (editorWrapper.getAttribute('wire:model') || '').replace(/^data\./, '');
+                                let statePath = alpineData?.statePath;
+                                if (!statePath) {
+                                    const modelAttr = el.getAttribute('wire:model') || el.querySelector('[wire\\:model]')?.getAttribute('wire:model');
+                                    if (modelAttr) statePath = modelAttr;
+                                }
+
                                 const cleanKey = statePath ? statePath.replace(/^data\./, '') : null;
 
-                                if (cleanKey && data[cleanKey]) {
+                                if (cleanKey && data[cleanKey] !== undefined && data[cleanKey] !== null) {
                                     const targetContent = data[cleanKey];
-                                    if (typeof alpineData.getEditor === 'function') {
-                                        const editor = alpineData.getEditor();
-                                        if (editor && typeof editor.commands?.setContent === 'function') {
-                                            editor.commands.setContent(targetContent);
+
+                                    if (alpineData) {
+                                        if (typeof alpineData.getEditor === 'function') {
+                                            const editor = alpineData.getEditor();
+                                            if (editor && typeof editor.commands?.setContent === 'function') {
+                                                const currentHTML = typeof editor.getHTML === 'function' ? editor.getHTML() : '';
+                                                if (!currentHTML || currentHTML === '<p></p>' || currentHTML !== targetContent) {
+                                                    editor.commands.setContent(targetContent, false);
+                                                }
+                                            }
                                         }
-                                    } else if (alpineData.state !== undefined) {
-                                        alpineData.state = targetContent;
+                                        if (alpineData.state !== undefined) {
+                                            alpineData.state = targetContent;
+                                        }
+                                    }
+
+                                    // Direct ProseMirror DOM fallback
+                                    const pm = el.querySelector('.tiptap.ProseMirror, .ProseMirror');
+                                    if (pm && (!pm.innerHTML || pm.innerHTML === '<p></p>')) {
+                                        pm.innerHTML = targetContent;
                                     }
                                 }
                             } catch (err) {
@@ -271,6 +330,7 @@
                     collectLiveFormData() {
                         let currentData = {};
 
+                        // 1. Base from Livewire
                         if (typeof this.$wire !== 'undefined') {
                             try {
                                 const rawData = this.$wire.get('data') || this.$wire.data || {};
@@ -278,22 +338,29 @@
                                     if (v instanceof File || v instanceof FileList || (typeof v === 'object' && v !== null && v.temporaryUrl)) {
                                         continue;
                                     }
-                                    currentData[k] = v;
+                                    // Deep clone objects/arrays to avoid live reference mutations
+                                    currentData[k] = JSON.parse(JSON.stringify(v));
                                 }
                             } catch (e) {}
                         }
 
                         const formElement = this.$el.closest('form') || document.querySelector('form.fi-form') || document.querySelector('form');
                         if (formElement) {
+                            // 2. Read standard DOM inputs, selects, textareas
                             const inputs = formElement.querySelectorAll('input[name], select[name], textarea[name]');
                             inputs.forEach(input => {
                                 const name = input.getAttribute('name');
                                 if (!name) return;
-                                const cleanKey = name.replace(/^data\./, '').replace(/\[\]$/, '');
                                 if (input.type === 'file' || (input.type === 'hidden' && name.includes('_token'))) return;
+
+                                const cleanKey = name.replace(/^data\./, '').replace(/\[\]$/, '');
 
                                 if (input.type === 'checkbox') {
                                     currentData[cleanKey] = input.checked;
+                                } else if (input.type === 'radio') {
+                                    if (input.checked) {
+                                        currentData[cleanKey] = input.value;
+                                    }
                                 } else if (input.value !== undefined && input.value !== null && input.value !== '') {
                                     if (!currentData[cleanKey] || typeof currentData[cleanKey] === 'string') {
                                         currentData[cleanKey] = input.value;
@@ -301,26 +368,43 @@
                                 }
                             });
 
-                            formElement.querySelectorAll('.fi-fo-rich-editor, [x-data*="richEditorFormComponent"]').forEach(editorWrapper => {
+                            // 3. Read all TipTap RichEditors
+                            const richEditorWrappers = formElement.querySelectorAll('.fi-fo-rich-editor, [x-data*="richEditorFormComponent"], [x-load-src*="rich-editor"]');
+                            richEditorWrappers.forEach(el => {
                                 try {
-                                    const alpineData = window.Alpine ? Alpine.$data(editorWrapper) : null;
-                                    let statePath = null;
+                                    let alpineData = null;
+                                    if (window.Alpine && typeof Alpine.$data === 'function') {
+                                        alpineData = Alpine.$data(el);
+                                        if (!alpineData?.statePath) {
+                                            const childWithData = el.querySelector('[x-data*="richEditorFormComponent"], [x-load-src*="rich-editor"]');
+                                            if (childWithData) {
+                                                alpineData = Alpine.$data(childWithData);
+                                            }
+                                        }
+                                    }
+
+                                    let statePath = alpineData?.statePath;
+                                    if (!statePath) {
+                                        const modelAttr = el.getAttribute('wire:model') || el.querySelector('[wire\\:model]')?.getAttribute('wire:model');
+                                        if (modelAttr) statePath = modelAttr;
+                                    }
+
                                     let contentHtml = null;
 
                                     if (alpineData) {
-                                        statePath = alpineData.statePath || (editorWrapper.getAttribute('wire:model') || '').replace(/^data\./, '');
                                         if (typeof alpineData.getEditor === 'function') {
                                             const editor = alpineData.getEditor();
                                             if (editor && typeof editor.getHTML === 'function') {
                                                 contentHtml = editor.getHTML();
                                             }
-                                        } else if (alpineData.state) {
+                                        }
+                                        if (!contentHtml && alpineData.state) {
                                             contentHtml = typeof alpineData.state === 'string' ? alpineData.state : JSON.stringify(alpineData.state);
                                         }
                                     }
 
                                     if (!contentHtml) {
-                                        const pm = editorWrapper.querySelector('.tiptap.ProseMirror, .ProseMirror');
+                                        const pm = el.querySelector('.tiptap.ProseMirror, .ProseMirror');
                                         if (pm && pm.innerHTML && pm.innerHTML !== '<p></p>') {
                                             contentHtml = pm.innerHTML;
                                         }
@@ -340,7 +424,7 @@
                     },
 
                     setupAutoSave() {
-                        const formElement = this.$el.closest('form') || this.$el.parentElement;
+                        const formElement = this.$el.closest('form') || this.$el.parentElement || document.querySelector('form.fi-form');
                         if (!formElement) return;
 
                         const handleInput = () => {
@@ -348,15 +432,25 @@
                             clearTimeout(this.saveTimeout);
                             this.saveTimeout = setTimeout(() => {
                                 this.saveDraftToStorage();
-                            }, 500);
+                            }, 400);
                         };
 
-                        formElement.addEventListener('input', handleInput);
-                        formElement.addEventListener('change', handleInput);
-                        formElement.addEventListener('keyup', handleInput);
-                        formElement.addEventListener('paste', handleInput);
+                        // Listen on all user interaction types across the entire form
+                        formElement.addEventListener('input', handleInput, true);
+                        formElement.addEventListener('change', handleInput, true);
+                        formElement.addEventListener('keyup', handleInput, true);
+                        formElement.addEventListener('paste', handleInput, true);
+                        formElement.addEventListener('blur', handleInput, true);
+                        formElement.addEventListener('focusout', handleInput, true);
                         formElement.addEventListener('trix-change', handleInput);
                         window.addEventListener('filament-rich-editor-update', handleInput);
+
+                        // Periodic backup autosave every 5 seconds if changes exist
+                        this.periodicInterval = setInterval(() => {
+                            if (this.hasUnsavedChanges && !this.isSubmitting) {
+                                this.saveDraftToStorage();
+                            }
+                        }, 5000);
 
                         if (typeof this.$wire !== 'undefined') {
                             this.$watch('$wire.data', () => {
@@ -401,6 +495,8 @@
                     setupBeforeUnload() {
                         window.addEventListener('beforeunload', (event) => {
                             if (this.hasUnsavedChanges && !this.isSubmitting) {
+                                // Final sync attempt on tab close/navigation
+                                this.saveDraftToStorage();
                                 event.preventDefault();
                                 event.returnValue = 'You have unsaved changes in your ' + this.resourceName + '. Are you sure you want to leave?';
                                 return event.returnValue;
