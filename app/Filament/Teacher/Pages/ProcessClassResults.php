@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\ClassTeacherAssignment;
 use App\Models\Subject;
 use App\Models\SubjectResult;
+use App\Models\TeacherSubjectAssignment;
 use App\Models\Term;
 use App\Models\TermResult;
 use App\Services\ResultCalculationService;
@@ -119,6 +120,21 @@ class ProcessClassResults extends Page
             return [];
         }
 
+        $classroomSubjectIds = $classroom->subjects->pluck('id')->toArray();
+        $assignedSubjectIds = TeacherSubjectAssignment::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->pluck('subject_id')
+            ->toArray();
+        $resultSubjectIds = SubjectResult::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->pluck('subject_id')
+            ->toArray();
+
+        $allSubjectIds = array_unique(array_merge($classroomSubjectIds, $assignedSubjectIds, $resultSubjectIds));
+        $subjects = Subject::whereIn('id', $allSubjectIds)->active()->orderBy('name')->get();
+
         $publishedSubjectIds = SubjectResult::where('classroom_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
             ->where('term_id', $this->term_id)
@@ -128,7 +144,7 @@ class ProcessClassResults extends Page
             ->toArray();
 
         $list = [];
-        foreach ($classroom->subjects as $subject) {
+        foreach ($subjects as $subject) {
             $isPublished = in_array($subject->id, $publishedSubjectIds);
             $list[] = [
                 'id'           => $subject->id,

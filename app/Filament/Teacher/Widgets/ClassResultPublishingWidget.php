@@ -6,6 +6,7 @@ use App\Models\Session;
 use App\Models\Classroom;
 use App\Models\ClassTeacherAssignment;
 use App\Models\SubjectResult;
+use App\Models\TeacherSubjectAssignment;
 use App\Models\Term;
 use App\Models\TermResult;
 use Filament\Widgets\StatsOverviewWidget;
@@ -77,7 +78,19 @@ class ClassResultPublishingWidget extends StatsOverviewWidget
                 continue;
             }
 
-            $totalSubjects = $classroom->subjects->count();
+            $classroomSubjectIds = $classroom->subjects->pluck('id')->toArray();
+            $assignedSubjectIds = TeacherSubjectAssignment::where('classroom_id', $classId)
+                ->where('session_id', $activeSession->id)
+                ->where('term_id', $activeTerm->id)
+                ->pluck('subject_id')
+                ->toArray();
+            $resultSubjectIds = SubjectResult::where('classroom_id', $classId)
+                ->where('session_id', $activeSession->id)
+                ->where('term_id', $activeTerm->id)
+                ->pluck('subject_id')
+                ->toArray();
+
+            $totalSubjects = count(array_unique(array_merge($classroomSubjectIds, $assignedSubjectIds, $resultSubjectIds)));
 
             $publishedSubjectsCount = SubjectResult::where('classroom_id', $classId)
                 ->where('session_id', $activeSession->id)
