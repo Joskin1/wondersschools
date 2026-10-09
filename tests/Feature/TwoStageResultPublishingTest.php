@@ -382,4 +382,42 @@ describe('Authorization & Role Access Rules', function () {
             ->and(ClassResultPublishingWidget::canView())->toBeTrue();
     });
 
+    it('grants admin and sudo users access to the teacher panel', function () {
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $sudo = User::factory()->create(['role' => 'sudo', 'is_active' => true]);
+        $teacherPanel = \Filament\Facades\Filament::getPanel('teacher');
+
+        expect($admin->canAccessPanel($teacherPanel))->toBeTrue()
+            ->and($sudo->canAccessPanel($teacherPanel))->toBeTrue();
+    });
+
+    it('mounts EnterScores and ProcessClassResults with query parameters', function () {
+        $ctx = setupPublishingContext();
+        $this->actingAs($ctx['admin']);
+
+        Livewire::withQueryParams([
+            'session_id' => $ctx['session']->id,
+            'term_id' => $ctx['term']->id,
+            'classroom_id' => $ctx['classroom']->id,
+            'subject_id' => $ctx['math']->id,
+        ])
+            ->test(EnterScores::class)
+            ->assertSet('session_id', $ctx['session']->id)
+            ->assertSet('term_id', $ctx['term']->id)
+            ->assertSet('classroom_id', $ctx['classroom']->id)
+            ->assertSet('subject_id', $ctx['math']->id)
+            ->assertSet('loaded', true);
+
+        Livewire::withQueryParams([
+            'session_id' => $ctx['session']->id,
+            'term_id' => $ctx['term']->id,
+            'classroom_id' => $ctx['classroom']->id,
+        ])
+            ->test(ProcessClassResults::class)
+            ->assertSet('session_id', $ctx['session']->id)
+            ->assertSet('term_id', $ctx['term']->id)
+            ->assertSet('classroom_id', $ctx['classroom']->id);
+    });
+
 });
+

@@ -76,6 +76,23 @@ class EnterScores extends Page
                 $this->term_id = $activeTerm->id;
             }
         }
+
+        if (request()->has('session_id')) {
+            $this->session_id = (int) request()->query('session_id');
+        }
+        if (request()->has('term_id')) {
+            $this->term_id = (int) request()->query('term_id');
+        }
+        if (request()->has('classroom_id')) {
+            $this->classroom_id = (int) request()->query('classroom_id');
+        }
+        if (request()->has('subject_id')) {
+            $this->subject_id = (int) request()->query('subject_id');
+        }
+
+        if ($this->session_id && $this->term_id && $this->classroom_id && $this->subject_id) {
+            $this->loadScores();
+        }
     }
 
     // ── Livewire updater hooks ────────────────────────────────────────────────

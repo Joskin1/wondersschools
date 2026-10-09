@@ -66,6 +66,16 @@ class ProcessClassResults extends Page
                 $this->classroom_id = $assignedClassId;
             }
         }
+
+        if (request()->has('session_id')) {
+            $this->session_id = (int) request()->query('session_id');
+        }
+        if (request()->has('term_id')) {
+            $this->term_id = (int) request()->query('term_id');
+        }
+        if (request()->has('classroom_id')) {
+            $this->classroom_id = (int) request()->query('classroom_id');
+        }
     }
 
     public function getSessionsProperty()

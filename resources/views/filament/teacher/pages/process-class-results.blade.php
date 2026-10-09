@@ -111,7 +111,8 @@
                         <tr style="text-align: left; border-bottom: 1px solid rgba(148,163,184,0.1); font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 800;">
                             <th style="padding: 0.875rem 1.5rem;">Subject Name</th>
                             <th style="padding: 0.875rem 1.5rem;">Code</th>
-                            <th style="padding: 0.875rem 1.5rem; text-align: right;">Status</th>
+                            <th style="padding: 0.875rem 1.5rem; text-align: center;">Status</th>
+                            <th style="padding: 0.875rem 1.5rem; text-align: right;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -123,7 +124,7 @@
                                 <td style="padding: 1rem 1.5rem; color: #64748b;">
                                     {{ $subj['code'] ?: '—' }}
                                 </td>
-                                <td style="padding: 1rem 1.5rem; text-align: right;">
+                                <td style="padding: 1rem 1.5rem; text-align: center;">
                                     @if($subj['is_published'])
                                         <span style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; background: #d1fae5; color: #065f46;">
                                             ✓ Published
@@ -134,10 +135,30 @@
                                         </span>
                                     @endif
                                 </td>
+                                <td style="padding: 1rem 1.5rem; text-align: right;">
+                                    @php
+                                        $panelId = filament()->getCurrentPanel()?->getId() ?? 'teacher';
+                                        $enterScoresRoute = "filament.{$panelId}.pages.enter-scores";
+                                        $scoresUrl = \Illuminate\Support\Facades\Route::has($enterScoresRoute)
+                                            ? route($enterScoresRoute, [
+                                                'session_id' => $session_id,
+                                                'term_id' => $term_id,
+                                                'classroom_id' => $classroom_id,
+                                                'subject_id' => $subj['id'],
+                                            ])
+                                            : null;
+                                    @endphp
+                                    @if($scoresUrl)
+                                        <a href="{{ $scoresUrl }}" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.35rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 700; background: rgba(99,102,241,0.1); color: #4f46e5; text-decoration: none;" onmouseover="this.style.background='rgba(99,102,241,0.2)'" onmouseout="this.style.background='rgba(99,102,241,0.1)'">
+                                            <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <span>View Scores</span>
+                                        </a>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" style="padding: 2rem; text-align: center; color: #94a3b8;">
+                                <td colspan="4" style="padding: 2rem; text-align: center; color: #94a3b8;">
                                     No subjects assigned to this classroom.
                                 </td>
                             </tr>

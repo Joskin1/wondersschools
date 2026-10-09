@@ -102,6 +102,12 @@ class ClassResultPublishingWidget extends StatsOverviewWidget
                 ->icon('heroicon-o-document-chart-bar')
                 ->color($isComplete ? 'success' : 'warning');
 
+            $panelId = filament()->getCurrentPanel()?->getId() ?? 'teacher';
+            $routeName = "filament.{$panelId}.pages.process-class-results";
+            $targetUrl = \Illuminate\Support\Facades\Route::has($routeName)
+                ? route($routeName, ['classroom_id' => $classId])
+                : route('filament.teacher.pages.process-class-results', ['classroom_id' => $classId]);
+
             $stats[] = Stat::make(
                 "{$classroom->name} Class Finalization",
                 $isClassFinalized ? 'Published' : 'Pending Finalization'
@@ -109,7 +115,7 @@ class ClassResultPublishingWidget extends StatsOverviewWidget
                 ->description($isClassFinalized ? 'Results are published to students' : 'Awaiting Class Teacher finalization')
                 ->icon($isClassFinalized ? 'heroicon-o-check-badge' : 'heroicon-o-clock')
                 ->color($isClassFinalized ? 'success' : 'warning')
-                ->url(route('filament.teacher.pages.process-class-results', ['classroom_id' => $classId]));
+                ->url($targetUrl);
         }
 
         return $stats;
