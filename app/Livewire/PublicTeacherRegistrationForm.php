@@ -53,6 +53,7 @@ class PublicTeacherRegistrationForm extends Component
             'phone.regex' => 'Please enter a valid phone number.',
             'dob.required' => 'Date of birth is required.',
             'dob.before' => 'Date of birth must be in the past.',
+            'dob.after' => 'Please enter a valid date of birth.',
             'address.required' => 'Home address is required.',
             'password.required' => 'Password is required.',
             'password.min' => 'Password must be at least 8 characters.',
@@ -60,7 +61,12 @@ class PublicTeacherRegistrationForm extends Component
         ];
     }
 
-    public function submit(): void
+    public function updated($propertyName): void
+    {
+        $this->validateOnly($propertyName);
+    }
+
+    public function submit()
     {
         try {
             $this->rateLimit(5);
@@ -71,7 +77,7 @@ class PublicTeacherRegistrationForm extends Component
                 ->danger()
                 ->send();
 
-            return;
+            return null;
         }
 
         $this->validate();
@@ -88,7 +94,7 @@ class PublicTeacherRegistrationForm extends Component
                     'email' => strtolower(trim($this->email)),
                     'password' => Hash::make($this->password),
                     'role' => 'teacher',
-                    'is_active' => false, // Pending admin activation
+                    'is_active' => true, // Active upon registration
                     'registration_completed_at' => now(),
                     'email_verified_at' => now(),
                 ]);
@@ -104,6 +110,20 @@ class PublicTeacherRegistrationForm extends Component
             });
 
             $this->submitted = true;
+
+            Notification::make()
+                ->title('Registration successful!')
+                ->body('Welcome to the teacher portal. Please log in with your credentials.')
+                ->success()
+                ->send();
+
+            session()->flash('success', 'Registration completed successfully! Please log in with your email and password.');
+
+            $loginUrl = \Illuminate\Support\Facades\Route::has('filament.teacher.auth.login')
+                ? route('filament.teacher.auth.login')
+                : '/teacher/login';
+
+            return redirect()->to($loginUrl);
         } catch (\Throwable $e) {
             \Log::error('Public teacher registration failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),

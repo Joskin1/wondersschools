@@ -42,14 +42,14 @@ class PublicTeacherRegistrationTest extends TestCase
             ->set('password', 'Password123!')
             ->set('password_confirmation', 'Password123!')
             ->call('submit')
-            ->assertSet('submitted', true);
+            ->assertRedirect(route('filament.teacher.auth.login'));
 
         // Verify User record created
         $user = User::where('email', 'jane.teacher@example.com')->first();
         $this->assertNotNull($user);
         $this->assertEquals('Jane Teacher', $user->name);
         $this->assertEquals('teacher', $user->role);
-        $this->assertFalse($user->isActive(), 'Teacher portal access must be inactive upon registration');
+        $this->assertTrue($user->isActive(), 'Teacher portal access must be active upon registration');
         $this->assertNotNull($user->registration_completed_at);
 
         // Verify Teacher profile created
@@ -59,6 +59,18 @@ class PublicTeacherRegistrationTest extends TestCase
         $this->assertEquals('female', $teacher->gender);
         $this->assertEquals('123 Academic Way', $teacher->address);
         $this->assertNotNull($teacher->profile_picture);
+    }
+
+    public function test_teacher_registration_validation_errors()
+    {
+        Livewire::test(PublicTeacherRegistrationForm::class)
+            ->set('name', '')
+            ->set('email', 'not-an-email')
+            ->set('phone', '')
+            ->set('password', 'short')
+            ->set('password_confirmation', 'mismatch')
+            ->call('submit')
+            ->assertHasErrors(['name', 'email', 'phone', 'dob', 'address', 'password']);
     }
 
     public function test_inactive_teacher_cannot_access_teacher_panel()

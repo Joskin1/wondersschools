@@ -31,6 +31,26 @@
             </div>
         @endif
 
+        @if ($errors->any())
+            <div class="mb-8 bg-red-50 border border-red-200 p-5 rounded-2xl shadow-sm animate-pulse">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 text-red-600 mt-0.5">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-red-900">Please correct the following errors before submitting:</h4>
+                        <ul class="mt-2 list-disc list-inside text-xs text-red-700 space-y-1">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         @if ($submitted)
             {{-- Registration Success Card --}}
             <div class="bg-white rounded-3xl border border-[var(--rule)] shadow-xl p-8 sm:p-12 text-center">
@@ -40,31 +60,31 @@
                     </svg>
                 </div>
                 
-                <span class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">Submission Verified</span>
-                <h2 class="text-2xl sm:text-3xl font-serif font-bold text-[var(--ink)] mt-1 mb-3">Registration Submitted Successfully!</h2>
+                <span class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">Registration Completed</span>
+                <h2 class="text-2xl sm:text-3xl font-serif font-bold text-[var(--ink)] mt-1 mb-3">Welcome to the Faculty!</h2>
                 <p class="text-sm sm:text-base text-[var(--body)] max-w-md mx-auto mb-8 leading-relaxed">
-                    Thank you, <span class="font-bold text-[var(--ink)]">{{ $name }}</span>. Your teacher registration profile has been recorded in our system.
+                    Thank you, <span class="font-bold text-[var(--ink)]">{{ $name }}</span>. Your teacher account has been created successfully.
                 </p>
 
                 <div class="bg-[var(--paper)] border border-[var(--rule)] rounded-2xl p-6 sm:p-7 mb-8 text-left max-w-lg mx-auto">
                     <div class="flex items-start gap-3">
                         <div class="flex-shrink-0 text-[var(--accent)] mt-0.5">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-[var(--ink)]">What happens next?</h3>
+                            <h3 class="text-sm font-bold text-[var(--ink)]">Ready to log in</h3>
                             <p class="text-xs sm:text-sm text-[var(--body)] mt-1 leading-relaxed">
-                                Your portal access is currently pending administrator approval. As soon as the school admin toggles your portal access, an automated welcome email with a direct login link will be sent to <strong>{{ $email }}</strong>.
+                                You can now access your teacher portal with your registered email (<strong>{{ $email }}</strong>) and your password.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex justify-center">
-                    <a href="{{ route('home') }}" class="inline-flex items-center gap-2 px-8 py-3.5 border border-[var(--rule)] shadow-sm text-sm font-bold uppercase tracking-wider rounded-xl text-[var(--ink)] bg-white hover:bg-[var(--paper)] focus:outline-none transition">
-                        <span>Return to Homepage</span>
+                    <a href="{{ route('filament.teacher.auth.login') }}" class="inline-flex items-center gap-2 px-8 py-3.5 border border-transparent shadow-sm text-sm font-bold uppercase tracking-wider rounded-xl text-white bg-[var(--ink)] hover:bg-[var(--accent)] focus:outline-none transition">
+                        <span>Go to Teacher Login</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
@@ -120,47 +140,47 @@
                             {{-- Full Name --}}
                             <div class="sm:col-span-2">
                                 <label for="name" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Full Name <span class="text-red-500">*</span></label>
-                                <input type="text" wire:model.defer="name" id="name" placeholder="e.g. John Doe" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
-                                @error('name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <input type="text" wire:model.blur="name" id="name" placeholder="e.g. John Doe" class="block w-full rounded-xl border @error('name') !border-red-500 ring-1 ring-red-500 @else border-[var(--rule)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                @error('name') <span class="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium"><svg class="w-3.5 h-3.5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>{{ $message }}</span> @enderror
                             </div>
 
                             {{-- Email Address --}}
                             <div>
                                 <label for="email" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Email Address <span class="text-red-500">*</span></label>
-                                <input type="email" wire:model.defer="email" id="email" placeholder="teacher@example.com" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
-                                @error('email') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <input type="email" wire:model.blur="email" id="email" placeholder="teacher@example.com" class="block w-full rounded-xl border @error('email') !border-red-500 ring-1 ring-red-500 @else border-[var(--rule)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                @error('email') <span class="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium"><svg class="w-3.5 h-3.5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>{{ $message }}</span> @enderror
                             </div>
 
                             {{-- Phone Number --}}
                             <div>
                                 <label for="phone" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Phone Number <span class="text-red-500">*</span></label>
-                                <input type="text" wire:model.defer="phone" id="phone" placeholder="08012345678" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
-                                @error('phone') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <input type="text" wire:model.blur="phone" id="phone" placeholder="08012345678" class="block w-full rounded-xl border @error('phone') !border-red-500 ring-1 ring-red-500 @else border-[var(--rule)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                @error('phone') <span class="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium"><svg class="w-3.5 h-3.5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>{{ $message }}</span> @enderror
                             </div>
 
                             {{-- Gender --}}
                             <div>
                                 <label for="gender" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Gender <span class="text-red-500">*</span></label>
-                                <select wire:model.defer="gender" id="gender" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                <select wire:model.blur="gender" id="gender" class="block w-full rounded-xl border @error('gender') !border-red-500 ring-1 ring-red-500 @else border-[var(--rule)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
                                     <option value="male">Male</option>
                                     <option value="female">Female</option>
                                     <option value="other">Other</option>
                                 </select>
-                                @error('gender') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                @error('gender') <span class="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium"><svg class="w-3.5 h-3.5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>{{ $message }}</span> @enderror
                             </div>
 
                             {{-- Date of Birth --}}
                             <div>
                                 <label for="dob" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Date of Birth <span class="text-red-500">*</span></label>
-                                <input type="date" wire:model.defer="dob" id="dob" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
-                                @error('dob') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <input type="date" wire:model.blur="dob" id="dob" class="block w-full rounded-xl border @error('dob') !border-red-500 ring-1 ring-red-500 @else border-[var(--rule)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                @error('dob') <span class="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium"><svg class="w-3.5 h-3.5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>{{ $message }}</span> @enderror
                             </div>
 
                             {{-- Address --}}
                             <div class="sm:col-span-2">
                                 <label for="address" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Home Address <span class="text-red-500">*</span></label>
-                                <textarea wire:model.defer="address" id="address" rows="2" placeholder="Street address, City..." class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition"></textarea>
-                                @error('address') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <textarea wire:model.blur="address" id="address" rows="2" placeholder="Street address, City..." class="block w-full rounded-xl border @error('address') !border-red-500 ring-1 ring-red-500 @else border-[var(--rule)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition"></textarea>
+                                @error('address') <span class="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium"><svg class="w-3.5 h-3.5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>{{ $message }}</span> @enderror
                             </div>
                         </div>
                     </div>
@@ -179,15 +199,15 @@
                             {{-- Password --}}
                             <div>
                                 <label for="password" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Portal Password <span class="text-red-500">*</span></label>
-                                <input type="password" wire:model.defer="password" id="password" placeholder="••••••••" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
-                                @error('password') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <input type="password" wire:model.blur="password" id="password" placeholder="••••••••" class="block w-full rounded-xl border @error('password') !border-red-500 ring-1 ring-red-500 @else border-[var(--rule)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                @error('password') <span class="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium"><svg class="w-3.5 h-3.5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>{{ $message }}</span> @enderror
                             </div>
 
                             {{-- Password Confirmation --}}
                             <div>
                                 <label for="password_confirmation" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Confirm Password <span class="text-red-500">*</span></label>
-                                <input type="password" wire:model.defer="password_confirmation" id="password_confirmation" placeholder="••••••••" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
-                                @error('password_confirmation') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                <input type="password" wire:model.blur="password_confirmation" id="password_confirmation" placeholder="••••••••" class="block w-full rounded-xl border @error('password_confirmation') !border-red-500 ring-1 ring-red-500 @else border-[var(--rule)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                @error('password_confirmation') <span class="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium"><svg class="w-3.5 h-3.5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>{{ $message }}</span> @enderror
                             </div>
                         </div>
                     </div>
