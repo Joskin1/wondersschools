@@ -49,7 +49,11 @@ class PublicStudentRegistrationTest extends TestCase
             ->set('password', 'StudentPass123!')
             ->set('password_confirmation', 'StudentPass123!')
             ->call('submit')
-            ->assertSet('submitted', true);
+            ->assertSet('submitted', true)
+            ->assertSee('Your Official Admission Number')
+            ->assertSee('How to Sign In to Your Portal')
+            ->assertSee('Tell the School to Activate Your Account')
+            ->assertSee('Keep It Safe');
 
         // Verify Student created
         $student = Student::where('full_name', 'Alexander Michael Great')->first();

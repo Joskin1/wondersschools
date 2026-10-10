@@ -6,20 +6,71 @@
         </div>
 
         @if($isCompleted)
-            <div class="bg-white shadow-xl rounded-2xl p-10">
+            <div class="bg-white shadow-xl rounded-2xl p-8 sm:p-10 max-w-lg mx-auto">
                 <div class="text-center">
-                    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100">
-                        <svg class="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-4">
+                        <svg class="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
                         </svg>
                     </div>
-                    <h2 class="mt-6 text-3xl font-bold text-gray-900">Registration Completed!</h2>
-                    <p class="mt-3 text-lg text-gray-600">Your details have been submitted successfully.</p>
-                    <div class="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                        <p class="text-amber-800 font-medium">⏳ Awaiting school approval</p>
-                        <p class="mt-1 text-sm text-amber-600">The school will review your registration and activate your portal access. You will be notified when your account is ready.</p>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Registration Completed!</h2>
+                    <p class="mt-2 text-sm text-gray-600">Your details have been submitted successfully.</p>
+                </div>
+
+                @if($student?->admission_number)
+                    {{-- Prominent Admission Number --}}
+                    <div class="mt-6 bg-slate-50 border-2 border-emerald-500/20 rounded-2xl p-5 text-center">
+                        <span class="text-xs font-bold uppercase tracking-wider text-gray-500 block mb-1">Your Official Admission Number</span>
+                        <div class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-xs my-1">
+                            <span class="text-xl sm:text-2xl font-mono font-black text-emerald-700 tracking-wider select-all">{{ $student->admission_number }}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Please take note of this number immediately.</p>
                     </div>
-                    <p class="mt-6 text-sm text-gray-500">You can now close this window.</p>
+                @endif
+
+                {{-- Login Credentials Reminder --}}
+                <div class="mt-6 bg-blue-50 border border-blue-200 rounded-2xl p-5 text-left">
+                    <h3 class="text-sm font-bold text-blue-900 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <span>How to Sign In to Your Portal</span>
+                    </h3>
+                    <p class="text-xs text-blue-800 mt-1 leading-relaxed">
+                        Once your account is activated, you will use:
+                    </p>
+                    <div class="mt-2 bg-white/80 rounded-lg p-2.5 border border-blue-200/80 space-y-1 text-xs text-blue-950 font-medium">
+                        <div class="flex items-center justify-between">
+                            <span class="text-blue-700">Username:</span>
+                            <span class="font-mono font-bold">{{ $student?->admission_number }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-blue-700">Password:</span>
+                            <span class="italic text-gray-600">The password you set during registration</span>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 p-2 bg-blue-100/70 border border-blue-200 rounded-lg text-xs text-blue-900 font-medium">
+                        🔒 <strong>Keep It Safe:</strong> Save your admission number and password in a safe place. You will need them to log in.
+                    </div>
+                </div>
+
+                {{-- Prompt to tell the school --}}
+                <div class="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 text-left">
+                    <h3 class="text-sm font-bold text-amber-900 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span>Next Step: Tell the School to Activate Your Account</span>
+                    </h3>
+                    <p class="text-xs text-amber-800 mt-1.5 leading-relaxed">
+                        Please notify the school administration or your class teacher with your admission number (<span class="font-mono font-bold text-amber-950">{{ $student?->admission_number }}</span>) so they can activate your portal access.
+                    </p>
+                </div>
+
+                <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <a href="{{ route('filament.student.auth.login') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-blue-700 transition">
+                        <span>Go to Student Login</span>
+                    </a>
                 </div>
             </div>
         @elseif($isExpired)

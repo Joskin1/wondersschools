@@ -46,43 +46,80 @@
                     Thank you! The student application for <span class="font-bold text-[var(--ink)]">{{ $full_name }}</span> has been registered successfully.
                 </p>
 
-                <div class="bg-[var(--paper)] border border-[var(--rule)] rounded-2xl p-6 sm:p-7 mb-8 text-left max-w-lg mx-auto space-y-4">
-                    <div class="flex justify-between items-center pb-3 border-b border-[var(--rule)]">
-                        <span class="text-xs font-bold uppercase tracking-wider text-[var(--support)]">Admission Number</span>
-                        <span class="text-sm font-mono font-bold text-[var(--ink)] bg-white px-3 py-1 rounded-lg border border-[var(--rule)] shadow-sm">{{ $generatedAdmissionNumber }}</span>
+                {{-- Prominent Admission Number Box --}}
+                <div class="bg-[var(--paper)] border-2 border-[var(--accent)]/30 rounded-2xl p-6 sm:p-7 mb-6 text-center max-w-lg mx-auto shadow-sm">
+                    <span class="text-xs font-bold uppercase tracking-wider text-[var(--support)] block mb-1">Your Official Admission Number</span>
+                    <div class="inline-flex items-center gap-2 sm:gap-3 bg-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl border border-[var(--rule)] shadow-sm my-2">
+                        <span class="text-xl sm:text-2xl font-mono font-black text-[var(--accent)] tracking-wider select-all">{{ $generatedAdmissionNumber }}</span>
+                        <button type="button" 
+                                x-data="{ copied: false }"
+                                @click="navigator.clipboard.writeText('{{ $generatedAdmissionNumber }}'); copied = true; setTimeout(() => copied = false, 2500)"
+                                class="text-xs font-bold px-2.5 py-1.5 rounded-lg border border-[var(--rule)] bg-slate-50 hover:bg-slate-100 text-[var(--ink)] transition inline-flex items-center gap-1 shadow-2xs">
+                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                            <span x-text="copied ? 'Copied!' : 'Copy'">Copy</span>
+                        </button>
                     </div>
-                    <div class="flex justify-between items-center pb-3 border-b border-[var(--rule)]">
-                        <span class="text-xs font-bold uppercase tracking-wider text-[var(--support)]">System Internal Email</span>
-                        <span class="text-sm font-mono text-[var(--ink)]">{{ $generatedEmail }}</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold uppercase tracking-wider text-[var(--support)]">Parent / Guardian</span>
-                        <span class="text-sm font-medium text-[var(--ink)]">{{ $parent_name }} ({{ $parent_phone }})</span>
+                    <p class="text-xs text-[var(--support)] mt-1">Please take note of this number immediately.</p>
+                </div>
+
+                {{-- Login Credentials Reminder (Keep it safe) --}}
+                <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 sm:p-6 mb-6 text-left max-w-lg mx-auto shadow-sm">
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0 text-blue-600 mt-0.5">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                        </div>
+                        <div class="space-y-2 w-full">
+                            <h3 class="text-sm font-bold text-blue-900">How to Sign In to Your Portal</h3>
+                            <p class="text-xs sm:text-sm text-blue-800 leading-relaxed">
+                                Once activated, you will use these credentials to log in:
+                            </p>
+                            <div class="bg-white/80 rounded-xl p-3 border border-blue-200/80 space-y-1.5 text-xs sm:text-sm text-blue-950 font-medium">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-blue-700 font-semibold">Username:</span>
+                                    <span class="font-mono font-bold">{{ $generatedAdmissionNumber }}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-blue-700 font-semibold">Password:</span>
+                                    <span class="italic text-slate-600">The password you set during registration</span>
+                                </div>
+                            </div>
+                            <div class="p-2.5 bg-blue-100/70 border border-blue-200 rounded-lg text-xs text-blue-900 leading-relaxed font-medium">
+                                🔒 <strong>Keep It Safe:</strong> Please save your admission number and password in a secure place. You will need them whenever you sign in to view your classes, subjects, and report cards.
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-8 text-left max-w-lg mx-auto">
+                {{-- Prompt to tell the school for activation --}}
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 sm:p-6 mb-8 text-left max-w-lg mx-auto shadow-sm">
                     <div class="flex items-start gap-3">
                         <div class="flex-shrink-0 text-amber-600 mt-0.5">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-amber-900">Portal Access Verification</h3>
+                            <h3 class="text-sm font-bold text-amber-900">Next Step: Tell the School to Activate Your Account</h3>
                             <p class="text-xs sm:text-sm text-amber-800 mt-1 leading-relaxed">
-                                The student portal account is currently pending administrator activation. Once the school administration reviews the record and activates the portal, the student will be able to log in using their admission details.
+                                Your registration is currently <strong>awaiting activation</strong>. Please notify the school administration or your class teacher with your admission number (<span class="font-mono font-bold text-amber-950">{{ $generatedAdmissionNumber }}</span>) so they can activate your portal access.
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex justify-center">
-                    <a href="{{ route('home') }}" class="inline-flex items-center gap-2 px-8 py-3.5 border border-[var(--rule)] shadow-sm text-sm font-bold uppercase tracking-wider rounded-xl text-[var(--ink)] bg-white hover:bg-[var(--paper)] focus:outline-none transition">
-                        <span>Return to Homepage</span>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <a href="{{ route('filament.student.auth.login') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[var(--accent)] text-white text-xs sm:text-sm font-bold uppercase tracking-wider rounded-xl hover:opacity-90 transition shadow-sm">
+                        <span>Go to Student Login</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                         </svg>
+                    </a>
+                    <a href="{{ route('home') }}" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 border border-[var(--rule)] shadow-sm text-xs sm:text-sm font-bold uppercase tracking-wider rounded-xl text-[var(--ink)] bg-white hover:bg-[var(--paper)] transition">
+                        <span>Return to Homepage</span>
                     </a>
                 </div>
             </div>
