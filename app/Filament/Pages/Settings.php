@@ -65,6 +65,7 @@ class Settings extends Page
         'footer_social_x',
         'seo_title',
         'seo_description',
+        'allow_manual_admission_number',
     ];
 
     /**
@@ -171,6 +172,10 @@ class Settings extends Page
         // Apply tenant primary color if tenant is initialized
         if (tenant() && tenant()->primary_color) {
             $data['primary_color'] = tenant()->primary_color;
+        }
+
+        if (isset($data['allow_manual_admission_number'])) {
+            $data['allow_manual_admission_number'] = filter_var($data['allow_manual_admission_number'], FILTER_VALIDATE_BOOLEAN);
         }
 
         $this->form->fill($data);
@@ -954,6 +959,20 @@ class Settings extends Page
                         Tab::make('08 — Admissions')
                             ->icon('heroicon-o-clipboard-document-check')
                             ->schema([
+                                Section::make('Student Registration Settings')
+                                    ->description('Configure student online registration behaviour and admission number assignment.')
+                                    ->headerActions([
+                                        $this->makeSaveAction('Registration Settings', [
+                                            'allow_manual_admission_number',
+                                        ]),
+                                    ])
+                                    ->schema([
+                                        Toggle::make('allow_manual_admission_number')
+                                            ->label('Allow Students to Input Admission Number During Registration')
+                                            ->helperText('When enabled, students can enter their existing admission/registration number during online registration. When disabled, the system auto-generates one automatically.')
+                                            ->default(false),
+                                    ]),
+
                                 Section::make('08 — Admissions & Application Steps')
                                     ->description('Admissions banner callout, step-by-step application timeline, and primary buttons.')
                                     ->headerActions([
@@ -1228,6 +1247,9 @@ class Settings extends Page
                     $first = reset($value);
                     $value = is_string($first) ? $first : null;
                 }
+                if (is_bool($value)) {
+                    $value = $value ? '1' : '0';
+                }
                 Setting::updateOrCreate(['key' => $key], ['value' => $value]);
 
                 if ($key === 'primary_color' && tenant()) {
@@ -1283,6 +1305,9 @@ class Settings extends Page
                 if (in_array($key, $singleFileKeys, true) && is_array($value)) {
                     $first = reset($value);
                     $value = is_string($first) ? $first : null;
+                }
+                if (is_bool($value)) {
+                    $value = $value ? '1' : '0';
                 }
                 Setting::updateOrCreate(['key' => $key], ['value' => $value]);
             }

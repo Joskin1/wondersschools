@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Models\User;
 use App\Services\BrandingService;
+use App\Services\FrontendLibrary;
 use App\Services\StudentAccountService;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use DanHarrin\LivewireRateLimiting\WithRateLimiting;
@@ -22,6 +23,8 @@ class PublicStudentRegistrationForm extends Component
     use WithFileUploads, WithRateLimiting;
 
     // Student fields
+    public ?string $admission_number = null;
+    public bool $allowManualAdmissionNumber = false;
     public string $full_name = '';
     public ?string $date_of_birth = null;
     public string $gender = 'male';
@@ -44,9 +47,14 @@ class PublicStudentRegistrationForm extends Component
     public ?string $generatedAdmissionNumber = null;
     public ?string $generatedEmail = null;
 
+    public function mount(): void
+    {
+        $this->allowManualAdmissionNumber = FrontendLibrary::getBooleanSetting('allow_manual_admission_number', false);
+    }
+
     protected function rules(): array
     {
-        return [
+        $rules = [
             'full_name' => 'required|string|max:255',
             'date_of_birth' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
@@ -59,11 +67,19 @@ class PublicStudentRegistrationForm extends Component
             'parent_email' => 'nullable|email|max:255',
             'password' => 'required|string|min:8|confirmed',
         ];
+
+        if ($this->allowManualAdmissionNumber) {
+            $rules['admission_number'] = 'required|string|max:50|unique:students,admission_number';
+        }
+
+        return $rules;
     }
 
     protected function messages(): array
     {
         return [
+            'admission_number.required' => 'Admission / Registration number is required.',
+            'admission_number.unique' => 'This admission number has already been registered to another student.',
             'full_name.required' => 'Student full name is required.',
             'date_of_birth.required' => 'Date of birth is required.',
             'date_of_birth.before' => 'Date of birth must be in the past.',
@@ -93,6 +109,8 @@ class PublicStudentRegistrationForm extends Component
             return;
         }
 
+        $this->allowManualAdmissionNumber = FrontendLibrary::getBooleanSetting('allow_manual_admission_number', false);
+
         $this->validate();
 
         $profilePicturePath = null;
@@ -100,10 +118,15 @@ class PublicStudentRegistrationForm extends Component
             $profilePicturePath = $this->profile_picture->store('profile-pictures', config('filesystems.upload_disk', 'public'));
         }
 
+        $manualAdmission = ($this->allowManualAdmissionNumber && filled($this->admission_number))
+            ? strtoupper(trim($this->admission_number))
+            : null;
+
         try {
-            DB::transaction(function () use ($profilePicturePath) {
+            DB::transaction(function () use ($profilePicturePath, $manualAdmission) {
                 // 1. Create Student record
                 $student = Student::create([
+                    'admission_number' => $manualAdmission,
                     'full_name' => trim($this->full_name),
                     'date_of_birth' => $this->date_of_birth,
                     'gender' => $this->gender,
@@ -170,6 +193,7 @@ class PublicStudentRegistrationForm extends Component
         return view('livewire.public-student-registration-form', [
             'appName' => $branding->getAppName(),
             'classrooms' => $classrooms,
+            'allowManualAdmissionNumber' => $this->allowManualAdmissionNumber,
         ])->layout('components.layouts.app', [
             'title' => 'Student Online Registration',
         ]);

@@ -23,8 +23,12 @@ class Login extends BaseLogin
 
     protected function getCredentialsFromFormData(#[SensitiveParameter] array $data): array
     {
+        $input = trim((string) $data['admission_number']);
         $student = Student::query()
-            ->where('admission_number', strtoupper(trim((string) $data['admission_number'])))
+            ->where(function ($query) use ($input) {
+                $query->where('admission_number', $input)
+                    ->orWhere('admission_number', strtoupper($input));
+            })
             ->whereNotNull('user_id')
             ->with('user')
             ->first();

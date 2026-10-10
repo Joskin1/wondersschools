@@ -85,4 +85,100 @@ class PublicStudentRegistrationTest extends TestCase
         $component->call('submit')
             ->assertNotified('Too many registration attempts');
     }
+
+    public function test_student_can_register_with_manual_admission_number_when_setting_is_enabled(): void
+    {
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'allow_manual_admission_number'],
+            ['value' => '1']
+        );
+        \App\Services\FrontendLibrary::flush();
+
+        $session = Session::factory()->create(['is_active' => true]);
+        $classroom = Classroom::factory()->create();
+
+        Livewire::test(PublicStudentRegistrationForm::class)
+            ->assertSee('Admission / Registration Number')
+            ->set('full_name', 'Grace Hopper')
+            ->set('admission_number', 'SCH/2026/077')
+            ->set('date_of_birth', '2015-05-10')
+            ->set('gender', 'female')
+            ->set('classroom_id', $classroom->id)
+            ->set('address', '10 Naval Way')
+            ->set('parent_name', 'Admiral Hopper')
+            ->set('parent_phone', '08099887766')
+            ->set('password', 'SecurePass123!')
+            ->set('password_confirmation', 'SecurePass123!')
+            ->call('submit')
+            ->assertHasNoErrors()
+            ->assertSet('submitted', true);
+
+        $student = Student::where('full_name', 'Grace Hopper')->first();
+        $this->assertNotNull($student);
+        $this->assertEquals('SCH/2026/077', $student->admission_number);
+
+        $user = User::where('id', $student->user_id)->first();
+        $this->assertNotNull($user);
+        $this->assertEquals('sch.2026.077@student.local', $user->email);
+    }
+
+    public function test_manual_admission_number_enforces_validation_when_setting_is_enabled(): void
+    {
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'allow_manual_admission_number'],
+            ['value' => '1']
+        );
+        \App\Services\FrontendLibrary::flush();
+
+        $session = Session::factory()->create(['is_active' => true]);
+        $classroom = Classroom::factory()->create();
+
+        // Create an existing student with this admission number
+        Student::factory()->create([
+            'admission_number' => 'EXISTING/123',
+        ]);
+
+        // Attempt 1: Empty admission number
+        Livewire::test(PublicStudentRegistrationForm::class)
+            ->set('full_name', 'Student Test')
+            ->set('admission_number', '')
+            ->set('date_of_birth', '2015-05-10')
+            ->set('gender', 'female')
+            ->set('classroom_id', $classroom->id)
+            ->set('address', '10 Test St')
+            ->set('parent_name', 'Parent Test')
+            ->set('parent_phone', '08012345678')
+            ->set('password', 'SecurePass123!')
+            ->set('password_confirmation', 'SecurePass123!')
+            ->call('submit')
+            ->assertHasErrors(['admission_number' => 'required']);
+
+        // Attempt 2: Duplicate admission number
+        Livewire::test(PublicStudentRegistrationForm::class)
+            ->set('full_name', 'Student Test 2')
+            ->set('admission_number', 'EXISTING/123')
+            ->set('date_of_birth', '2015-05-10')
+            ->set('gender', 'female')
+            ->set('classroom_id', $classroom->id)
+            ->set('address', '10 Test St')
+            ->set('parent_name', 'Parent Test')
+            ->set('parent_phone', '08012345678')
+            ->set('password', 'SecurePass123!')
+            ->set('password_confirmation', 'SecurePass123!')
+            ->call('submit')
+            ->assertHasErrors(['admission_number' => 'unique']);
+    }
+
+    public function test_manual_admission_number_field_is_hidden_when_disabled(): void
+    {
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'allow_manual_admission_number'],
+            ['value' => '0']
+        );
+        \App\Services\FrontendLibrary::flush();
+
+        Livewire::test(PublicStudentRegistrationForm::class)
+            ->assertDontSee('Admission / Registration Number')
+            ->assertSet('allowManualAdmissionNumber', false);
+    }
 }

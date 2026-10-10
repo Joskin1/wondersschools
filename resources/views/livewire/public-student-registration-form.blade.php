@@ -138,6 +138,16 @@
                                 @error('full_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
 
+                            @if ($allowManualAdmissionNumber)
+                                {{-- Admission / Registration Number --}}
+                                <div class="sm:col-span-2">
+                                    <label for="admission_number" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Admission / Registration Number <span class="text-red-500">*</span></label>
+                                    <input type="text" wire:model.defer="admission_number" id="admission_number" placeholder="e.g. ADM/2026/001" class="block w-full rounded-xl border @error('admission_number') border-red-500 focus:ring-red-500 @else border-[var(--rule)] focus:ring-[var(--accent)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                    <p class="text-xs text-[var(--support)] mt-1.5">Enter the student's existing official school admission number.</p>
+                                    @error('admission_number') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                </div>
+                            @endif
+
                             {{-- Classroom / Grade --}}
                             <div>
                                 <label for="classroom_id" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Classroom / Grade <span class="text-red-500">*</span></label>

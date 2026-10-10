@@ -145,6 +145,16 @@ class FrontendLibrary
     }
 
     /**
+     * Retrieve a setting value cast to boolean.
+     */
+    public static function getBooleanSetting(string $key, bool $default = false): bool
+    {
+        $value = self::getSetting($key, $default);
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
      * Get the active visual website theme/template identifier.
      * Supports query parameter override (?theme=modern) for instant live preview/demos,
      * database setting (`layout_style`), and config fallback.
