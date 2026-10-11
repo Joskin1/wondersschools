@@ -12,7 +12,7 @@ class ClassGroupPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('class_groups');
     }
 
     /**
@@ -20,7 +20,7 @@ class ClassGroupPolicy
      */
     public function view(User $user, ClassGroup $classGroup): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('class_groups');
     }
 
     /**
@@ -28,7 +28,7 @@ class ClassGroupPolicy
      */
     public function create(User $user): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('class_groups');
     }
 
     /**
@@ -36,7 +36,7 @@ class ClassGroupPolicy
      */
     public function update(User $user, ClassGroup $classGroup): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('class_groups');
     }
 
     /**

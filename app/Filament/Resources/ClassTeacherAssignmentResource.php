@@ -29,17 +29,28 @@ class ClassTeacherAssignmentResource extends Resource
 
     protected static ?int $navigationSort = 8;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('class_teachers') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 Select::make('teacher_id')
                     ->label('Teacher')
-                    ->options(User::activeTeachers()->pluck('name', 'id'))
+                    ->options(fn () => User::assignableTeachers()
+                        ->orderBy('name')
+                        ->get()
+                        ->mapWithKeys(fn (User $user) => [
+                            $user->id => $user->name . ($user->isAdmin() ? ' (Admin)' : ''),
+                        ])
+                    )
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->helperText('Only active teachers who have completed registration are shown')
+                    ->helperText('Active teachers and administrators can be assigned')
                     ->rules([
                         fn (\Filament\Schemas\Components\Utilities\Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
                             $sessionId = $get('session_id');
@@ -73,6 +84,7 @@ class ClassTeacherAssignmentResource extends Resource
                     ->label('Class')
                     ->options(Classroom::active()->ordered()->pluck('name', 'id'))
                     ->required()
+                    ->live()
                     ->searchable()
                     ->preload()
                     ->rules([
@@ -82,10 +94,21 @@ class ClassTeacherAssignmentResource extends Resource
                                 return;
                             }
 
-                            $existing = ClassTeacherAssignment::where('class_id', $value)
-                                ->where('session_id', $sessionId)
-                                ->with('teacher')
-                                ->first();
+                            $query = ClassTeacherAssignment::where('class_id', $value)
+                                ->where('session_id', $sessionId);
+
+                            $deptId = $get('department_id');
+                            $armId  = $get('class_arm_id');
+
+                            if ($deptId) {
+                                $query->where('department_id', $deptId);
+                            } elseif ($armId) {
+                                $query->where('class_arm_id', $armId);
+                            } else {
+                                $query->whereNull('department_id')->whereNull('class_arm_id');
+                            }
+
+                            $existing = $query->with('teacher')->first();
 
                             if (! $existing) {
                                 return;
@@ -100,9 +123,34 @@ class ClassTeacherAssignmentResource extends Resource
                             $className = Classroom::find($value)?->name ?? 'This class';
                             $teacherName = $existing->teacher?->name ?? 'another teacher';
 
-                            $fail("{$className} already has a class teacher ({$teacherName}) for the selected session.");
+                            $divisionInfo = $deptId ? ' (Department)' : ($armId ? ' (Arm)' : '');
+                            $fail("{$className}{$divisionInfo} already has a class teacher ({$teacherName}) for the selected session.");
                         },
                     ]),
+
+                Select::make('department_id')
+                    ->label('Department')
+                    ->options(\App\Models\Department::active()->pluck('name', 'id'))
+                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => (bool) Classroom::find($get('class_id'))?->has_departments)
+                    ->required(fn (\Filament\Schemas\Components\Utilities\Get $get) => (bool) Classroom::find($get('class_id'))?->has_departments)
+                    ->searchable()
+                    ->preload()
+                    ->helperText('Assign homeroom class teacher for this senior department (e.g. SS 2 Science)'),
+
+                Select::make('class_arm_id')
+                    ->label('Class Arm')
+                    ->options(fn (\Filament\Schemas\Components\Utilities\Get $get) => \App\Models\ClassArm::where('classroom_id', $get('class_id'))->active()->pluck('name', 'id'))
+                    ->visible(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                        $classroom = Classroom::find($get('class_id'));
+                        return $classroom && !$classroom->has_departments && $classroom->hasArms();
+                    })
+                    ->required(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                        $classroom = Classroom::find($get('class_id'));
+                        return $classroom && !$classroom->has_departments && $classroom->hasArms();
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->helperText('Assign homeroom class teacher for this arm (e.g. JSS 1 Gold)'),
 
                 Select::make('session_id')
                     ->label('Academic Session')
@@ -141,6 +189,20 @@ class ClassTeacherAssignmentResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('division')
+                    ->label('Arm / Department')
+                    ->getStateUsing(function (ClassTeacherAssignment $record): string {
+                        if ($record->department) {
+                            return 'Dept: ' . $record->department->name;
+                        }
+                        if ($record->classArm) {
+                            return 'Arm: ' . $record->classArm->name;
+                        }
+                        return 'Entire Class';
+                    })
+                    ->badge()
+                    ->color(fn (ClassTeacherAssignment $record): string => $record->department ? 'purple' : ($record->classArm ? 'info' : 'gray')),
+
                 Tables\Columns\TextColumn::make('session.name')
                     ->label('Session')
                     ->searchable()
@@ -160,7 +222,13 @@ class ClassTeacherAssignmentResource extends Resource
 
                 Tables\Filters\SelectFilter::make('teacher_id')
                     ->label('Teacher')
-                    ->options(User::where('role', 'teacher')->pluck('name', 'id'))
+                    ->options(fn () => User::assignableTeachers()
+                        ->orderBy('name')
+                        ->get()
+                        ->mapWithKeys(fn (User $user) => [
+                            $user->id => $user->name . ($user->isAdmin() ? ' (Admin)' : ''),
+                        ])
+                    )
                     ->searchable(),
             ])
             ->actions([

@@ -11,6 +11,11 @@ class StudentsByClassWidget extends ChartWidget
 {
     protected static ?int $sort = 2;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('students') ?? false;
+    }
+
     protected ?string $heading = 'Students by Class';
 
     protected ?string $description = 'Active student enrolments for the current academic session.';

@@ -185,4 +185,118 @@ class PublicStudentRegistrationTest extends TestCase
             ->assertDontSee('Admission / Registration Number')
             ->assertSet('allowManualAdmissionNumber', false);
     }
+
+    public function test_classroom_can_have_multiple_arms(): void
+    {
+        $classroom = Classroom::create([
+            'name' => 'JSS 1',
+            'class_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $armGold = \App\Models\ClassArm::create([
+            'classroom_id' => $classroom->id,
+            'name' => 'Gold',
+            'is_active' => true,
+        ]);
+
+        $armSilver = \App\Models\ClassArm::create([
+            'classroom_id' => $classroom->id,
+            'name' => 'Silver',
+            'is_active' => true,
+        ]);
+
+        $this->assertEquals(2, $classroom->arms()->count());
+        $this->assertTrue($classroom->hasArms());
+        $this->assertEquals('JSS 1 — Gold', $armGold->full_name);
+    }
+
+    public function test_student_can_register_with_classroom_and_arm_when_arms_enabled(): void
+    {
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'enable_class_arms'],
+            ['value' => '1']
+        );
+        \App\Services\FrontendLibrary::flush();
+
+        $session = Session::factory()->create(['is_active' => true]);
+        $classroom = Classroom::create([
+            'name' => 'JSS 1',
+            'class_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $armGold = \App\Models\ClassArm::create([
+            'classroom_id' => $classroom->id,
+            'name' => 'Gold',
+            'is_active' => true,
+        ]);
+
+        Livewire::test(PublicStudentRegistrationForm::class)
+            ->assertSee('Classroom / Grade')
+            ->assertSee('Class Arm / Stream')
+            ->set('full_name', 'Chinedu Eze')
+            ->set('classroom_id', $classroom->id)
+            ->set('class_arm_id', $armGold->id)
+            ->set('date_of_birth', '2014-06-12')
+            ->set('gender', 'male')
+            ->set('address', '15 Palm Avenue')
+            ->set('parent_name', 'Chief Eze')
+            ->set('parent_phone', '08022334455')
+            ->set('password', 'StudentPass123!')
+            ->set('password_confirmation', 'StudentPass123!')
+            ->call('submit')
+            ->assertHasNoErrors()
+            ->assertSet('submitted', true);
+
+        $student = Student::where('full_name', 'Chinedu Eze')->first();
+        $this->assertNotNull($student);
+
+        // Verify enrolled in JSS 1 with Gold arm
+        $enrollment = StudentEnrollment::where('student_id', $student->id)->first();
+        $this->assertNotNull($enrollment);
+        $this->assertEquals($classroom->id, $enrollment->classroom_id);
+        $this->assertEquals($armGold->id, $enrollment->class_arm_id);
+        $this->assertEquals('JSS 1 — Gold', $enrollment->getFullClassName());
+    }
+
+    public function test_student_can_register_with_nullable_arm_when_arms_enabled(): void
+    {
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'enable_class_arms'],
+            ['value' => '1']
+        );
+        \App\Services\FrontendLibrary::flush();
+
+        $session = Session::factory()->create(['is_active' => true]);
+        $classroom = Classroom::create([
+            'name' => 'JSS 1',
+            'class_order' => 1,
+            'is_active' => true,
+        ]);
+
+        Livewire::test(PublicStudentRegistrationForm::class)
+            ->set('full_name', 'Amina Bello')
+            ->set('classroom_id', $classroom->id)
+            ->set('class_arm_id', null) // Arm left unassigned / nullable
+            ->set('date_of_birth', '2014-09-18')
+            ->set('gender', 'female')
+            ->set('address', '22 Crescent Road')
+            ->set('parent_name', 'Hajiya Bello')
+            ->set('parent_phone', '08033445566')
+            ->set('password', 'StudentPass123!')
+            ->set('password_confirmation', 'StudentPass123!')
+            ->call('submit')
+            ->assertHasNoErrors()
+            ->assertSet('submitted', true);
+
+        $student = Student::where('full_name', 'Amina Bello')->first();
+        $this->assertNotNull($student);
+
+        $enrollment = StudentEnrollment::where('student_id', $student->id)->first();
+        $this->assertNotNull($enrollment);
+        $this->assertEquals($classroom->id, $enrollment->classroom_id);
+        $this->assertNull($enrollment->class_arm_id);
+        $this->assertEquals('JSS 1', $enrollment->getFullClassName());
+    }
 }

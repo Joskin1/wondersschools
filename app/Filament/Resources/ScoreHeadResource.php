@@ -113,6 +113,6 @@ class ScoreHeadResource extends Resource
 
     public static function canAccess(): bool
     {
-        return Auth::user()?->canManageAcademics() ?? false;
+        return Auth::user()?->canAccessAdminPage('score_heads') ?? false;
     }
 }

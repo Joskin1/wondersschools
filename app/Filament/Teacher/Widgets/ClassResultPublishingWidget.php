@@ -24,7 +24,7 @@ class ClassResultPublishingWidget extends StatsOverviewWidget
             return false;
         }
 
-        if ($user->canManageAcademics()) {
+        if ($user->canAccessAdminPage('process_class_results')) {
             return true;
         }
 

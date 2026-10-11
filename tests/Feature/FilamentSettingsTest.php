@@ -14,8 +14,9 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->admin = User::factory()->create([
-        'role'      => 'admin',
-        'is_active' => true,
+        'role'             => 'admin',
+        'is_primary_admin' => true,
+        'is_active'        => true,
     ]);
 
     $this->actingAs($this->admin);

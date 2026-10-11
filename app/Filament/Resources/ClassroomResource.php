@@ -3,7 +3,9 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ClassroomResource\Pages;
+use App\Filament\Resources\ClassroomResource\RelationManagers;
 use App\Models\Classroom;
+use App\Services\FrontendLibrary;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -29,15 +31,22 @@ class ClassroomResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('classrooms') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Class Name')
                     ->required()
                     ->maxLength(255)
                     ->unique(ignoreRecord: true)
-                    ->placeholder('e.g., JSS1, SS2'),
+                    ->placeholder('e.g., JSS 1, Primary 2, SS 1')
+                    ->helperText('Name of the class (e.g. JSS 1, Primary 2). Arms/streams can be added separately.'),
 
                 Select::make('class_group_id')
                     ->label('Class Group')
@@ -53,8 +62,13 @@ class ClassroomResource extends Resource
                     ->numeric()
                     ->integer()
                     ->minValue(1)
-                    ->unique(ignoreRecord: true)
-                    ->helperText('Lower number = lower academic level. Defines promotion path.'),
+                    ->rules(['unique:classrooms,class_order,' . request()->route('record')])
+                    ->helperText('Lower number = lower academic level. Defines the promotion sequence (1 for JSS 1, 2 for JSS 2, etc.).'),
+
+                Toggle::make('has_departments')
+                    ->label('Senior School (Has Departments)')
+                    ->default(false)
+                    ->helperText('Enable this for Senior Secondary classes (SS 1–3 / Year 10–12) to allow students in this class to select a department (Science, Commercial, Arts, etc.).'),
 
                 Toggle::make('is_active')
                     ->label('Active')
@@ -72,6 +86,8 @@ class ClassroomResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $enableClassArms = FrontendLibrary::getBooleanSetting('enable_class_arms');
+
         return $table
             ->columns([
                 TextColumn::make('name')
@@ -87,10 +103,23 @@ class ClassroomResource extends Resource
                     ->searchable()
                     ->placeholder('None'),
 
+                TextColumn::make('arms.name')
+                    ->label('Arms')
+                    ->badge()
+                    ->color('primary')
+                    ->separator(', ')
+                    ->placeholder('No arms')
+                    ->visible(fn () => $enableClassArms),
+
                 TextColumn::make('class_order')
                     ->label('Order')
                     ->sortable()
                     ->badge(),
+
+                IconColumn::make('has_departments')
+                    ->label('Senior / Dept')
+                    ->boolean()
+                    ->sortable(),
 
                 IconColumn::make('is_active')
                     ->label('Active')
@@ -125,6 +154,9 @@ class ClassroomResource extends Resource
                     ->relationship('classGroup', 'name')
                     ->label('Class Group'),
 
+                TernaryFilter::make('has_departments')
+                    ->label('Has Departments (Senior)'),
+
                 TernaryFilter::make('is_active')
                     ->label('Active Status'),
             ])
@@ -140,7 +172,7 @@ class ClassroomResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ArmsRelationManager::class,
         ];
     }
 

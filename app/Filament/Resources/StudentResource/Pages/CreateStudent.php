@@ -15,9 +15,11 @@ class CreateStudent extends CreateRecord
     {
         $this->sessionId = $data['session_id'] ?? null;
         $this->classroomId = $data['classroom_id'] ?? null;
+        $this->classArmId = $data['class_arm_id'] ?? null;
+        $this->departmentId = $data['department_id'] ?? null;
         $this->initialPassword = $data['initial_password'] ?? null;
 
-        unset($data['session_id'], $data['classroom_id'], $data['initial_password']);
+        unset($data['session_id'], $data['classroom_id'], $data['class_arm_id'], $data['department_id'], $data['initial_password']);
 
         $data['status'] = 'pending';
 
@@ -31,6 +33,8 @@ class CreateStudent extends CreateRecord
             StudentEnrollment::create([
                 'student_id' => $this->record->id,
                 'classroom_id' => $this->classroomId,
+                'class_arm_id' => $this->classArmId,
+                'department_id' => $this->departmentId,
                 'session_id' => $this->sessionId,
             ]);
         }
@@ -47,6 +51,10 @@ class CreateStudent extends CreateRecord
     protected ?int $sessionId = null;
 
     protected ?int $classroomId = null;
+
+    protected ?int $classArmId = null;
+
+    protected ?int $departmentId = null;
 
     protected ?string $initialPassword = null;
 

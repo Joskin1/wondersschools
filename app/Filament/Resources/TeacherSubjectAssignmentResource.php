@@ -40,6 +40,11 @@ class TeacherSubjectAssignmentResource extends Resource
 
     protected static ?int $navigationSort = 7;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('subject_teachers') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         $activeSession = Session::active()->first();
@@ -49,11 +54,17 @@ class TeacherSubjectAssignmentResource extends Resource
             ->components([
                 Select::make('teacher_id')
                     ->label('Teacher')
-                    ->options(User::activeTeachers()->pluck('name', 'id'))
+                    ->options(fn () => User::assignableTeachers()
+                        ->orderBy('name')
+                        ->get()
+                        ->mapWithKeys(fn (User $user) => [
+                            $user->id => $user->name . ($user->isAdmin() ? ' (Admin)' : ''),
+                        ])
+                    )
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->helperText('Only active teachers who have completed registration are shown'),
+                    ->helperText('Active teachers and administrators can be assigned'),
 
                 Select::make('subject_id')
                     ->label('Subject')
@@ -271,7 +282,13 @@ class TeacherSubjectAssignmentResource extends Resource
 
                 SelectFilter::make('teacher_id')
                     ->label('Teacher')
-                    ->options(User::activeTeachers()->pluck('name', 'id'))
+                    ->options(fn () => User::assignableTeachers()
+                        ->orderBy('name')
+                        ->get()
+                        ->mapWithKeys(fn (User $user) => [
+                            $user->id => $user->name . ($user->isAdmin() ? ' (Admin)' : ''),
+                        ])
+                    )
                     ->searchable()
                     ->preload()
                     ->placeholder('All Teachers'),

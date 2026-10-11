@@ -27,17 +27,17 @@ class FrontendContentResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->role === 'sudo';
+        return auth()->user()?->isSudo() || (auth()->user()?->canAccessAdminPage('frontend_content') ?? false);
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->role === 'sudo';
+        return static::canAccess();
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->role === 'sudo';
+        return static::canAccess();
     }
 
     public static function getNavigationGroup(): ?string

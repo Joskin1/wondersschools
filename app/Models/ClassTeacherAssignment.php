@@ -13,6 +13,8 @@ class ClassTeacherAssignment extends Model
     protected $fillable = [
         'teacher_id',
         'class_id',
+        'class_arm_id',
+        'department_id',
         'session_id',
     ];
 
@@ -30,6 +32,22 @@ class ClassTeacherAssignment extends Model
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class, 'class_id');
+    }
+
+    /**
+     * Get the class arm for this assignment.
+     */
+    public function classArm(): BelongsTo
+    {
+        return $this->belongsTo(ClassArm::class, 'class_arm_id');
+    }
+
+    /**
+     * Get the department for this assignment.
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
 
     /**

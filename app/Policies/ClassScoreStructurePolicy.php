@@ -9,22 +9,22 @@ class ClassScoreStructurePolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('class_score_structure');
     }
 
     public function view(User $user, ClassScoreStructure $structure): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('class_score_structure');
     }
 
     public function create(User $user): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('class_score_structure');
     }
 
     public function update(User $user, ClassScoreStructure $structure): bool
     {
-        if (! $user->canManageAcademics()) {
+        if (! $user->canAccessAdminPage('class_score_structure')) {
             return false;
         }
 

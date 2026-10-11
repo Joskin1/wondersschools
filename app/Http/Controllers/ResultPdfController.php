@@ -47,9 +47,19 @@ class ResultPdfController extends Controller
         // Enrollment for class info
         $enrollment  = StudentEnrollment::where('student_id', $student->id)
             ->where('session_id', $sessionId)
-            ->with('classroom')
+            ->with(['classroom', 'department', 'classArm'])
             ->first();
         $classroomId = $enrollment?->classroom_id ?? $termResult->classroom_id;
+
+        // ── Admin Approval Gate ──────────────────────────────────────────────
+        $approval = \App\Models\ClassTermApproval::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->first();
+
+        if ($approval && $approval->status !== 'approved') {
+            abort(403, 'Results for this term are pending final administrative approval and have not yet been released.');
+        }
 
         // ── Detect cumulative (third term) ───────────────────────────────────
         $isCumulative = $term->order === 3;
@@ -76,6 +86,14 @@ class ResultPdfController extends Controller
             ->where('term_id', $termId)
             ->with('subject')
             ->get();
+
+        // Pre-fetch count of students examined per subject in this classroom/session/term
+        $studentsExaminedCounts = Score::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->selectRaw('subject_id, count(distinct student_id) as examined_count')
+            ->groupBy('subject_id')
+            ->pluck('examined_count', 'subject_id');
 
         // Pre-fetch all scores in one query (avoid N+1)
         $allScores = Score::where('student_id', $student->id)
@@ -120,15 +138,16 @@ class ResultPdfController extends Controller
                 $t3Raw = round($t3Raw, 2);
 
                 $subjectRows[] = [
-                    'subject'   => $sr->subject->name ?? 'Unknown',
-                    'scores'    => $scores,
-                    'term3_raw' => $t3Raw,
-                    'term1'     => $t1,
-                    'term2'     => $t2,
-                    'average'   => (float) $sr->total,
-                    'grade'     => $sr->grade,
-                    'position'  => $sr->position,
-                    'remark'    => $sr->remark,
+                    'subject'           => $sr->subject->name ?? 'Unknown',
+                    'scores'            => $scores,
+                    'term3_raw'         => $t3Raw,
+                    'term1'             => $t1,
+                    'term2'             => $t2,
+                    'average'           => (float) $sr->total,
+                    'grade'             => $sr->grade,
+                    'position'          => $sr->position,
+                    'remark'            => $sr->remark,
+                    'students_examined' => $studentsExaminedCounts->get($subjectId, 0),
                 ];
             }
         } else {
@@ -142,12 +161,13 @@ class ResultPdfController extends Controller
                 }
 
                 $subjectRows[] = [
-                    'subject'  => $sr->subject->name ?? 'Unknown',
-                    'total'    => $sr->total,
-                    'grade'    => $sr->grade,
-                    'position' => $sr->position,
-                    'remark'   => $sr->remark,
-                    'scores'   => $scores,
+                    'subject'           => $sr->subject->name ?? 'Unknown',
+                    'total'             => $sr->total,
+                    'grade'             => $sr->grade,
+                    'position'          => $sr->position,
+                    'remark'            => $sr->remark,
+                    'scores'            => $scores,
+                    'students_examined' => $studentsExaminedCounts->get($sr->subject_id, 0),
                 ];
             }
         }
@@ -161,9 +181,13 @@ class ResultPdfController extends Controller
 
         $data = [
             'student'      => [
-                'name'   => $student->full_name,
-                'gender' => $student->gender ?? '-',
-                'dob'    => $student->date_of_birth?->format('d/m/Y') ?? '-',
+                'name'           => $student->full_name,
+                'gender'         => $student->gender ?? '-',
+                'dob'            => $student->date_of_birth?->format('d/m/Y') ?? '-',
+                'admission_no'   => $student->admission_number ?? '-',
+                'department'     => $enrollment?->department?->name ?? null,
+                'arm'            => $enrollment?->classArm?->name ?? null,
+                'passport_photo' => $student->profile_picture,
             ],
             'classroom'        => $enrollment?->classroom?->name ?? '-',
             'session_name'     => $session?->name ?? '-',
@@ -171,13 +195,23 @@ class ResultPdfController extends Controller
             'is_cumulative'    => $isCumulative,
             'score_heads'      => $scoreHeads,
             'subjects'         => $subjectRows,
+            'times_school_opened' => $approval?->times_school_opened,
+            'next_term_begins'    => $approval?->next_term_begins,
             'term_result'      => [
-                'subjects_count'   => $termResult->subjects_count,
-                'grand_total'      => $termResult->grand_total,
-                'average'          => $termResult->average,
-                'grade'            => $termResult->grade,
-                'remark'           => $termResult->remark,
-                'overall_position' => $termResult->overall_position,
+                'subjects_count'        => $termResult->subjects_count,
+                'grand_total'           => $termResult->grand_total,
+                'average'               => $termResult->average,
+                'grade'                 => $termResult->grade,
+                'remark'                => $termResult->remark,
+                'overall_position'      => $termResult->overall_position,
+                'class_population'      => $termResult->class_population ?? $classSize,
+                'department_position'   => $termResult->department_position,
+                'department_population' => $termResult->department_population,
+                'arm_position'          => $termResult->arm_position,
+                'arm_population'        => $termResult->arm_population,
+                'times_present'         => $termResult->times_present,
+                'class_teacher_comment' => $termResult->class_teacher_comment,
+                'principal_comment'     => $termResult->principal_comment,
             ],
             'class_size'       => $classSize,
             'total_obtainable' => $totalObtainable,

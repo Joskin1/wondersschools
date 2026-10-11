@@ -9,11 +9,13 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -77,7 +79,23 @@ class AdminadminPanelProvider extends PanelProvider
                 \App\Filament\Teacher\Widgets\ClassResultPublishingWidget::class,
                 AccountWidget::class,
             ])
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn () => view('filament.components.switch-to-teacher-button')
+            )
+            ->userMenuItems([
+                MenuItem::make()
+                    ->label('Switch to Teacher Portal')
+                    ->url(fn () => url('/teacher'))
+                    ->icon('heroicon-o-academic-cap')
+                    ->visible(fn () => auth()->user()?->isTeachingStaff() ?? false),
+            ])
             ->navigationItems([
+                NavigationItem::make('Teacher Portal')
+                    ->url(fn () => url('/teacher'))
+                    ->icon('heroicon-o-academic-cap')
+                    ->visible(fn () => auth()->user()?->isTeachingStaff() ?? false)
+                    ->sort(PHP_INT_MAX - 10),
                 NavigationItem::make('Visit School Website')
                     ->url(fn () => request()->getSchemeAndHttpHost(), shouldOpenInNewTab: true)
                     ->icon('heroicon-o-arrow-top-right-on-square')

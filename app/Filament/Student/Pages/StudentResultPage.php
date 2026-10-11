@@ -140,10 +140,23 @@ class StudentResultPage extends Page
         // ── Get enrollment for class info ────────────────────────────────────
         $enrollment = StudentEnrollment::where('student_id', $student->id)
             ->where('session_id', $this->session_id)
-            ->with('classroom')
+            ->with(['classroom', 'department', 'classArm'])
             ->first();
 
         $classroomId = $enrollment?->classroom_id ?? $termResult->classroom_id;
+
+        // ── Admin Approval Gate ──────────────────────────────────────────────
+        $approval = \App\Models\ClassTermApproval::where('classroom_id', $classroomId)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->first();
+
+        if ($approval && $approval->status !== 'approved') {
+            $this->resultData = [];
+            $this->loaded = false;
+
+            return;
+        }
 
         // ── Detect third term (cumulative) ───────────────────────────────────
         $isCumulative = $term->order === 3;
@@ -273,9 +286,12 @@ class StudentResultPage extends Page
 
         $this->resultData = [
             'student' => [
-                'name' => $student->full_name,
-                'gender' => $student->gender ?? '-',
-                'dob' => $student->date_of_birth?->format('d/m/Y') ?? '-',
+                'name'         => $student->full_name,
+                'gender'       => $student->gender ?? '-',
+                'dob'          => $student->date_of_birth?->format('d/m/Y') ?? '-',
+                'admission_no' => $student->admission_number ?? '-',
+                'department'   => $enrollment?->department?->name ?? null,
+                'arm'          => $enrollment?->classArm?->name ?? null,
             ],
             'classroom' => $enrollment?->classroom?->name ?? '-',
             'session_name' => $session?->name ?? '-',
@@ -283,13 +299,23 @@ class StudentResultPage extends Page
             'is_cumulative' => $isCumulative,
             'score_heads' => $scoreHeads,
             'subjects' => $subjectRows,
+            'times_school_opened' => $approval?->times_school_opened,
+            'next_term_begins'    => $approval?->next_term_begins,
             'term_result' => [
-                'subjects_count' => $termResult->subjects_count,
-                'grand_total' => $termResult->grand_total,
-                'average' => $termResult->average,
-                'grade' => $termResult->grade,
-                'remark' => $termResult->remark,
-                'overall_position' => $termResult->overall_position,
+                'subjects_count'        => $termResult->subjects_count,
+                'grand_total'           => $termResult->grand_total,
+                'average'               => $termResult->average,
+                'grade'                 => $termResult->grade,
+                'remark'                => $termResult->remark,
+                'overall_position'      => $termResult->overall_position,
+                'class_population'      => $termResult->class_population ?? $classSize,
+                'department_position'   => $termResult->department_position,
+                'department_population' => $termResult->department_population,
+                'arm_position'          => $termResult->arm_position,
+                'arm_population'        => $termResult->arm_population,
+                'times_present'         => $termResult->times_present,
+                'class_teacher_comment' => $termResult->class_teacher_comment,
+                'principal_comment'     => $termResult->principal_comment,
             ],
             'class_size' => $classSize,
             'total_obtainable' => $totalObtainable,

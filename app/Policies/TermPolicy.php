@@ -12,8 +12,7 @@ class TermPolicy
      */
     public function viewAny(User $user): bool
     {
-        // Admins and teachers can view terms
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('terms');
     }
 
     /**
@@ -21,7 +20,7 @@ class TermPolicy
      */
     public function view(User $user, Term $term): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('terms');
     }
 
     /**
@@ -29,8 +28,7 @@ class TermPolicy
      */
     public function create(User $user): bool
     {
-        // Only admins can create terms (auto-created with sessions)
-        return $user->isAdmin();
+        return $user->canAccessAdminPage('terms');
     }
 
     /**
@@ -38,8 +36,7 @@ class TermPolicy
      */
     public function update(User $user, Term $term): bool
     {
-        // Only admins can update terms
-        return $user->isAdmin();
+        return $user->canAccessAdminPage('terms');
     }
 
     /**

@@ -9,11 +9,13 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -64,7 +66,23 @@ class TeacherPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
             ])
+            ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                fn () => view('filament.components.switch-to-admin-button')
+            )
+            ->userMenuItems([
+                MenuItem::make()
+                    ->label('Switch to Admin Panel')
+                    ->url(fn () => url('/admin'))
+                    ->icon('heroicon-o-shield-check')
+                    ->visible(fn () => (auth()->user()?->isAdmin() || auth()->user()?->isSudo()) ?? false),
+            ])
             ->navigationItems([
+                NavigationItem::make('Admin Panel')
+                    ->url(fn () => url('/admin'))
+                    ->icon('heroicon-o-shield-check')
+                    ->visible(fn () => (auth()->user()?->isAdmin() || auth()->user()?->isSudo()) ?? false)
+                    ->sort(PHP_INT_MAX - 10),
                 NavigationItem::make('Visit School Website')
                     ->url(fn () => request()->getSchemeAndHttpHost(), shouldOpenInNewTab: true)
                     ->icon('heroicon-o-arrow-top-right-on-square')

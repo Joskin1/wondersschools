@@ -30,6 +30,11 @@ class TermResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('terms') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

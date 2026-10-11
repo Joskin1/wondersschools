@@ -38,7 +38,7 @@ class SystemLogs extends Page
         if (!$user) {
             return false;
         }
-        return $user->isSudo();
+        return $user->isSudo() || $user->canAccessAdminPage('system_logs');
     }
 
     public function mount(): void

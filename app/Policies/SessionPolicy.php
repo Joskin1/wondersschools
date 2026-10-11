@@ -12,8 +12,7 @@ class SessionPolicy
      */
     public function viewAny(User $user): bool
     {
-        // Admins and sudo users can view sessions
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('academic_sessions');
     }
 
     /**
@@ -21,7 +20,7 @@ class SessionPolicy
      */
     public function view(User $user, Session $session): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('academic_sessions');
     }
 
     /**
@@ -29,7 +28,7 @@ class SessionPolicy
      */
     public function create(User $user): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('academic_sessions');
     }
 
     /**
@@ -37,7 +36,7 @@ class SessionPolicy
      */
     public function update(User $user, Session $session): bool
     {
-        return $user->canManageAcademics();
+        return $user->canAccessAdminPage('academic_sessions');
     }
 
     /**

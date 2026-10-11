@@ -30,6 +30,11 @@ class ClassGroupResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('class_groups') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

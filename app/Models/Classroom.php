@@ -16,14 +16,18 @@ class Classroom extends Model
 
     protected $fillable = [
         'name',
+        'arm',
+        'level',
         'class_group_id',
         'class_order',
+        'has_departments',
         'is_active',
     ];
 
     protected $casts = [
         'class_group_id' => 'integer',
         'class_order' => 'integer',
+        'has_departments' => 'boolean',
         'is_active' => 'boolean',
     ];
 
@@ -49,6 +53,30 @@ class Classroom extends Model
     public function scopeInGroup(Builder $query, int $groupId): Builder
     {
         return $query->where('class_group_id', $groupId);
+    }
+
+    /**
+     * Scope to filter classrooms by academic level.
+     */
+    public function scopeLevel(Builder $query, string $level): Builder
+    {
+        return $query->where('level', $level);
+    }
+
+    /**
+     * Get the academic level name (falls back to name if level is not set).
+     */
+    public function getLevelName(): string
+    {
+        return $this->level ?: $this->name;
+    }
+
+    /**
+     * Determine if this classroom belongs to a specific arm.
+     */
+    public function hasArm(): bool
+    {
+        return filled($this->arm);
     }
 
     /**
@@ -89,5 +117,21 @@ class Classroom extends Model
     public function subjects(): BelongsToMany
     {
         return $this->belongsToMany(Subject::class);
+    }
+
+    /**
+     * Get all arms / sections for this classroom.
+     */
+    public function arms(): HasMany
+    {
+        return $this->hasMany(ClassArm::class);
+    }
+
+    /**
+     * Determine if this classroom has any arms defined.
+     */
+    public function hasArms(): bool
+    {
+        return $this->arms()->exists();
     }
 }

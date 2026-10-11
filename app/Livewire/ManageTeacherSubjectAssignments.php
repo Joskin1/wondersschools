@@ -118,7 +118,7 @@ class ManageTeacherSubjectAssignments extends Component
         return view('livewire.manage-teacher-subject-assignments', [
             'classrooms' => $classrooms,
             'assignments' => $assignments,
-            'teachers' => User::activeTeachers()->get(),
+            'teachers' => User::assignableTeachers()->orderBy('name')->get(),
             'subjects' => Subject::orderBy('name')->get(),
             'sessions' => Session::orderBy('start_year', 'desc')->get(),
             'terms' => Term::where('session_id', $this->session_id)->orderBy('order')->get(),

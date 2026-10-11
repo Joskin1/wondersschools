@@ -436,7 +436,15 @@ class EnterScores extends Page
     public static function canAccess(): bool
     {
         $user = Auth::user();
-        return $user?->isTeacher() || $user?->canManageAcademics() ?? false;
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->isTeacher()) {
+            return true;
+        }
+
+        return $user->canAccessAdminPage('enter_scores');
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

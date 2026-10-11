@@ -32,6 +32,11 @@ class UserResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('users') ?? false;
+    }
+
     /**
      * Build the base query for the resource.
      * Non-sudo users never see sudo records.
@@ -79,8 +84,15 @@ class UserResource extends Resource
                     ->options($roleOptions)
                     ->required()
                     ->default('teacher')
+                    ->live()
                     // Prevent non-sudo from changing the role of a sudo user
                     ->disabled(fn (?User $record) => $record && $record->isSudo() && !$isSudo),
+
+                TextInput::make('admin_designation')
+                    ->label('Admin Designation / Title')
+                    ->placeholder('e.g. Bursar, Exam Officer, Vice Principal')
+                    ->maxLength(255)
+                    ->visible(fn ($get) => $get('role') === 'admin'),
             ]);
     }
 
@@ -126,6 +138,21 @@ class UserResource extends Resource
                         'student' => 'info',
                         default => 'gray',
                     }),
+
+                Tables\Columns\TextColumn::make('admin_designation')
+                    ->label('Designation')
+                    ->badge()
+                    ->color('info')
+                    ->placeholder('—')
+                    ->searchable(),
+
+                Tables\Columns\IconColumn::make('is_primary_admin')
+                    ->label('Primary Admin')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-shield-check')
+                    ->falseIcon('heroicon-o-minus')
+                    ->trueColor('success')
+                    ->falseColor('gray'),
 
                 // Portal Access toggle — editable for teachers, disabled for sudo/admin records
                 Tables\Columns\ToggleColumn::make('is_active')
@@ -237,14 +264,54 @@ class UserResource extends Resource
                         default => '/teacher',
                     }),
 
+                // Manage permissions — only for secondary admins, visible to primary admin and sudo
+                Action::make('manage_permissions')
+                    ->label('Permissions')
+                    ->icon('heroicon-o-key')
+                    ->color('success')
+                    ->visible(fn (User $record) => 
+                        !$record->trashed() && 
+                        $record->role === 'admin' && 
+                        !$record->is_primary_admin &&
+                        (auth()->user()?->isPrimaryAdmin() || auth()->user()?->isSudo())
+                    )
+                    ->url(fn (User $record) => \App\Filament\Pages\ManageAdminPermissions::getUrl(['user' => $record->id])),
+
+                // Designate / Revoke Principal privilege — Sudo only
+                Action::make('toggle_primary_admin')
+                    ->label(fn (User $record) => $record->is_primary_admin ? 'Revoke Principal' : 'Make Principal')
+                    ->icon('heroicon-o-shield-check')
+                    ->color(fn (User $record) => $record->is_primary_admin ? 'danger' : 'success')
+                    ->visible(fn (User $record) => auth()->user()?->isSudo() && $record->role === 'admin' && !$record->trashed())
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (User $record) => $record->is_primary_admin ? 'Revoke Principal Privilege' : 'Grant Principal Privilege')
+                    ->modalDescription(fn (User $record) => $record->is_primary_admin
+                        ? "Revoke Principal privilege from {$record->name} ({$record->email})? They will no longer have access to Admin Permissions."
+                        : "Grant Principal privilege to {$record->name} ({$record->email})? They will gain unrestricted access and will be able to manage other administrators' permissions."
+                    )
+                    ->action(function (User $record) {
+                        $newState = !$record->is_primary_admin;
+                        $updateData = ['is_primary_admin' => $newState];
+                        if ($newState && empty($record->admin_designation)) {
+                            $updateData['admin_designation'] = 'Principal';
+                        }
+                        $record->update($updateData);
+
+                        Notification::make()
+                            ->title($newState ? 'Principal Privilege Granted' : 'Principal Privilege Revoked')
+                            ->body("{$record->name} ({$record->email}) " . ($newState ? 'is now the Principal with Admin Permissions access.' : 'no longer has Admin Permissions access.'))
+                            ->success()
+                            ->send();
+                    }),
+
                 ViewAction::make(),
 
-                // Change role — admins and sudo can change user role between teacher and admin (students cannot change role)
+                // Change role — admins and sudo can change user role between teacher and admin (cannot change sudo or primary admin)
                 Action::make('change_role')
                     ->label('Change Role')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
-                    ->visible(fn (User $record) => !$record->trashed() && !$record->isSudo() && $record->role !== 'student')
+                    ->visible(fn (User $record) => !$record->trashed() && !$record->isSudo() && !$record->is_primary_admin && $record->role !== 'student')
                     ->form([
                         Select::make('role')
                             ->label('New Role')

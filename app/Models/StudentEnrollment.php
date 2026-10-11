@@ -19,6 +19,8 @@ class StudentEnrollment extends Model
     protected $fillable = [
         'student_id',
         'classroom_id',
+        'class_arm_id',
+        'department_id',
         'session_id',
     ];
 
@@ -36,6 +38,34 @@ class StudentEnrollment extends Model
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
+    }
+
+    /**
+     * Get the class arm for this enrollment.
+     */
+    public function classArm(): BelongsTo
+    {
+        return $this->belongsTo(ClassArm::class, 'class_arm_id');
+    }
+
+    /**
+     * Get the department for this enrollment.
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Get the full display name for this class enrollment (e.g. "JSS 1 — Gold" or "JSS 1").
+     */
+    public function getFullClassName(): string
+    {
+        $className = $this->classroom?->name ?? '—';
+        if ($this->classArm) {
+            return "{$className} — {$this->classArm->name}";
+        }
+        return $className;
     }
 
     /**

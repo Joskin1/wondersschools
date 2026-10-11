@@ -28,6 +28,11 @@ class AcademicSessionResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('academic_sessions') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

@@ -472,8 +472,18 @@
                     <div class="stat-label">Overall Grade</div>
                 </div>
                 <div class="sr-stat-card pos-card">
-                    <div class="stat-value">{{ $tr['overall_position'] }}<span style="font-size:0.9rem;font-weight:400;color:#9ca3af;"> / {{ $resultData['class_size'] }}</span></div>
-                    <div class="stat-label">Class Position</div>
+                    @if(!empty($tr['department_position']))
+                        <div class="stat-value">{{ $tr['department_position'] }}<span style="font-size:0.85rem;font-weight:600;color:#9ca3af;"> / {{ $tr['department_population'] }}</span></div>
+                        <div class="stat-label">Dept Position ({{ $resultData['student']['department'] ?? 'Dept' }})</div>
+                        <div style="font-size:0.7rem;color:#9ca3af;margin-top:2px;">Set: {{ $tr['overall_position'] }} of {{ $tr['class_population'] ?? $resultData['class_size'] }}</div>
+                    @elseif(!empty($tr['arm_position']))
+                        <div class="stat-value">{{ $tr['arm_position'] }}<span style="font-size:0.85rem;font-weight:600;color:#9ca3af;"> / {{ $tr['arm_population'] }}</span></div>
+                        <div class="stat-label">Arm Position ({{ $resultData['student']['arm'] ?? 'Arm' }})</div>
+                        <div style="font-size:0.7rem;color:#9ca3af;margin-top:2px;">Set: {{ $tr['overall_position'] }} of {{ $tr['class_population'] ?? $resultData['class_size'] }}</div>
+                    @else
+                        <div class="stat-value">{{ $tr['overall_position'] }}<span style="font-size:0.9rem;font-weight:400;color:#9ca3af;"> / {{ $tr['class_population'] ?? $resultData['class_size'] }}</span></div>
+                        <div class="stat-label">Class Position</div>
+                    @endif
                 </div>
                 <div class="sr-stat-card total-card">
                     <div class="stat-value">{{ number_format($tr['grand_total'], 0) }}</div>
@@ -567,9 +577,31 @@
                         <div class="summary-value">{{ $tr['grade'] }}</div>
                     </div>
                     <div class="sr-summary-item">
-                        <div class="summary-label">Position</div>
-                        <div class="summary-value">{{ $tr['overall_position'] }} of {{ $resultData['class_size'] }}</div>
+                        <div class="summary-label">
+                            @if(!empty($tr['department_position']))
+                                Dept Position
+                            @elseif(!empty($tr['arm_position']))
+                                Arm Position
+                            @else
+                                Position
+                            @endif
+                        </div>
+                        <div class="summary-value">
+                            @if(!empty($tr['department_position']))
+                                {{ $tr['department_position'] }} of {{ $tr['department_population'] }}
+                            @elseif(!empty($tr['arm_position']))
+                                {{ $tr['arm_position'] }} of {{ $tr['arm_population'] }}
+                            @else
+                                {{ $tr['overall_position'] }} of {{ $tr['class_population'] ?? $resultData['class_size'] }}
+                            @endif
+                        </div>
                     </div>
+                    @if(!empty($tr['department_position']) || !empty($tr['arm_position']))
+                        <div class="sr-summary-item">
+                            <div class="summary-label">Overall Set Position</div>
+                            <div class="summary-value">{{ $tr['overall_position'] }} of {{ $tr['class_population'] ?? $resultData['class_size'] }}</div>
+                        </div>
+                    @endif
                     <div class="sr-summary-item">
                         <div class="summary-label">Subjects</div>
                         <div class="summary-value">{{ $tr['subjects_count'] }}</div>

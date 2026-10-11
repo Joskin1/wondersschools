@@ -114,6 +114,14 @@ class Student extends Model
     }
 
     /**
+     * Get the current department for the active session (if any).
+     */
+    public function currentDepartment(): ?Department
+    {
+        return $this->currentEnrollment()?->department;
+    }
+
+    /**
      * Generate a unique registration slug.
      *
      * @return string

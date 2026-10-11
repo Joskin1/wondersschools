@@ -30,6 +30,11 @@ class SubjectResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('subjects') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

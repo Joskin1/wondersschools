@@ -35,6 +35,11 @@ class ContactSubmissionResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('contact_submissions') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

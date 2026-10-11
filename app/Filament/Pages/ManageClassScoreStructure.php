@@ -342,7 +342,7 @@ class ManageClassScoreStructure extends Page
 
     public static function canAccess(): bool
     {
-        return Auth::user()?->canManageAcademics() ?? false;
+        return Auth::user()?->canAccessAdminPage('class_score_structure') ?? false;
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────

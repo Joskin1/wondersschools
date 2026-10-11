@@ -78,18 +78,26 @@ describe('Database', function () {
             ->and($assignment->session_id)->toBe($this->session->id);
     });
 
-    it('enforces unique constraint - one class teacher per class per session', function () {
-        ClassTeacherAssignment::create([
-            'teacher_id' => $this->classTeacher->id,
-            'class_id' => $this->classroomA->id,
-            'session_id' => $this->session->id,
+    it('allows distinct class teachers per department in the same class and session', function () {
+        $scienceDept = \App\Models\Department::create(['name' => 'ScienceDept', 'is_active' => true]);
+        $artDept = \App\Models\Department::create(['name' => 'ArtDept', 'is_active' => true]);
+
+        $assignment1 = ClassTeacherAssignment::create([
+            'teacher_id'    => $this->classTeacher->id,
+            'class_id'      => $this->classroomA->id,
+            'session_id'    => $this->session->id,
+            'department_id' => $scienceDept->id,
         ]);
 
-        expect(fn () => ClassTeacherAssignment::create([
-            'teacher_id' => $this->subjectTeacher->id,
-            'class_id' => $this->classroomA->id,
-            'session_id' => $this->session->id,
-        ]))->toThrow(\Illuminate\Database\QueryException::class);
+        $assignment2 = ClassTeacherAssignment::create([
+            'teacher_id'    => $this->subjectTeacher->id,
+            'class_id'      => $this->classroomA->id,
+            'session_id'    => $this->session->id,
+            'department_id' => $artDept->id,
+        ]);
+
+        expect($assignment1)->toBeInstanceOf(ClassTeacherAssignment::class)
+            ->and($assignment2)->toBeInstanceOf(ClassTeacherAssignment::class);
     });
 
     it('enforces unique constraint - one class per teacher per session', function () {

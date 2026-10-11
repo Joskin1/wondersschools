@@ -2,7 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Models\ClassArm;
 use App\Models\Classroom;
+use App\Models\Department;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
@@ -25,10 +27,13 @@ class PublicStudentRegistrationForm extends Component
     // Student fields
     public ?string $admission_number = null;
     public bool $allowManualAdmissionNumber = false;
+    public bool $enableClassArms = false;
+    public ?int $classroom_id = null;
+    public ?int $class_arm_id = null;
+    public ?int $department_id = null;
     public string $full_name = '';
     public ?string $date_of_birth = null;
     public string $gender = 'male';
-    public ?int $classroom_id = null;
     public $profile_picture = null;
     public string $previous_school = '';
     public string $address = '';
@@ -50,15 +55,24 @@ class PublicStudentRegistrationForm extends Component
     public function mount(): void
     {
         $this->allowManualAdmissionNumber = FrontendLibrary::getBooleanSetting('allow_manual_admission_number', false);
+        $this->enableClassArms = FrontendLibrary::getBooleanSetting('enable_class_arms', false);
+    }
+
+    public function updatedClassroomId(): void
+    {
+        $this->class_arm_id = null;
+        $this->department_id = null;
     }
 
     protected function rules(): array
     {
+        $this->enableClassArms = FrontendLibrary::getBooleanSetting('enable_class_arms', false);
+        $this->allowManualAdmissionNumber = FrontendLibrary::getBooleanSetting('allow_manual_admission_number', false);
+
         $rules = [
             'full_name' => 'required|string|max:255',
             'date_of_birth' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
-            'classroom_id' => 'required|exists:classrooms,id',
             'profile_picture' => 'nullable|image|max:2048', // 2MB Max
             'previous_school' => 'nullable|string|max:255',
             'address' => 'required|string|max:500',
@@ -67,6 +81,18 @@ class PublicStudentRegistrationForm extends Component
             'parent_email' => 'nullable|email|max:255',
             'password' => 'required|string|min:8|confirmed',
         ];
+
+        $rules['classroom_id'] = 'required|exists:classrooms,id';
+        if ($this->enableClassArms) {
+            $rules['class_arm_id'] = 'nullable|exists:class_arms,id';
+        }
+
+        $selectedClassroom = $this->classroom_id ? Classroom::find($this->classroom_id) : null;
+        if ($selectedClassroom?->has_departments) {
+            $rules['department_id'] = 'required|exists:departments,id';
+        } else {
+            $rules['department_id'] = 'nullable';
+        }
 
         if ($this->allowManualAdmissionNumber) {
             $rules['admission_number'] = 'required|string|max:50|unique:students,admission_number';
@@ -78,13 +104,14 @@ class PublicStudentRegistrationForm extends Component
     protected function messages(): array
     {
         return [
+            'classroom_id.required' => 'Please select your classroom / grade.',
+            'department_id.required' => 'Please select your department / stream for this senior class.',
             'admission_number.required' => 'Admission / Registration number is required.',
             'admission_number.unique' => 'This admission number has already been registered to another student.',
             'full_name.required' => 'Student full name is required.',
             'date_of_birth.required' => 'Date of birth is required.',
             'date_of_birth.before' => 'Date of birth must be in the past.',
             'gender.required' => 'Gender is required.',
-            'classroom_id.required' => 'Please select a classroom/grade.',
             'address.required' => 'Home address is required.',
             'parent_name.required' => 'Parent/Guardian name is required.',
             'parent_phone.required' => 'Parent/Guardian phone number is required.',
@@ -109,6 +136,7 @@ class PublicStudentRegistrationForm extends Component
             return;
         }
 
+        $this->enableClassArms = FrontendLibrary::getBooleanSetting('enable_class_arms', false);
         $this->allowManualAdmissionNumber = FrontendLibrary::getBooleanSetting('allow_manual_admission_number', false);
 
         $this->validate();
@@ -144,13 +172,15 @@ class PublicStudentRegistrationForm extends Component
                 // Ensure admission number is assigned
                 $admissionNum = $student->ensureAdmissionNumber();
 
-                // 2. Enroll in active session and selected classroom
+                // 2. Enroll in active session and selected classroom (with optional arm and department)
                 $activeSession = Session::where('is_active', true)->first() ?? Session::first();
                 if ($activeSession && $this->classroom_id) {
                     StudentEnrollment::create([
                         'student_id' => $student->id,
                         'session_id' => $activeSession->id,
                         'classroom_id' => $this->classroom_id,
+                        'class_arm_id' => $this->class_arm_id,
+                        'department_id' => $this->department_id,
                         'enrolled_at' => now(),
                     ]);
                 }
@@ -188,11 +218,29 @@ class PublicStudentRegistrationForm extends Component
     public function render()
     {
         $branding = app(BrandingService::class);
-        $classrooms = Classroom::orderBy('name')->get();
+        $classrooms = Classroom::where('is_active', true)->orderBy('class_order')->orderBy('name')->get();
+
+        $availableArms = [];
+        if ($this->enableClassArms && $this->classroom_id) {
+            $availableArms = ClassArm::where('classroom_id', $this->classroom_id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        }
+
+        $selectedClassroom = $this->classroom_id ? Classroom::find($this->classroom_id) : null;
+        $hasDepartments = (bool) ($selectedClassroom?->has_departments);
+        $availableDepartments = $hasDepartments
+            ? Department::active()->orderBy('name')->get()
+            : collect();
 
         return view('livewire.public-student-registration-form', [
             'appName' => $branding->getAppName(),
             'classrooms' => $classrooms,
+            'availableArms' => $availableArms,
+            'hasDepartments' => $hasDepartments,
+            'availableDepartments' => $availableDepartments,
+            'enableClassArms' => $this->enableClassArms,
             'allowManualAdmissionNumber' => $this->allowManualAdmissionNumber,
         ])->layout('components.layouts.app', [
             'title' => 'Student Online Registration',

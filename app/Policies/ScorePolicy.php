@@ -11,12 +11,20 @@ class ScorePolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->canManageAcademics() || $user->isTeacher();
+        if ($user->isAdmin()) {
+            return $user->canAccessAdminPage('enter_scores') || $user->canAccessAdminPage('process_class_results');
+        }
+
+        return $user->isSudo() || $user->isTeacher();
     }
 
     public function view(User $user, Score $score): bool
     {
-        if ($user->canManageAcademics()) {
+        if ($user->isAdmin()) {
+            return $user->canAccessAdminPage('enter_scores') || $user->canAccessAdminPage('process_class_results');
+        }
+
+        if ($user->isSudo()) {
             return true;
         }
 
@@ -36,12 +44,20 @@ class ScorePolicy
 
     public function create(User $user): bool
     {
-        return $user->isTeacher() || $user->canManageAcademics();
+        if ($user->isAdmin()) {
+            return $user->canAccessAdminPage('enter_scores');
+        }
+
+        return $user->isSudo() || $user->isTeacher();
     }
 
     public function update(User $user, Score $score): bool
     {
-        if ($user->canManageAcademics()) {
+        if ($user->isAdmin()) {
+            return $user->canAccessAdminPage('enter_scores');
+        }
+
+        if ($user->isSudo()) {
             return true;
         }
 
@@ -60,7 +76,11 @@ class ScorePolicy
 
     public function delete(User $user, Score $score): bool
     {
-        return $user->canManageAcademics();
+        if ($user->isAdmin()) {
+            return $user->canAccessAdminPage('enter_scores');
+        }
+
+        return $user->isSudo();
     }
 
     /**
@@ -74,7 +94,11 @@ class ScorePolicy
         int $sessionId,
         int $termId
     ): bool {
-        if ($user->canManageAcademics()) {
+        if ($user->isAdmin()) {
+            return $user->canAccessAdminPage('enter_scores');
+        }
+
+        if ($user->isSudo()) {
             return true;
         }
 

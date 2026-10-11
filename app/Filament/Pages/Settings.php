@@ -34,6 +34,11 @@ class Settings extends Page
 
     protected static ?int $navigationSort = 1;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('settings') ?? false;
+    }
+
     protected string $view = 'filament.pages.settings';
 
     public ?array $data = [];
@@ -66,6 +71,7 @@ class Settings extends Page
         'seo_title',
         'seo_description',
         'allow_manual_admission_number',
+        'enable_class_arms',
     ];
 
     /**
@@ -178,6 +184,10 @@ class Settings extends Page
             $data['allow_manual_admission_number'] = filter_var($data['allow_manual_admission_number'], FILTER_VALIDATE_BOOLEAN);
         }
 
+        if (isset($data['enable_class_arms'])) {
+            $data['enable_class_arms'] = filter_var($data['enable_class_arms'], FILTER_VALIDATE_BOOLEAN);
+        }
+
         $this->form->fill($data);
     }
 
@@ -275,6 +285,20 @@ class Settings extends Page
                                             ->maxSize(2048)
                                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
                                             ->helperText('Official crest/logo image (max 2 MB). Displayed in the navbar header, mobile drawer, and footer colophon.'),
+                                    ]),
+
+                                Section::make('Academic & Classroom Structure')
+                                    ->description('Configure classroom organization, arm divisions, and class streaming.')
+                                    ->headerActions([
+                                        $this->makeSaveAction('Classroom Structure', [
+                                            'enable_class_arms',
+                                        ]),
+                                    ])
+                                    ->schema([
+                                        Toggle::make('enable_class_arms')
+                                            ->label('Enable Class Arms / Sections')
+                                            ->helperText('When enabled, classes can have arms (e.g. JSS 1 Gold, JSS 1 Silver, SS 2A, SS 2B). When disabled, each class represents a single cohort without arms.')
+                                            ->default(false),
                                     ]),
                             ]),
 

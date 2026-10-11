@@ -12,8 +12,11 @@ class LessonNotePolicy
 {
     public function viewAny(User $user): bool
     {
-        // Admins, sudo, and teachers can view
-        if (in_array($user->role, ['admin', 'sudo', 'teacher'])) {
+        if ($user->isAdmin()) {
+            return $user->canAccessAdminPage('lesson_notes');
+        }
+
+        if ($user->isSudo() || $user->isTeacher()) {
             return true;
         }
 
@@ -30,8 +33,11 @@ class LessonNotePolicy
      */
     public function view(User $user, LessonNote $lessonNote): bool
     {
-        // Admins and sudo can view all
-        if (in_array($user->role, ['admin', 'sudo'])) {
+        if ($user->isAdmin()) {
+            return $user->canAccessAdminPage('lesson_notes');
+        }
+
+        if ($user->isSudo()) {
             return true;
         }
 

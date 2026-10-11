@@ -3,8 +3,10 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentResource\Pages;
+use App\Models\ClassArm;
 use App\Models\Session;
 use App\Models\Student;
+use App\Services\FrontendLibrary;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Actions\DeleteAction;
@@ -33,6 +35,11 @@ class StudentResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('students') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -55,7 +62,47 @@ class StudentResource extends Resource
                     ->options(fn () => \App\Models\Classroom::pluck('name', 'id'))
                     ->searchable()
                     ->preload()
+                    ->live()
                     ->helperText('Select the classroom for this student.'),
+
+                Select::make('class_arm_id')
+                    ->label('Class Arm / Stream')
+                    ->options(function (callable $get) {
+                        $classroomId = $get('classroom_id');
+                        if (! $classroomId) {
+                            return [];
+                        }
+                        return ClassArm::where('classroom_id', $classroomId)
+                            ->where('is_active', true)
+                            ->pluck('name', 'id');
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Select arm (optional)')
+                    ->visible(fn () => FrontendLibrary::getBooleanSetting('enable_class_arms'))
+                    ->helperText('Select the specific arm or section for this student (optional).'),
+
+                Select::make('department_id')
+                    ->label('Department')
+                    ->options(fn () => \App\Models\Department::active()->pluck('name', 'id'))
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Select department')
+                    ->visible(function (callable $get) {
+                        $classroomId = $get('classroom_id');
+                        if (! $classroomId) {
+                            return false;
+                        }
+                        return (bool) \App\Models\Classroom::where('id', $classroomId)->value('has_departments');
+                    })
+                    ->required(function (callable $get) {
+                        $classroomId = $get('classroom_id');
+                        if (! $classroomId) {
+                            return false;
+                        }
+                        return (bool) \App\Models\Classroom::where('id', $classroomId)->value('has_departments');
+                    })
+                    ->helperText('Select the academic department/stream for this senior school student.'),
 
                 Select::make('session_id')
                     ->label('Academic Session')
@@ -134,6 +181,19 @@ class StudentResource extends Resource
                     ->sortable()
                     ->default('—'),
 
+                TextColumn::make('enrollments.classArm.name')
+                    ->label('Arm')
+                    ->badge()
+                    ->color('primary')
+                    ->placeholder('—')
+                    ->visible(fn () => FrontendLibrary::getBooleanSetting('enable_class_arms')),
+
+                TextColumn::make('enrollments.department.name')
+                    ->label('Department')
+                    ->badge()
+                    ->color('info')
+                    ->placeholder('—'),
+
                 TextColumn::make('enrollments.session.name')
                     ->label('Session')
                     ->searchable()
@@ -167,6 +227,25 @@ class StudentResource extends Resource
                 SelectFilter::make('classroom_id')
                     ->label('Classroom')
                     ->relationship('enrollments.classroom', 'name'),
+
+                SelectFilter::make('class_arm_id')
+                    ->label('Arm')
+                    ->options(fn () => ClassArm::pluck('name', 'id'))
+                    ->query(function ($query, array $data) {
+                        if (! empty($data['value'])) {
+                            $query->whereHas('enrollments', fn ($q) => $q->where('class_arm_id', $data['value']));
+                        }
+                    })
+                    ->visible(fn () => FrontendLibrary::getBooleanSetting('enable_class_arms')),
+
+                SelectFilter::make('department_id')
+                    ->label('Department')
+                    ->options(fn () => \App\Models\Department::pluck('name', 'id'))
+                    ->query(function ($query, array $data) {
+                        if (! empty($data['value'])) {
+                            $query->whereHas('enrollments', fn ($q) => $q->where('department_id', $data['value']));
+                        }
+                    }),
 
                 TrashedFilter::make(),
             ])

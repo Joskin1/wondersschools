@@ -12,15 +12,25 @@ class TermResult extends Model
         'session_id', 'term_id',
         'subjects_count', 'grand_total', 'average',
         'grade', 'remark', 'overall_position',
+        'arm_position', 'arm_population',
+        'department_position', 'department_population',
+        'class_population',
+        'times_present', 'class_teacher_comment', 'principal_comment',
         'is_finalized',
     ];
 
     protected $casts = [
-        'subjects_count'   => 'integer',
-        'grand_total'      => 'decimal:2',
-        'average'          => 'decimal:2',
-        'overall_position' => 'integer',
-        'is_finalized'     => 'boolean',
+        'subjects_count'        => 'integer',
+        'grand_total'           => 'decimal:2',
+        'average'               => 'decimal:2',
+        'overall_position'      => 'integer',
+        'arm_position'          => 'integer',
+        'arm_population'        => 'integer',
+        'department_position'   => 'integer',
+        'department_population' => 'integer',
+        'class_population'      => 'integer',
+        'times_present'         => 'integer',
+        'is_finalized'          => 'boolean',
     ];
 
     // ── Relationships ────────────────────────────────────────────────────────

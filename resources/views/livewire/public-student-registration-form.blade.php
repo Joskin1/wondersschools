@@ -188,7 +188,7 @@
                             {{-- Classroom / Grade --}}
                             <div>
                                 <label for="classroom_id" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Classroom / Grade <span class="text-red-500">*</span></label>
-                                <select wire:model.defer="classroom_id" id="classroom_id" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                <select wire:model.live="classroom_id" id="classroom_id" class="block w-full rounded-xl border @error('classroom_id') border-red-500 focus:ring-red-500 @else border-[var(--rule)] focus:ring-[var(--accent)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 text-sm py-3.5 px-4 text-[var(--ink)] transition">
                                     <option value="">-- Select Classroom --</option>
                                     @foreach($classrooms as $classroom)
                                         <option value="{{ $classroom->id }}">{{ $classroom->name }}</option>
@@ -196,6 +196,38 @@
                                 </select>
                                 @error('classroom_id') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
                             </div>
+
+                            @if ($hasDepartments)
+                                {{-- Department / Academic Stream (Senior Secondary) --}}
+                                <div>
+                                    <label for="department_id" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Department / Stream <span class="text-red-500">*</span></label>
+                                    <select wire:model.defer="department_id" id="department_id" class="block w-full rounded-xl border @error('department_id') border-red-500 focus:ring-red-500 @else border-[var(--rule)] focus:ring-[var(--accent)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                        <option value="">-- Select Department --</option>
+                                        @foreach($availableDepartments as $dept)
+                                            <option value="{{ $dept->id }}">{{ $dept->name }} @if($dept->code)({{ $dept->code }})@endif</option>
+                                        @endforeach
+                                    </select>
+                                    <p class="text-xs text-[var(--support)] mt-1.5">Required for Senior School students.</p>
+                                    @error('department_id') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                </div>
+                            @endif
+
+                            @if ($enableClassArms)
+                                {{-- Class Arm / Stream (Optional/Nullable) --}}
+                                <div>
+                                    <label for="class_arm_id" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Class Arm / Stream <span class="text-xs font-normal text-[var(--support)] lowercase">(optional)</span></label>
+                                    <select wire:model.defer="class_arm_id" id="class_arm_id" class="block w-full rounded-xl border @error('class_arm_id') border-red-500 focus:ring-red-500 @else border-[var(--rule)] focus:ring-[var(--accent)] @enderror bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                        <option value="">-- Not Assigned Yet (Optional) --</option>
+                                        @foreach($availableArms as $arm)
+                                            <option value="{{ $arm->id }}">{{ $arm->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @if(count($availableArms) === 0 && $classroom_id)
+                                        <p class="text-xs text-[var(--support)] mt-1.5">No specific arms configured for this class.</p>
+                                    @endif
+                                    @error('class_arm_id') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                </div>
+                            @endif
 
                             {{-- Gender --}}
                             <div>

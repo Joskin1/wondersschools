@@ -12,7 +12,7 @@ class SubmissionWindowPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'sudo']);
+        return $user->canAccessAdminPage('submission_windows');
     }
 
     /**
@@ -20,7 +20,7 @@ class SubmissionWindowPolicy
      */
     public function view(User $user, SubmissionWindow $submissionWindow): bool
     {
-        return in_array($user->role, ['admin', 'sudo']);
+        return $user->canAccessAdminPage('submission_windows');
     }
 
     /**
@@ -28,7 +28,7 @@ class SubmissionWindowPolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['admin', 'sudo']);
+        return $user->canAccessAdminPage('submission_windows');
     }
 
     /**
@@ -36,7 +36,7 @@ class SubmissionWindowPolicy
      */
     public function update(User $user, SubmissionWindow $submissionWindow): bool
     {
-        return in_array($user->role, ['admin', 'sudo']);
+        return $user->canAccessAdminPage('submission_windows');
     }
 
     /**

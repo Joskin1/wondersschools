@@ -28,6 +28,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         'email',
         'password',
         'role',
+        'is_primary_admin',
+        'admin_designation',
+        'allowed_admin_pages',
         'is_active',
         'email_verified_at',
         'registration_completed_at',
@@ -53,6 +56,8 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_primary_admin' => 'boolean',
+            'allowed_admin_pages' => 'array',
             'is_active' => 'boolean',
             'registration_completed_at' => 'datetime',
         ];
@@ -72,6 +77,35 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is the primary admin (Principal / School Owner).
+     */
+    public function isPrimaryAdmin(): bool
+    {
+        return $this->isAdmin() && (bool) $this->is_primary_admin;
+    }
+
+    /**
+     * Determine if an admin user can access a specific admin page/resource.
+     */
+    public function canAccessAdminPage(string $pageKey): bool
+    {
+        if ($this->isSudo() || $this->isPrimaryAdmin()) {
+            return true;
+        }
+
+        if (!$this->isAdmin()) {
+            return false;
+        }
+
+        $allowed = $this->allowed_admin_pages;
+        if (!is_array($allowed)) {
+            return false;
+        }
+
+        return in_array('*', $allowed, true) || in_array($pageKey, $allowed, true);
     }
 
     /**
@@ -95,7 +129,19 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     public function canManageAcademics(): bool
     {
-        return in_array($this->role, ['sudo', 'admin']);
+        if ($this->isSudo() || $this->isPrimaryAdmin()) {
+            return true;
+        }
+
+        if (!$this->isAdmin()) {
+            return false;
+        }
+
+        return $this->canAccessAdminPage('academic_sessions')
+            || $this->canAccessAdminPage('terms')
+            || $this->canAccessAdminPage('classrooms')
+            || $this->canAccessAdminPage('enter_scores')
+            || $this->canAccessAdminPage('process_class_results');
     }
 
     /**
@@ -218,11 +264,57 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     }
 
     /**
+     * Get the class teacher assignments for this user.
+     */
+    public function classTeacherAssignments()
+    {
+        return $this->hasMany(ClassTeacherAssignment::class, 'teacher_id');
+    }
+
+    /**
+     * Get the teacher subject assignments for this user.
+     */
+    public function teacherSubjectAssignments()
+    {
+        return $this->hasMany(TeacherSubjectAssignment::class, 'teacher_id');
+    }
+
+    /**
+     * Scope a query to only include users eligible to be assigned as teachers (active teachers + active admins).
+     */
+    public function scopeAssignableTeachers($query)
+    {
+        return $query->where('is_active', true)
+            ->whereIn('role', ['teacher', 'admin']);
+    }
+
+    /**
+     * Check if user is actively assigned as a class teacher or subject teacher.
+     */
+    public function isAssignedTeacher(): bool
+    {
+        return $this->classTeacherAssignments()->exists()
+            || $this->teacherSubjectAssignments()->exists();
+    }
+
+    /**
+     * Check if user is a teacher or an admin who has teaching duties.
+     */
+    public function isTeachingStaff(): bool
+    {
+        return $this->isTeacher() || $this->isAssignedTeacher();
+    }
+
+    /**
      * Check if the user can be assigned to classes/subjects.
-     * Only active teachers who have completed registration can be assigned.
+     * Active teachers who have completed registration or active administrators can be assigned.
      */
     public function canBeAssigned(): bool
     {
+        if ($this->isAdmin()) {
+            return $this->isActive();
+        }
+
         return $this->isTeacher() && $this->isActive() && $this->hasCompletedRegistration();
     }
 

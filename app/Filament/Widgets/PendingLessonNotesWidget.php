@@ -10,6 +10,11 @@ class PendingLessonNotesWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
 
+    public static function canView(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('lesson_notes') ?? false;
+    }
+
     protected function getStats(): array
     {
         $pendingCount = LessonNote::where('status', 'pending')->count();

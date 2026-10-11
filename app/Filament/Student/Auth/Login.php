@@ -15,7 +15,7 @@ class Login extends BaseLogin
     protected function getEmailFormComponent(): Component
     {
         return TextInput::make('admission_number')
-            ->label('Admission Number')
+            ->label('Admission Number or Email')
             ->required()
             ->autocomplete('username')
             ->autofocus();
@@ -27,7 +27,8 @@ class Login extends BaseLogin
         $student = Student::query()
             ->where(function ($query) use ($input) {
                 $query->where('admission_number', $input)
-                    ->orWhere('admission_number', strtoupper($input));
+                    ->orWhere('admission_number', strtoupper($input))
+                    ->orWhereHas('user', fn ($q) => $q->where('email', strtolower($input)));
             })
             ->whereNotNull('user_id')
             ->with('user')

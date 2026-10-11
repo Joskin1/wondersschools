@@ -27,6 +27,11 @@ class SubmissionWindowResource extends Resource
         return false;
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('submission_windows') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

@@ -158,7 +158,7 @@
                                     <select wire:model="teacher_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm">
                                         <option value="">Select Teacher</option>
                                         @foreach($teachers as $teacher)
-                                            <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
+                                            <option value="{{ $teacher->id }}">{{ $teacher->name }}{{ $teacher->isAdmin() ? ' (Admin)' : '' }}</option>
                                         @endforeach
                                     </select>
                                     @error('teacher_id') <span class="text-xs text-red-600">{{ $message }}</span> @enderror

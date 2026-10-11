@@ -135,12 +135,20 @@ class ResultCalculationService
 
         foreach ($scale as $band) {
             if ($score >= $band['min'] && $score <= $band['max']) {
-                return ['grade' => $band['grade'], 'remark' => $band['remark']];
+                return [
+                    'grade'             => $band['grade'],
+                    'remark'            => $band['remark'],
+                    'principal_comment' => $band['principal_comment'] ?? '',
+                ];
             }
         }
 
         // Fallback — should never happen if config covers 0–100
-        return ['grade' => 'F', 'remark' => 'Fail'];
+        return [
+            'grade'             => 'F',
+            'remark'            => 'Fail',
+            'principal_comment' => 'A poor result. Needs urgent academic support, seriousness, and dedication.',
+        ];
     }
 
     /**
@@ -366,6 +374,15 @@ class ResultCalculationService
             $average       = $subjectsCount > 0 ? round($grandTotal / $subjectsCount, 2) : 0;
             $grading       = $this->resolveGrade($average);
 
+            $existing = TermResult::where('student_id', $row->student_id)
+                ->where('session_id', $sessionId)
+                ->where('term_id', $termId)
+                ->first();
+
+            $principalComment = ($existing && ! empty($existing->principal_comment))
+                ? $existing->principal_comment
+                : ($grading['principal_comment'] ?? '');
+
             TermResult::updateOrCreate(
                 [
                     'student_id' => $row->student_id,
@@ -373,20 +390,21 @@ class ResultCalculationService
                     'term_id'    => $termId,
                 ],
                 [
-                    'classroom_id'   => $classroomId,
-                    'subjects_count' => $subjectsCount,
-                    'grand_total'    => $grandTotal,
-                    'average'        => $average,
-                    'grade'          => $grading['grade'],
-                    'remark'         => $grading['remark'],
-                    'is_finalized'   => true,
+                    'classroom_id'      => $classroomId,
+                    'subjects_count'    => $subjectsCount,
+                    'grand_total'       => $grandTotal,
+                    'average'           => $average,
+                    'grade'             => $grading['grade'],
+                    'remark'            => $grading['remark'],
+                    'principal_comment' => $principalComment,
+                    'is_finalized'      => true,
                 ]
             );
         }
     }
 
     /**
-     * Step 5: Competition-rank students by grand_total for overall position.
+     * Step 5: Competition-rank students by grand_total for overall, department, and arm positions.
      */
     private function computeOverallPositions(int $classroomId, int $sessionId, int $termId): void
     {
@@ -395,9 +413,49 @@ class ResultCalculationService
             ->where('term_id', $termId)
             ->get();
 
-        $ranked = $this->competitionRank($results, 'grand_total', 'overall_position');
+        if ($results->isEmpty()) {
+            return;
+        }
 
-        foreach ($ranked as $result) {
+        $enrollments = StudentEnrollment::where('session_id', $sessionId)
+            ->where('classroom_id', $classroomId)
+            ->whereIn('student_id', $results->pluck('student_id'))
+            ->get()
+            ->keyBy('student_id');
+
+        // Overall cohort ranking
+        $results = $this->competitionRank($results, 'grand_total', 'overall_position');
+        $classPopulation = $results->count();
+
+        foreach ($results as $result) {
+            $enrollment = $enrollments->get($result->student_id);
+            $result->class_population    = $classPopulation;
+            $result->_temp_department_id = $enrollment?->department_id;
+            $result->_temp_class_arm_id  = $enrollment?->class_arm_id;
+        }
+
+        // Rank within department (Senior school)
+        $deptGroups = $results->filter(fn ($r) => !empty($r->_temp_department_id))->groupBy('_temp_department_id');
+        foreach ($deptGroups as $deptId => $deptResults) {
+            $deptPopulation = $deptResults->count();
+            $rankedDept = $this->competitionRank($deptResults, 'grand_total', 'department_position');
+            foreach ($rankedDept as $r) {
+                $r->department_population = $deptPopulation;
+            }
+        }
+
+        // Rank within class arm (Junior school / streamed arms)
+        $armGroups = $results->filter(fn ($r) => !empty($r->_temp_class_arm_id))->groupBy('_temp_class_arm_id');
+        foreach ($armGroups as $armId => $armResults) {
+            $armPopulation = $armResults->count();
+            $rankedArm = $this->competitionRank($armResults, 'grand_total', 'arm_position');
+            foreach ($rankedArm as $r) {
+                $r->arm_population = $armPopulation;
+            }
+        }
+
+        foreach ($results as $result) {
+            unset($result->_temp_department_id, $result->_temp_class_arm_id);
             $result->save();
         }
     }

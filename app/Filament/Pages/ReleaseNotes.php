@@ -65,7 +65,7 @@ class ReleaseNotes extends Page
             return false;
         }
 
-        return $user->isAdmin() || $user->isSudo();
+        return $user->isSudo() || $user->canAccessAdminPage('release_notes');
     }
 
     public function mount(): void

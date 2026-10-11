@@ -35,6 +35,11 @@ class InquiryResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->canAccessAdminPage('inquiries') ?? false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
