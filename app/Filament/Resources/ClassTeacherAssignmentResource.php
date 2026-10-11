@@ -52,7 +52,7 @@ class ClassTeacherAssignmentResource extends Resource
                     ->preload()
                     ->helperText('Active teachers and administrators can be assigned')
                     ->rules([
-                        fn (\Filament\Schemas\Components\Utilities\Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                        fn (\Filament\Schemas\Components\Utilities\Get $get, ?\Illuminate\Database\Eloquent\Model $record = null): Closure => function (string $attribute, $value, Closure $fail) use ($get, $record) {
                             $sessionId = $get('session_id');
                             if (! $value || ! $sessionId) {
                                 return;
@@ -68,7 +68,7 @@ class ClassTeacherAssignmentResource extends Resource
                             }
 
                             // When editing, ignore the current record
-                            $recordId = request()->route('record');
+                            $recordId = $record?->id ?? request()->route('record');
                             if ($recordId && (int) $existing->id === (int) $recordId) {
                                 return;
                             }
@@ -88,7 +88,7 @@ class ClassTeacherAssignmentResource extends Resource
                     ->searchable()
                     ->preload()
                     ->rules([
-                        fn (\Filament\Schemas\Components\Utilities\Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get) {
+                        fn (\Filament\Schemas\Components\Utilities\Get $get, ?\Illuminate\Database\Eloquent\Model $record = null): Closure => function (string $attribute, $value, Closure $fail) use ($get, $record) {
                             $sessionId = $get('session_id');
                             if (! $value || ! $sessionId) {
                                 return;
@@ -115,7 +115,7 @@ class ClassTeacherAssignmentResource extends Resource
                             }
 
                             // When editing, ignore the current record
-                            $recordId = request()->route('record');
+                            $recordId = $record?->id ?? request()->route('record');
                             if ($recordId && (int) $existing->id === (int) $recordId) {
                                 return;
                             }

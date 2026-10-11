@@ -62,7 +62,7 @@ class ClassroomResource extends Resource
                     ->numeric()
                     ->integer()
                     ->minValue(1)
-                    ->rules(['unique:classrooms,class_order,' . request()->route('record')])
+                    ->unique(ignoreRecord: true)
                     ->helperText('Lower number = lower academic level. Defines the promotion sequence (1 for JSS 1, 2 for JSS 2, etc.).'),
 
                 Toggle::make('has_departments')
