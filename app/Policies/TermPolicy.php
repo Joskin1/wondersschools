@@ -1,74 +1,41 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
 use App\Models\Term;
 use App\Models\User;
+use App\Policies\Concerns\HandlesAdminPermissions;
 
 class TermPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
+    use HandlesAdminPermissions;
+
+    protected function getResourceKey(): string
     {
-        return $user->canAccessAdminPage('terms');
+        return 'terms';
     }
 
     /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Term $term): bool
-    {
-        return $user->canAccessAdminPage('terms');
-    }
-
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(User $user): bool
-    {
-        return $user->canAccessAdminPage('terms');
-    }
-
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Term $term): bool
-    {
-        return $user->canAccessAdminPage('terms');
-    }
-
-    /**
-     * Determine whether the user can delete the model.
      * Terms should never be deleted to preserve historical data.
      */
-    public function delete(User $user, Term $term): bool
+    public function delete(User $user, mixed $term): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can migrate terms.
-     */
     public function migrate(User $user): bool
     {
-        // Admins and sudo users can migrate terms
         return $user->canManageAcademics();
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, Term $term): bool
+    public function restore(User $user, mixed $term): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, Term $term): bool
+    public function forceDelete(User $user, mixed $term): bool
     {
         return false;
     }

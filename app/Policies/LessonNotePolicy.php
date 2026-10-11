@@ -12,8 +12,8 @@ class LessonNotePolicy
 {
     public function viewAny(User $user): bool
     {
-        if ($user->isAdmin()) {
-            return $user->canAccessAdminPage('lesson_notes');
+        if ($user->isAdmin() || $user->isPrimaryAdmin()) {
+            return $user->canPerformAdminAction('lesson_notes', 'viewAny');
         }
 
         if ($user->isSudo() || $user->isTeacher()) {
@@ -33,12 +33,12 @@ class LessonNotePolicy
      */
     public function view(User $user, LessonNote $lessonNote): bool
     {
-        if ($user->isAdmin()) {
-            return $user->canAccessAdminPage('lesson_notes');
+        if ($user->isSudo() || $user->isPrimaryAdmin()) {
+            return true;
         }
 
-        if ($user->isSudo()) {
-            return true;
+        if ($user->isAdmin()) {
+            return $user->canPerformAdminAction('lesson_notes', 'view');
         }
 
         // Teachers can view their own
@@ -93,8 +93,12 @@ class LessonNotePolicy
      */
     public function update(User $user, LessonNote $lessonNote): bool
     {
-        // Admins can always update (for review/approval)
-        if (in_array($user->role, ['admin', 'sudo'])) {
+        // Sudo, Principal or admins with update permission can update (for review/approval)
+        if ($user->isSudo() || $user->isPrimaryAdmin()) {
+            return true;
+        }
+
+        if ($user->isAdmin() && $user->canPerformAdminAction('lesson_notes', 'update')) {
             return true;
         }
 
@@ -123,7 +127,11 @@ class LessonNotePolicy
      */
     public function approve(User $user, LessonNote $lessonNote): bool
     {
-        return in_array($user->role, ['admin', 'sudo']);
+        if ($user->isSudo() || $user->isPrimaryAdmin()) {
+            return true;
+        }
+
+        return $user->isAdmin() && $user->canPerformAdminAction('lesson_notes', 'update');
     }
 
     /**
@@ -131,7 +139,11 @@ class LessonNotePolicy
      */
     public function reject(User $user, LessonNote $lessonNote): bool
     {
-        return in_array($user->role, ['admin', 'sudo']);
+        if ($user->isSudo() || $user->isPrimaryAdmin()) {
+            return true;
+        }
+
+        return $user->isAdmin() && $user->canPerformAdminAction('lesson_notes', 'update');
     }
 
     /**

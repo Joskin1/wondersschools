@@ -11,21 +11,25 @@ class ScorePolicy
 {
     public function viewAny(User $user): bool
     {
+        if ($user->isSudo() || $user->isPrimaryAdmin()) {
+            return true;
+        }
+
         if ($user->isAdmin()) {
             return $user->canAccessAdminPage('enter_scores') || $user->canAccessAdminPage('process_class_results');
         }
 
-        return $user->isSudo() || $user->isTeacher();
+        return $user->isTeacher();
     }
 
     public function view(User $user, Score $score): bool
     {
-        if ($user->isAdmin()) {
-            return $user->canAccessAdminPage('enter_scores') || $user->canAccessAdminPage('process_class_results');
+        if ($user->isSudo() || $user->isPrimaryAdmin()) {
+            return true;
         }
 
-        if ($user->isSudo()) {
-            return true;
+        if ($user->isAdmin()) {
+            return $user->canAccessAdminPage('enter_scores') || $user->canAccessAdminPage('process_class_results');
         }
 
         if ($user->isTeacher()) {
@@ -44,21 +48,25 @@ class ScorePolicy
 
     public function create(User $user): bool
     {
-        if ($user->isAdmin()) {
-            return $user->canAccessAdminPage('enter_scores');
+        if ($user->isSudo() || $user->isPrimaryAdmin()) {
+            return true;
         }
 
-        return $user->isSudo() || $user->isTeacher();
+        if ($user->isAdmin()) {
+            return $user->canPerformAdminAction('enter_scores', 'create');
+        }
+
+        return $user->isTeacher();
     }
 
     public function update(User $user, Score $score): bool
     {
-        if ($user->isAdmin()) {
-            return $user->canAccessAdminPage('enter_scores');
+        if ($user->isSudo() || $user->isPrimaryAdmin()) {
+            return true;
         }
 
-        if ($user->isSudo()) {
-            return true;
+        if ($user->isAdmin()) {
+            return $user->canPerformAdminAction('enter_scores', 'update');
         }
 
         if ($user->isTeacher()) {
@@ -76,11 +84,15 @@ class ScorePolicy
 
     public function delete(User $user, Score $score): bool
     {
-        if ($user->isAdmin()) {
-            return $user->canAccessAdminPage('enter_scores');
+        if ($user->isSudo() || $user->isPrimaryAdmin()) {
+            return true;
         }
 
-        return $user->isSudo();
+        if ($user->isAdmin()) {
+            return $user->canPerformAdminAction('enter_scores', 'delete');
+        }
+
+        return false;
     }
 
     /**
@@ -94,12 +106,12 @@ class ScorePolicy
         int $sessionId,
         int $termId
     ): bool {
-        if ($user->isAdmin()) {
-            return $user->canAccessAdminPage('enter_scores');
+        if ($user->isSudo() || $user->isPrimaryAdmin()) {
+            return true;
         }
 
-        if ($user->isSudo()) {
-            return true;
+        if ($user->isAdmin()) {
+            return $user->canAccessAdminPage('enter_scores');
         }
 
         if (! $user->isTeacher()) {

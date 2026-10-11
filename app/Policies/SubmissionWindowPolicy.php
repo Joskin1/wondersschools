@@ -1,51 +1,37 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
 use App\Models\SubmissionWindow;
 use App\Models\User;
+use App\Policies\Concerns\HandlesAdminPermissions;
 
 class SubmissionWindowPolicy
 {
-    /**
-     * Determine if the user can view any submission windows.
-     */
-    public function viewAny(User $user): bool
+    use HandlesAdminPermissions;
+
+    protected function getResourceKey(): string
     {
-        return $user->canAccessAdminPage('submission_windows');
+        return 'submission_windows';
     }
 
     /**
-     * Determine if the user can view the submission window.
+     * No deletions allowed - data preservation requirement.
      */
-    public function view(User $user, SubmissionWindow $submissionWindow): bool
+    public function delete(User $user, mixed $submissionWindow): bool
     {
-        return $user->canAccessAdminPage('submission_windows');
+        return false;
     }
 
-    /**
-     * Determine if the user can create submission windows.
-     */
-    public function create(User $user): bool
+    public function restore(User $user, mixed $submissionWindow): bool
     {
-        return $user->canAccessAdminPage('submission_windows');
+        return false;
     }
 
-    /**
-     * Determine if the user can update the submission window.
-     */
-    public function update(User $user, SubmissionWindow $submissionWindow): bool
+    public function forceDelete(User $user, mixed $submissionWindow): bool
     {
-        return $user->canAccessAdminPage('submission_windows');
-    }
-
-    /**
-     * Determine if the user can delete the submission window.
-     * 
-     * CRITICAL: No deletions allowed - data preservation requirement
-     */
-    public function delete(User $user, SubmissionWindow $submissionWindow): bool
-    {
-        return false; // Never allow deletions
+        return false;
     }
 }

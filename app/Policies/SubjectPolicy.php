@@ -1,46 +1,36 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
 use App\Models\Subject;
 use App\Models\User;
+use App\Policies\Concerns\HandlesAdminPermissions;
 
 class SubjectPolicy
 {
-    public function viewAny(User $user): bool
-    {
-        return $user->canAccessAdminPage('subjects');
-    }
+    use HandlesAdminPermissions;
 
-    public function view(User $user, Subject $subject): bool
+    protected function getResourceKey(): string
     {
-        return $user->canAccessAdminPage('subjects');
-    }
-
-    public function create(User $user): bool
-    {
-        return $user->canAccessAdminPage('subjects');
-    }
-
-    public function update(User $user, Subject $subject): bool
-    {
-        return $user->canAccessAdminPage('subjects');
+        return 'subjects';
     }
 
     /**
      * Subjects should never be deleted to preserve historical data.
      */
-    public function delete(User $user, Subject $subject): bool
+    public function delete(User $user, mixed $subject): bool
     {
         return false;
     }
 
-    public function restore(User $user, Subject $subject): bool
+    public function restore(User $user, mixed $subject): bool
     {
         return false;
     }
 
-    public function forceDelete(User $user, Subject $subject): bool
+    public function forceDelete(User $user, mixed $subject): bool
     {
         return false;
     }

@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Filament\Facades\Filament;
+use Illuminate\Support\Str;
+
 class AdminPermissionRegistry
 {
     /**
-     * Get all admin permissions grouped by module.
+     * Get base curated admin permissions grouped by module.
      *
      * @return array<string, array{icon: string, items: array<string, array{label: string, description: string}>}>
      */
-    public static function getPermissionsGrouped(): array
+    public static function getBaseGroups(): array
     {
         return [
             'Academic Management' => [
@@ -148,6 +151,115 @@ class AdminPermissionRegistry
     }
 
     /**
+     * Get all admin permissions grouped by module with dynamic discovery of newly registered resources.
+     *
+     * @return array<string, array{icon: string, items: array<string, array{label: string, description: string}>}>
+     */
+    public static function getPermissionsGrouped(): array
+    {
+        $groups = static::getBaseGroups();
+
+        try {
+            if (class_exists(Filament::class)) {
+                $panel = Filament::getPanel('admin');
+                if ($panel) {
+                    $existingKeys = [];
+                    foreach ($groups as $group) {
+                        foreach (array_keys($group['items']) as $k) {
+                            $existingKeys[] = $k;
+                        }
+                    }
+
+                    $resources = $panel->getResources();
+                    foreach ($resources as $resourceClass) {
+                        if (! is_string($resourceClass) || ! class_exists($resourceClass)) {
+                            continue;
+                        }
+
+                        // Skip hidden staff resource
+                        if ($resourceClass === \App\Filament\Resources\StaffResource::class) {
+                            continue;
+                        }
+
+                        $slug = static::inferResourceKey($resourceClass);
+                        if (! in_array($slug, $existingKeys, true)) {
+                            $navGroup = method_exists($resourceClass, 'getNavigationGroup')
+                                ? ((string) $resourceClass::getNavigationGroup() ?: 'Additional Resources')
+                                : 'Additional Resources';
+
+                            if (! isset($groups[$navGroup])) {
+                                $groups[$navGroup] = [
+                                    'icon' => 'heroicon-o-cube',
+                                    'items' => [],
+                                ];
+                            }
+
+                            $label = method_exists($resourceClass, 'getNavigationLabel')
+                                ? ((string) $resourceClass::getNavigationLabel() ?: class_basename($resourceClass))
+                                : class_basename($resourceClass);
+
+                            $groups[$navGroup]['items'][$slug] = [
+                                'label' => $label,
+                                'description' => "Manage {$label} records",
+                            ];
+                            $existingKeys[] = $slug;
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Gracefully ignore during early boot or console commands without Filament active
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Infer permission slug from resource class name.
+     */
+    public static function inferResourceKey(string $resourceClass): string
+    {
+        $basename = class_basename($resourceClass);
+        $clean = (string) preg_replace('/Resource$/', '', $basename);
+
+        return Str::snake(Str::plural($clean));
+    }
+
+    /**
+     * Check if a permission is a custom page rather than an Eloquent resource.
+     */
+    public static function isPageOnly(string $key): bool
+    {
+        return in_array($key, [
+            'class_score_structure',
+            'enter_scores',
+            'process_class_results',
+            'settings',
+            'system_logs',
+            'release_notes',
+        ], true);
+    }
+
+    /**
+     * Get supported granular actions for a resource.
+     *
+     * @return array<string, string>
+     */
+    public static function getActionsForResource(string $resourceKey): array
+    {
+        if (static::isPageOnly($resourceKey)) {
+            return [];
+        }
+
+        return [
+            'view' => 'View (List & Details)',
+            'create' => 'Create New',
+            'update' => 'Edit & Update',
+            'delete' => 'Delete',
+        ];
+    }
+
+    /**
      * Get all registered permission keys.
      *
      * @return list<string>
@@ -156,47 +268,76 @@ class AdminPermissionRegistry
     {
         $keys = [];
         foreach (static::getPermissionsGrouped() as $group) {
-            foreach (array_keys($group['items']) as $key) {
+            foreach ($group['items'] as $key => $item) {
                 $keys[] = $key;
+                if (! static::isPageOnly($key)) {
+                    foreach (array_keys(static::getActionsForResource($key)) as $action) {
+                        $keys[] = "{$key}.{$action}";
+                    }
+                }
             }
         }
-        return $keys;
+
+        return array_values(array_unique($keys));
     }
 
     /**
-     * Get predefined role presets.
+     * Check if a resource is fully granted for the given permissions list.
+     */
+    public static function isResourceFullyGranted(string $resourceKey, array $userPermissions): bool
+    {
+        if (in_array('*', $userPermissions, true) || in_array($resourceKey, $userPermissions, true) || in_array("{$resourceKey}.*", $userPermissions, true)) {
+            return true;
+        }
+
+        $actions = array_keys(static::getActionsForResource($resourceKey));
+        if (empty($actions)) {
+            return false;
+        }
+
+        foreach ($actions as $action) {
+            if (! in_array("{$resourceKey}.{$action}", $userPermissions, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Get predefined role presets (convenient templates).
      *
      * @return array<string, array{name: string, designation: string, description: string, pages: list<string>}>
      */
     public static function getPresets(): array
     {
         return [
+            'bursar' => [
+                'name' => 'Bursar / Accounts',
+                'designation' => 'Bursar',
+                'description' => 'Access to view student records, inquiries, and public messages without altering academic records or student data',
+                'pages' => [
+                    'students.view',
+                    'inquiries',
+                    'contact_submissions',
+                ],
+            ],
             'exam_officer' => [
                 'name' => 'Exam Officer',
                 'designation' => 'Exam Officer',
                 'description' => 'Full access to examinations, score entry, result processing, academic structure, and student records',
                 'pages' => [
-                    'score_heads',
-                    'class_score_structure',
                     'enter_scores',
                     'process_class_results',
+                    'score_heads',
+                    'class_score_structure',
                     'academic_sessions',
                     'terms',
                     'classrooms',
                     'class_arms',
                     'departments',
                     'subjects',
-                    'students',
-                ],
-            ],
-            'bursar' => [
-                'name' => 'Bursar / Accounts',
-                'designation' => 'Bursar',
-                'description' => 'Access to student records, inquiries, and public messages without academic score alteration',
-                'pages' => [
-                    'students',
-                    'inquiries',
-                    'contact_submissions',
+                    'students.view',
                 ],
             ],
             'vp_academic' => [
@@ -219,15 +360,15 @@ class AdminPermissionRegistry
                     'process_class_results',
                     'lesson_notes',
                     'submission_windows',
-                    'students',
+                    'students.view',
                 ],
             ],
             'front_desk' => [
                 'name' => 'Front Desk / Secretary',
                 'designation' => 'Front Desk Officer',
-                'description' => 'Admissions, student directory, public website inquiries, news posts, and media gallery',
+                'description' => 'Admissions, student directory (view only), public website inquiries, news posts, and media gallery',
                 'pages' => [
-                    'students',
+                    'students.view',
                     'inquiries',
                     'contact_submissions',
                     'posts',

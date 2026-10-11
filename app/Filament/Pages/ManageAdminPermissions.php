@@ -49,26 +49,35 @@ class ManageAdminPermissions extends Page
         $this->principalUserId = $this->getCurrentPrincipal()?->id;
 
         $requestedUserId = request()->query('user');
-        $admins = $this->getSecondaryAdmins();
+        $staff = $this->getManageableStaff();
 
-        if ($requestedUserId && $admins->contains('id', (int) $requestedUserId)) {
+        if ($requestedUserId && $staff->contains('id', (int) $requestedUserId)) {
             $this->selectedUserId = (int) $requestedUserId;
-        } elseif ($admins->isNotEmpty()) {
-            $this->selectedUserId = $admins->first()->id;
+        } elseif ($staff->isNotEmpty()) {
+            $this->selectedUserId = $staff->first()->id;
         }
 
         $this->loadUserData();
     }
 
     /**
-     * Get all admin users for Sudo to select from.
+     * Get all eligible users for Sudo to select as Principal (any staff member, excluding Sudo).
+     */
+    public function getAllPotentialPrincipals(): Collection
+    {
+        return User::query()
+            ->whereIn('role', ['admin', 'teacher'])
+            ->where('role', '!=', 'sudo')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Backward-compatible alias for potential admins/principals.
      */
     public function getAllAdmins(): Collection
     {
-        return User::query()
-            ->where('role', 'admin')
-            ->orderBy('name')
-            ->get();
+        return $this->getAllPotentialPrincipals();
     }
 
     /**
@@ -77,8 +86,8 @@ class ManageAdminPermissions extends Page
     public function getCurrentPrincipal(): ?User
     {
         return User::query()
-            ->where('role', 'admin')
             ->where('is_primary_admin', true)
+            ->where('role', '!=', 'sudo')
             ->first();
     }
 
@@ -91,13 +100,17 @@ class ManageAdminPermissions extends Page
 
         if (! $this->principalUserId) {
             Notification::make()
-                ->title('Please select an admin user to designate as Principal')
+                ->title('Please select a staff user to designate as Principal')
                 ->warning()
                 ->send();
             return;
         }
 
-        $user = User::where('role', 'admin')->find($this->principalUserId);
+        $user = User::query()
+            ->whereIn('role', ['admin', 'teacher'])
+            ->where('role', '!=', 'sudo')
+            ->find($this->principalUserId);
+
         if (! $user) {
             Notification::make()
                 ->title('Invalid user selected')
@@ -106,8 +119,8 @@ class ManageAdminPermissions extends Page
             return;
         }
 
-        // Reset previous primary admin
-        User::where('role', 'admin')->where('is_primary_admin', true)->update([
+        // Reset previous primary admin to enforce single active Principal per tenant
+        User::where('is_primary_admin', true)->update([
             'is_primary_admin' => false,
         ]);
 
@@ -118,14 +131,14 @@ class ManageAdminPermissions extends Page
         }
         $user->save();
 
-        // Refresh secondary admin selection
-        $admins = $this->getSecondaryAdmins();
-        $this->selectedUserId = $admins->first()?->id;
+        // Refresh staff selection
+        $staff = $this->getManageableStaff();
+        $this->selectedUserId = $staff->first()?->id;
         $this->loadUserData();
 
         Notification::make()
             ->title('Principal Privilege Granted')
-            ->body("{$user->name} ({$user->email}) is now designated as Principal. They can now access Admin Permissions in their panel.")
+            ->body("{$user->name} ({$user->email}) is now designated as Principal. They have unrestricted administrative access and can manage permissions for ordinary staff.")
             ->success()
             ->send();
     }
@@ -137,34 +150,45 @@ class ManageAdminPermissions extends Page
     {
         abort_unless(auth()->user()?->isSudo(), 403);
 
-        $user = User::where('role', 'admin')->find($userId);
+        $user = User::find($userId);
         if ($user) {
             $user->is_primary_admin = false;
             $user->save();
 
             $this->principalUserId = null;
-            $admins = $this->getSecondaryAdmins();
-            $this->selectedUserId = $admins->first()?->id;
+            $staff = $this->getManageableStaff();
+            $this->selectedUserId = $staff->first()?->id;
             $this->loadUserData();
 
             Notification::make()
                 ->title('Principal Privilege Revoked')
-                ->body("{$user->name} ({$user->email}) no longer has access to Admin Permissions.")
+                ->body("{$user->name} ({$user->email}) is no longer the designated Principal.")
                 ->info()
                 ->send();
         }
     }
 
     /**
-     * Get list of secondary administrators that can have permissions managed.
+     * Get list of secondary administrators and teachers whose permissions can be managed.
+     * Sudo and the active Principal are never manageable through this list.
+     */
+    public function getManageableStaff(): Collection
+    {
+        return User::query()
+            ->whereIn('role', ['admin', 'teacher'])
+            ->where('role', '!=', 'sudo')
+            ->where('is_primary_admin', false)
+            ->orderBy('role')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Backward-compatible alias for secondary admins.
      */
     public function getSecondaryAdmins(): Collection
     {
-        return User::query()
-            ->where('role', 'admin')
-            ->where('is_primary_admin', false)
-            ->orderBy('name')
-            ->get();
+        return $this->getManageableStaff();
     }
 
     public function updatedSelectedUserId(): void
@@ -190,6 +214,109 @@ class ManageAdminPermissions extends Page
         }
     }
 
+    /**
+     * Check if a specific granular action is active for a resource.
+     */
+    public function isActionSelected(string $resourceKey, string $action): bool
+    {
+        if (in_array('*', $this->selectedPermissions, true)) {
+            return true;
+        }
+
+        if (in_array($resourceKey, $this->selectedPermissions, true) || in_array("{$resourceKey}.*", $this->selectedPermissions, true)) {
+            return true;
+        }
+
+        return in_array("{$resourceKey}.{$action}", $this->selectedPermissions, true);
+    }
+
+    /**
+     * Check if a resource or page is fully granted.
+     */
+    public function isResourceSelected(string $resourceKey): bool
+    {
+        if (in_array('*', $this->selectedPermissions, true)) {
+            return true;
+        }
+
+        if (AdminPermissionRegistry::isPageOnly($resourceKey)) {
+            return in_array($resourceKey, $this->selectedPermissions, true);
+        }
+
+        if (in_array($resourceKey, $this->selectedPermissions, true) || in_array("{$resourceKey}.*", $this->selectedPermissions, true)) {
+            return true;
+        }
+
+        $actions = array_keys(AdminPermissionRegistry::getActionsForResource($resourceKey));
+        if (empty($actions)) {
+            return false;
+        }
+
+        foreach ($actions as $action) {
+            if (! in_array("{$resourceKey}.{$action}", $this->selectedPermissions, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Toggle all permissions for an entire resource or custom page.
+     */
+    public function toggleResource(string $resourceKey): void
+    {
+        if (AdminPermissionRegistry::isPageOnly($resourceKey)) {
+            if (in_array($resourceKey, $this->selectedPermissions, true)) {
+                $this->selectedPermissions = array_values(array_diff($this->selectedPermissions, [$resourceKey]));
+            } else {
+                $this->selectedPermissions[] = $resourceKey;
+            }
+            $this->selectedPermissions = array_values(array_unique($this->selectedPermissions));
+            return;
+        }
+
+        $actions = array_keys(AdminPermissionRegistry::getActionsForResource($resourceKey));
+        $actionKeys = array_map(fn ($act) => "{$resourceKey}.{$act}", $actions);
+        $allKeysToRemove = array_merge([$resourceKey, "{$resourceKey}.*"], $actionKeys);
+
+        if ($this->isResourceSelected($resourceKey)) {
+            // Deselect whole resource
+            $this->selectedPermissions = array_values(array_diff($this->selectedPermissions, $allKeysToRemove));
+        } else {
+            // Select all actions for this resource
+            $this->selectedPermissions = array_values(array_diff($this->selectedPermissions, $allKeysToRemove));
+            $this->selectedPermissions = array_values(array_unique(array_merge($this->selectedPermissions, $actionKeys)));
+        }
+    }
+
+    /**
+     * Toggle an individual granular action for a resource.
+     */
+    public function toggleAction(string $resourceKey, string $action): void
+    {
+        $targetKey = "{$resourceKey}.{$action}";
+        $actions = array_keys(AdminPermissionRegistry::getActionsForResource($resourceKey));
+        $allActionKeys = array_map(fn ($act) => "{$resourceKey}.{$act}", $actions);
+
+        // If the resource was granted as a whole, decompose it into granular actions first
+        if (in_array($resourceKey, $this->selectedPermissions, true) || in_array("{$resourceKey}.*", $this->selectedPermissions, true)) {
+            $this->selectedPermissions = array_values(array_diff($this->selectedPermissions, [$resourceKey, "{$resourceKey}.*"]));
+            $this->selectedPermissions = array_values(array_unique(array_merge($this->selectedPermissions, $allActionKeys)));
+        }
+
+        if (in_array($targetKey, $this->selectedPermissions, true)) {
+            $this->selectedPermissions = array_values(array_diff($this->selectedPermissions, [$targetKey]));
+        } else {
+            $this->selectedPermissions[] = $targetKey;
+        }
+
+        $this->selectedPermissions = array_values(array_unique($this->selectedPermissions));
+    }
+
+    /**
+     * Apply optional role preset template.
+     */
     public function applyPreset(string $presetKey): void
     {
         $presets = AdminPermissionRegistry::getPresets();
@@ -206,6 +333,7 @@ class ManageAdminPermissions extends Page
 
         Notification::make()
             ->title("Preset applied: {$preset['name']}")
+            ->body('Preset template applied. You can further adjust individual permissions before saving.')
             ->success()
             ->send();
     }
@@ -215,7 +343,7 @@ class ManageAdminPermissions extends Page
         $this->selectedPermissions = AdminPermissionRegistry::getAllKeys();
 
         Notification::make()
-            ->title('All pages selected')
+            ->title('All permissions selected')
             ->info()
             ->send();
     }
@@ -225,7 +353,7 @@ class ManageAdminPermissions extends Page
         $this->selectedPermissions = [];
 
         Notification::make()
-            ->title('All pages cleared')
+            ->title('All permissions cleared')
             ->warning()
             ->send();
     }
@@ -237,14 +365,21 @@ class ManageAdminPermissions extends Page
             return;
         }
 
-        $groupKeys = array_keys($grouped[$groupName]['items']);
+        $groupKeys = [];
+        foreach ($grouped[$groupName]['items'] as $itemKey => $item) {
+            $groupKeys[] = $itemKey;
+            if (! AdminPermissionRegistry::isPageOnly($itemKey)) {
+                foreach (array_keys(AdminPermissionRegistry::getActionsForResource($itemKey)) as $action) {
+                    $groupKeys[] = "{$itemKey}.{$action}";
+                }
+            }
+        }
+
         $allPresent = count(array_intersect($groupKeys, $this->selectedPermissions)) === count($groupKeys);
 
         if ($allPresent) {
-            // Remove group keys
             $this->selectedPermissions = array_values(array_diff($this->selectedPermissions, $groupKeys));
         } else {
-            // Add all group keys
             $this->selectedPermissions = array_values(array_unique(array_merge($this->selectedPermissions, $groupKeys)));
         }
     }
@@ -255,7 +390,7 @@ class ManageAdminPermissions extends Page
 
         if (! $this->selectedUserId) {
             Notification::make()
-                ->title('No administrator selected')
+                ->title('No staff member selected')
                 ->danger()
                 ->send();
             return;
@@ -263,7 +398,8 @@ class ManageAdminPermissions extends Page
 
         $user = User::query()
             ->where('id', $this->selectedUserId)
-            ->where('role', 'admin')
+            ->whereIn('role', ['admin', 'teacher'])
+            ->where('role', '!=', 'sudo')
             ->where('is_primary_admin', false)
             ->first();
 
@@ -276,12 +412,12 @@ class ManageAdminPermissions extends Page
         }
 
         $user->admin_designation = trim($this->adminDesignation) ?: null;
-        $user->allowed_admin_pages = array_values(array_unique($this->selectedPermissions));
+        $user->allowed_admin_pages = array_values(array_unique(array_filter($this->selectedPermissions)));
         $user->save();
 
         Notification::make()
             ->title('Permissions updated successfully')
-            ->body("Access permissions saved for {$user->name} (" . ($user->admin_designation ?: 'Admin') . ').')
+            ->body("Access permissions saved for {$user->name} (" . ($user->admin_designation ?: ucfirst($user->role)) . ').')
             ->success()
             ->send();
     }

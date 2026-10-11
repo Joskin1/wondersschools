@@ -1,65 +1,36 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
 use App\Models\Session;
 use App\Models\User;
+use App\Policies\Concerns\HandlesAdminPermissions;
 
 class SessionPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
+    use HandlesAdminPermissions;
+
+    protected function getResourceKey(): string
     {
-        return $user->canAccessAdminPage('academic_sessions');
+        return 'academic_sessions';
     }
 
     /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Session $session): bool
-    {
-        return $user->canAccessAdminPage('academic_sessions');
-    }
-
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(User $user): bool
-    {
-        return $user->canAccessAdminPage('academic_sessions');
-    }
-
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Session $session): bool
-    {
-        return $user->canAccessAdminPage('academic_sessions');
-    }
-
-    /**
-     * Determine whether the user can delete the model.
      * Sessions should never be deleted to preserve historical data.
      */
-    public function delete(User $user, Session $session): bool
+    public function delete(User $user, mixed $session): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, Session $session): bool
+    public function restore(User $user, mixed $session): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, Session $session): bool
+    public function forceDelete(User $user, mixed $session): bool
     {
         return false;
     }

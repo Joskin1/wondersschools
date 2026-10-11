@@ -81,6 +81,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 
     /**
      * Check if user is the primary admin (Principal / School Owner).
+     * Protected full-access designation within this tenant.
      */
     public function isPrimaryAdmin(): bool
     {
@@ -88,7 +89,18 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     }
 
     /**
-     * Determine if an admin user can access a specific admin page/resource.
+     * Check if user has any active admin permissions assigned.
+     */
+    public function hasAnyAdminPermission(): bool
+    {
+        $allowed = $this->allowed_admin_pages;
+
+        return is_array($allowed) && !empty($allowed);
+    }
+
+    /**
+     * Determine if a user can access a specific admin page/resource.
+     * Sudo and Principal have automatic unrestricted access to all current and future pages.
      */
     public function canAccessAdminPage(string $pageKey): bool
     {
@@ -96,16 +108,75 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
             return true;
         }
 
-        if (!$this->isAdmin()) {
+        if (!$this->isAdmin() && !$this->isTeacher()) {
             return false;
         }
 
         $allowed = $this->allowed_admin_pages;
-        if (!is_array($allowed)) {
+        if (!is_array($allowed) || empty($allowed)) {
             return false;
         }
 
-        return in_array('*', $allowed, true) || in_array($pageKey, $allowed, true);
+        if (in_array('*', $allowed, true) || in_array($pageKey, $allowed, true) || in_array("{$pageKey}.*", $allowed, true)) {
+            return true;
+        }
+
+        // If user has any granular action permission for this resource/page (e.g. students.view, students.create)
+        foreach ($allowed as $permission) {
+            if (is_string($permission) && str_starts_with($permission, "{$pageKey}.")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine if a user can perform a specific granular action on a resource.
+     * Sudo and Principal have automatic unrestricted access to all current and future actions.
+     */
+    public function canPerformAdminAction(string $resourceKey, string $action): bool
+    {
+        if ($this->isSudo() || $this->isPrimaryAdmin()) {
+            return true;
+        }
+
+        if (!$this->isAdmin() && !$this->isTeacher()) {
+            return false;
+        }
+
+        $allowed = $this->allowed_admin_pages;
+        if (!is_array($allowed) || empty($allowed)) {
+            return false;
+        }
+
+        // Wildcard or full-resource grant
+        if (in_array('*', $allowed, true) || in_array($resourceKey, $allowed, true) || in_array("{$resourceKey}.*", $allowed, true)) {
+            return true;
+        }
+
+        // Direct action key check
+        if (in_array("{$resourceKey}.{$action}", $allowed, true)) {
+            return true;
+        }
+
+        // Action aliases matching
+        $actionAliases = match ($action) {
+            'viewAny', 'view' => ['view', 'viewAny', 'read'],
+            'create' => ['create', 'add'],
+            'update', 'edit' => ['update', 'edit'],
+            'delete', 'deleteAny', 'forceDelete' => ['delete', 'deleteAny'],
+            'restore' => ['restore', 'update', 'edit'],
+            default => [$action],
+        };
+
+        foreach ($actionAliases as $alias) {
+            if (in_array("{$resourceKey}.{$alias}", $allowed, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -162,7 +233,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
 
         return match ($panel->getId()) {
             'sudo' => $this->role === 'sudo',
-            'admin' => in_array($this->role, ['sudo', 'admin']),
+            'admin' => in_array($this->role, ['sudo', 'admin']) || ($this->isTeacher() && $this->hasAnyAdminPermission()),
             'teacher' => (in_array($this->role, ['sudo', 'admin']) || $this->role === 'teacher') && $this->isActive(),
             'student' => $this->role === 'student' && $this->isActive(),
             default => false,

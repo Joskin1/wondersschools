@@ -1,4 +1,4 @@
-@if(auth()->user()?->isAdmin() || auth()->user()?->isSudo())
+@if(auth()->user()?->isAdmin() || auth()->user()?->isSudo() || auth()->user()?->hasAnyAdminPermission())
     <div class="flex items-center me-2">
         <a href="{{ url('/admin') }}"
            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/60 dark:text-amber-300 dark:hover:bg-amber-900/60 border border-amber-300 dark:border-amber-700 transition shadow-sm"

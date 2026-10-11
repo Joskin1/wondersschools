@@ -75,13 +75,13 @@ class TeacherPanelProvider extends PanelProvider
                     ->label('Switch to Admin Panel')
                     ->url(fn () => url('/admin'))
                     ->icon('heroicon-o-shield-check')
-                    ->visible(fn () => (auth()->user()?->isAdmin() || auth()->user()?->isSudo()) ?? false),
+                    ->visible(fn () => (auth()->user()?->isAdmin() || auth()->user()?->isSudo() || auth()->user()?->hasAnyAdminPermission()) ?? false),
             ])
             ->navigationItems([
                 NavigationItem::make('Admin Panel')
                     ->url(fn () => url('/admin'))
                     ->icon('heroicon-o-shield-check')
-                    ->visible(fn () => (auth()->user()?->isAdmin() || auth()->user()?->isSudo()) ?? false)
+                    ->visible(fn () => (auth()->user()?->isAdmin() || auth()->user()?->isSudo() || auth()->user()?->hasAnyAdminPermission()) ?? false)
                     ->sort(PHP_INT_MAX - 10),
                 NavigationItem::make('Visit School Website')
                     ->url(fn () => request()->getSchemeAndHttpHost(), shouldOpenInNewTab: true)

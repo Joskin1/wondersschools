@@ -290,7 +290,15 @@ class UserResource extends Resource
                         : "Grant Principal privilege to {$record->name} ({$record->email})? They will gain unrestricted access and will be able to manage other administrators' permissions."
                     )
                     ->action(function (User $record) {
+                        abort_unless(auth()->user()?->isSudo(), 403);
+
                         $newState = !$record->is_primary_admin;
+                        if ($newState) {
+                            User::where('is_primary_admin', true)->where('id', '!=', $record->id)->update([
+                                'is_primary_admin' => false,
+                            ]);
+                        }
+
                         $updateData = ['is_primary_admin' => $newState];
                         if ($newState && empty($record->admin_designation)) {
                             $updateData['admin_designation'] = 'Principal';
