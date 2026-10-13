@@ -71,12 +71,9 @@ class AdminadminPanelProvider extends PanelProvider
                 \App\Filament\Teacher\Pages\EnterScores::class,
                 \App\Filament\Teacher\Pages\ProcessClassResults::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 \App\Filament\Widgets\SchoolOverviewWidget::class,
                 \App\Filament\Widgets\StudentsByClassWidget::class,
-                \App\Filament\Widgets\PendingLessonNotesWidget::class,
-                \App\Filament\Teacher\Widgets\ClassResultPublishingWidget::class,
                 AccountWidget::class,
             ])
             ->renderHook(

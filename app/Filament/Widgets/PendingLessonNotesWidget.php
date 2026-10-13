@@ -12,7 +12,7 @@ class PendingLessonNotesWidget extends BaseWidget
 
     public static function canView(): bool
     {
-        return auth()->user()?->canAccessAdminPage('lesson_notes') ?? false;
+        return false;
     }
 
     protected function getStats(): array
