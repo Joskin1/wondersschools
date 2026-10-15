@@ -213,13 +213,14 @@ class LessonNote extends Model
     }
 
     /**
-     * Scope to only include lesson notes created via the template or written editor.
+     * Scope to only include lesson notes created via template writing or valid document upload.
      */
     public function scopeBasedOnTemplate($query)
     {
         return $query->whereHas('latestVersion', function ($vQuery) {
             $vQuery->where(function ($q) {
                 $q->where('submission_type', 'written')
+                    ->orWhereNotNull('file_path')
                     ->orWhere(function ($sq) {
                         $sq->whereNotNull('content')
                             ->where('content', '!=', '');

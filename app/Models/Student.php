@@ -140,7 +140,9 @@ class Student extends Model
 
     public static function generateAdmissionNumber(int $studentId): string
     {
-        $base = 'ADM'.now()->format('Y').str_pad((string) $studentId, 5, '0', STR_PAD_LEFT);
+        $tenantId = tenant('id');
+        $prefix = ($tenantId === 'livingsspring' || $tenantId === 'wonders' || str_contains(strtolower((string) tenant('name')), 'living')) ? 'LRS' : 'ADM';
+        $base = $prefix.now()->format('Y').str_pad((string) $studentId, 5, '0', STR_PAD_LEFT);
         $admissionNumber = $base;
         $suffix = 2;
 

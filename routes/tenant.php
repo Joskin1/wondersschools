@@ -52,6 +52,11 @@ Route::get('/student/result-pdf', [\App\Http\Controllers\ResultPdfController::cl
     ->middleware('auth')
     ->name('student.result-pdf');
 
+// Admin Result PINs PDF Download (auth-protected, sudo only)
+Route::get('/admin/result-pins/{batch}/pdf', [\App\Http\Controllers\ResultPinPdfController::class, 'download'])
+    ->middleware('auth')
+    ->name('admin.result-pins.pdf');
+
 // Student Lesson Note PDF Download (auth-protected)
 Route::get('/student/lesson-notes/{lessonNote}/pdf', [\App\Http\Controllers\LessonNotePdfController::class, 'download'])
     ->middleware('auth')

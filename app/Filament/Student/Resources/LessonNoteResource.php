@@ -85,7 +85,7 @@ class LessonNoteResource extends Resource
                         ]),
                     ]),
 
-                Section::make('Uploaded File')
+                Section::make('Lesson Note Content')
                     ->schema([
                         ViewField::make('file_preview')
                             ->view('filament.components.lesson-note-preview')
@@ -161,10 +161,12 @@ class LessonNoteResource extends Resource
             ->actions([
                 ViewAction::make(),
                 Action::make('download_pdf')
-                    ->label('Download Lesson Note PDF')
+                    ->label(fn (LessonNote $record) => $record->latestVersion?->isFile() ? 'Download Lesson Note File' : 'Download Lesson Note PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('primary')
-                    ->url(fn (LessonNote $record) => route('student.lesson-note.pdf', $record))
+                    ->url(fn (LessonNote $record) => $record->latestVersion?->isFile()
+                        ? route('tenant.lesson-note.file', ['version' => $record->latestVersion->id, 'download' => 1])
+                        : route('student.lesson-note.pdf', $record))
                     ->openUrlInNewTab(),
                 Action::make('download_lesson_plan_pdf')
                     ->label('Download Lesson Plan PDF')

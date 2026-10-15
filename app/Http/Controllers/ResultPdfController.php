@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ClassScoreStructure;
 use App\Models\ClassScoreStructureItem;
+use App\Models\ResultPin;
 use App\Models\Score;
 use App\Models\Session;
 use App\Models\Setting;
@@ -15,11 +16,16 @@ use App\Services\ResultCalculationService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use STS\FilamentImpersonate\Facades\Impersonation;
 
 class ResultPdfController extends Controller
 {
     public function download(Request $request)
     {
+        if (Impersonation::isImpersonating()) {
+            abort(403, 'Result downloads are disabled during administrative impersonation.');
+        }
+
         $request->validate([
             'session_id' => 'required|integer',
             'term_id'    => 'required|integer',
@@ -43,6 +49,17 @@ class ResultPdfController extends Controller
             ->where('term_id', $termId)
             ->where('is_finalized', true)
             ->firstOrFail();
+
+        // ── Verify Result Checker PIN Gate ──────────────────────────────────
+        $isUnlocked = ResultPin::where('student_id', $student->id)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->where('is_used', true)
+            ->exists();
+
+        if (! $isUnlocked) {
+            abort(403, 'You have not unlocked results for this term. Please enter your result checker PIN on your student portal first.');
+        }
 
         // Enrollment for class info
         $enrollment  = StudentEnrollment::where('student_id', $student->id)

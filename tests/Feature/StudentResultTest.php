@@ -121,7 +121,59 @@ describe('Student Result Page rendering and filtering', function () {
             });
     });
 
-    it('fetches term result data successfully when both session and term are selected', function () {
+    it('requires a result checker PIN before showing term result data', function () {
+        TermResult::create([
+            'student_id'       => $this->student->id,
+            'session_id'       => $this->session->id,
+            'term_id'          => $this->term->id,
+            'classroom_id'     => $this->classroom->id,
+            'subjects_count'   => 8,
+            'grand_total'      => 750,
+            'average'          => 93.75,
+            'overall_position' => 1,
+            'grade'            => 'A',
+            'is_finalized'     => 1,
+        ]);
+
+        $batch = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-001',
+            'session_id' => $this->session->id,
+            'term_id'    => $this->term->id,
+            'quantity'   => 1,
+        ]);
+
+        $pinRecord = \App\Models\ResultPin::create([
+            'batch_id'      => $batch->id,
+            'serial_number' => 'SN-000001',
+            'pin'           => '654321',
+            'session_id'    => $this->session->id,
+            'term_id'       => $this->term->id,
+            'is_used'       => false,
+        ]);
+
+        $this->actingAs($this->user);
+
+        // Selecting session & term shows PIN gatekeeper
+        Livewire::test(StudentResultPage::class)
+            ->set('session_id', $this->session->id)
+            ->set('term_id', $this->term->id)
+            ->assertSet('loaded', false)
+            ->assertSet('isUnlocked', false)
+            ->assertSee('Result Checker PIN Required')
+            // Entering wrong PIN fails
+            ->set('pin_input', '000000')
+            ->call('verifyPin')
+            ->assertSet('isUnlocked', false)
+            ->assertSet('pin_error', 'Invalid PIN. Please check the 6 digits on your scratch card and ensure it matches this session and term.')
+            // Entering correct PIN unlocks result
+            ->set('pin_input', '654321')
+            ->call('verifyPin')
+            ->assertSet('isUnlocked', true)
+            ->assertSet('loaded', true)
+            ->assertSee('Download PDF');
+    });
+
+    it('fetches term result data successfully when both session and term are selected and PIN is already unlocked', function () {
         TermResult::create([
             'student_id'       => $this->student->id,
             'session_id'       => $this->session->id,
@@ -140,11 +192,30 @@ describe('Student Result Page rendering and filtering', function () {
             'date_of_birth' => '2012-05-15',
         ]);
 
+        $batch = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-002',
+            'session_id' => $this->session->id,
+            'term_id'    => $this->term->id,
+            'quantity'   => 1,
+        ]);
+
+        \App\Models\ResultPin::create([
+            'batch_id'      => $batch->id,
+            'serial_number' => 'SN-000002',
+            'pin'           => '123456',
+            'session_id'    => $this->session->id,
+            'term_id'       => $this->term->id,
+            'student_id'    => $this->student->id,
+            'is_used'       => true,
+            'used_at'       => now(),
+        ]);
+
         $this->actingAs($this->user);
 
         Livewire::test(StudentResultPage::class)
             ->set('session_id', $this->session->id)
             ->set('term_id', $this->term->id)
+            ->assertSet('isUnlocked', true)
             ->assertSet('loaded', true)
             ->assertSee('Download PDF')
             ->assertSet('resultData.student.gender', 'female')
@@ -179,7 +250,7 @@ describe('Student Result PDF Download', function () {
         $response->assertNotFound();
     });
 
-    it('allows downloading PDF when result is finalized', function () {
+    it('blocks downloading PDF when result is finalized but PIN is not redeemed with 403', function () {
         TermResult::create([
             'student_id'       => $this->student->id,
             'session_id'       => $this->session->id,
@@ -191,6 +262,48 @@ describe('Student Result PDF Download', function () {
             'overall_position' => 1,
             'grade'            => 'B',
             'is_finalized'     => 1, // FINALIZED
+        ]);
+
+        $this->actingAs($this->user);
+
+        $response = $this->get(route('student.result-pdf', [
+            'session_id' => $this->session->id,
+            'term_id'    => $this->term->id,
+        ]));
+
+        $response->assertForbidden();
+    });
+
+    it('allows downloading PDF when result is finalized and PIN is redeemed', function () {
+        TermResult::create([
+            'student_id'       => $this->student->id,
+            'session_id'       => $this->session->id,
+            'term_id'          => $this->term->id,
+            'classroom_id'     => $this->classroom->id,
+            'subjects_count'   => 1,
+            'grand_total'      => 80,
+            'average'          => 80,
+            'overall_position' => 1,
+            'grade'            => 'B',
+            'is_finalized'     => 1, // FINALIZED
+        ]);
+
+        $batch = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-PDF',
+            'session_id' => $this->session->id,
+            'term_id'    => $this->term->id,
+            'quantity'   => 1,
+        ]);
+
+        \App\Models\ResultPin::create([
+            'batch_id'      => $batch->id,
+            'serial_number' => 'SN-000003',
+            'pin'           => '888999',
+            'session_id'    => $this->session->id,
+            'term_id'       => $this->term->id,
+            'student_id'    => $this->student->id,
+            'is_used'       => true,
+            'used_at'       => now(),
         ]);
 
         $this->actingAs($this->user);

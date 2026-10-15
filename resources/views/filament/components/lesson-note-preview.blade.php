@@ -3,7 +3,8 @@
     $latestVersion = $record?->latestVersion;
     $isWritten = $latestVersion?->isWritten() ?? false;
     $mimeType = $latestVersion?->mime_type ?? '';
-    $fileName = $latestVersion?->file_name ?? 'No file';
+    $displayFileName = $latestVersion?->original_filename ?: ($latestVersion?->file_name ?: 'Lesson Note Document');
+    $fileName = $displayFileName;
     $fileSize = $latestVersion?->formatted_file_size ?? 'N/A';
     $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
     $isOfficeDocument = in_array($fileExtension, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'], true)

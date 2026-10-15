@@ -4,6 +4,7 @@ namespace App\Filament\Student\Pages;
 
 use App\Models\ClassScoreStructure;
 use App\Models\ClassScoreStructureItem;
+use App\Models\ResultPin;
 use App\Models\Score;
 use App\Models\Session;
 use App\Models\Setting;
@@ -12,8 +13,10 @@ use App\Models\SubjectResult;
 use App\Models\Term;
 use App\Models\TermResult;
 use App\Services\ResultCalculationService;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
+use STS\FilamentImpersonate\Facades\Impersonation;
 
 class StudentResultPage extends Page
 {
@@ -34,6 +37,15 @@ class StudentResultPage extends Page
 
     public ?int $term_id = null;
 
+    // ── PIN & Impersonation Gatekeeper ───────────────────────────────────────
+    public bool $isUnlocked = false;
+
+    public bool $isImpersonating = false;
+
+    public string $pin_input = '';
+
+    public ?string $pin_error = null;
+
     // ── Loaded data ──────────────────────────────────────────────────────────
     public array $sessions = [];
 
@@ -45,6 +57,8 @@ class StudentResultPage extends Page
 
     public function mount(): void
     {
+        $this->isImpersonating = Impersonation::isImpersonating();
+
         $student = Auth::user()->student;
 
         if (! $student) {
@@ -69,6 +83,9 @@ class StudentResultPage extends Page
     {
         $this->term_id = null;
         $this->loaded = false;
+        $this->isUnlocked = false;
+        $this->pin_input = '';
+        $this->pin_error = null;
         $this->resultData = [];
         $this->terms = [];
 
@@ -94,17 +111,125 @@ class StudentResultPage extends Page
     public function updatedTermId(): void
     {
         $this->loaded = false;
+        $this->isUnlocked = false;
+        $this->pin_input = '';
+        $this->pin_error = null;
         $this->resultData = [];
 
         if (! $this->session_id || ! $this->term_id) {
             return;
         }
 
+        $this->isImpersonating = Impersonation::isImpersonating();
+
+        if ($this->isImpersonating) {
+            return;
+        }
+
+        $student = Auth::user()->student;
+
+        if (! $student) {
+            return;
+        }
+
+        // Check if student has already unlocked this term result
+        $this->isUnlocked = ResultPin::where('student_id', $student->id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->where('is_used', true)
+            ->exists();
+
+        if ($this->isUnlocked) {
+            $this->loadResult();
+        }
+    }
+
+    public function verifyPin(): void
+    {
+        $this->pin_error = null;
+
+        $this->isImpersonating = Impersonation::isImpersonating();
+        if ($this->isImpersonating) {
+            $this->pin_error = 'Action not permitted during administrative impersonation.';
+
+            return;
+        }
+
+        $student = Auth::user()->student;
+        if (! $student || ! $this->session_id || ! $this->term_id) {
+            $this->pin_error = 'Invalid request. Please select session and term first.';
+
+            return;
+        }
+
+        $cleanPin = trim($this->pin_input);
+
+        if (empty($cleanPin)) {
+            $this->pin_error = 'Please enter your 6-digit PIN.';
+
+            return;
+        }
+
+        if (! preg_match('/^\d{6}$/', $cleanPin)) {
+            $this->pin_error = 'The PIN must be exactly 6 digits.';
+
+            return;
+        }
+
+        $pinRecord = ResultPin::where('pin', $cleanPin)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->first();
+
+        if (! $pinRecord) {
+            $this->pin_error = 'Invalid PIN. Please check the 6 digits on your scratch card and ensure it matches this session and term.';
+
+            return;
+        }
+
+        if ($pinRecord->is_used) {
+            if ($pinRecord->student_id === $student->id) {
+                $this->isUnlocked = true;
+                $this->pin_input = '';
+                $this->loadResult();
+
+                return;
+            }
+
+            $this->pin_error = 'This PIN has already been used by another student.';
+
+            return;
+        }
+
+        // Redeem the PIN
+        $pinRecord->update([
+            'is_used'    => true,
+            'student_id' => $student->id,
+            'used_at'    => now(),
+        ]);
+
+        $this->isUnlocked = true;
+        $this->pin_input = '';
+        $this->pin_error = null;
+
+        Notification::make()
+            ->title('Result Unlocked!')
+            ->body('Your scratch card PIN has been successfully redeemed.')
+            ->success()
+            ->send();
+
         $this->loadResult();
     }
 
     public function loadResult(): void
     {
+        if ($this->isImpersonating || ! $this->isUnlocked) {
+            $this->resultData = [];
+            $this->loaded = false;
+
+            return;
+        }
+
         $student = Auth::user()->student;
 
         if (! $student) {

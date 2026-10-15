@@ -17,6 +17,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ViewField;
 use Filament\Resources\Resource;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables;
@@ -267,10 +268,12 @@ class LessonNoteResource extends Resource
                     ->openUrlInNewTab(),
 
                 Action::make('note_pdf')
-                    ->label('Note PDF')
-                    ->icon('heroicon-o-document-arrow-down')
+                    ->label(fn (LessonNote $record) => $record->latestVersion?->isFile() ? 'Download File' : 'Note PDF')
+                    ->icon(fn (LessonNote $record) => $record->latestVersion?->isFile() ? 'heroicon-o-arrow-down-tray' : 'heroicon-o-document-arrow-down')
                     ->color('gray')
-                    ->url(fn (LessonNote $record) => route('admin.lesson-note.pdf', $record))
+                    ->url(fn (LessonNote $record) => $record->latestVersion?->isFile()
+                        ? route('tenant.lesson-note.file', ['version' => $record->latestVersion->id, 'download' => 1])
+                        : route('admin.lesson-note.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Action::make('plan_pdf')
@@ -353,6 +356,116 @@ class LessonNoteResource extends Resource
                     })
                     ->visible(fn (LessonNote $record) => $record->status === 'pending'
                         && $record->getPairedLessonPlan()?->status === 'pending'),
+
+                ActionGroup::make([
+                    Action::make('delete_note')
+                        ->label('Delete Lesson Note')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Delete Lesson Note?')
+                        ->modalDescription('Are you sure you want to delete this Lesson Note? The teacher will be able to start again and create a new lesson note for this week. This action cannot be undone.')
+                        ->modalSubmitActionLabel('Yes, delete lesson note')
+                        ->action(function (LessonNote $record) {
+                            \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
+                                $pairedPlan = $record->getPairedLessonPlan();
+                                if ($pairedPlan && in_array($pairedPlan->status, ['pending', 'approved', 'rejected'])) {
+                                    $pairedPlan->update(['status' => 'draft']);
+                                }
+
+                                foreach ($record->versions as $version) {
+                                    if ($version->file_path) {
+                                        try {
+                                            \Illuminate\Support\Facades\Storage::disk('lesson_notes')->delete($version->file_path);
+                                        } catch (\Throwable $e) {}
+                                    }
+                                }
+                                $record->versions()->forceDelete();
+                                $record->forceDelete();
+                            });
+
+                            Notification::make()
+                                ->title('Lesson Note Deleted')
+                                ->body('The lesson note has been permanently deleted. The teacher can now create a new lesson note for this week.')
+                                ->success()
+                                ->send();
+                        })
+                        ->visible(fn () => in_array(auth()->user()?->role, ['admin', 'sudo'], true)),
+
+                    Action::make('delete_plan')
+                        ->label('Delete Lesson Plan')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Delete Paired Lesson Plan?')
+                        ->modalDescription('Are you sure you want to delete the paired Lesson Plan? The teacher will be able to start again and create a new lesson plan for this week. This action cannot be undone.')
+                        ->modalSubmitActionLabel('Yes, delete lesson plan')
+                        ->visible(fn (LessonNote $record) => $record->getPairedLessonPlan() !== null
+                            && in_array(auth()->user()?->role, ['admin', 'sudo'], true))
+                        ->action(function (LessonNote $record) {
+                            $plan = $record->getPairedLessonPlan();
+                            if ($plan) {
+                                \Illuminate\Support\Facades\DB::transaction(function () use ($plan, $record) {
+                                    $plan->referenceMaterials()->detach();
+                                    $plan->instructionalMaterials()->detach();
+                                    $plan->teachingMethods()->detach();
+                                    $plan->forceDelete();
+
+                                    $record->update(['status' => 'draft']);
+                                    if ($record->latestVersion) {
+                                        $record->latestVersion->update(['status' => 'draft']);
+                                    }
+                                });
+
+                                Notification::make()
+                                    ->title('Lesson Plan Deleted')
+                                    ->body('The paired lesson plan has been deleted. The teacher can now create a new lesson plan for this week.')
+                                    ->success()
+                                    ->send();
+                            }
+                        }),
+
+                    Action::make('delete_both')
+                        ->label('Delete Both (Note & Plan)')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Delete Both Lesson Note and Lesson Plan?')
+                        ->modalDescription('Are you sure you want to delete both this Lesson Note and its paired Lesson Plan? The teacher will be able to start both again from scratch for this week. This action cannot be undone.')
+                        ->modalSubmitActionLabel('Yes, delete both')
+                        ->visible(fn (LessonNote $record) => $record->getPairedLessonPlan() !== null
+                            && in_array(auth()->user()?->role, ['admin', 'sudo'], true))
+                        ->action(function (LessonNote $record) {
+                            \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
+                                $plan = $record->getPairedLessonPlan();
+                                if ($plan) {
+                                    $plan->referenceMaterials()->detach();
+                                    $plan->instructionalMaterials()->detach();
+                                    $plan->teachingMethods()->detach();
+                                    $plan->forceDelete();
+                                }
+
+                                foreach ($record->versions as $version) {
+                                    if ($version->file_path) {
+                                        try {
+                                            \Illuminate\Support\Facades\Storage::disk('lesson_notes')->delete($version->file_path);
+                                        } catch (\Throwable $e) {}
+                                    }
+                                }
+                                $record->versions()->forceDelete();
+                                $record->forceDelete();
+                            });
+
+                            Notification::make()
+                                ->title('Lesson Note and Plan Deleted')
+                                ->body('Both documents have been permanently deleted. The teacher can now start both from scratch.')
+                                ->success()
+                                ->send();
+                        }),
+                ])
+                    ->label('Delete Options')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger'),
             ])
             ->bulkActions([
                 BulkAction::make('bulk_approve')
@@ -386,6 +499,44 @@ class LessonNoteResource extends Resource
                             ->success()
                             ->send();
                     }),
+
+                BulkAction::make('bulk_delete')
+                    ->label('Delete Selected')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Delete Selected Submissions?')
+                    ->modalDescription('Are you sure you want to permanently delete the selected submissions so the teachers can start again?')
+                    ->modalSubmitActionLabel('Yes, delete selected')
+                    ->action(function ($records) {
+                        \Illuminate\Support\Facades\DB::transaction(function () use ($records) {
+                            foreach ($records as $record) {
+                                $plan = $record->getPairedLessonPlan();
+                                if ($plan) {
+                                    $plan->referenceMaterials()->detach();
+                                    $plan->instructionalMaterials()->detach();
+                                    $plan->teachingMethods()->detach();
+                                    $plan->forceDelete();
+                                }
+                                foreach ($record->versions as $version) {
+                                    if ($version->file_path) {
+                                        try {
+                                            \Illuminate\Support\Facades\Storage::disk('lesson_notes')->delete($version->file_path);
+                                        } catch (\Throwable $e) {}
+                                    }
+                                }
+                                $record->versions()->forceDelete();
+                                $record->forceDelete();
+                            }
+                        });
+
+                        Notification::make()
+                            ->title('Submissions Deleted')
+                            ->body(count($records) . ' lesson submission(s) deleted. Teachers can now start again.')
+                            ->success()
+                            ->send();
+                    })
+                    ->visible(fn () => in_array(auth()->user()?->role, ['admin', 'sudo'], true)),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -441,7 +592,7 @@ class LessonNoteResource extends Resource
 
     public static function canDelete($record): bool
     {
-        return false; // Never allow deletions
+        return in_array(auth()->user()?->role, ['admin', 'sudo'], true);
     }
 
     public static function canEdit($record): bool

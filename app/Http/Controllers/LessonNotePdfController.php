@@ -62,16 +62,21 @@ class LessonNotePdfController extends Controller
             $className
         );
 
-        // If the teacher uploaded an actual PDF file, deliver the real PDF directly
+        // If the teacher uploaded a document or file, deliver the original file directly
         if ($latestVersion && $latestVersion->isFile() && !empty($latestVersion->file_path)) {
             $fileController = new LessonNoteFileController();
             $method = new \ReflectionMethod(LessonNoteFileController::class, 'resolveFilePath');
             $method->setAccessible(true);
             $absolutePath = $method->invoke($fileController, $latestVersion->file_path);
 
-            if ($absolutePath && file_exists($absolutePath) && strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION)) === 'pdf') {
-                return response()->download($absolutePath, $filename, [
-                    'Content-Type' => 'application/pdf',
+            if ($absolutePath && file_exists($absolutePath)) {
+                $ext = strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION));
+                $downloadName = $latestVersion->original_filename 
+                    ?: sprintf('%s_Week_%d_%s_Lesson_Note.%s', $subjectName, $lessonNote->week_number, $className, $ext ?: 'bin');
+                $mimeType = $latestVersion->mime_type ?: (\Illuminate\Support\Facades\File::mimeType($absolutePath) ?: 'application/octet-stream');
+
+                return response()->download($absolutePath, $downloadName, [
+                    'Content-Type' => $mimeType,
                 ]);
             }
         }

@@ -57,19 +57,28 @@ class LessonNoteVersion extends Model
     }
 
     /**
-     * Check if this version is a written note.
-     */
-    public function isWritten(): bool
-    {
-        return $this->submission_type === 'written' || !empty($this->content);
-    }
-
-    /**
      * Check if this version is an uploaded document file.
      */
     public function isFile(): bool
     {
-        return !$this->isWritten();
+        return !empty($this->file_path) || $this->submission_type === 'file';
+    }
+
+    /**
+     * Check if this version is a written note.
+     */
+    public function isWritten(): bool
+    {
+        return !$this->isFile();
+    }
+
+    /**
+     * Check if this version has valid content (either rich text or uploaded file).
+     */
+    public function hasValidContent(): bool
+    {
+        return (!empty($this->content) && trim(strip_tags($this->content)) !== '')
+            || (!empty($this->file_path));
     }
 
     /**
@@ -120,7 +129,7 @@ class LessonNoteVersion extends Model
      * @param int $expirationMinutes
      * @return string|null
      */
-    public function getDownloadUrl(int $expirationMinutes = 60): ?string
+    public function getDownloadUrl(int $expirationMinutes = 60, bool $download = false): ?string
     {
         if (empty($this->file_path)) {
             return null;
@@ -128,7 +137,11 @@ class LessonNoteVersion extends Model
 
         try {
             if (\Illuminate\Support\Facades\Route::has('tenant.lesson-note.file')) {
-                return route('tenant.lesson-note.file', ['version' => $this->id]);
+                $params = ['version' => $this->id];
+                if ($download) {
+                    $params['download'] = 1;
+                }
+                return route('tenant.lesson-note.file', $params);
             }
 
             return Storage::disk('lesson_notes')->temporaryUrl(

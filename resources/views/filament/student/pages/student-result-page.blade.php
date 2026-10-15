@@ -413,16 +413,199 @@
                 font-size: 0.95rem;
             }
         }
+
+        /* ── Impersonation Alert ────────────────────────────────────────── */
+        .sr-impersonate-alert {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 12px;
+            color: #92400e;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+        }
+        .dark .sr-impersonate-alert {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.25);
+            color: #fde68a;
+        }
+        .sr-impersonate-icon {
+            width: 2rem;
+            height: 2rem;
+            flex-shrink: 0;
+            color: #d97706;
+        }
+        .sr-impersonate-alert h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin: 0 0 0.25rem;
+            color: #b45309;
+        }
+        .dark .sr-impersonate-alert h4 { color: #fbbf24; }
+        .sr-impersonate-alert p {
+            font-size: 0.85rem;
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        /* ── PIN Gatekeeper ─────────────────────────────────────────────── */
+        .sr-pin-gate {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,.05), 0 2px 4px -2px rgba(0,0,0,.05);
+            margin-bottom: 1.5rem;
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .dark .sr-pin-gate {
+            background: #1f2937;
+            border-color: #374151;
+        }
+        .sr-pin-icon-wrap {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #eff6ff;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.25rem;
+        }
+        .dark .sr-pin-icon-wrap {
+            background: rgba(37, 99, 235, 0.15);
+            color: #60a5fa;
+        }
+        .sr-pin-icon {
+            width: 32px;
+            height: 32px;
+        }
+        .sr-pin-gate h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 0.5rem;
+        }
+        .dark .sr-pin-gate h3 { color: #f8fafc; }
+        .sr-pin-gate .sr-pin-sub {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 1.75rem;
+            line-height: 1.5;
+        }
+        .dark .sr-pin-gate .sr-pin-sub { color: #94a3b8; }
+        .sr-pin-form {
+            margin-bottom: 1.25rem;
+        }
+        .sr-pin-input-group {
+            display: flex;
+            gap: 0.5rem;
+            max-width: 380px;
+            margin: 0 auto;
+        }
+        @media (max-width: 480px) {
+            .sr-pin-input-group {
+                flex-direction: column;
+            }
+        }
+        .sr-pin-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            text-align: center;
+            border-radius: 10px;
+            border: 2px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+        .sr-pin-input:focus {
+            border-color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+        .dark .sr-pin-input {
+            background: #111827;
+            border-color: #4b5563;
+            color: #f8fafc;
+        }
+        .dark .sr-pin-input:focus {
+            border-color: #60a5fa;
+            background: #1f2937;
+        }
+        .sr-pin-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 0.875rem;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .sr-pin-btn:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+        .sr-pin-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .sr-pin-error {
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #dc2626;
+        }
+        .dark .sr-pin-error { color: #f87171; }
+        .sr-pin-help {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            line-height: 1.4;
+            max-width: 360px;
+            margin: 0 auto;
+        }
     </style>
 
     <div class="sr-page">
+        {{-- ═══════════════════════════════════════════════════════════════
+             IMPERSONATION RESTRICTION ALERT
+        ═══════════════════════════════════════════════════════════════ --}}
+        @if ($isImpersonating)
+            <div class="sr-impersonate-alert">
+                <svg class="sr-impersonate-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                <div>
+                    <h4>Result Viewing Restricted During Impersonation</h4>
+                    <p>Terminal results cannot be viewed or bypassed while impersonating a student account. Physical scratch card PINs are required for genuine student access.</p>
+                </div>
+            </div>
+        @endif
+
         {{-- ═══════════════════════════════════════════════════════════════
              FILTER BAR
         ═══════════════════════════════════════════════════════════════ --}}
         <div class="sr-filters">
             <div class="sr-filter-group">
                 <label for="session_id">Academic Session</label>
-                <select wire:model.live="session_id" id="session_id">
+                <select wire:model.live="session_id" id="session_id" @if($isImpersonating) disabled @endif>
                     <option value="">— Select Session —</option>
                     @foreach ($sessions as $session)
                         <option value="{{ $session['id'] }}">{{ $session['name'] }}</option>
@@ -431,7 +614,7 @@
             </div>
             <div class="sr-filter-group">
                 <label for="term_id">Term</label>
-                <select wire:model.live="term_id" id="term_id" @if(empty($terms)) disabled @endif>
+                <select wire:model.live="term_id" id="term_id" @if(empty($terms) || $isImpersonating) disabled @endif>
                     <option value="">— Select Term —</option>
                     @foreach ($terms as $term)
                         <option value="{{ $term['id'] }}">{{ $term['name'] }}</option>
@@ -441,9 +624,50 @@
         </div>
 
         {{-- ═══════════════════════════════════════════════════════════════
-             NO RESULTS STATE
+             PIN GATEKEEPER CARD (When term is selected but locked)
         ═══════════════════════════════════════════════════════════════ --}}
-        @if ($session_id && $term_id && !$loaded)
+        @if ($session_id && $term_id && !$isUnlocked && !$isImpersonating)
+            <div class="sr-pin-gate">
+                <div class="sr-pin-icon-wrap">
+                    <svg class="sr-pin-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                </div>
+                <h3>Result Checker PIN Required</h3>
+                <p class="sr-pin-sub">Enter your 6-digit scratch card PIN for this term to unlock and view your results.</p>
+
+                <form wire:submit.prevent="verifyPin" class="sr-pin-form">
+                    <div class="sr-pin-input-group">
+                        <input
+                            type="text"
+                            wire:model="pin_input"
+                            maxlength="6"
+                            placeholder="Enter 6-digit PIN"
+                            autocomplete="off"
+                            class="sr-pin-input"
+                        />
+                        <button type="submit" class="sr-pin-btn" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="verifyPin">Unlock Result</span>
+                            <span wire:loading wire:target="verifyPin">Verifying...</span>
+                        </button>
+                    </div>
+                    @if ($pin_error)
+                        <div class="sr-pin-error">
+                            {{ $pin_error }}
+                        </div>
+                    @endif
+                </form>
+
+                <div class="sr-pin-help">
+                    Obtain a scratch card from the school administration. Gently scratch off the protective layer to reveal your 6-digit PIN. Each PIN is permanently linked to your profile for this term.
+                </div>
+            </div>
+        @endif
+
+        {{-- ═══════════════════════════════════════════════════════════════
+             NO RESULTS STATE (Unlocked but not published/finalized)
+        ═══════════════════════════════════════════════════════════════ --}}
+        @if ($session_id && $term_id && $isUnlocked && !$loaded && !$isImpersonating)
             <div class="sr-empty">
                 <svg class="sr-empty-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />

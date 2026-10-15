@@ -23,11 +23,16 @@ class CreateTeacherLessonNote extends CreateRecord
 
     protected ?string $heading = 'Create Lesson Note';
 
-    private ?string $templateFilePath = null;
     private string $submissionType = 'written';
     private ?string $writtenTitle = null;
     private ?string $writtenContent = null;
     private ?array $writtenImages = null;
+    private ?string $uploadedFilePath = null;
+    private ?string $uploadedFileName = null;
+    private ?string $uploadedOriginalName = null;
+    private ?int $uploadedFileSize = null;
+    private ?string $uploadedFileHash = null;
+    private ?string $uploadedMimeType = null;
 
     protected function getHeaderActions(): array
     {
@@ -105,40 +110,66 @@ class CreateTeacherLessonNote extends CreateRecord
 
         $this->submissionType = $data['submission_type'] ?? 'written';
 
-        if ($this->submissionType === 'template') {
+        if (in_array($this->submissionType, ['file', 'template'], true)) {
             $templateFile = $data['template_file'] ?? null;
             if (!$templateFile) {
                 Notification::make()
                     ->title('Document file required')
-                    ->body('Please upload your document file (.docx, .doc, .pdf, .txt, .md).')
+                    ->body('Please upload your document file (.pdf, .docx, .doc, .ppt, .pptx, images, etc.).')
                     ->danger()
                     ->send();
                 $this->halt();
             }
 
-            $fullPath = Storage::disk('local')->path($templateFile);
-            $originalName = basename($templateFile);
+            if ($templateFile instanceof \Illuminate\Http\UploadedFile) {
+                $fileContents = file_get_contents($templateFile->getRealPath());
+                $originalName = $templateFile->getClientOriginalName();
+                $fileSize = $templateFile->getSize();
+                $mimeType = $templateFile->getMimeType() ?: 'application/octet-stream';
+                $extension = strtolower($templateFile->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION));
+            } else {
+                $sourceDisk = 'local';
+                if (!Storage::disk($sourceDisk)->exists($templateFile)) {
+                    if (Storage::disk('public')->exists($templateFile)) {
+                        $sourceDisk = 'public';
+                    } elseif (Storage::disk('lesson_notes')->exists($templateFile)) {
+                        $sourceDisk = 'lesson_notes';
+                    }
+                }
 
-            try {
-                $parser = app(DocumentMarkdownParserService::class);
-                $parsed = $parser->parse($fullPath, $originalName);
-            } catch (\Throwable $e) {
-                Storage::disk('local')->delete($templateFile);
-                Notification::make()
-                    ->title('Failed to extract document text')
-                    ->body($e->getMessage())
-                    ->danger()
-                    ->persistent()
-                    ->send();
-                $this->halt();
+                $fileContents = Storage::disk($sourceDisk)->get($templateFile);
+                $originalName = basename($templateFile);
+                $fileSize = Storage::disk($sourceDisk)->size($templateFile);
+                $mimeType = Storage::disk($sourceDisk)->mimeType($templateFile) ?: 'application/octet-stream';
+                $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
             }
 
-            $this->writtenTitle = $parsed['title'] ?: 'LESSON NOTE';
-            $this->writtenContent = $parsed['content'] ?: '';
-            if (!empty($parsed['learning_objectives'])) {
-                $data['learning_objectives'] = $parsed['learning_objectives'];
-            }
-            $this->templateFilePath = $templateFile;
+            $fileHash = hash('sha256', $fileContents);
+
+            // Build permanent storage path on lesson_notes disk
+            $permanentPath = \App\Models\LessonNoteVersion::buildStoragePath(
+                $activeSession->id,
+                $activeTerm->id,
+                (int) $data['week_number'],
+                auth()->id(),
+                $fileHash,
+                $extension ?: 'bin'
+            );
+
+            // Store permanently on lesson_notes disk
+            Storage::disk('lesson_notes')->put($permanentPath, $fileContents);
+
+            // Record metadata for afterCreate
+            $this->uploadedFilePath = $permanentPath;
+            $this->uploadedFileName = $originalName;
+            $this->uploadedOriginalName = $originalName;
+            $this->uploadedFileSize = $fileSize;
+            $this->uploadedFileHash = $fileHash;
+            $this->uploadedMimeType = $mimeType;
+
+            // Optional title or default to filename
+            $rawTitle = !empty($data['title']) ? $data['title'] : pathinfo($originalName, PATHINFO_FILENAME);
+            $this->writtenTitle = mb_strtoupper(trim(str_replace(['_', '-'], ' ', $rawTitle)));
         } else {
             $this->writtenTitle = !empty($data['title']) ? mb_strtoupper(trim($data['title'])) : null;
             $this->writtenContent = $data['content'] ?? null;
@@ -164,28 +195,41 @@ class CreateTeacherLessonNote extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $version = \App\Models\LessonNoteVersion::create([
-            'lesson_note_id' => $this->record->id,
-            'submission_type' => 'written',
-            'title' => $this->writtenTitle,
-            'learning_objectives' => $this->record->learning_objectives,
-            'content' => $this->writtenContent,
-            'images' => $this->writtenImages,
-            'file_name' => ($this->writtenTitle ?: 'Written Lesson Note') . ' (Week ' . $this->record->week_number . ')',
-            'file_size' => strlen($this->writtenContent ?? ''),
-            'file_hash' => hash('sha256', ($this->writtenContent ?? '') . json_encode($this->writtenImages ?? [])),
-            'uploaded_by' => auth()->id(),
-            'mime_type' => 'text/html',
-            'status' => 'draft',
-        ]);
+        if (in_array($this->submissionType, ['file', 'template'], true)) {
+            $version = \App\Models\LessonNoteVersion::create([
+                'lesson_note_id' => $this->record->id,
+                'submission_type' => 'file',
+                'title' => $this->writtenTitle,
+                'learning_objectives' => $this->record->learning_objectives,
+                'file_path' => $this->uploadedFilePath,
+                'file_name' => $this->uploadedFileName,
+                'original_filename' => $this->uploadedOriginalName,
+                'file_size' => $this->uploadedFileSize,
+                'file_hash' => $this->uploadedFileHash,
+                'mime_type' => $this->uploadedMimeType,
+                'uploaded_by' => auth()->id(),
+                'status' => 'draft',
+            ]);
+        } else {
+            $version = \App\Models\LessonNoteVersion::create([
+                'lesson_note_id' => $this->record->id,
+                'submission_type' => 'written',
+                'title' => $this->writtenTitle,
+                'learning_objectives' => $this->record->learning_objectives,
+                'content' => $this->writtenContent,
+                'images' => $this->writtenImages,
+                'file_name' => ($this->writtenTitle ?: 'Written Lesson Note') . ' (Week ' . $this->record->week_number . ')',
+                'file_size' => strlen($this->writtenContent ?? ''),
+                'file_hash' => hash('sha256', ($this->writtenContent ?? '') . json_encode($this->writtenImages ?? [])),
+                'uploaded_by' => auth()->id(),
+                'mime_type' => 'text/html',
+                'status' => 'draft',
+            ]);
+        }
 
         $this->record->update([
             'latest_version_id' => $version->id,
         ]);
-
-        if (!empty($this->templateFilePath)) {
-            Storage::disk('local')->delete($this->templateFilePath);
-        }
     }
 
     protected function getRedirectUrl(): string

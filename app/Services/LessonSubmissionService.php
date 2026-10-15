@@ -30,10 +30,10 @@ class LessonSubmissionService
                 ->first();
         }
 
-        // Both must exist, be template-based, and be pending (ready for review)
+        // Both must exist, have valid content (written or uploaded file), and be pending (ready for review)
         if (
             $note && $plan &&
-            ($note->latestVersion?->isWritten() ?? false) &&
+            ($note->latestVersion?->hasValidContent() ?? false) &&
             in_array($note->status, ['pending']) &&
             in_array($plan->status, ['pending'])
         ) {
@@ -63,10 +63,10 @@ class LessonSubmissionService
                 ];
             }
 
-            if (!$note->latestVersion?->isWritten()) {
+            if (!$note->latestVersion?->hasValidContent()) {
                 return [
                     'success' => false,
-                    'message' => "The Lesson Note for Week {$plan->week_number} must be completed using the lesson template or online editor before submitting for review.",
+                    'message' => "The Lesson Note for Week {$plan->week_number} must have written content or an uploaded file before submitting for review.",
                 ];
             }
         } else {
@@ -80,10 +80,10 @@ class LessonSubmissionService
                 ];
             }
 
-            if (!$note->latestVersion?->isWritten()) {
+            if (!$note->latestVersion?->hasValidContent()) {
                 return [
                     'success' => false,
-                    'message' => "This Lesson Note must be completed using the lesson template or online editor before submitting for review.",
+                    'message' => "This Lesson Note must have written content or an uploaded file before submitting for review.",
                 ];
             }
         }
@@ -110,9 +110,9 @@ class LessonSubmissionService
     public function isPairComplete(LessonNote $note): bool
     {
         $plan = $note->getPairedLessonPlan();
-        $isTemplateBased = $note->latestVersion?->isWritten() ?? false;
+        $hasValidNote = $note->latestVersion?->hasValidContent() ?? false;
 
-        return $isTemplateBased
+        return $hasValidNote
             && $plan !== null
             && in_array($note->status, ['pending', 'approved'])
             && in_array($plan->status, ['pending', 'approved']);
@@ -139,9 +139,9 @@ class LessonSubmissionService
             ->where('week_number', $weekNumber)
             ->first();
 
-        $isTemplateBased = $note?->latestVersion?->isWritten() ?? false;
+        $hasValidNote = $note?->latestVersion?->hasValidContent() ?? false;
 
-        $isComplete = $note && $plan && $isTemplateBased
+        $isComplete = $note && $plan && $hasValidNote
             && in_array($note->status, ['pending', 'approved'])
             && in_array($plan->status, ['pending', 'approved']);
 
@@ -153,7 +153,7 @@ class LessonSubmissionService
             'has_note' => $note !== null,
             'has_plan' => $plan !== null,
             'is_complete' => $isComplete,
-            'missing_note' => !$note || !$isTemplateBased || !in_array($note->status, ['pending', 'approved']),
+            'missing_note' => !$note || !$hasValidNote || !in_array($note->status, ['pending', 'approved']),
             'missing_plan' => !$plan || !in_array($plan->status, ['pending', 'approved']),
         ];
     }

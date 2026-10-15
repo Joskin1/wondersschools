@@ -16,16 +16,28 @@ class EditTeacherLessonNote extends EditRecord
     private ?string $writtenTitle = null;
     private ?string $writtenContent = null;
     private ?array $writtenImages = null;
-    private ?string $templateFilePath = null;
+    private ?string $uploadedFilePath = null;
+    private ?string $uploadedFileName = null;
+    private ?string $uploadedOriginalName = null;
+    private ?int $uploadedFileSize = null;
+    private ?string $uploadedFileHash = null;
+    private ?string $uploadedMimeType = null;
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $version = $this->record->latestVersion;
 
-        $data['submission_type'] = 'written';
-        $data['title'] = $version?->title;
-        $data['content'] = $version?->content;
-        $data['images'] = $version?->images;
+        if ($version?->isFile()) {
+            $data['submission_type'] = 'file';
+            $data['title'] = $version->title;
+            $data['template_file'] = $version->file_path;
+        } else {
+            $data['submission_type'] = 'written';
+            $data['title'] = $version?->title;
+            $data['content'] = $version?->content;
+            $data['images'] = $version?->images;
+        }
+
         $data['learning_objectives'] = collect($this->record->learning_objectives ?? [])
             ->map(fn ($objective) => ['objective' => is_array($objective) ? ($objective['objective'] ?? '') : $objective])
             ->values()
@@ -46,41 +58,91 @@ class EditTeacherLessonNote extends EditRecord
         }
 
         $this->submissionType = $data['submission_type'] ?? 'written';
+        $currentVersion = $this->record->latestVersion;
 
-        if ($this->submissionType === 'template') {
+        if (in_array($this->submissionType, ['file', 'template'], true)) {
             $templateFile = $data['template_file'] ?? null;
-            if (!$templateFile) {
+
+            if (!$templateFile && (!$currentVersion || empty($currentVersion->file_path))) {
                 Notification::make()
                     ->title('Document file required')
-                    ->body('Please upload your document file (.docx, .doc, .pdf, .txt, .md).')
+                    ->body('Please upload your document file (.pdf, .docx, .doc, .ppt, .pptx, images, etc.).')
                     ->danger()
                     ->send();
                 $this->halt();
             }
 
-            $fullPath = \Illuminate\Support\Facades\Storage::disk('local')->path($templateFile);
-            $originalName = basename($templateFile);
+            if ($templateFile instanceof \Illuminate\Http\UploadedFile) {
+                $fileContents = file_get_contents($templateFile->getRealPath());
+                $originalName = $templateFile->getClientOriginalName();
+                $fileSize = $templateFile->getSize();
+                $mimeType = $templateFile->getMimeType() ?: 'application/octet-stream';
+                $extension = strtolower($templateFile->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION));
+                $fileHash = hash('sha256', $fileContents);
 
-            try {
-                $parser = app(\App\Services\DocumentMarkdownParserService::class);
-                $parsed = $parser->parse($fullPath, $originalName);
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Storage::disk('local')->delete($templateFile);
-                Notification::make()
-                    ->title('Failed to extract document text')
-                    ->body($e->getMessage())
-                    ->danger()
-                    ->persistent()
-                    ->send();
-                $this->halt();
+                $permanentPath = LessonNoteVersion::buildStoragePath(
+                    $this->record->session_id,
+                    $this->record->term_id,
+                    (int) $this->record->week_number,
+                    auth()->id(),
+                    $fileHash,
+                    $extension ?: 'bin'
+                );
+
+                \Illuminate\Support\Facades\Storage::disk('lesson_notes')->put($permanentPath, $fileContents);
+
+                $this->uploadedFilePath = $permanentPath;
+                $this->uploadedFileName = $originalName;
+                $this->uploadedOriginalName = $originalName;
+                $this->uploadedFileSize = $fileSize;
+                $this->uploadedFileHash = $fileHash;
+                $this->uploadedMimeType = $mimeType;
+            } elseif (is_string($templateFile) && $templateFile !== $currentVersion?->file_path) {
+                $sourceDisk = 'local';
+                if (!\Illuminate\Support\Facades\Storage::disk($sourceDisk)->exists($templateFile)) {
+                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($templateFile)) {
+                        $sourceDisk = 'public';
+                    } elseif (\Illuminate\Support\Facades\Storage::disk('lesson_notes')->exists($templateFile)) {
+                        $sourceDisk = 'lesson_notes';
+                    }
+                }
+
+                $fileContents = \Illuminate\Support\Facades\Storage::disk($sourceDisk)->get($templateFile);
+                $originalName = basename($templateFile);
+                $fileSize = \Illuminate\Support\Facades\Storage::disk($sourceDisk)->size($templateFile);
+                $mimeType = \Illuminate\Support\Facades\Storage::disk($sourceDisk)->mimeType($templateFile) ?: 'application/octet-stream';
+                $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+                $fileHash = hash('sha256', $fileContents);
+
+                $permanentPath = LessonNoteVersion::buildStoragePath(
+                    $this->record->session_id,
+                    $this->record->term_id,
+                    (int) $this->record->week_number,
+                    auth()->id(),
+                    $fileHash,
+                    $extension ?: 'bin'
+                );
+
+                \Illuminate\Support\Facades\Storage::disk('lesson_notes')->put($permanentPath, $fileContents);
+
+                $this->uploadedFilePath = $permanentPath;
+                $this->uploadedFileName = $originalName;
+                $this->uploadedOriginalName = $originalName;
+                $this->uploadedFileSize = $fileSize;
+                $this->uploadedFileHash = $fileHash;
+                $this->uploadedMimeType = $mimeType;
+            } else {
+                // Kept existing file
+                $this->uploadedFilePath = $currentVersion?->file_path;
+                $this->uploadedFileName = $currentVersion?->file_name;
+                $this->uploadedOriginalName = $currentVersion?->original_filename ?: $currentVersion?->file_name;
+                $this->uploadedFileSize = $currentVersion?->file_size;
+                $this->uploadedFileHash = $currentVersion?->file_hash;
+                $this->uploadedMimeType = $currentVersion?->mime_type;
             }
 
-            $this->writtenTitle = $parsed['title'] ?: 'LESSON NOTE';
-            $this->writtenContent = $parsed['content'] ?: '';
-            if (!empty($parsed['learning_objectives'])) {
-                $data['learning_objectives'] = $parsed['learning_objectives'];
-            }
-            $this->templateFilePath = $templateFile;
+            $rawTitle = !empty($data['title']) ? $data['title'] : ($this->uploadedFileName ? pathinfo($this->uploadedFileName, PATHINFO_FILENAME) : 'LESSON NOTE');
+            $this->writtenTitle = mb_strtoupper(trim(str_replace(['_', '-'], ' ', $rawTitle)));
         } else {
             $this->writtenTitle = !empty($data['title']) ? mb_strtoupper(trim($data['title'])) : null;
             $this->writtenContent = $data['content'] ?? null;
@@ -105,29 +167,42 @@ class EditTeacherLessonNote extends EditRecord
 
     protected function afterSave(): void
     {
-        $version = LessonNoteVersion::create([
-            'lesson_note_id' => $this->record->id,
-            'submission_type' => 'written',
-            'title' => $this->writtenTitle,
-            'learning_objectives' => $this->record->learning_objectives,
-            'content' => $this->writtenContent,
-            'images' => $this->writtenImages,
-            'file_name' => ($this->writtenTitle ?: 'Written Lesson Note') . ' (Week ' . $this->record->week_number . ')',
-            'file_size' => strlen($this->writtenContent ?? ''),
-            'file_hash' => hash('sha256', ($this->writtenContent ?? '') . json_encode($this->writtenImages ?? [])),
-            'uploaded_by' => auth()->id(),
-            'mime_type' => 'text/html',
-            'status' => 'draft',
-        ]);
+        if (in_array($this->submissionType, ['file', 'template'], true)) {
+            $version = LessonNoteVersion::create([
+                'lesson_note_id' => $this->record->id,
+                'submission_type' => 'file',
+                'title' => $this->writtenTitle,
+                'learning_objectives' => $this->record->learning_objectives,
+                'file_path' => $this->uploadedFilePath,
+                'file_name' => $this->uploadedFileName,
+                'original_filename' => $this->uploadedOriginalName,
+                'file_size' => $this->uploadedFileSize,
+                'file_hash' => $this->uploadedFileHash,
+                'mime_type' => $this->uploadedMimeType,
+                'uploaded_by' => auth()->id(),
+                'status' => 'draft',
+            ]);
+        } else {
+            $version = LessonNoteVersion::create([
+                'lesson_note_id' => $this->record->id,
+                'submission_type' => 'written',
+                'title' => $this->writtenTitle,
+                'learning_objectives' => $this->record->learning_objectives,
+                'content' => $this->writtenContent,
+                'images' => $this->writtenImages,
+                'file_name' => ($this->writtenTitle ?: 'Written Lesson Note') . ' (Week ' . $this->record->week_number . ')',
+                'file_size' => strlen($this->writtenContent ?? ''),
+                'file_hash' => hash('sha256', ($this->writtenContent ?? '') . json_encode($this->writtenImages ?? [])),
+                'uploaded_by' => auth()->id(),
+                'mime_type' => 'text/html',
+                'status' => 'draft',
+            ]);
+        }
 
         $this->record->update([
             'latest_version_id' => $version->id,
             'status' => 'draft',
         ]);
-
-        if (!empty($this->templateFilePath)) {
-            \Illuminate\Support\Facades\Storage::disk('local')->delete($this->templateFilePath);
-        }
 
         Notification::make()
             ->title('Lesson note updated')

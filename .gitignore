@@ -34,3 +34,4 @@ Thumbs.db
 !/ContentInventory.md
 
 /storage/app/vendor-templates
+/public/downloads

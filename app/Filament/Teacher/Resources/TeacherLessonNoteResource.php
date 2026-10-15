@@ -129,8 +129,8 @@ class TeacherLessonNoteResource extends Resource
                         Radio::make('submission_type')
                             ->label('Creation Method')
                             ->options([
-                                'written' => '📝 Write Lesson Note Online',
-                                'template' => '📁 Upload Any Document (.docx, .doc, .pdf, .txt, .md)',
+                                'written' => '📝 Write Lesson Note Online (Structured Template)',
+                                'file' => '📁 Upload Any File / Document (.pdf, .docx, .doc, .ppt, .pptx, images, etc.)',
                             ])
                             ->default('written')
                             ->live()
@@ -138,33 +138,42 @@ class TeacherLessonNoteResource extends Resource
 
                         // Document Upload Option
                         FileUpload::make('template_file')
-                            ->label('Lesson Note Document (.docx, .doc, .pdf, .txt, .md)')
+                            ->label('Lesson Note Document / File')
                             ->disk('local')
                             ->directory('lesson-note-uploads/temp')
+                            ->preserveFilenames()
                             ->acceptedFileTypes([
-                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                'application/msword',
                                 'application/pdf',
+                                'application/msword',
+                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                'application/vnd.ms-powerpoint',
+                                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                                'application/vnd.ms-excel',
+                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                                 'text/plain',
                                 'text/markdown',
                                 'application/rtf',
                                 'text/rtf',
+                                'image/jpeg',
+                                'image/png',
+                                'image/webp',
                             ])
-                            ->maxSize(10240)
-                            ->required(fn ($get) => $get('submission_type') === 'template')
-                            ->visible(fn ($get) => $get('submission_type') === 'template')
-                            ->helperText('Upload your lesson note file in any format (.docx, .doc, .pdf, .txt, .md). The system will automatically extract the topic, learning objectives, and structured markdown content into the database.')
+                            ->maxSize(25600)
+                            ->required(fn ($get) => in_array($get('submission_type'), ['file', 'template']))
+                            ->visible(fn ($get) => in_array($get('submission_type'), ['file', 'template']))
+                            ->helperText('Upload your lesson note file in any format (.pdf, .docx, .doc, .ppt, .pptx, images, .txt). The file is saved securely for admin review and student access upon approval.')
                             ->columnSpanFull(),
 
-                        // Written Option
+                        // Title Option (Required for written, optional for file)
                         TextInput::make('title')
                             ->label('Lesson Topic / Title')
                             ->placeholder('e.g. INTRODUCTION TO PHOTOSYNTHESIS & PLANT NUTRITION')
                             ->required(fn ($get) => $get('submission_type') === 'written')
-                            ->visible(fn ($get) => $get('submission_type') === 'written')
                             ->dehydrateStateUsing(fn ($state) => $state ? mb_strtoupper(trim($state)) : null)
                             ->extraInputAttributes(['style' => 'text-transform: uppercase'])
-                            ->helperText('Main topic for this lesson note (saved in ALL CAPS).')
+                            ->helperText(fn ($get) => $get('submission_type') === 'written'
+                                ? 'Main topic for this lesson note (saved in ALL CAPS).'
+                                : 'Optional topic for this uploaded document (defaults to filename if left blank).')
                             ->columnSpanFull(),
 
                         RichEditor::make('content')
@@ -290,6 +299,15 @@ class TeacherLessonNoteResource extends Resource
             ])
             ->actions([
                 ViewAction::make(),
+                Action::make('download')
+                    ->label(fn (LessonNote $record) => $record->latestVersion?->isFile() ? 'Download File' : 'Download PDF')
+                    ->icon(fn (LessonNote $record) => $record->latestVersion?->isFile() ? 'heroicon-o-arrow-down-tray' : 'heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->url(fn (LessonNote $record) => $record->latestVersion?->isFile()
+                        ? route('tenant.lesson-note.file', ['version' => $record->latestVersion->id, 'download' => 1])
+                        : route('teacher.lesson-note.pdf', $record))
+                    ->openUrlInNewTab()
+                    ->visible(fn (LessonNote $record) => $record->latestVersion !== null),
                 EditAction::make()
                     ->visible(fn (LessonNote $record): bool => $record->canBeEditedByTeacher()),
                 Action::make('submit_for_review')
