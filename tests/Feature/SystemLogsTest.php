@@ -55,7 +55,7 @@ LOG;
 
     public function test_admin_user_cannot_access_system_logs()
     {
-        $user = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'admin', 'is_primary_admin' => false]);
         $this->actingAs($user);
 
         $this->assertFalse(SystemLogs::canAccess());

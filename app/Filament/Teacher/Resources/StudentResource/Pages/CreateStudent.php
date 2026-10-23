@@ -13,6 +13,9 @@ class CreateStudent extends CreateRecord
 {
     protected static string $resource = StudentResource::class;
 
+    protected ?string $surname = null;
+    protected ?string $firstName = null;
+    protected ?string $otherName = null;
     protected ?int $sessionId = null;
     protected ?int $classroomId = null;
     protected ?string $initialPassword = null;
@@ -20,6 +23,9 @@ class CreateStudent extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $teacherId = auth()->id();
+        $this->surname = $data['surname'] ?? null;
+        $this->firstName = $data['first_name'] ?? null;
+        $this->otherName = $data['other_name'] ?? null;
         $this->sessionId = $data['session_id'] ?? null;
         $this->classroomId = $data['classroom_id'] ?? null;
         $this->initialPassword = $data['initial_password'] ?? null;
@@ -36,7 +42,14 @@ class CreateStudent extends CreateRecord
             ]);
         }
 
-        unset($data['session_id'], $data['classroom_id'], $data['initial_password']);
+        unset(
+            $data['surname'],
+            $data['first_name'],
+            $data['other_name'],
+            $data['session_id'],
+            $data['classroom_id'],
+            $data['initial_password']
+        );
 
         $data['status'] = 'pending';
 
@@ -45,21 +58,25 @@ class CreateStudent extends CreateRecord
 
     protected function afterCreate(): void
     {
-        // Create enrollment record
+        // 1. Create linked User for the student
+        if ($this->surname && $this->firstName) {
+            app(StudentAccountService::class)->createOrLinkUser(
+                $this->record,
+                $this->surname,
+                $this->firstName,
+                $this->otherName,
+                $this->initialPassword,
+                auth()->id(),
+            );
+        }
+
+        // 2. Create enrollment record
         if ($this->sessionId && $this->classroomId) {
             StudentEnrollment::create([
                 'student_id'   => $this->record->id,
                 'classroom_id' => $this->classroomId,
                 'session_id'   => $this->sessionId,
             ]);
-        }
-
-        if ($this->initialPassword) {
-            app(StudentAccountService::class)->createOrUpdateLogin(
-                $this->record,
-                $this->initialPassword,
-                auth()->id(),
-            );
         }
     }
 

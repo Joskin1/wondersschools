@@ -17,7 +17,9 @@ class StaffFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'surname' => fake()->lastName(),
+            'first_name' => fake()->firstName(),
+            'other_name' => fake()->optional(0.3)->firstName(),
             'role' => fake()->jobTitle,
             'bio' => fake()->paragraph,
             'image' => null,

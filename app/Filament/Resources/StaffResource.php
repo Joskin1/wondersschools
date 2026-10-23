@@ -48,8 +48,13 @@ class StaffResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('name')
+                TextInput::make('surname')
                     ->required()
+                    ->maxLength(255),
+                TextInput::make('first_name')
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('other_name')
                     ->maxLength(255),
                 TextInput::make('role')
                     ->required()
@@ -75,8 +80,17 @@ class StaffResource extends Resource
                 ImageColumn::make('image')
                     ->disk(config('filesystems.upload_disk', 'public'))
                     ->circular(),
-                TextColumn::make('name')
-                    ->searchable(),
+                TextColumn::make('surname')
+                    ->label('Name')
+                    ->formatStateUsing(fn (Staff $record): string => $record->full_name)
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where(function ($q) use ($search) {
+                            $q->where('surname', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('other_name', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable(['surname', 'first_name']),
                 TextColumn::make('role')
                     ->searchable(),
                 TextColumn::make('order')

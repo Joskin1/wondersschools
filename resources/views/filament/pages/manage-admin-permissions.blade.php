@@ -35,6 +35,14 @@
         .perm-card svg, .perm-btn svg, .perm-banner svg, svg.perm-icon {
             width: 16px !important; height: 16px !important; max-width: 16px !important; max-height: 16px !important; min-width: 16px !important; min-height: 16px !important; flex-shrink: 0 !important; display: inline-block !important;
         }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 0.85s linear infinite;
+        }
     </style>
 
     <div class="space-y-6">
@@ -58,8 +66,13 @@
                             <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                                 Current Principal: {{ $currentPrincipal->name }} [{{ ucfirst($currentPrincipal->role) }}] ({{ $currentPrincipal->email }})
                             </span>
-                            <button type="button" wire:click="revokePrincipal({{ $currentPrincipal->id }})" class="perm-btn text-xs font-bold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40" style="border: 1px solid rgba(225,29,72,0.3); padding: 4px 8px;">
-                                Revoke Privilege
+                            <button type="button" wire:click="revokePrincipal({{ $currentPrincipal->id }})" wire:loading.attr="disabled" wire:target="revokePrincipal({{ $currentPrincipal->id }})" class="perm-btn text-xs font-bold text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40" style="border: 1px solid rgba(225,29,72,0.3); padding: 4px 8px;">
+                                <svg wire:loading wire:target="revokePrincipal({{ $currentPrincipal->id }})" class="animate-spin" width="12" height="12" fill="none" viewBox="0 0 24 24">
+                                    <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span wire:loading.remove wire:target="revokePrincipal({{ $currentPrincipal->id }})">Revoke Privilege</span>
+                                <span wire:loading wire:target="revokePrincipal({{ $currentPrincipal->id }})">Revoking...</span>
                             </button>
                         </div>
                     @else
@@ -82,11 +95,16 @@
                         </select>
                     </div>
                     <div class="pt-5">
-                        <button type="button" wire:click="assignPrincipal" class="perm-btn perm-btn-primary">
-                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button type="button" wire:click="assignPrincipal" wire:loading.attr="disabled" wire:target="assignPrincipal" class="perm-btn perm-btn-primary">
+                            <svg wire:loading.remove wire:target="assignPrincipal" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
-                            Designate as Principal
+                            <svg wire:loading wire:target="assignPrincipal" class="animate-spin" width="16" height="16" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="assignPrincipal">Designate as Principal</span>
+                            <span wire:loading wire:target="assignPrincipal">Designating...</span>
                         </button>
                     </div>
                 </div>
@@ -138,6 +156,13 @@
                                 </option>
                             @endforeach
                         </select>
+                        <div wire:loading wire:target="selectedUserId" style="margin-top: 0.25rem; font-size: 0.75rem; color: #6366f1; font-weight: 700; display: flex; align-items: center; gap: 0.375rem;">
+                            <svg class="animate-spin" width="12" height="12" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            Loading user permissions...
+                        </div>
                     </div>
 
                     <div class="md:col-span-4">
@@ -146,11 +171,16 @@
                     </div>
 
                     <div class="flex items-end justify-end md:col-span-3">
-                        <button type="button" wire:click="save" class="perm-btn perm-btn-primary w-full md:w-auto">
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button type="button" wire:click="save" wire:loading.attr="disabled" wire:target="save" class="perm-btn perm-btn-primary w-full md:w-auto">
+                            <svg wire:loading.remove wire:target="save" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            Save Permissions
+                            <svg wire:loading wire:target="save" class="animate-spin" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="save">Save Permissions</span>
+                            <span wire:loading wire:target="save">Saving...</span>
                         </button>
                     </div>
                 </div>
@@ -272,11 +302,16 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button type="button" wire:click="save" class="perm-btn perm-btn-primary">
-                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button type="button" wire:click="save" wire:loading.attr="disabled" wire:target="save" class="perm-btn perm-btn-primary">
+                        <svg wire:loading.remove wire:target="save" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Save Permissions
+                        <svg wire:loading wire:target="save" class="animate-spin" width="14" height="14" fill="none" viewBox="0 0 24 24">
+                            <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span wire:loading.remove wire:target="save">Save Permissions</span>
+                        <span wire:loading wire:target="save">Saving...</span>
                     </button>
                 </div>
             </div>

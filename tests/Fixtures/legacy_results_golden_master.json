@@ -1,0 +1,285 @@
+{
+    "subject_results": [
+        {
+            "term": "term_1",
+            "student": "student_1",
+            "subject": "subject_math",
+            "total": 80,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 1,
+            "is_published": true
+        },
+        {
+            "term": "term_1",
+            "student": "student_1",
+            "subject": "subject_english",
+            "total": 80,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 1,
+            "is_published": true
+        },
+        {
+            "term": "term_1",
+            "student": "student_2",
+            "subject": "subject_math",
+            "total": 80,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 1,
+            "is_published": true
+        },
+        {
+            "term": "term_1",
+            "student": "student_2",
+            "subject": "subject_english",
+            "total": 80,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 1,
+            "is_published": true
+        },
+        {
+            "term": "term_1",
+            "student": "student_3",
+            "subject": "subject_math",
+            "total": 70,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 3,
+            "is_published": true
+        },
+        {
+            "term": "term_1",
+            "student": "student_3",
+            "subject": "subject_english",
+            "total": 65,
+            "grade": "B",
+            "remark": "Very Good",
+            "position": 3,
+            "is_published": true
+        },
+        {
+            "term": "term_2",
+            "student": "student_1",
+            "subject": "subject_math",
+            "total": 85,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 1,
+            "is_published": true
+        },
+        {
+            "term": "term_2",
+            "student": "student_1",
+            "subject": "subject_english",
+            "total": 82,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 1,
+            "is_published": true
+        },
+        {
+            "term": "term_2",
+            "student": "student_2",
+            "subject": "subject_math",
+            "total": 75,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 2,
+            "is_published": true
+        },
+        {
+            "term": "term_2",
+            "student": "student_2",
+            "subject": "subject_english",
+            "total": 80,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 2,
+            "is_published": true
+        },
+        {
+            "term": "term_2",
+            "student": "student_3",
+            "subject": "subject_math",
+            "total": 75,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 2,
+            "is_published": true
+        },
+        {
+            "term": "term_2",
+            "student": "student_3",
+            "subject": "subject_english",
+            "total": 70,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 3,
+            "is_published": true
+        },
+        {
+            "term": "term_3",
+            "student": "student_1",
+            "subject": "subject_math",
+            "total": 85,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 1,
+            "is_published": true
+        },
+        {
+            "term": "term_3",
+            "student": "student_1",
+            "subject": "subject_english",
+            "total": 82.67,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 1,
+            "is_published": true
+        },
+        {
+            "term": "term_3",
+            "student": "student_2",
+            "subject": "subject_math",
+            "total": 80,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 2,
+            "is_published": true
+        },
+        {
+            "term": "term_3",
+            "student": "student_2",
+            "subject": "subject_english",
+            "total": 80,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 2,
+            "is_published": true
+        },
+        {
+            "term": "term_3",
+            "student": "student_3",
+            "subject": "subject_math",
+            "total": 75,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 3,
+            "is_published": true
+        },
+        {
+            "term": "term_3",
+            "student": "student_3",
+            "subject": "subject_english",
+            "total": 70,
+            "grade": "A",
+            "remark": "Excellent",
+            "position": 3,
+            "is_published": true
+        }
+    ],
+    "term_results": [
+        {
+            "term": "term_1",
+            "student": "student_1",
+            "subjects_count": 2,
+            "grand_total": 160,
+            "average": 80,
+            "grade": "A",
+            "remark": "Excellent",
+            "overall_position": 1,
+            "is_finalized": true
+        },
+        {
+            "term": "term_1",
+            "student": "student_2",
+            "subjects_count": 2,
+            "grand_total": 160,
+            "average": 80,
+            "grade": "A",
+            "remark": "Excellent",
+            "overall_position": 1,
+            "is_finalized": true
+        },
+        {
+            "term": "term_1",
+            "student": "student_3",
+            "subjects_count": 2,
+            "grand_total": 135,
+            "average": 67.5,
+            "grade": "B",
+            "remark": "Very Good",
+            "overall_position": 3,
+            "is_finalized": true
+        },
+        {
+            "term": "term_2",
+            "student": "student_1",
+            "subjects_count": 2,
+            "grand_total": 167,
+            "average": 83.5,
+            "grade": "A",
+            "remark": "Excellent",
+            "overall_position": 1,
+            "is_finalized": true
+        },
+        {
+            "term": "term_2",
+            "student": "student_2",
+            "subjects_count": 2,
+            "grand_total": 155,
+            "average": 77.5,
+            "grade": "A",
+            "remark": "Excellent",
+            "overall_position": 2,
+            "is_finalized": true
+        },
+        {
+            "term": "term_2",
+            "student": "student_3",
+            "subjects_count": 2,
+            "grand_total": 145,
+            "average": 72.5,
+            "grade": "A",
+            "remark": "Excellent",
+            "overall_position": 3,
+            "is_finalized": true
+        },
+        {
+            "term": "term_3",
+            "student": "student_1",
+            "subjects_count": 2,
+            "grand_total": 167.67,
+            "average": 83.84,
+            "grade": "A",
+            "remark": "Excellent",
+            "overall_position": 1,
+            "is_finalized": true
+        },
+        {
+            "term": "term_3",
+            "student": "student_2",
+            "subjects_count": 2,
+            "grand_total": 160,
+            "average": 80,
+            "grade": "A",
+            "remark": "Excellent",
+            "overall_position": 2,
+            "is_finalized": true
+        },
+        {
+            "term": "term_3",
+            "student": "student_3",
+            "subjects_count": 2,
+            "grand_total": 145,
+            "average": 72.5,
+            "grade": "A",
+            "remark": "Excellent",
+            "overall_position": 3,
+            "is_finalized": true
+        }
+    ]
+}

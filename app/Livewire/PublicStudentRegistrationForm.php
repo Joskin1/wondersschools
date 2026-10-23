@@ -31,6 +31,9 @@ class PublicStudentRegistrationForm extends Component
     public ?int $classroom_id = null;
     public ?int $class_arm_id = null;
     public ?int $department_id = null;
+    public string $surname = '';
+    public string $first_name = '';
+    public string $other_name = '';
     public string $full_name = '';
     public ?string $date_of_birth = null;
     public string $gender = 'male';
@@ -58,6 +61,14 @@ class PublicStudentRegistrationForm extends Component
         $this->enableClassArms = FrontendLibrary::getBooleanSetting('enable_class_arms', false);
     }
 
+    public function updatedFullName(): void
+    {
+        $parsed = \App\Console\Commands\SplitFullNames::parseFullName($this->full_name);
+        $this->surname = $parsed['surname'];
+        $this->first_name = $parsed['first_name'];
+        $this->other_name = $parsed['other_name'] ?? '';
+    }
+
     public function updatedClassroomId(): void
     {
         $this->class_arm_id = null;
@@ -70,7 +81,9 @@ class PublicStudentRegistrationForm extends Component
         $this->allowManualAdmissionNumber = FrontendLibrary::getBooleanSetting('allow_manual_admission_number', false);
 
         $rules = [
-            'full_name' => 'required|string|max:255',
+            'surname' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+            'other_name' => 'nullable|string|max:255',
             'date_of_birth' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
             'profile_picture' => 'nullable|image|max:2048', // 2MB Max
@@ -108,7 +121,8 @@ class PublicStudentRegistrationForm extends Component
             'department_id.required' => 'Please select your department / stream for this senior class.',
             'admission_number.required' => 'Admission / Registration number is required.',
             'admission_number.unique' => 'This admission number has already been registered to another student.',
-            'full_name.required' => 'Student full name is required.',
+            'surname.required' => 'Student surname is required.',
+            'first_name.required' => 'Student first name is required.',
             'date_of_birth.required' => 'Date of birth is required.',
             'date_of_birth.before' => 'Date of birth must be in the past.',
             'gender.required' => 'Gender is required.',
@@ -154,8 +168,10 @@ class PublicStudentRegistrationForm extends Component
             DB::transaction(function () use ($profilePicturePath, $manualAdmission) {
                 // 1. Create Student record
                 $student = Student::create([
+                    'surname' => trim($this->surname),
+                    'first_name' => trim($this->first_name),
+                    'other_name' => filled($this->other_name) ? trim($this->other_name) : null,
                     'admission_number' => $manualAdmission,
-                    'full_name' => trim($this->full_name),
                     'date_of_birth' => $this->date_of_birth,
                     'gender' => $this->gender,
                     'address' => trim($this->address),
@@ -185,20 +201,35 @@ class PublicStudentRegistrationForm extends Component
                     ]);
                 }
 
-                // 3. Create linked User account for student login
+                // 3. Create or configure linked User account for student login
                 $accountService = app(StudentAccountService::class);
-                $internalEmail = $accountService->internalEmailFor($student);
+                $user = $student->user;
+                if (! $user) {
+                    $user = $accountService->createOrLinkUser(
+                        $student,
+                        $this->surname,
+                        $this->first_name,
+                        $this->other_name
+                    );
+                }
 
-                $user = User::create([
-                    'name' => $student->full_name,
-                    'email' => $internalEmail,
+                $user->update([
+                    'surname' => trim($this->surname),
+                    'first_name' => trim($this->first_name),
+                    'other_name' => filled($this->other_name) ? trim($this->other_name) : null,
                     'password' => Hash::make($this->password),
                     'role' => 'student',
-                    'is_active' => false, // Pending portal activation
+                    'is_active' => false,
                     'registration_completed_at' => now(),
                     'email_verified_at' => now(),
                 ]);
 
+                $student->forceFill([
+                    'user_id' => $user->id,
+                    'is_portal_active' => false,
+                ])->saveQuietly();
+
+                $internalEmail = $user->email;
                 $student->update(['user_id' => $user->id]);
 
                 $this->createdStudent = $student;

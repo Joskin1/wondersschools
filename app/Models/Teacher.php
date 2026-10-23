@@ -40,4 +40,29 @@ class Teacher extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function getFullNameAttribute(): string
+    {
+        return $this->user?->full_name ?? '';
+    }
+
+    public function getNameAttribute(): string
+    {
+        return $this->full_name;
+    }
+
+    public function getSurnameAttribute(): ?string
+    {
+        return $this->user?->surname;
+    }
+
+    public function getFirstNameAttribute(): ?string
+    {
+        return $this->user?->first_name;
+    }
+
+    public function getOtherNameAttribute(): ?string
+    {
+        return $this->user?->other_name;
+    }
 }

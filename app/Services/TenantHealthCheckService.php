@@ -31,6 +31,11 @@ class TenantHealthCheckService
         'scores',
         'classrooms',
         'subjects',
+        'class_midterm_configs',
+        'term_scoring_snapshots',
+        'midterm_subject_results',
+        'midterm_term_results',
+        'midterm_class_term_approvals',
     ];
 
     /**

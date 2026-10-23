@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terminal Academic Report Sheet</title>
     @php
+        use App\Services\ReportCardSettingsService;
+
         $brandColor = $data['settings']['primary_color'] ?? config('app.tenant_primary_color', '#1e3a8a');
         $settings   = $data['settings'] ?? [];
         $student    = $data['student'] ?? [];
@@ -13,13 +15,74 @@
         $present    = $termRes['times_present'] ?? null;
         $absent     = ($opened !== null && $present !== null) ? max(0, (int)$opened - (int)$present) : null;
         $attRate    = ($opened && $present !== null) ? round(($present / $opened) * 100, 1) : null;
+
+        // Modular feature toggle helper
+        $is = fn(string $key) => ReportCardSettingsService::isEnabled($settings, $key);
+
+        // Safe margins calculation (Default 18mm, ample breathing room)
+        $marginCss = $data['margin_css'] ?? ReportCardSettingsService::getMarginCss($settings);
+
+        $resolveImage = function(?string $path): ?string {
+            if (empty($path)) {
+                return null;
+            }
+            if (str_starts_with($path, 'data:')) {
+                return $path;
+            }
+            try {
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                    $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($path);
+                    if (file_exists($fullPath)) {
+                        $mime = mime_content_type($fullPath) ?: 'image/png';
+                        return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fullPath));
+                    }
+                }
+            } catch (\Throwable $e) {}
+
+            $pubPath = public_path('storage/' . $path);
+            if (file_exists($pubPath)) {
+                $mime = mime_content_type($pubPath) ?: 'image/png';
+                return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($pubPath));
+            }
+
+            $stPath = storage_path('app/public/' . $path);
+            if (file_exists($stPath)) {
+                $mime = mime_content_type($stPath) ?: 'image/png';
+                return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($stPath));
+            }
+
+            return null;
+        };
+
+        $showLogo  = $is('rc_show_school_logo');
+        $showPhoto = $is('rc_show_student_photo');
+        $logoSrc   = $showLogo ? $resolveImage($settings['school_logo'] ?? null) : null;
+        $photoSrc  = $showPhoto ? $resolveImage($student['passport_photo'] ?? null) : null;
+
+        // Dynamic column counts for results table
+        $showScoreHeads = $is('rc_show_score_heads');
+        $showCumulative = ($data['is_cumulative'] ?? false) && $is('rc_show_cumulative_terms');
+        $showTotal      = $is('rc_show_subject_total');
+        $showExamined   = $is('rc_show_students_examined');
+        $showGrade      = $is('rc_show_subject_grade');
+        $showPosition   = $is('rc_show_subject_position');
+        $showRemark     = $is('rc_show_subject_teacher_remark');
+
+        $scoreHeadsList = $showScoreHeads ? ($data['score_heads'] ?? []) : [];
+        $colCount = 1 + count($scoreHeadsList)
+            + ($showCumulative ? 3 : 0)
+            + ($showTotal ? 1 : 0)
+            + ($showExamined ? 1 : 0)
+            + ($showGrade ? 1 : 0)
+            + ($showPosition ? 1 : 0)
+            + ($showRemark ? 1 : 0);
     @endphp
     <style>
         /* ── Reset & Document Base ─────────────────────────────────────────── */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         @page {
             size: a4 portrait;
-            margin: 14mm 14mm 14mm 14mm;
+            margin: {{ $marginCss }};
         }
         body {
             font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
@@ -41,7 +104,6 @@
             vertical-align: middle;
         }
         .header-center-cell {
-            width: 70%;
             text-align: center;
             vertical-align: middle;
             padding: 0 6px;
@@ -143,7 +205,7 @@
             font-weight: 800;
             color: #475569;
             background: #f8fafc;
-            width: 17%;
+            width: 18%;
             text-transform: uppercase;
             font-size: 8px;
             letter-spacing: 0.3px;
@@ -151,7 +213,7 @@
         .info-table .val {
             font-weight: 700;
             color: #0f172a;
-            width: 33%;
+            width: 32%;
         }
         .badge-dept {
             display: inline-block;
@@ -266,11 +328,8 @@
             margin-bottom: 4px;
         }
         .traits-col {
-            width: 50%;
             vertical-align: top;
         }
-        .traits-col:first-child { padding-right: 3px; }
-        .traits-col:last-child { padding-left: 3px; }
         .trait-table {
             width: 100%;
             border-collapse: collapse;
@@ -341,7 +400,6 @@
             page-break-inside: avoid;
         }
         .sig-col {
-            width: 33.33%;
             text-align: center;
             vertical-align: bottom;
             padding: 0 8px;
@@ -382,111 +440,192 @@
     {{-- ══════════════════════════════════════════════════════════════════════
          1. SCHOOL BRANDING & HEADER SECTION
     ══════════════════════════════════════════════════════════════════════ --}}
+    @php
+        $centerWidth = 100;
+        if ($showLogo)  $centerWidth -= 15;
+        if ($showPhoto) $centerWidth -= 15;
+    @endphp
     <table class="school-header-table">
         <tr>
-            {{-- Left: School Logo --}}
-            <td class="header-logo-cell">
-                @if (!empty($settings['school_logo']) && file_exists(public_path('storage/' . $settings['school_logo'])))
-                    <img src="{{ public_path('storage/' . $settings['school_logo']) }}" class="school-logo" alt="Logo">
-                @else
-                    <div style="width:64px;height:64px;border-radius:50%;background:#ffffff;border:2.5px solid {{ $brandColor }};display:inline-block;line-height:60px;text-align:center;font-size:16px;font-weight:900;color:{{ $brandColor }};letter-spacing:1px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-                        {{ strtoupper(substr($settings['school_short_name'] ?? $settings['school_name'] ?? 'SCH', 0, 3)) }}
+            {{-- Left: School Logo (Optional) --}}
+            @if ($showLogo)
+                <td class="header-logo-cell">
+                    @if (!empty($logoSrc))
+                        <img src="{{ $logoSrc }}" class="school-logo" alt="Logo">
+                    @else
+                        <div style="width:64px;height:64px;border-radius:50%;background:#ffffff;border:2.5px solid {{ $brandColor }};display:inline-block;line-height:60px;text-align:center;font-size:16px;font-weight:900;color:{{ $brandColor }};letter-spacing:1px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                            {{ strtoupper(substr($settings['school_short_name'] ?? $settings['school_name'] ?? 'SCH', 0, 3)) }}
+                        </div>
+                    @endif
+                </td>
+            @endif
+
+            {{-- Center: School Identity (Adaptive Width) --}}
+            <td class="header-center-cell" style="width: {{ $centerWidth }}%;">
+                @if ($is('rc_show_school_name'))
+                    <div class="school-name">{{ $settings['school_name'] ?? 'EXCELLENCE ACADEMY' }}</div>
+                @endif
+                @if ($is('rc_show_school_address') && !empty($settings['school_address']))
+                    <div class="school-address">{{ $settings['school_address'] }}</div>
+                @endif
+                @if ($is('rc_show_school_contacts'))
+                    <div class="school-contacts">
+                        @if(!empty($settings['school_phone'])) Tel: {{ $settings['school_phone'] }} @endif
+                        @if(!empty($settings['school_email'])) &bull; Email: {{ $settings['school_email'] }} @endif
+                        @if(!empty($settings['school_website'])) &bull; Web: {{ $settings['school_website'] }} @endif
+                    </div>
+                @endif
+                @if ($is('rc_show_school_motto') && !empty($settings['school_motto']))
+                    <div class="school-motto">"{{ $settings['school_motto'] }}"</div>
+                @endif
+                @if ($is('rc_show_report_title'))
+                    <div>
+                        <span class="report-title-badge">Official Terminal Report Card</span>
                     </div>
                 @endif
             </td>
 
-            {{-- Center: School Identity --}}
-            <td class="header-center-cell">
-                <div class="school-name">{{ $settings['school_name'] ?? 'EXCELLENCE ACADEMY' }}</div>
-                @if(!empty($settings['school_address']))
-                    <div class="school-address">{{ $settings['school_address'] }}</div>
-                @endif
-                <div class="school-contacts">
-                    @if(!empty($settings['school_phone'])) Tel: {{ $settings['school_phone'] }} @endif
-                    @if(!empty($settings['school_email'])) &bull; Email: {{ $settings['school_email'] }} @endif
-                    @if(!empty($settings['school_website'])) &bull; Web: {{ $settings['school_website'] }} @endif
-                </div>
-                @if(!empty($settings['school_motto']))
-                    <div class="school-motto">"{{ $settings['school_motto'] }}"</div>
-                @endif
-                <div>
-                    <span class="report-title-badge">Official Terminal Report Card</span>
-                </div>
-            </td>
-
-            {{-- Right: Student Passport Photo --}}
-            <td class="header-photo-cell">
-                @if (!empty($student['passport_photo']) && file_exists(public_path('storage/' . $student['passport_photo'])))
-                    <img src="{{ public_path('storage/' . $student['passport_photo']) }}" class="student-photo" alt="Photo">
-                @else
-                    <div class="student-photo-placeholder">PHOTO</div>
-                @endif
-            </td>
+            {{-- Right: Student Passport Photo (Optional) --}}
+            @if ($showPhoto)
+                <td class="header-photo-cell">
+                    @if (!empty($photoSrc))
+                        <img src="{{ $photoSrc }}" class="student-photo" alt="Photo">
+                    @else
+                        <div class="student-photo-placeholder">PHOTO</div>
+                    @endif
+                </td>
+            @endif
         </tr>
     </table>
 
-    {{-- Academic Session & Term Ribbon --}}
-    <div class="term-ribbon">
-        {{ $data['term_name'] ?? 'TERMINAL' }} REPORT SHEET &mdash; {{ $data['session_name'] ?? '' }} ACADEMIC SESSION
-    </div>
+    {{-- Academic Session & Term Ribbon (Optional) --}}
+    @if ($is('rc_show_term_ribbon'))
+        <div class="term-ribbon">
+            {{ $data['term_name'] ?? 'TERMINAL' }} REPORT SHEET &mdash; {{ $data['session_name'] ?? '' }} ACADEMIC SESSION
+        </div>
+    @endif
 
     {{-- ══════════════════════════════════════════════════════════════════════
          2. STUDENT BIO-DATA & ATTENDANCE INFORMATION
     ══════════════════════════════════════════════════════════════════════ --}}
-    <table class="info-table">
-        <tr>
-            <td class="lbl">Student Name</td>
-            <td class="val" style="font-size:10.5px;">{{ strtoupper($student['name'] ?? '-') }}</td>
-            <td class="lbl">Admission No</td>
-            <td class="val"><span class="badge-adm">{{ $student['admission_no'] ?? '-' }}</span></td>
-        </tr>
-        <tr>
-            <td class="lbl">Class</td>
-            <td class="val">{{ $data['classroom'] ?? '-' }}</td>
-            @if(!empty($student['department']))
-                <td class="lbl">Department</td>
-                <td class="val"><span class="badge-dept">{{ strtoupper($student['department']) }}</span></td>
-            @elseif(!empty($student['arm']))
-                <td class="lbl">Class Arm</td>
-                <td class="val"><span class="badge-dept">{{ strtoupper($student['arm']) }}</span></td>
-            @else
-                <td class="lbl">Stream</td>
-                <td class="val">General</td>
-            @endif
-        </tr>
-        <tr>
-            <td class="lbl">Gender / DOB</td>
-            <td class="val">{{ ucfirst($student['gender'] ?? '-') }} &bull; {{ $student['dob'] ?? '-' }}</td>
-            <td class="lbl">Class Population</td>
-            <td class="val">
-                @if(!empty($termRes['department_population']))
-                    {{ $termRes['department_population'] }} (Dept) &bull; {{ $termRes['class_population'] ?? $data['class_size'] ?? '-' }} (Overall)
-                @elseif(!empty($termRes['arm_population']))
-                    {{ $termRes['arm_population'] }} (Arm) &bull; {{ $termRes['class_population'] ?? $data['class_size'] ?? '-' }} (Overall)
-                @else
-                    {{ $termRes['class_population'] ?? $data['class_size'] ?? '-' }} Students
-                @endif
-            </td>
-        </tr>
-        <tr>
-            <td class="lbl">Attendance</td>
-            <td class="val">
-                @if($opened !== null && $present !== null)
-                    <strong>{{ $present }}</strong> of <strong>{{ $opened }}</strong> Days Opened ({{ $attRate }}%)
-                @else
-                    {{ $present !== null ? $present . ' Days Present' : '—' }}
-                @endif
-            </td>
-            <td class="lbl">Absence / Punctuality</td>
-            <td class="val">
-                @if($absent !== null)
-                    {{ $absent }} Days Absent
-                @else
-                    Good
-                @endif
-            </td>
-        </tr>
-    </table>
+    @php
+        $bioItems = [];
+
+        if ($is('rc_show_student_name')) {
+            $bioItems[] = [
+                'label' => 'Student Name',
+                'value' => strtoupper($student['name'] ?? '-'),
+                'val_style' => 'font-size:10px;',
+            ];
+        }
+
+        if ($is('rc_show_admission_number')) {
+            $bioItems[] = [
+                'label' => 'Admission No',
+                'value' => $student['admission_no'] ?? '-',
+                'badge' => 'badge-adm',
+            ];
+        }
+
+        if ($is('rc_show_class')) {
+            $bioItems[] = [
+                'label' => 'Class',
+                'value' => $data['classroom'] ?? '-',
+            ];
+        }
+
+        if (!empty($student['arm']) && $is('rc_show_class_arm')) {
+            $bioItems[] = [
+                'label' => 'Class Arm',
+                'value' => strtoupper($student['arm']),
+                'badge' => 'badge-dept',
+            ];
+        } elseif (!empty($student['department']) && $is('rc_show_department')) {
+            $bioItems[] = [
+                'label' => 'Department',
+                'value' => strtoupper($student['department']),
+                'badge' => 'badge-dept',
+            ];
+        }
+
+        if ($is('rc_show_class_size')) {
+            $bioItems[] = [
+                'label' => 'Number in Class',
+                'value' => ($termRes['class_population'] ?? $data['class_size'] ?? '-') . ' Students',
+            ];
+        }
+
+        if (!empty($student['arm']) && $is('rc_show_arm_dept_population')) {
+            $bioItems[] = [
+                'label' => 'Number in Arm',
+                'value' => ($termRes['arm_population'] ?? '-') . ' Students',
+            ];
+        } elseif (!empty($student['department']) && $is('rc_show_arm_dept_population')) {
+            $bioItems[] = [
+                'label' => 'Number in Dept',
+                'value' => ($termRes['department_population'] ?? '-') . ' Students',
+            ];
+        }
+
+        $showGender = $is('rc_show_gender');
+        $showDob    = $is('rc_show_dob');
+        if ($showGender && $showDob) {
+            $bioItems[] = [
+                'label' => 'Gender / DOB',
+                'value' => ucfirst($student['gender'] ?? '-') . ' • ' . ($student['dob'] ?? '-'),
+            ];
+        } elseif ($showGender) {
+            $bioItems[] = [
+                'label' => 'Gender',
+                'value' => ucfirst($student['gender'] ?? '-'),
+            ];
+        } elseif ($showDob) {
+            $bioItems[] = [
+                'label' => 'Date of Birth',
+                'value' => $student['dob'] ?? '-',
+            ];
+        }
+
+        if ($is('rc_show_attendance')) {
+            $attText = '';
+            if ($opened !== null && $present !== null) {
+                $attText = "<strong>{$present}</strong> of <strong>{$opened}</strong> Days ({$attRate}%)";
+            } else {
+                $attText = $present !== null ? "{$present} Days Present" : '—';
+            }
+            if ($absent !== null && $absent > 0) {
+                $attText .= " &bull; {$absent} Absent";
+            }
+            $bioItems[] = [
+                'label' => 'Attendance',
+                'raw_html' => $attText,
+            ];
+        }
+    @endphp
+
+    @if (!empty($bioItems))
+        <table class="info-table">
+            @foreach (array_chunk($bioItems, 2) as $rowChunk)
+                <tr>
+                    @foreach ($rowChunk as $index => $item)
+                        @php
+                            $isSingle = (count($rowChunk) === 1);
+                        @endphp
+                        <td class="lbl">{{ $item['label'] }}</td>
+                        <td class="val" @if($isSingle) colspan="3" @endif @if(!empty($item['val_style'])) style="{{ $item['val_style'] }}" @endif>
+                            @if (!empty($item['raw_html']))
+                                {!! $item['raw_html'] !!}
+                            @elseif (!empty($item['badge']))
+                                <span class="{{ $item['badge'] }}">{{ $item['value'] }}</span>
+                            @else
+                                {{ $item['value'] }}
+                            @endif
+                        </td>
+                    @endforeach
+                </tr>
+            @endforeach
+        </table>
+    @endif
 
     {{-- ══════════════════════════════════════════════════════════════════════
          3. ACADEMIC PERFORMANCE BREAKDOWN TABLE
@@ -495,22 +634,34 @@
     <table class="results-table">
         <thead>
             <tr>
-                <th class="th-left" style="width:26%;">Subject</th>
-                @foreach (($data['score_heads'] ?? []) as $sh)
+                <th class="th-left" style="width: {{ $showRemark ? '26%' : '35%' }};">Subject</th>
+                @foreach ($scoreHeadsList as $sh)
                     <th>{{ $sh['name'] }}</th>
                 @endforeach
-                @if ($data['is_cumulative'] ?? false)
+                @if ($showCumulative)
                     <th>3rd Raw</th>
                     <th>1st Term</th>
                     <th>2nd Term</th>
-                    <th>Cum. Avg</th>
+                    @if ($showTotal)
+                        <th>Cum. Avg</th>
+                    @endif
                 @else
-                    <th>Total</th>
+                    @if ($showTotal)
+                        <th>Total</th>
+                    @endif
                 @endif
-                <th style="width:7%;">Examined</th>
-                <th style="width:7%;">Grade</th>
-                <th style="width:6%;">Pos</th>
-                <th class="th-left" style="width:23%;">Subject Teacher's Remark</th>
+                @if ($showExamined)
+                    <th style="width:7%;">Examined</th>
+                @endif
+                @if ($showGrade)
+                    <th style="width:7%;">Grade</th>
+                @endif
+                @if ($showPosition)
+                    <th style="width:6%;">Pos</th>
+                @endif
+                @if ($showRemark)
+                    <th class="th-left" style="width:23%;">Subject Teacher's Remark</th>
+                @endif
             </tr>
         </thead>
         <tbody>
@@ -528,25 +679,37 @@
                 @endphp
                 <tr>
                     <td class="td-left">{{ $row['subject'] }}</td>
-                    @foreach (($data['score_heads'] ?? []) as $sh)
-                        <td>{{ isset($row['scores'][$sh['id']]) ? (is_numeric($row['scores'][$sh['id']]) ? (float)$row['scores'][$sh['id']] : $row['scores'][$sh['id']]) : '-' }}</td>
+                    @foreach ($scoreHeadsList as $sh)
+                        <td>{{ isset($row['scores'][$sh['id']]) ? (is_numeric($row['scores'][$sh['id']]) ? (int) ceil((float)$row['scores'][$sh['id']]) : $row['scores'][$sh['id']]) : '-' }}</td>
                     @endforeach
-                    @if ($data['is_cumulative'] ?? false)
-                        <td class="score-total">{{ (float) $row['term3_raw'] }}</td>
-                        <td>{{ (float) $row['term1'] }}</td>
-                        <td>{{ (float) $row['term2'] }}</td>
-                        <td class="score-total" style="background:rgba(30,58,138,0.06);">{{ (float) $row['average'] }}</td>
+                    @if ($showCumulative)
+                        <td class="score-total">{{ is_numeric($row['term3_raw'] ?? null) ? (int) ceil((float) $row['term3_raw']) : ($row['term3_raw'] ?? '-') }}</td>
+                        <td>{{ is_numeric($row['term1'] ?? null) ? (int) ceil((float) $row['term1']) : ($row['term1'] ?? '-') }}</td>
+                        <td>{{ is_numeric($row['term2'] ?? null) ? (int) ceil((float) $row['term2']) : ($row['term2'] ?? '-') }}</td>
+                        @if ($showTotal)
+                            <td class="score-total" style="background:rgba(30,58,138,0.06);">{{ is_numeric($row['average'] ?? null) ? (int) ceil((float) $row['average']) : ($row['average'] ?? '-') }}</td>
+                        @endif
                     @else
-                        <td class="score-total" style="background:rgba(30,58,138,0.06);">{{ (float) $row['total'] }}</td>
+                        @if ($showTotal)
+                            <td class="score-total" style="background:rgba(30,58,138,0.06);">{{ is_numeric($row['total'] ?? null) ? (int) ceil((float) $row['total']) : ($row['total'] ?? '-') }}</td>
+                        @endif
                     @endif
-                    <td>{{ $row['students_examined'] ?? '-' }}</td>
-                    <td class="{{ $gClass }}">{{ $g }}</td>
-                    <td>{{ $row['position'] ?? '-' }}</td>
-                    <td class="remark-cell">{{ $row['remark'] ?? '-' }}</td>
+                    @if ($showExamined)
+                        <td>{{ $row['students_examined'] ?? '-' }}</td>
+                    @endif
+                    @if ($showGrade)
+                        <td class="{{ $gClass }}">{{ $g }}</td>
+                    @endif
+                    @if ($showPosition)
+                        <td>{{ $row['position'] ?? '-' }}</td>
+                    @endif
+                    @if ($showRemark)
+                        <td class="remark-cell">{{ $row['remark'] ?? '-' }}</td>
+                    @endif
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10" style="padding:10px;text-align:center;color:#94a3b8;">No subject records found for this term.</td>
+                    <td colspan="{{ $colCount }}" style="padding:10px;text-align:center;color:#94a3b8;">No subject records found for this term.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -555,109 +718,168 @@
     {{-- ══════════════════════════════════════════════════════════════════════
          4. TERMINAL SUMMARY STATISTICS
     ══════════════════════════════════════════════════════════════════════ --}}
-    <div class="section-header">Terminal Performance Summary</div>
-    <table class="summary-grid-table">
-        <tr>
-            <td class="s-lbl">Total Marks Obtained</td>
-            <td class="s-val">{{ isset($termRes['grand_total']) ? (float)$termRes['grand_total'] : '-' }} / {{ $data['total_obtainable'] ?? '-' }}</td>
-            <td class="s-lbl">Term Percentage Average</td>
-            <td class="s-val">{{ isset($termRes['average']) ? (float)$termRes['average'] : '-' }}%</td>
-        </tr>
-        <tr>
-            @if(!empty($termRes['department_position']))
-                <td class="s-lbl">Department Position</td>
-                <td class="s-val">{{ $termRes['department_position'] }} <span style="font-size:8px;color:#64748b;font-weight:normal;">of {{ $termRes['department_population'] ?? '-' }} ({{ $student['department'] ?? 'Dept' }})</span></td>
-            @elseif(!empty($termRes['arm_position']))
-                <td class="s-lbl">Arm Position</td>
-                <td class="s-val">{{ $termRes['arm_position'] }} <span style="font-size:8px;color:#64748b;font-weight:normal;">of {{ $termRes['arm_population'] ?? '-' }} ({{ $student['arm'] ?? 'Arm' }})</span></td>
-            @else
-                <td class="s-lbl">Overall Position in Class</td>
-                <td class="s-val">{{ $termRes['overall_position'] ?? '-' }} <span style="font-size:8px;color:#64748b;font-weight:normal;">of {{ $termRes['class_population'] ?? $data['class_size'] ?? '-' }}</span></td>
-            @endif
-            <td class="s-lbl">Final Academic Grade</td>
-            <td class="s-val">{{ $termRes['grade'] ?? '-' }} &mdash; {{ $termRes['remark'] ?? '-' }}</td>
-        </tr>
-        @if(!empty($termRes['department_position']) || !empty($termRes['arm_position']))
-        <tr>
-            <td class="s-lbl">Overall Set Position</td>
-            <td class="s-val">{{ $termRes['overall_position'] ?? '-' }} <span style="font-size:8px;color:#64748b;font-weight:normal;">of {{ $termRes['class_population'] ?? $data['class_size'] ?? '-' }}</span></td>
-            <td class="s-lbl">Set Cohort</td>
-            <td class="s-val" style="font-size:8px;color:#475569;">{{ $data['classroom'] ?? '-' }} (Entire Set)</td>
-        </tr>
+    @if ($is('rc_show_performance_summary'))
+        @php
+            $summaryItems = [];
+
+            if ($is('rc_show_total_obtained')) {
+                $obtainedVal = isset($termRes['grand_total']) && is_numeric($termRes['grand_total']) ? (int) ceil((float)$termRes['grand_total']) : ($termRes['grand_total'] ?? '-');
+                $maxVal = isset($data['total_obtainable']) && is_numeric($data['total_obtainable']) ? (int) ceil((float)$data['total_obtainable']) : ($data['total_obtainable'] ?? '-');
+                $summaryItems[] = [
+                    'label' => 'Total Marks Obtained',
+                    'value' => "{$obtainedVal} / {$maxVal}",
+                ];
+            }
+
+            if ($is('rc_show_term_percentage')) {
+                $avgVal = isset($termRes['average']) && is_numeric($termRes['average']) ? (int) ceil((float)$termRes['average']) . '%' : ($termRes['average'] ?? '-');
+                $summaryItems[] = [
+                    'label' => 'Term Percentage Average',
+                    'value' => $avgVal,
+                ];
+            }
+
+            if (!empty($termRes['department_position']) && $is('rc_show_arm_dept_position')) {
+                $deptPop = $termRes['department_population'] ?? '-';
+                $deptName = $student['department'] ?? 'Dept';
+                $summaryItems[] = [
+                    'label' => 'Department Position',
+                    'value' => "{$termRes['department_position']} (of {$deptPop} in {$deptName})",
+                ];
+            } elseif (!empty($termRes['arm_position']) && $is('rc_show_arm_dept_position')) {
+                $armPop = $termRes['arm_population'] ?? '-';
+                $armName = $student['arm'] ?? 'Arm';
+                $summaryItems[] = [
+                    'label' => 'Arm Position',
+                    'value' => "{$termRes['arm_position']} (of {$armPop} in {$armName})",
+                ];
+            }
+
+            if ($is('rc_show_overall_position')) {
+                $classPop = $termRes['class_population'] ?? $data['class_size'] ?? '-';
+                $posVal = $termRes['overall_position'] ?? '-';
+                $summaryItems[] = [
+                    'label' => 'Overall Position in Class',
+                    'value' => "{$posVal} of {$classPop}",
+                ];
+            }
+
+            if ($is('rc_show_final_grade')) {
+                $grd = $termRes['grade'] ?? '-';
+                $rmk = $termRes['remark'] ?? '-';
+                $summaryItems[] = [
+                    'label' => 'Final Academic Grade',
+                    'value' => "{$grd} — {$rmk}",
+                ];
+            }
+        @endphp
+
+        @if (!empty($summaryItems))
+            <div class="section-header">Terminal Performance Summary</div>
+            <table class="summary-grid-table">
+                @foreach (array_chunk($summaryItems, 2) as $rowChunk)
+                    <tr>
+                        @foreach ($rowChunk as $item)
+                            @php $isSingle = (count($rowChunk) === 1); @endphp
+                            <td class="s-lbl">{{ $item['label'] }}</td>
+                            <td class="s-val" @if($isSingle) colspan="3" @endif>{{ $item['value'] }}</td>
+                        @endforeach
+                    </tr>
+                @endforeach
+            </table>
         @endif
-    </table>
+    @endif
 
     {{-- ══════════════════════════════════════════════════════════════════════
          5. AFFECTIVE DOMAIN & PSYCHOMOTOR SKILLS
     ══════════════════════════════════════════════════════════════════════ --}}
-    <table class="traits-container">
-        <tr>
-            {{-- Affective Domain --}}
-            <td class="traits-col">
-                <div class="section-header">Affective Domain (Character &amp; Conduct)</div>
-                <table class="trait-table">
-                    <thead>
-                        <tr>
-                            <th>Behavioral Trait</th>
-                            <th class="th-ctr">Rating (1 - 5)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>Punctuality &amp; Regularity</td><td class="td-ctr">5</td></tr>
-                        <tr><td>Neatness &amp; Personal Hygiene</td><td class="td-ctr">5</td></tr>
-                        <tr><td>Attentiveness in Class</td><td class="td-ctr">4</td></tr>
-                        <tr><td>Honesty &amp; Integrity</td><td class="td-ctr">5</td></tr>
-                        <tr><td>Relationship with Peers</td><td class="td-ctr">4</td></tr>
-                        <tr><td>Leadership &amp; Initiative</td><td class="td-ctr">5</td></tr>
-                    </tbody>
-                </table>
-            </td>
+    @php
+        $showAffective   = $is('rc_show_affective_domain');
+        $showPsychomotor = $is('rc_show_psychomotor_skills');
+        $showLegend      = $is('rc_show_domain_scale');
+    @endphp
 
-            {{-- Psychomotor Skills --}}
-            <td class="traits-col">
-                <div class="section-header">Psychomotor Skills &amp; Activities</div>
-                <table class="trait-table">
-                    <thead>
-                        <tr>
-                            <th>Practical Skill / Activity</th>
-                            <th class="th-ctr">Rating (1 - 5)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>Handwriting &amp; Presentation</td><td class="td-ctr">4</td></tr>
-                        <tr><td>Sports, Games &amp; Athletics</td><td class="td-ctr">4</td></tr>
-                        <tr><td>Craft, Design &amp; Projects</td><td class="td-ctr">4</td></tr>
-                        <tr><td>Verbal Fluency &amp; Communication</td><td class="td-ctr">5</td></tr>
-                        <tr><td>Musical &amp; Creative Arts</td><td class="td-ctr">4</td></tr>
-                        <tr><td>Laboratory / Practical Skills</td><td class="td-ctr">5</td></tr>
-                    </tbody>
-                </table>
-            </td>
-        </tr>
-    </table>
-    <div style="font-size:7.5px;color:#64748b;margin-bottom:8px;text-align:right;">
-        <strong>Rating Scale:</strong> 5 - Excellent &bull; 4 - Very Good &bull; 3 - Good &bull; 2 - Fair &bull; 1 - Poor
-    </div>
+    @if ($showAffective || $showPsychomotor)
+        <table class="traits-container">
+            <tr>
+                {{-- Affective Domain (Optional) --}}
+                @if ($showAffective)
+                    <td class="traits-col" style="width: {{ $showPsychomotor ? '50%' : '100%' }}; @if($showPsychomotor) padding-right: 3px; @endif">
+                        <div class="section-header">Affective Domain (Character &amp; Conduct)</div>
+                        <table class="trait-table">
+                            <thead>
+                                <tr>
+                                    <th>Behavioral Trait</th>
+                                    <th class="th-ctr">Rating (1 - 5)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Punctuality &amp; Regularity</td><td class="td-ctr">5</td></tr>
+                                <tr><td>Neatness &amp; Personal Hygiene</td><td class="td-ctr">5</td></tr>
+                                <tr><td>Attentiveness in Class</td><td class="td-ctr">4</td></tr>
+                                <tr><td>Honesty &amp; Integrity</td><td class="td-ctr">5</td></tr>
+                                <tr><td>Relationship with Peers</td><td class="td-ctr">4</td></tr>
+                                <tr><td>Leadership &amp; Initiative</td><td class="td-ctr">5</td></tr>
+                            </tbody>
+                        </table>
+                    </td>
+                @endif
+
+                {{-- Psychomotor Skills (Optional) --}}
+                @if ($showPsychomotor)
+                    <td class="traits-col" style="width: {{ $showAffective ? '50%' : '100%' }}; @if($showAffective) padding-left: 3px; @endif">
+                        <div class="section-header">Psychomotor Skills &amp; Activities</div>
+                        <table class="trait-table">
+                            <thead>
+                                <tr>
+                                    <th>Practical Skill / Activity</th>
+                                    <th class="th-ctr">Rating (1 - 5)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Handwriting &amp; Presentation</td><td class="td-ctr">4</td></tr>
+                                <tr><td>Sports, Games &amp; Athletics</td><td class="td-ctr">4</td></tr>
+                                <tr><td>Craft, Design &amp; Projects</td><td class="td-ctr">4</td></tr>
+                                <tr><td>Verbal Fluency &amp; Communication</td><td class="td-ctr">5</td></tr>
+                                <tr><td>Musical &amp; Creative Arts</td><td class="td-ctr">4</td></tr>
+                                <tr><td>Laboratory / Practical Skills</td><td class="td-ctr">5</td></tr>
+                            </tbody>
+                        </table>
+                    </td>
+                @endif
+            </tr>
+        </table>
+
+        @if ($showLegend)
+            <div style="font-size:7.5px;color:#64748b;margin-bottom:6px;text-align:right;">
+                <strong>Rating Scale:</strong> 5 - Excellent &bull; 4 - Very Good &bull; 3 - Good &bull; 2 - Fair &bull; 1 - Poor
+            </div>
+        @endif
+    @endif
 
     {{-- ══════════════════════════════════════════════════════════════════════
          6. REMARKS & COMMENTS
     ══════════════════════════════════════════════════════════════════════ --}}
-    <div class="remark-card">
-        <div class="remark-title">Class Teacher's Remark:</div>
-        <div class="remark-text">
-            {{ $termRes['class_teacher_comment'] ?? 'A diligent, polite, and hardworking student who exhibits great academic promise.' }}
+    @if ($is('rc_show_class_teacher_remark'))
+        <div class="remark-card">
+            <div class="remark-title">Class Teacher's Remark:</div>
+            <div class="remark-text">
+                {{ $termRes['class_teacher_comment'] ?? 'A diligent, polite, and hardworking student who exhibits great academic promise.' }}
+            </div>
         </div>
-    </div>
+    @endif
 
-    <div class="remark-card">
-        <div class="remark-title">Principal's Executive Comment:</div>
-        <div class="remark-text">
-            {{ $termRes['principal_comment'] ?? 'An exceptional and commendable performance. Keep maintaining this exemplary standard!' }}
+    @if ($is('rc_show_principal_remark'))
+        <div class="remark-card">
+            <div class="remark-title">Principal's Executive Comment:</div>
+            <div class="remark-text">
+                {{ $termRes['principal_comment'] ?? 'An exceptional and commendable performance. Keep maintaining this exemplary standard!' }}
+            </div>
         </div>
-    </div>
+    @endif
 
-    {{-- Next Term Resumption Banner --}}
-    @if(!empty($data['next_term_begins']))
+    {{-- Next Term Resumption Banner (Optional) --}}
+    @if ($is('rc_show_next_term_resumption') && !empty($data['next_term_begins']))
         <div class="resumption-banner">
             <strong>NEXT TERM RESUMPTION DATE:</strong> {{ strtoupper($data['next_term_begins']) }}
         </div>
@@ -666,26 +888,45 @@
     {{-- ══════════════════════════════════════════════════════════════════════
          7. SIGNATURES & OFFICIAL VERIFICATION
     ══════════════════════════════════════════════════════════════════════ --}}
-    <table class="sig-table">
-        <tr>
-            <td class="sig-col">
-                <div class="sig-line">Class Teacher's Signature</div>
-            </td>
-            <td class="sig-col">
-                <div class="stamp-box">
-                    &bull; OFFICIAL SCHOOL SEAL &bull;
-                </div>
-            </td>
-            <td class="sig-col">
-                <div class="sig-line">Principal's Signature &amp; Date</div>
-            </td>
-        </tr>
-    </table>
+    @php
+        $showTeacherSig   = $is('rc_show_teacher_signature');
+        $showStamp        = $is('rc_show_school_stamp');
+        $showPrincipalSig = $is('rc_show_principal_signature');
 
-    {{-- Document Footer --}}
-    <div class="footer-note">
-        This is an official computer-generated student terminal report issued by {{ $settings['school_name'] ?? 'the School' }}. &bull; Generated on: {{ now()->format('d M Y, h:i A') }}
-    </div>
+        $sigColumns = [];
+        if ($showTeacherSig)   $sigColumns[] = 'teacher';
+        if ($showStamp)        $sigColumns[] = 'stamp';
+        if ($showPrincipalSig) $sigColumns[] = 'principal';
+
+        $colWidth = !empty($sigColumns) ? round(100 / count($sigColumns), 2) . '%' : '100%';
+    @endphp
+
+    @if (!empty($sigColumns))
+        <table class="sig-table">
+            <tr>
+                @foreach ($sigColumns as $type)
+                    <td class="sig-col" style="width: {{ $colWidth }};">
+                        @if ($type === 'teacher')
+                            <div class="sig-line">Class Teacher's Signature</div>
+                        @elseif ($type === 'stamp')
+                            <div class="stamp-box">
+                                &bull; OFFICIAL SCHOOL SEAL &bull;
+                            </div>
+                        @elseif ($type === 'principal')
+                            <div class="sig-line">Principal's Signature &amp; Date</div>
+                        @endif
+                    </td>
+                @endforeach
+            </tr>
+        </table>
+    @endif
+
+    {{-- Document Footer (Optional) --}}
+    @if ($is('rc_show_footer_note'))
+        <div class="footer-note">
+            This is an official computer-generated student terminal report issued by {{ $settings['school_name'] ?? 'the School' }}. &bull; Generated on: {{ now()->format('d M Y, h:i A') }}
+        </div>
+    @endif
 
 </body>
 </html>

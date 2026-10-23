@@ -11,9 +11,86 @@
         .dark .ss-input { background: #0b0f19; border-color: #1e293b; color: #f1f5f9; }
         .ss-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; }
         @media (min-width: 768px) { .ss-grid { grid-template-columns: repeat(4, 1fr); } }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 0.85s linear infinite;
+        }
     </style>
 
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div x-data="{ isUploading: false, uploadProgress: 0 }"
+         x-on:livewire-upload-start="isUploading = true; uploadProgress = 0"
+         x-on:livewire-upload-finish="isUploading = false"
+         x-on:livewire-upload-error="isUploading = false; alert('Spreadsheet upload failed. Please verify the file and try again.')"
+         x-on:livewire-upload-progress="uploadProgress = $event.detail.progress"
+         style="display: flex; flex-direction: column; gap: 1.5rem; position: relative;">
+
+        {{-- ── Full-Screen Backdrop Overlays ────────────────────────────────── --}}
+        <div wire:loading.flex wire:target="processClassResults" style="display:none; position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 1.25rem; padding: 2rem 2.5rem; max-width: 440px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);" class="dark:bg-slate-900">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #e0e7ff; color: #4338ca; margin-bottom: 1.25rem;" class="dark:bg-indigo-950 dark:text-indigo-400">
+                    <svg class="animate-spin" style="width: 36px; height: 36px;" fill="none" viewBox="0 0 24 24">
+                        <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path style="opacity: 0.85;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </div>
+                <h3 style="font-size: 1.125rem; font-weight: 900; color: #0f172a; margin-bottom: 0.5rem;" class="dark:text-white">Calculating Class Results</h3>
+                <p style="font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0;" class="dark:text-slate-400">
+                    Computing student scores, competition rankings, averages, and overall class positions. Please wait...
+                </p>
+            </div>
+        </div>
+
+        <div wire:loading.flex wire:target="approveClassResults" style="display:none; position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 1.25rem; padding: 2rem 2.5rem; max-width: 440px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);" class="dark:bg-slate-900">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #dcfce7; color: #059669; margin-bottom: 1.25rem;" class="dark:bg-emerald-950 dark:text-emerald-400">
+                    <svg class="animate-spin" style="width: 36px; height: 36px;" fill="none" viewBox="0 0 24 24">
+                        <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path style="opacity: 0.85;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </div>
+                <h3 style="font-size: 1.125rem; font-weight: 900; color: #0f172a; margin-bottom: 0.5rem;" class="dark:text-white">Releasing Results to Students</h3>
+                <p style="font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0;" class="dark:text-slate-400">
+                    Finalizing official administrative release and enabling student portal access. Please wait...
+                </p>
+            </div>
+        </div>
+
+        <div x-show="isUploading" x-cloak style="position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 1.25rem; padding: 2rem 2.5rem; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);" class="dark:bg-slate-900">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #e0e7ff; color: #4338ca; margin-bottom: 1.25rem;" class="dark:bg-indigo-950 dark:text-indigo-400">
+                    <svg class="animate-spin" style="width: 36px; height: 36px;" fill="none" viewBox="0 0 24 24">
+                        <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path style="opacity: 0.85;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </div>
+                <h3 style="font-size: 1.125rem; font-weight: 900; color: #0f172a; margin-bottom: 0.5rem;" class="dark:text-white">Uploading Remarks Spreadsheet</h3>
+                <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 1rem;" class="dark:text-slate-400">
+                    Transferring file to server... <span x-text="uploadProgress + '%'" style="font-weight: 800; color: #4338ca;"></span>
+                </p>
+                <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;" class="dark:bg-slate-800">
+                    <div style="height: 100%; background: #4f46e5; transition: width 0.2s;" :style="'width: ' + uploadProgress + '%'"></div>
+                </div>
+            </div>
+        </div>
+
+        <div wire:loading.flex wire:target="uploadFile" style="display:none; position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 1.25rem; padding: 2rem 2.5rem; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);" class="dark:bg-slate-900">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #e0f2fe; color: #0284c7; margin-bottom: 1.25rem;" class="dark:bg-sky-950 dark:text-sky-400">
+                    <svg class="animate-spin" style="width: 36px; height: 36px;" fill="none" viewBox="0 0 24 24">
+                        <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path style="opacity: 0.85;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </div>
+                <h3 style="font-size: 1.125rem; font-weight: 900; color: #0f172a; margin-bottom: 0.5rem;" class="dark:text-white">Parsing Remarks &amp; Attendance</h3>
+                <p style="font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0;" class="dark:text-slate-400">
+                    Reading spreadsheet records and updating student comments. Please wait...
+                </p>
+            </div>
+        </div>
         {{-- Parameters Header Card --}}
         <div class="ss-card">
             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -57,6 +134,14 @@
                             @endforeach
                         </select>
                     </div>
+                </div>
+
+                <div wire:loading wire:target="session_id,term_id,classroom_id" style="font-size: 0.8rem; color: #6366f1; font-weight: 700; display: inline-flex; align-items: center; gap: 0.375rem;">
+                    <svg class="animate-spin" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24">
+                        <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    Loading class records...
                 </div>
             </div>
         </div>
@@ -115,10 +200,29 @@
 
                 <div class="ss-card" style="display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
                     <p style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem;">Action</p>
-                    <button type="button" wire:click="processClassResults" wire:loading.attr="disabled" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.25rem; border-radius: 0.75rem; background: #4f46e5; color: white; font-size: 0.875rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
-                        <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        Calculate Class Scores
+                    <button type="button"
+                            wire:click="processClassResults"
+                            wire:loading.attr="disabled"
+                            wire:target="processClassResults"
+                            @disabled($isApproved)
+                            style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.25rem; border-radius: 0.75rem; background: {{ $isApproved ? '#94a3b8' : '#4f46e5' }}; color: white; font-size: 0.875rem; font-weight: 800; cursor: {{ $isApproved ? 'not-allowed' : 'pointer' }}; opacity: {{ $isApproved ? '0.65' : '1' }}; border: none; transition: background 0.15s;"
+                            @if(!$isApproved) onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'" @endif>
+                        @if($isApproved)
+                            <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            <span>Scores Locked (Released)</span>
+                        @else
+                            <svg wire:loading.remove wire:target="processClassResults" style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <svg wire:loading wire:target="processClassResults" class="animate-spin" style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="processClassResults">Calculate Class Scores</span>
+                            <span wire:loading wire:target="processClassResults">Calculating Scores...</span>
+                        @endif
                     </button>
+                    @if($isApproved)
+                        <span style="font-size: 10px; color: #94a3b8; margin-top: 5px; font-weight: 600;">Revert approval to recalculate.</span>
+                    @endif
                 </div>
             </div>
 
@@ -148,8 +252,13 @@
                                     <span style="font-size: 0.75rem; color: #065f46; font-weight: 700;">
                                         Approved by {{ $approvedByName ?? 'Admin' }} on {{ $approvedAt ?? '—' }}
                                     </span>
-                                    <button type="button" wire:click="unapproveClassResults" wire:confirm="Are you sure you want to revert approval? Results will be hidden from students." style="padding: 0.4rem 0.85rem; border-radius: 0.5rem; background: #ef4444; color: white; font-size: 0.75rem; font-weight: 800; cursor: pointer; border: none;">
-                                        Revert Approval
+                                    <button type="button" wire:click="unapproveClassResults" wire:confirm="Are you sure you want to revert approval? Results will be hidden from students." wire:loading.attr="disabled" wire:target="unapproveClassResults" style="padding: 0.4rem 0.85rem; border-radius: 0.5rem; background: #ef4444; color: white; font-size: 0.75rem; font-weight: 800; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 0.375rem;">
+                                        <svg wire:loading wire:target="unapproveClassResults" class="animate-spin" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24">
+                                            <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        <span wire:loading.remove wire:target="unapproveClassResults">Revert Approval</span>
+                                        <span wire:loading wire:target="unapproveClassResults">Reverting...</span>
                                     </button>
                                 </div>
                             @endif
@@ -158,21 +267,40 @@
                         <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 1.25rem;" class="sm:grid-cols-3">
                             <div>
                                 <label class="ss-label">Times School Opened (Days)</label>
-                                <input type="number" wire:model="times_school_opened" placeholder="e.g. 114" min="1" class="ss-input" />
+                                <input type="number" wire:model="times_school_opened" placeholder="e.g. 114" min="1" class="ss-input" @disabled($isApproved) style="{{ $isApproved ? 'background: #f1f5f9; cursor: not-allowed; opacity: 0.75;' : '' }}" />
                                 @error('times_school_opened') <span style="color:#ef4444;font-size:11px;">{{ $message }}</span> @enderror
                             </div>
 
                             <div>
                                 <label class="ss-label">Next Term Begins</label>
-                                <input type="text" wire:model="next_term_begins" placeholder="e.g. 12th January, 2026" class="ss-input" />
+                                <input type="text" wire:model="next_term_begins" placeholder="e.g. 12th January, 2026" class="ss-input" @disabled($isApproved) style="{{ $isApproved ? 'background: #f1f5f9; cursor: not-allowed; opacity: 0.75;' : '' }}" />
                                 @error('next_term_begins') <span style="color:#ef4444;font-size:11px;">{{ $message }}</span> @enderror
                             </div>
 
-                            <div style="display: flex; align-items: flex-end;">
-                                <button type="button" wire:click="approveClassResults" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.65rem 1.25rem; border-radius: 0.625rem; background: {{ $isApproved ? '#059669' : '#10b981' }}; color: white; font-size: 0.875rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='{{ $isApproved ? '#059669' : '#10b981' }}'">
-                                    <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                    {{ $isApproved ? 'Update & Release Results' : 'Approve & Release Results' }}
+                            <div style="display: flex; flex-direction: column; justify-content: flex-end;">
+                                <button type="button"
+                                        wire:click="approveClassResults"
+                                        wire:loading.attr="disabled"
+                                        wire:target="approveClassResults"
+                                        @disabled($isApproved)
+                                        style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.65rem 1.25rem; border-radius: 0.625rem; background: {{ $isApproved ? '#94a3b8' : '#10b981' }}; color: white; font-size: 0.875rem; font-weight: 800; cursor: {{ $isApproved ? 'not-allowed' : 'pointer' }}; opacity: {{ $isApproved ? '0.65' : '1' }}; border: none; transition: background 0.15s;"
+                                        @if(!$isApproved) onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#10b981'" @endif>
+                                    @if($isApproved)
+                                        <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Results Released to Students</span>
+                                    @else
+                                        <svg wire:loading.remove wire:target="approveClassResults" style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                        <svg wire:loading wire:target="approveClassResults" class="animate-spin" style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24">
+                                            <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                        <span wire:loading.remove wire:target="approveClassResults">Approve &amp; Release Results</span>
+                                        <span wire:loading wire:target="approveClassResults">Releasing Results...</span>
+                                    @endif
                                 </button>
+                                @if($isApproved)
+                                    <span style="font-size: 10px; color: #047857; margin-top: 5px; font-weight: 600; text-align: center;">Revert approval above to update dates or recalculate.</span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -190,23 +318,49 @@
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        {{-- Sync Daily Attendance --}}
+                        <button type="button" wire:click="syncFromAttendance" wire:loading.attr="disabled" wire:target="syncFromAttendance" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 0.875rem; border-radius: 0.625rem; background: #6366f1; color: white; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
+                            <svg wire:loading.remove wire:target="syncFromAttendance" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            <svg wire:loading wire:target="syncFromAttendance" class="animate-spin" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="syncFromAttendance">Sync Daily Attendance</span>
+                            <span wire:loading wire:target="syncFromAttendance">Syncing...</span>
+                        </button>
+
                         {{-- Export Excel Template --}}
-                        <button type="button" wire:click="exportRemarksSpreadsheet" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 0.875rem; border-radius: 0.625rem; background: #059669; color: white; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
-                            <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                            Export Excel (.xlsx)
+                        <button type="button" wire:click="exportRemarksSpreadsheet" wire:loading.attr="disabled" wire:target="exportRemarksSpreadsheet" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 0.875rem; border-radius: 0.625rem; background: #059669; color: white; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
+                            <svg wire:loading.remove wire:target="exportRemarksSpreadsheet" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            <svg wire:loading wire:target="exportRemarksSpreadsheet" class="animate-spin" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="exportRemarksSpreadsheet">Export Excel (.xlsx)</span>
+                            <span wire:loading wire:target="exportRemarksSpreadsheet">Exporting...</span>
                         </button>
 
                         {{-- Import Excel File --}}
                         <label style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 0.875rem; border-radius: 0.625rem; background: #0284c7; color: white; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s; margin: 0;" onmouseover="this.style.background='#0369a1'" onmouseout="this.style.background='#0284c7'">
-                            <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                            <span>Import Filled Excel</span>
+                            <svg wire:loading.remove wire:target="uploadFile" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                            <svg wire:loading wire:target="uploadFile" class="animate-spin" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="uploadFile">Import Filled Excel</span>
+                            <span wire:loading wire:target="uploadFile">Uploading...</span>
                             <input type="file" wire:model.live="uploadFile" accept=".xlsx,.xls" style="display: none;" />
                         </label>
 
                         {{-- Save Inline Remarks --}}
-                        <button type="button" wire:click="saveRemarks" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; border-radius: 0.625rem; background: #4f46e5; color: white; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
-                            <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                            Save Remarks &amp; Attendance
+                        <button type="button" wire:click="saveRemarks" wire:loading.attr="disabled" wire:target="saveRemarks" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; border-radius: 0.625rem; background: #4f46e5; color: white; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+                            <svg wire:loading.remove wire:target="saveRemarks" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            <svg wire:loading wire:target="saveRemarks" class="animate-spin" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="saveRemarks">Save Remarks &amp; Attendance</span>
+                            <span wire:loading wire:target="saveRemarks">Saving...</span>
                         </button>
                     </div>
                 </div>
@@ -249,7 +403,7 @@
                                     @endif
                                 </td>
                                 <td style="padding: 0.875rem 1rem; text-align: center; font-weight: 800; color: #4f46e5;">
-                                    {{ $st['average'] !== null ? $st['average'] . '%' : '—' }}
+                                    {{ $st['average'] !== null ? (is_numeric($st['average']) ? (int) ceil((float) $st['average']) . '%' : $st['average'] . '%') : '—' }}
                                 </td>
                                 <td style="padding: 0.875rem 1rem; text-align: center; font-weight: 800;">
                                     @if(!empty($st['department_position']))

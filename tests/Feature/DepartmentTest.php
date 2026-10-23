@@ -4,6 +4,7 @@ use App\Http\Controllers\ResultPdfController;
 use App\Livewire\PublicStudentRegistrationForm;
 use App\Models\Classroom;
 use App\Models\Department;
+use App\Models\ResultPin;
 use App\Models\Score;
 use App\Models\ScoreHead;
 use App\Models\Session;
@@ -114,7 +115,7 @@ describe('Student Registration Form with Dynamic Department', function () {
             ->call('submit')
             ->assertHasNoErrors(['department_id']);
 
-        $enrollment = StudentEnrollment::whereHas('student', fn ($q) => $q->where('full_name', 'Junior Student'))->first();
+        $enrollment = StudentEnrollment::whereHas('student.user', fn ($q) => $q->where('surname', 'Junior')->where('first_name', 'Student'))->first();
         expect($enrollment)->not->toBeNull();
         expect($enrollment->department_id)->toBeNull();
     });
@@ -134,7 +135,7 @@ describe('Student Registration Form with Dynamic Department', function () {
             ->call('submit')
             ->assertHasNoErrors();
 
-        $student = Student::where('full_name', 'Abdullasisi Fathia Atinuke')->first();
+        $student = Student::whereHas('user', fn ($q) => $q->where('surname', 'Abdullasisi')->where('first_name', 'Fathia'))->first();
         expect($student)->not->toBeNull();
 
         $enrollment = $student->enrollments()->where('session_id', $this->session->id)->first();
@@ -147,7 +148,7 @@ describe('Student Registration Form with Dynamic Department', function () {
 describe('Result Sheet Integration with Department and Examined Count', function () {
     it('includes department and students examined count in result pdf data', function () {
         $user = User::factory()->create(['role' => 'student', 'is_active' => true]);
-        $student = Student::factory()->create(['user_id' => $user->id, 'full_name' => 'Fathia Science Student']);
+        $student = Student::factory()->create(['user_id' => $user->id, 'surname' => 'Fathia', 'first_name' => 'Science', 'other_name' => 'Student']);
 
         StudentEnrollment::create([
             'student_id' => $student->id,
@@ -208,6 +209,24 @@ describe('Result Sheet Integration with Department and Examined Count', function
             'remark' => 'Very Good',
             'overall_position' => 1,
             'is_finalized' => true,
+        ]);
+
+        $batch = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-01',
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'quantity' => 1,
+        ]);
+
+        ResultPin::create([
+            'batch_id' => $batch->id,
+            'student_id' => $student->id,
+            'session_id' => $this->session->id,
+            'term_id' => $this->term->id,
+            'serial_number' => 'SN-TEST-01',
+            'pin' => 'TEST-PIN-1234',
+            'is_used' => true,
+            'used_at' => now(),
         ]);
 
         $this->actingAs($user);

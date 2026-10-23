@@ -35,7 +35,9 @@ class StudentSeeder extends Seeder
             $user = User::firstOrCreate(
                 ['email' => "student{$i}@wonders.test"],
                 [
-                    'name' => "Student {$i}",
+                    'surname' => 'Student',
+                    'first_name' => (string) $i,
+                    'other_name' => null,
                     'password' => $passwordHash,
                     'role' => 'student',
                     'is_active' => true,
@@ -47,7 +49,6 @@ class StudentSeeder extends Seeder
             $student = Student::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'full_name' => $user->name,
                     'status' => 'active',
                     'registration_completed_at' => now(),
                     'is_portal_active' => true,

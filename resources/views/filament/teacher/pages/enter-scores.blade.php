@@ -59,9 +59,71 @@
         
         .ss-alert { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1.5rem; text-align: center; border-radius: 1rem; border: 2px dashed rgba(245,158,11,0.2); }
         .dark .ss-alert { background: rgba(245,158,11,0.02); }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 0.85s linear infinite;
+        }
     </style>
 
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div x-data="{ isUploading: false, uploadProgress: 0 }"
+         x-on:livewire-upload-start="isUploading = true; uploadProgress = 0"
+         x-on:livewire-upload-finish="isUploading = false"
+         x-on:livewire-upload-error="isUploading = false; alert('Spreadsheet upload failed. Please verify the file format and try again.')"
+         x-on:livewire-upload-progress="uploadProgress = $event.detail.progress"
+         style="display: flex; flex-direction: column; gap: 1.5rem; position: relative;">
+
+        {{-- ── Full-Screen Backdrop Overlay for File Upload & Processing ──────── --}}
+        <div x-show="isUploading" x-cloak style="position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 1.25rem; padding: 2rem 2.5rem; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);" class="dark:bg-slate-900">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #e0e7ff; color: #4338ca; margin-bottom: 1.25rem;" class="dark:bg-indigo-950 dark:text-indigo-400">
+                    <svg class="animate-spin" style="width: 36px; height: 36px;" fill="none" viewBox="0 0 24 24">
+                        <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path style="opacity: 0.85;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </div>
+                <h3 style="font-size: 1.125rem; font-weight: 900; color: #0f172a; margin-bottom: 0.5rem;" class="dark:text-white">Uploading Excel Spreadsheet</h3>
+                <p style="font-size: 0.875rem; color: #64748b; margin-bottom: 1rem;" class="dark:text-slate-400">
+                    Transferring file to server... <span x-text="uploadProgress + '%'" style="font-weight: 800; color: #4338ca;"></span>
+                </p>
+                <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;" class="dark:bg-slate-800">
+                    <div style="height: 100%; background: #4f46e5; transition: width 0.2s;" :style="'width: ' + uploadProgress + '%'"></div>
+                </div>
+            </div>
+        </div>
+
+        <div wire:loading.flex wire:target="uploadFile" style="display:none; position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 1.25rem; padding: 2rem 2.5rem; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);" class="dark:bg-slate-900">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #e0e7ff; color: #4338ca; margin-bottom: 1.25rem;" class="dark:bg-indigo-950 dark:text-indigo-400">
+                    <svg class="animate-spin" style="width: 36px; height: 36px;" fill="none" viewBox="0 0 24 24">
+                        <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path style="opacity: 0.85;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </div>
+                <h3 style="font-size: 1.125rem; font-weight: 900; color: #0f172a; margin-bottom: 0.5rem;" class="dark:text-white">Processing &amp; Validating Excel</h3>
+                <p style="font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0;" class="dark:text-slate-400">
+                    Reading spreadsheet columns, matching students, and validating score values. Please wait a moment...
+                </p>
+            </div>
+        </div>
+
+        <div wire:loading.flex wire:target="confirmImport" style="display:none; position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 1.25rem; padding: 2rem 2.5rem; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);" class="dark:bg-slate-900">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #e0e7ff; color: #4338ca; margin-bottom: 1.25rem;" class="dark:bg-indigo-950 dark:text-indigo-400">
+                    <svg class="animate-spin" style="width: 36px; height: 36px;" fill="none" viewBox="0 0 24 24">
+                        <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path style="opacity: 0.85;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </div>
+                <h3 style="font-size: 1.125rem; font-weight: 900; color: #0f172a; margin-bottom: 0.5rem;" class="dark:text-white">Saving &amp; Applying Scores</h3>
+                <p style="font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0;" class="dark:text-slate-400">
+                    Writing scores into database and updating class records. Please wait...
+                </p>
+            </div>
+        </div>
 
         {{-- ── Step 1: Active Parameters Filters ──────────────────────── --}}
         <div class="ss-card">
@@ -84,14 +146,18 @@
                             <div style="display: flex; align-items: center; gap: 0.375rem;">
                                 @if ($this->subject_id)
                                     <button type="button" wire:click="exportCurrentSubject" wire:loading.attr="disabled" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.45rem 0.75rem; border-radius: 0.75rem; background: #059669; color: white; font-size: 0.75rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'" title="Download Excel template for this subject">
-                                        <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                        <span>Export Subject (.xlsx)</span>
+                                        <svg wire:loading.remove wire:target="exportCurrentSubject" style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                        <svg wire:loading wire:target="exportCurrentSubject" class="animate-spin" style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24"><circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                                        <span wire:loading.remove wire:target="exportCurrentSubject">Export Subject (.xlsx)</span>
+                                        <span wire:loading wire:target="exportCurrentSubject">Exporting...</span>
                                     </button>
                                 @endif
 
                                 <button type="button" wire:click="exportClassSubjects" wire:loading.attr="disabled" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.45rem 0.75rem; border-radius: 0.75rem; background: #0f766e; color: white; font-size: 0.75rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#115e59'" onmouseout="this.style.background='#0f766e'" title="Download one Excel sheet for all subjects you teach in this class">
-                                    <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                    <span>Export Class (.xlsx)</span>
+                                    <svg wire:loading.remove wire:target="exportClassSubjects" style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <svg wire:loading wire:target="exportClassSubjects" class="animate-spin" style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24"><circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                                    <span wire:loading.remove wire:target="exportClassSubjects">Export Class (.xlsx)</span>
+                                    <span wire:loading wire:target="exportClassSubjects">Exporting...</span>
                                 </button>
                             </div>
 
@@ -115,14 +181,16 @@
                             @endif
 
                             <button type="button" wire:click="publishSubject" wire:loading.attr="disabled" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.75rem; background: #4f46e5; color: white; font-size: 0.8125rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
-                                <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3 21l19-9L3 3l3 9zm0 0h75"/></svg>
-                                Publish Subject Scores
+                                <svg wire:loading.remove wire:target="publishSubject" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3 21l19-9L3 3l3 9zm0 0h75"/></svg>
+                                <svg wire:loading wire:target="publishSubject" class="animate-spin" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24"><circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                                <span wire:loading.remove wire:target="publishSubject">Publish Subject Scores</span>
+                                <span wire:loading wire:target="publishSubject">Publishing...</span>
                             </button>
                         @endif
 
-                        <div wire:loading wire:target="session_id,term_id,classroom_id,subject_id,uploadFile,exportCurrentSubject,exportClassSubjects" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #6366f1; font-weight: 700;">
-                            <svg style="width: 16px; height: 16px;" class="animate-spin" fill="none" viewBox="0 0 24 24"><circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                            Processing...
+                        <div wire:loading wire:target="session_id,term_id,classroom_id,subject_id" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #6366f1; font-weight: 700;">
+                            <svg style="width: 16px; height: 16px;" class="animate-spin" fill="none" viewBox="0 0 24 24"><circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                            <span>Loading data...</span>
                         </div>
                     </div>
                 </div>
@@ -317,6 +385,11 @@
                                                 <svg style="width: 14px; height: 14px; color: #64748b;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                                             </div>
                                         </th>
+                                        @if($isMidtermMode)
+                                            <th style="text-align: center; min-width: 125px; border-right: 1px solid rgba(148,163,184,0.1); background: rgba(238,242,255,0.4);" class="dark:bg-indigo-950/20">
+                                                Mid-Term ({{ $midtermWeight }}%)
+                                            </th>
+                                        @endif
                                         @foreach($scoreHeads as $sh)
                                             <th style="text-align: center; min-width: 135px; border-right: 1px solid rgba(148,163,184,0.1);">
                                                 {{ $sh['name'] }} (Max {{ $sh['effective_max'] }})
@@ -337,10 +410,17 @@
                                 <tbody style="background: white;" class="dark:bg-[#0b0f19]">
                                     @foreach($students as $student)
                                         @php
-                                            $studentTotal = collect($scoreHeads)->sum(
+                                            $examTotal = collect($scoreHeads)->sum(
                                                 fn($sh) => (float) ($scores[$student['id']][$sh['id']] ?? 0)
                                             );
                                             $hasAny = collect($scoreHeads)->contains(fn($sh) => ($scores[$student['id']][$sh['id']] ?? '') !== '');
+                                            if ($isMidtermMode) {
+                                                $m = $midtermResults[$student['id']] ?? null;
+                                                $mScore = ($m && ($m['status'] ?? '') === 'complete') ? (float) $m['scaled_score'] : 0.0;
+                                                $studentTotal = $examTotal + $mScore;
+                                            } else {
+                                                $studentTotal = $examTotal;
+                                            }
                                             $gradeInfo = app(\App\Services\ResultCalculationService::class)->resolveGrade($studentTotal);
                                             $currentGrade = $hasAny ? $gradeInfo['grade'] : '—';
                                             
@@ -370,6 +450,22 @@
                                                     </div>
                                                 </div>
                                             </td>
+
+                                            @if($isMidtermMode)
+                                                @php
+                                                    $m = $midtermResults[$student['id']] ?? null;
+                                                    $mDisplay = match ($m['status'] ?? 'missing') {
+                                                        'absent'  => 'ABS',
+                                                        'missing' => '—',
+                                                        default   => number_format((float) ($m['scaled_score'] ?? 0), 2),
+                                                    };
+                                                @endphp
+                                                <td style="text-align: center; border-right: 1px solid rgba(148,163,184,0.1); background: rgba(238,242,255,0.25);" class="dark:bg-indigo-950/10">
+                                                    <span style="font-weight: 800; font-size: 0.8125rem; color: #6366f1;">
+                                                        {{ $mDisplay }}
+                                                    </span>
+                                                </td>
+                                            @endif
 
                                             {{-- Dynamic cells --}}
                                             @foreach($scoreHeads as $sh)
@@ -627,8 +723,10 @@
                                 </button>
                             @else
                                 <button type="button" wire:click="confirmImport" wire:loading.attr="disabled" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.25rem; border-radius: 0.75rem; border: none; background: #4f46e5; color: white; font-size: 0.8125rem; font-weight: 800; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
-                                    <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                    Confirm & Save All Scores
+                                    <svg wire:loading.remove wire:target="confirmImport" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    <svg wire:loading wire:target="confirmImport" class="animate-spin" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24"><circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                                    <span wire:loading.remove wire:target="confirmImport">Confirm &amp; Save All Scores</span>
+                                    <span wire:loading wire:target="confirmImport">Saving Scores...</span>
                                 </button>
                             @endif
                         </div>

@@ -59,7 +59,8 @@ class LessonNoteResource extends Resource
                     ->schema([
                         Grid::make(4)->schema([
                             Select::make('teacher_id')
-                                ->relationship('teacher', 'name')
+                                ->relationship('teacher', 'surname', fn (\Illuminate\Database\Eloquent\Builder $query) => $query->orderBy('surname')->orderBy('first_name'))
+                                ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name)
                                 ->required()
                                 ->disabled()
                                 ->dehydrated(false),
@@ -141,10 +142,22 @@ class LessonNoteResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('teacher.name')
+                Tables\Columns\TextColumn::make('teacher.surname')
                     ->label('Teacher')
-                    ->searchable()
-                    ->sortable(),
+                    ->formatStateUsing(fn ($record) => $record->teacher?->full_name ?? '—')
+                    ->searchable(query: function ($query, string $search) {
+                        $query->whereHas('teacher', function ($q) use ($search) {
+                            $q->where('surname', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('other_name', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable(query: function ($query, string $direction) {
+                        $query->join('users as teacher_users', 'lesson_notes.teacher_id', '=', 'teacher_users.id')
+                            ->orderBy('teacher_users.surname', $direction)
+                            ->orderBy('teacher_users.first_name', $direction)
+                            ->select('lesson_notes.*');
+                    }),
 
                 Tables\Columns\TextColumn::make('subject.name')
                     ->label('Subject')
@@ -308,7 +321,7 @@ class LessonNoteResource extends Resource
                             $record->id,
                             'approve',
                             auth()->id(),
-                            'Approved by ' . auth()->user()->name
+                            'Approved by ' . auth()->user()->full_name
                         );
 
                         Notification::make()
@@ -345,7 +358,7 @@ class LessonNoteResource extends Resource
                             $record->id,
                             'reject',
                             auth()->id(),
-                            'Rejected by ' . auth()->user()->name
+                            'Rejected by ' . auth()->user()->full_name
                         );
 
                         Notification::make()
@@ -488,7 +501,7 @@ class LessonNoteResource extends Resource
                                     $record->id,
                                     'bulk_approve',
                                     auth()->id(),
-                                    'Bulk approved by ' . auth()->user()->name
+                                    'Bulk approved by ' . auth()->user()->full_name
                                 );
                             }
                         }

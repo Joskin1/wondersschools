@@ -56,12 +56,12 @@ class ImportLivingSpringsStudents extends Command
         $portalUrl = "{$scheme}://{$domain}/student/login";
 
         $classMapping = [
-            'JSS 1' => Classroom::where('name', 'JSS1')->first(),
-            'JSS 2' => Classroom::where('name', 'JSS2')->first(),
-            'JSS 3' => Classroom::where('name', 'JSS3')->first(),
-            'SS 1'  => Classroom::where('name', 'SS1')->first(),
-            'SS 2'  => Classroom::where('name', 'SS2')->first(),
-            'SS 3'  => Classroom::where('name', 'SS3')->first(),
+            'SS 3'  => Classroom::where('name', 'SS3')->orWhere('name', 'SS 3')->first(),
+            'SS 2'  => Classroom::where('name', 'SS2')->orWhere('name', 'SS 2')->first(),
+            'SS 1'  => Classroom::where('name', 'SS1')->orWhere('name', 'SS 1')->first(),
+            'JSS 3' => Classroom::where('name', 'JSS3')->orWhere('name', 'JSS 3')->first(),
+            'JSS 2' => Classroom::where('name', 'JSS2')->orWhere('name', 'JSS 2')->first(),
+            'JSS 1' => Classroom::where('name', 'JSS1')->orWhere('name', 'JSS 1')->first(),
         ];
 
         foreach ($classMapping as $label => $class) {
@@ -73,9 +73,14 @@ class ImportLivingSpringsStudents extends Command
 
         $rawStudents = $this->getRawStudentData();
 
+        $admYear = (string) ($activeSession->start_year ?: now()->format('Y'));
+        $hasUserSurname = \Illuminate\Support\Facades\Schema::hasColumn('users', 'surname');
+        $hasStudentFullName = \Illuminate\Support\Facades\Schema::hasColumn('students', 'full_name');
+
         $processedStudents = [];
         $totalCreated = 0;
         $totalUpdated = 0;
+        $globalSequence = 1;
 
         DB::beginTransaction();
         try {
@@ -83,22 +88,50 @@ class ImportLivingSpringsStudents extends Command
                 $classroom = $classMapping[$classLabel];
                 $this->info("Processing {$classLabel} (" . count($names) . " students)...");
 
-                foreach ($names as $sn => $rawName) {
+                // Sort alphabetically per class (Surname first, A to Z)
+                usort($names, function ($a, $b) {
+                    $cleanA = trim(preg_replace('/\s+/', ' ', rtrim($a, '.')));
+                    $cleanB = trim(preg_replace('/\s+/', ' ', rtrim($b, '.')));
+                    return strcasecmp($cleanA, $cleanB);
+                });
+
+                $classSn = 1;
+                foreach ($names as $rawName) {
                     $cleanName = trim(preg_replace('/\s+/', ' ', rtrim($rawName, '.')));
                     $password = $this->derivePassword($cleanName);
 
+                    $parts = preg_split('/\s+/', $cleanName);
+                    $surname = $parts[0] ?? '';
+                    $firstName = $parts[1] ?? '';
+                    $otherName = count($parts) > 2 ? implode(' ', array_slice($parts, 2)) : null;
+
                     // Check if student with exact name and enrollment in this class already exists
-                    $student = Student::where('full_name', $cleanName)
-                        ->whereHas('enrollments', fn ($q) => $q->where('classroom_id', $classroom->id)->where('session_id', $activeSession->id))
-                        ->first();
+                    $student = Student::where(function ($q) use ($cleanName, $surname, $firstName, $hasUserSurname, $hasStudentFullName) {
+                        if ($hasStudentFullName) {
+                            $q->where('full_name', $cleanName);
+                        }
+                        $q->orWhereHas('user', function ($uq) use ($surname, $firstName, $cleanName, $hasUserSurname) {
+                            if ($hasUserSurname) {
+                                $uq->where('surname', $surname)->where('first_name', $firstName);
+                            } else {
+                                $uq->where('name', $cleanName);
+                            }
+                        });
+                    })
+                    ->whereHas('enrollments', fn ($q) => $q->where('classroom_id', $classroom->id)->where('session_id', $activeSession->id))
+                    ->first();
 
                     if (! $student) {
-                        $student = Student::create([
-                            'full_name'        => $cleanName,
+                        $studentData = [
                             'status'           => 'active',
                             'is_portal_active' => true,
                             'activated_at'     => now(),
-                        ]);
+                        ];
+                        if ($hasStudentFullName) {
+                            $studentData['full_name'] = $cleanName;
+                        }
+
+                        $student = Student::create($studentData);
 
                         StudentEnrollment::create([
                             'student_id'   => $student->id,
@@ -111,25 +144,31 @@ class ImportLivingSpringsStudents extends Command
                         $totalUpdated++;
                     }
 
-                    // Enforce "LRS" prefix followed by numbers instead of ADM
-                    $admNumber = 'LRS' . now()->format('Y') . str_pad((string) $student->id, 5, '0', STR_PAD_LEFT);
+                    // Enforce "LRSC" prefix followed by admission year and 3-digit zero-padded number (e.g. LRSC2026001)
+                    $admNumber = 'LRSC' . $admYear . str_pad((string) $globalSequence, 3, '0', STR_PAD_LEFT);
                     $student->forceFill([
                         'admission_number' => $admNumber,
                     ])->saveQuietly();
 
                     // Create or update login account
-                    $user = $accountService->createOrUpdateLogin($student, $password);
+                    if (method_exists($accountService, 'createOrLinkUser')) {
+                        $user = $accountService->createOrLinkUser($student, $surname, $firstName, $otherName, $password);
+                    } else {
+                        $user = $accountService->createOrUpdateLogin($student, $password);
+                    }
 
                     $processedStudents[$classLabel][] = [
-                        'sn'               => $sn + 1,
+                        'sn'               => $classSn++,
                         'student_id'       => $student->id,
-                        'name'             => $student->full_name,
+                        'name'             => $cleanName,
                         'admission_number' => $student->admission_number,
                         'email'            => $user->email,
                         'password'         => $password,
                         'classroom'        => $classLabel,
                         'portal_active'    => 'Active',
                     ];
+
+                    $globalSequence++;
                 }
             }
 
@@ -330,6 +369,157 @@ class ImportLivingSpringsStudents extends Command
     private function getRawStudentData(): array
     {
         return [
+            'SS 3' => [
+                'Ubah Favour CHIZITERE',
+                'Adigwe Angel',
+                'Oshowale ANJOLA Favour',
+                'Onovo Mercy UGOCHUKWU',
+                'Iwuegbu Prosper AMARACHI',
+                'Akalonu Mmesoma DANIELLA',
+                'Adu Ejiroghene CHRISTABELLE',
+                'Orji Adjutant',
+                'Agukwe David CHUKWUEBUKA',
+                'Agukwe Daniel CHUKWUEMEKA',
+                'Adeniran Olaoluwa JAMES',
+                'Okubotin Simeon',
+                'Idowu Esther',
+                'Alozie David CHINEDU',
+                'Ikechukwu Ifebuchechukwu EDNA',
+                'Adebayo Inioluwa PRECIOUS',
+                'Philip Empress',
+                'Ibeji Destiny EHIME CHUKWUKA',
+                'Ifeanyi Osuji Treasure',
+                'ANIELOKA CHIDERA DORIS',
+            ],
+            'SS 2' => [
+                'Suleman Favour',
+                'Okafor Amarachi PRINCESS',
+                'Echebiri Uzochi KENNEDY',
+                'Oliseyenum Dominion OVIE',
+                'Solomon Joshua CHIDIEBUBE',
+                'Duku Daniel',
+                'Alozie Nathaniel CHIGOZIE',
+                'Akpata chioma VIVIAN',
+                'Dozie Odunze Somachi',
+                'Onovo  NMACHUKWU Precious',
+                'Chinweuba Oluch ESTHERi',
+                'Emmanuel Chidubem',
+                'Ifeanyi Ezeh Chiamaka PRISCA',
+                'Odu Emmanuel',
+                'Nwachukwu Munachimso ADRIEL',
+                'Adigwe ANTHONIA Chisom',
+                'Adewole  Jomiloju HULDA',
+                'Obi Kamsiyochukwu',
+                'Alagabi Oluwadarasimi',
+                'ROTIMI  TOLUWALASE ALEXANDER',
+                'INNOCENT MARYANN CHINECHEREM',
+                'OKEEGBE HADASSAH AYOOLUWA',
+                'OLIOBI IFECHUKWU MICHAEL',
+                'ADEBIYI ABDULSAMAD',
+                'OLAYEMI OLUWAJUWON',
+            ],
+            'SS 1' => [
+                'Ajadi Deborah OLUWAFIKUNAYOMI',
+                'Faluyi Olamiposi MICHAEL',
+                'Oyetunde Jeremiah',
+                'Oshowale MODUPE LIGHT CHIOMA',
+                'Adeniran Ifeoluwa MARY',
+                'Lawal Faridah OPEYEMI',
+                'Chimezie Delight OBICHUKWU',
+                'Enyinnaya Chidubem CALEB',
+                'Nwachukwu Deborah CHIAMAKA',
+                'Ezemezue Ifechukwu SAMUEL',
+                'ELEOGU KAMSIYOCHUKWU EMMANUEL',
+                'Duku David OGHENEMEGA',
+                'Onunkwo Jennifer ONYINYE',
+                'Uzochi Precious CHINOMSO',
+                'Orumgbe Prosper CHUKWUEMEKA',
+                'Afuye  OLUWATOSIN JESUTOLAMI Silas',
+                'Ezenwaka Kamsiyochukwu MAXIMUS',
+                'Aluka Bianca  ESTHER Chinonso',
+                'Madubuike Mercy Onyinye',
+                'Shasore Faridat OYINDAMOLA',
+                'Patrick Chimaobi Delight',
+                'Oliobi Onyinyechukwu ESTHER',
+                'ADEJUMO DARASIMI DORCAS',
+                'Ajah KamSI GIDEON',
+                'AJADI EMMANUEL MOBOLAJI',
+            ],
+            'JSS 3' => [
+                'PHILEMON NOBLE GINIKACHUKWU',
+                'OKAKA RHEMA ONOSETALE',
+                'TAIWO OLUWATOYOSI PEARL',
+                'OBIEFUNA IFECHUKWU VICTORIA',
+                'Oji  AMA Nnenna MERCY',
+                'Ofoma Bethel CHIMAZURU',
+                'Etuk Utomobong IDORENYEN',
+                'Echebiri Chibueze KOSISOCHUKWU',
+                'Itoro Faith BRIGHT',
+                'Amuneke Emmanuel KAMSIYOCHUKWU',
+                'Nwachukwu Ezinwa SOPHIA',
+                'Eze Onyeabo MARTINS',
+                'Maduka Chisom MIRACLE',
+                'Chukwuma Greatness',
+                'Chimezie Miracle NNENNA',
+                'Chika Ebube Peace',
+                'Allison Victor',
+                'Aramide Oluwafifebamilo ALPHONSUS',
+                'Chukwuneta Chisom EMMANUELLA',
+                'Eze Samuel ONYEKACHI',
+                'Ganiyu Ruth GANIYAT',
+                'Idowu Gift OIZA',
+                'Madu KAMSIYONNA DIVINE',
+                'Mufumei Ifechukwude LORAINE',
+                'Okubotin Favour PREKIZIMOR',
+                'Ifeanyi-Osuji Cherish CHIEMELA',
+                'Isima Lolo Helen',
+                'Faluyi Tioluwalase MATTHEW',
+                'Aderounmu Victor Damilola',
+                'Okolo James IKEM',
+                'Abdulkareem Aminat Omobayonle',
+                'Uzochukwu Collins Obinna',
+                'Okoli Esther Mmachukwume',
+                'STEPHEN MENTOR CHIBUIKE',
+                'OLAYEMI JANET OLUWAPELUMI',
+                'AMEKE ESTHER.',
+            ],
+            'JSS 2' => [
+                'ELEOGU CHIKAMSOEJE EMMANUELLA',
+                'AKAOLISA CHRISTABEL IHUOMA',
+                'PATRICK NMASINACHI REJOICE',
+                'CHIBUKO HARMONY C.A',
+                'DOZIE ODUNZE MHARIDAH .C.',
+                'EMECHAFOR VIVIAN KASIAMOBI',
+                'ADEOYE  ADETUMILARA AKIJAH',
+                'EZEMEZUE NMESOMA ESTHER',
+                'AKPATA CHIEMERIE GIDEON',
+                'IKECHUKWU JULIET CHINECHEREM',
+                'ONUNKWO CHIKAMSO DAMIAN',
+                'UGWU DANIEL KOSISOCHUKWU',
+                'ODUMEGWU  CHINAZA VICTORIA',
+                'ETUK OTTOABASI  IDORENKEN SOCHINWEOKWU',
+                'ADESOLA OLUWADARASIMI BOLUWAJI',
+                'EJEMO OBANIJESU RICHARD',
+                'AKALONU DAVID CHINECHEREM',
+                'ANEKE DESTINY SOROMUTOCHUKWU',
+                'ABDULKADIR KHADIJAT BARMA',
+                'OBI MICHELLE NAESOCHUKWU',
+                'AKEREDOLU OLAYEMI DANIEL',
+                'OKOYEOKU CHIMAMANDA JESSICA',
+                'ORUMGBE CHIOMA EMMANUELLA',
+                'ROTIMI FEHINTOLA  WINIFRED',
+                'ENYINNAYA DESIRE CHINEMEREM',
+                'UDOJI DANIEL CHIDERA',
+                'ADEDIRAN SAMUEL TOBI',
+                'ADELEYE ZUBAIDAH DAMILOLA',
+                'OKORO TREASURE MUNACHI',
+                'OLAMIDE DEBORAH BOLUWATIFE',
+                'NWIBE CHIDIEBUBE GERALD',
+                'ADEBAYO PRAISE',
+                'VICTOR SAMUEL OSEBHAHIEMEN',
+                'NWANERI JOSHUA CHUKWUBUIKE',
+                'NWANERI ELIZABETH EZINNE',
+            ],
             'JSS 1' => [
                 'OPARANOZIE DANIEL KAMSIYOCHUKWU',
                 'OKEEGBE EMMANUEL OLUSEGUN',
@@ -371,157 +561,6 @@ class ImportLivingSpringsStudents extends Command
                 'SAMUEL BEULAH CHIMAMANDA',
                 'ADEYEMI GREAT EROMSELE',
                 'EBUKA HERBERT MUNACHIMSO',
-            ],
-            'JSS 2' => [
-                'ELEOGU CHIKAMSOEJE EMMANUELLA',
-                'AKAOLISA CHRISTABEL IHUOMA',
-                'PATRICK NMASINACHI REJOICE',
-                'CHIBUKO HARMONY C.A',
-                'DOZIE ODUNZE MHARIDAH .C.',
-                'EMECHAFOR VIVIAN KASIAMOBI',
-                'ADEOYE  ADETUMILARA AKIJAH',
-                'EZEMEZUE NMESOMA ESTHER',
-                'AKPATA CHIEMERIE GIDEON',
-                'IKECHUKWU JULIET CHINECHEREM',
-                'ONUNKWO CHIKAMSO DAMIAN',
-                'UGWU DANIEL KOSISOCHUKWU',
-                'ODUMEGWU  CHINAZA VICTORIA',
-                'ETUK OTTOABASI  IDORENKEN SOCHINWEOKWU',
-                'ADESOLA OLUWADARASIMI BOLUWAJI',
-                'EJEMO OBANIJESU RICHARD',
-                'AKALONU DAVID CHINECHEREM',
-                'ANEKE DESTINY SOROMUTOCHUKWU',
-                'ABDULKADIR KHADIJAT BARMA',
-                'OBI MICHELLE NAESOCHUKWU',
-                'AKEREDOLU OLAYEMI DANIEL',
-                'OKOYEOKU CHIMAMANDA JESSICA',
-                'ORUMGBE CHIOMA EMMANUELLA',
-                'ROTIMI FEHINTOLA  WINIFRED',
-                'ENYINNAYA DESIRE CHINEMEREM',
-                'UDOJI DANIEL CHIDERA',
-                'ADEDIRAN SAMUEL TOBI',
-                'ADELEYE ZUBAIDAH DAMILOLA',
-                'OKORO TREASURE MUNACHI',
-                'OLAMIDE DEBORAH BOLUWATIFE',
-                'NWIBE CHIDIEBUBE GERALD',
-                'ADEBAYO PRAISE',
-                'VICTOR SAMUEL OSEBHAHIEMEN',
-                'NWANERI JOSHUA CHUKWUBUIKE',
-                'NWANERI ELIZABETH EZINNE',
-            ],
-            'JSS 3' => [
-                'PHILEMON NOBLE GINIKACHUKWU',
-                'OKAKA RHEMA ONOSETALE',
-                'TAIWO OLUWATOYOSI PEARL',
-                'OBIEFUNA IFECHUKWU VICTORIA',
-                'Oji  AMA Nnenna MERCY',
-                'Ofoma Bethel CHIMAZURU',
-                'Etuk Utomobong IDORENYEN',
-                'Echebiri Chibueze KOSISOCHUKWU',
-                'Itoro Faith BRIGHT',
-                'Amuneke Emmanuel KAMSIYOCHUKWU',
-                'Nwachukwu Ezinwa SOPHIA',
-                'Eze Onyeabo MARTINS',
-                'Maduka Chisom MIRACLE',
-                'Chukwuma Greatness',
-                'Chimezie Miracle NNENNA',
-                'Chika Ebube Peace',
-                'Allison Victor',
-                'Aramide Oluwafifebamilo ALPHONSUS',
-                'Chukwuneta Chisom EMMANUELLA',
-                'Eze Samuel ONYEKACHI',
-                'Ganiyu Ruth GANIYAT',
-                'Idowu Gift OIZA',
-                'Madu KAMSIYONNA DIVINE',
-                'Mufumei Ifechukwude LORAINE',
-                'Okubotin Favour PREKIZIMOR',
-                'Ifeanyi-Osuji Cherish CHIEMELA',
-                'Isima Lolo Helen',
-                'Faluyi Tioluwalase MATTHEW',
-                'Aderounmu Victor Damilola',
-                'Okolo James IKEM',
-                'Abdulkareem Aminat Omobayonle',
-                'Uzochukwu Collins Obinna',
-                'Okoli Esther Mmachukwume',
-                'STEPHEN MENTOR CHIBUIKE',
-                'OLAYEMI JANET OLUWAPELUMI',
-                'AMEKE ESTHER.',
-            ],
-            'SS 1' => [
-                'Ajadi Deborah OLUWAFIKUNAYOMI',
-                'Faluyi Olamiposi MICHAEL',
-                'Oyetunde Jeremiah',
-                'Oshowale MODUPE LIGHT CHIOMA',
-                'Adeniran Ifeoluwa MARY',
-                'Lawal Faridah OPEYEMI',
-                'Chimezie Delight OBICHUKWU',
-                'Enyinnaya Chidubem CALEB',
-                'Nwachukwu Deborah CHIAMAKA',
-                'Ezemezue Ifechukwu SAMUEL',
-                'ELEOGU KAMSIYOCHUKWU EMMANUEL',
-                'Duku David OGHENEMEGA',
-                'Onunkwo Jennifer ONYINYE',
-                'Uzochi Precious CHINOMSO',
-                'Orumgbe Prosper CHUKWUEMEKA',
-                'Afuye  OLUWATOSIN JESUTOLAMI Silas',
-                'Ezenwaka Kamsiyochukwu MAXIMUS',
-                'Aluka Bianca  ESTHER Chinonso',
-                'Madubuike Mercy Onyinye',
-                'Shasore Faridat OYINDAMOLA',
-                'Patrick Chimaobi Delight',
-                'Oliobi Onyinyechukwu ESTHER',
-                'ADEJUMO DARASIMI DORCAS',
-                'Ajah KamSI GIDEON',
-                'AJADI EMMANUEL MOBOLAJI',
-            ],
-            'SS 2' => [
-                'Suleman Favour',
-                'Okafor Amarachi PRINCESS',
-                'Echebiri Uzochi KENNEDY',
-                'Oliseyenum Dominion OVIE',
-                'Solomon Joshua CHIDIEBUBE',
-                'Duku Daniel',
-                'Alozie Nathaniel CHIGOZIE',
-                'Akpata chioma VIVIAN',
-                'Dozie Odunze Somachi',
-                'Onovo  NMACHUKWU Precious',
-                'Chinweuba Oluch ESTHERi',
-                'Emmanuel Chidubem',
-                'Ifeanyi Ezeh Chiamaka PRISCA',
-                'Odu Emmanuel',
-                'Nwachukwu Munachimso ADRIEL',
-                'Adigwe ANTHONIA Chisom',
-                'Adewole  Jomiloju HULDA',
-                'Obi Kamsiyochukwu',
-                'Alagabi Oluwadarasimi',
-                'ROTIMI  TOLUWALASE ALEXANDER',
-                'INNOCENT MARYANN CHINECHEREM',
-                'OKEEGBE HADASSAH AYOOLUWA',
-                'OLIOBI IFECHUKWU MICHAEL',
-                'ADEBIYI ABDULSAMAD',
-                'OLAYEMI OLUWAJUWON',
-            ],
-            'SS 3' => [
-                'Ubah Favour CHIZITERE',
-                'Adigwe Angel',
-                'Oshowale ANJOLA Favour',
-                'Onovo Mercy UGOCHUKWU',
-                'Iwuegbu Prosper AMARACHI',
-                'Akalonu Mmesoma DANIELLA',
-                'Adu Ejiroghene CHRISTABELLE',
-                'Orji Adjutant',
-                'Agukwe David CHUKWUEBUKA',
-                'Agukwe Daniel CHUKWUEMEKA',
-                'Adeniran Olaoluwa JAMES',
-                'Okubotin Simeon',
-                'Idowu Esther',
-                'Alozie David CHINEDU',
-                'Ikechukwu Ifebuchechukwu EDNA',
-                'Adebayo Inioluwa PRECIOUS',
-                'Philip Empress',
-                'Ibeji Destiny EHIME CHUKWUKA',
-                'Ifeanyi Osuji Treasure',
-                'ANIELOKA CHIDERA DORIS',
             ],
         ];
     }

@@ -72,7 +72,9 @@ describe('Student Registration System', function () {
 
             Livewire::test(StudentResource\Pages\CreateStudent::class)
                 ->fillForm([
-                    'full_name' => 'Ada Johnson',
+                    'surname' => 'Johnson',
+                    'first_name' => 'Ada',
+                    'other_name' => null,
                     'student_email' => 'ada.johnson@student.test',
                     'initial_password' => 'Password123',
                     'classroom_id' => $classroom->id,
@@ -81,7 +83,7 @@ describe('Student Registration System', function () {
                 ->call('create')
                 ->assertHasNoFormErrors();
 
-            $student = Student::where('full_name', 'Ada Johnson')->firstOrFail();
+            $student = Student::whereHas('user', fn ($q) => $q->where('surname', 'Johnson')->where('first_name', 'Ada'))->firstOrFail();
             $user = $student->user;
 
             expect($student->user_id)->toBe($user->id)
@@ -95,7 +97,8 @@ describe('Student Registration System', function () {
 
         it('allows students to update their dashboard profile and password', function () {
             $user = User::factory()->create([
-                'name' => 'Ada Johnson',
+                'surname' => 'Johnson',
+                'first_name' => 'Ada',
                 'email' => 'ada.johnson@student.test',
                 'password' => Hash::make('Password123'),
                 'role' => 'student',
@@ -111,7 +114,9 @@ describe('Student Registration System', function () {
 
             Livewire::test(CustomProfile::class)
                 ->fillForm([
-                    'name' => 'Ada Johnson',
+                    'surname' => 'Johnson',
+                    'first_name' => 'Ada',
+                    'other_name' => null,
                     'email' => 'ada.johnson@student.test',
                     'role' => 'student',
                     'date_of_birth' => '2014-04-12',

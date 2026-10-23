@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ClassMidtermConfig;
 use App\Models\ClassScoreStructure;
 use App\Models\Classroom;
 use App\Models\Score;
@@ -10,6 +11,7 @@ use App\Models\StudentEnrollment;
 use App\Models\Subject;
 use App\Models\Session;
 use App\Models\Term;
+use App\Models\TermScoringSnapshot;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -29,7 +31,8 @@ class ScoreSpreadsheetService
         array $subjectIds,
         int $sessionId,
         int $termId,
-        ?int $teacherId = null
+        ?int $teacherId = null,
+        string $type = 'exam'
     ): Spreadsheet {
         $classroom = Classroom::findOrFail($classroomId);
         $session   = Session::findOrFail($sessionId);
@@ -40,24 +43,56 @@ class ScoreSpreadsheetService
             throw new \InvalidArgumentException('No valid active subjects provided for export.');
         }
 
-        // Get class score structure
-        $structure = ClassScoreStructure::with(['items.scoreHead'])
-            ->where('class_id', $classroomId)
+        $snapshot = TermScoringSnapshot::where('classroom_id', $classroomId)
             ->where('session_id', $sessionId)
             ->where('term_id', $termId)
             ->first();
 
-        if (! $structure || $structure->items->isEmpty()) {
-            throw new \RuntimeException("No score structure configured for {$classroom->name} in {$session->name} ({$term->name}).");
-        }
+        if ($type === 'midterm') {
+            if ($snapshot && $snapshot->mode === 'midterm') {
+                $scoreHeads = $snapshot->midterm_heads;
+            } else {
+                $midtermConfig = ClassMidtermConfig::with(['heads.scoreHead'])
+                    ->where('classroom_id', $classroomId)
+                    ->first();
 
-        $scoreHeads = $structure->items->map(function ($item) {
-            return [
-                'id'            => $item->score_head_id,
-                'name'          => $item->scoreHead->name,
-                'effective_max' => $item->max_score_override ?? $item->scoreHead->max_score,
-            ];
-        })->toArray();
+                if (! $midtermConfig || $midtermConfig->heads->isEmpty()) {
+                    throw new \RuntimeException("No mid-term score structure configured for {$classroom->name}.");
+                }
+
+                $scoreHeads = $midtermConfig->heads
+                    ->filter(fn ($h) => $h->scoreHead !== null)
+                    ->map(fn ($h) => [
+                        'id'            => $h->score_head_id,
+                        'name'          => $h->scoreHead->name,
+                        'effective_max' => (int) ($h->max_score_override ?? $h->scoreHead->max_score),
+                    ])
+                    ->values()
+                    ->toArray();
+            }
+        } else {
+            if ($snapshot) {
+                $scoreHeads = $snapshot->exam_heads;
+            } else {
+                $structure = ClassScoreStructure::with(['items.scoreHead'])
+                    ->where('class_id', $classroomId)
+                    ->where('session_id', $sessionId)
+                    ->where('term_id', $termId)
+                    ->first();
+
+                if (! $structure || $structure->items->isEmpty()) {
+                    throw new \RuntimeException("No score structure configured for {$classroom->name} in {$session->name} ({$term->name}).");
+                }
+
+                $scoreHeads = $structure->items->map(function ($item) {
+                    return [
+                        'id'            => $item->score_head_id,
+                        'name'          => $item->scoreHead->name,
+                        'effective_max' => (int) ($item->max_score_override ?? $item->scoreHead->max_score),
+                    ];
+                })->toArray();
+            }
+        }
 
         // Get enrolled students
         $enrolledIds = StudentEnrollment::where('classroom_id', $classroomId)
@@ -66,8 +101,10 @@ class ScoreSpreadsheetService
 
         $students = Student::whereIn('id', $enrolledIds)
             ->active()
-            ->orderBy('full_name')
-            ->get();
+            ->with('user')
+            ->get()
+            ->sortBy(fn ($s) => $s->name)
+            ->values();
 
         // Fetch existing scores for pre-filling
         $existingScores = Score::where('classroom_id', $classroomId)
@@ -90,8 +127,9 @@ class ScoreSpreadsheetService
         $lastColLetter = Coordinate::stringFromColumnIndex($totalColumns);
 
         // ── Row 1: Title Banner ──────────────────────────────────────────────
+        $titlePrefix = ($type === 'midterm') ? 'OFFICIAL MID-TERM SCORE ENTRY SHEET' : 'OFFICIAL SCORE ENTRY SHEET';
         $sheet->mergeCells("A1:{$lastColLetter}1");
-        $sheet->setCellValue('A1', "OFFICIAL SCORE ENTRY SHEET — {$classroom->name} ({$session->name} / {$term->name})");
+        $sheet->setCellValue('A1', "{$titlePrefix} — {$classroom->name} ({$session->name} / {$term->name})");
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 13, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E293B']], // Slate 800
@@ -100,8 +138,11 @@ class ScoreSpreadsheetService
         $sheet->getRowDimension(1)->setRowHeight(32);
 
         // ── Row 2: Instructions ──────────────────────────────────────────────
+        $instructions = ($type === 'midterm')
+            ? 'Instructions: Enter marks (decimals allowed) or \'ABS\' for absent students. Do NOT add total columns. Save and upload back to the portal.'
+            : 'Instructions: Enter raw marks for each assessment component. Do NOT add total columns. Save and upload back to the portal.';
         $sheet->mergeCells("A2:{$lastColLetter}2");
-        $sheet->setCellValue('A2', 'Instructions: Enter raw marks for each assessment component. Do NOT add total columns. Save and upload back to the portal.');
+        $sheet->setCellValue('A2', $instructions);
         $sheet->getStyle('A2')->applyFromArray([
             'font' => ['italic' => true, 'size' => 9, 'color' => ['rgb' => '475569']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F1F5F9']],
@@ -112,6 +153,7 @@ class ScoreSpreadsheetService
         // ── Row 3: Metadata Marker (Machine-Readable) ────────────────────────
         $metaJson = json_encode([
             'v'            => 1,
+            'type'         => $type,
             'classroom_id' => $classroomId,
             'session_id'   => $sessionId,
             'term_id'      => $termId,
@@ -211,7 +253,7 @@ class ScoreSpreadsheetService
 
         foreach ($students as $student) {
             $cleanAdm  = $this->sanitizeFormulaValue($student->admission_number ?? '—');
-            $cleanName = $this->sanitizeFormulaValue($student->full_name);
+            $cleanName = $this->sanitizeFormulaValue($student->name);
 
             $sheet->setCellValueExplicit("A{$rowNum}", $sn, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
             $sheet->setCellValueExplicit("B{$rowNum}", $cleanAdm, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
@@ -232,9 +274,11 @@ class ScoreSpreadsheetService
                     $key = "{$student->id}_{$subject->id}_{$sh['id']}";
                     
                     if ($existingScores->has($key)) {
-                        $rawVal = $existingScores[$key]->first()->score;
-                        if ($rawVal !== null) {
-                            $sheet->setCellValueExplicit("{$colLetter}{$rowNum}", (float) $rawVal, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
+                        $existing = $existingScores[$key]->first();
+                        if ($existing->is_absent) {
+                            $sheet->setCellValueExplicit("{$colLetter}{$rowNum}", 'ABS', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                        } elseif ($existing->score !== null) {
+                            $sheet->setCellValueExplicit("{$colLetter}{$rowNum}", (float) $existing->score, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC);
                         }
                     }
 
@@ -296,15 +340,26 @@ class ScoreSpreadsheetService
         array $subjectIds,
         int $sessionId,
         int $termId,
-        ?int $teacherId = null
+        ?int $teacherId = null,
+        string $type = 'exam'
     ): string {
-        $spreadsheet = $this->generateTemplate($classroomId, $subjectIds, $sessionId, $termId, $teacherId);
+        $spreadsheet = $this->generateTemplate($classroomId, $subjectIds, $sessionId, $termId, $teacherId, $type);
         $writer = new Xlsx($spreadsheet);
 
         $tempPath = tempnam(sys_get_temp_dir(), 'score_export_') . '.xlsx';
         $writer->save($tempPath);
 
         return $tempPath;
+    }
+
+    public function exportMidtermToTempFile(
+        int $classroomId,
+        array $subjectIds,
+        int $sessionId,
+        int $termId,
+        ?int $teacherId = null
+    ): string {
+        return $this->exportToTempFile($classroomId, $subjectIds, $sessionId, $termId, $teacherId, 'midterm');
     }
 
     /**
@@ -317,7 +372,8 @@ class ScoreSpreadsheetService
         int $classroomId,
         array $authorizedSubjectIds,
         int $sessionId,
-        int $termId
+        int $termId,
+        ?string $forcedType = null
     ): array {
         $reader = IOFactory::createReaderForFile($filePath);
         $reader->setReadDataOnly(false); // We want cell comments too
@@ -325,6 +381,7 @@ class ScoreSpreadsheetService
         $sheet = $spreadsheet->getActiveSheet();
 
         // ── Check Metadata ───────────────────────────────────────────────────
+        $meta = null;
         $metaRowValue = (string) $sheet->getCell('A3')->getValue();
         if (str_starts_with($metaRowValue, '#META:')) {
             $metaJson = substr($metaRowValue, 6);
@@ -343,23 +400,70 @@ class ScoreSpreadsheetService
         }
 
         // ── Load current score structure for validation ──────────────────────
-        $structure = ClassScoreStructure::with(['items.scoreHead'])
-            ->where('class_id', $classroomId)
+        $type = $forcedType ?: ($meta['type'] ?? 'exam');
+        $snapshot = TermScoringSnapshot::where('classroom_id', $classroomId)
             ->where('session_id', $sessionId)
             ->where('term_id', $termId)
             ->first();
 
-        if (! $structure || $structure->items->isEmpty()) {
-            throw new \RuntimeException('No score structure is currently configured for this class.');
-        }
-
         $scoreHeadMap = [];
-        foreach ($structure->items as $item) {
-            $scoreHeadMap[$item->score_head_id] = [
-                'id'            => $item->score_head_id,
-                'name'          => $item->scoreHead->name,
-                'effective_max' => $item->max_score_override ?? $item->scoreHead->max_score,
-            ];
+
+        if ($type === 'midterm') {
+            if ($snapshot && $snapshot->mode === 'midterm') {
+                foreach ($snapshot->midterm_heads as $item) {
+                    $scoreHeadMap[$item['id']] = [
+                        'id'            => $item['id'],
+                        'name'          => $item['name'],
+                        'effective_max' => (int) $item['effective_max'],
+                    ];
+                }
+            } else {
+                $midtermConfig = ClassMidtermConfig::with(['heads.scoreHead'])
+                    ->where('classroom_id', $classroomId)
+                    ->first();
+
+                if (! $midtermConfig || $midtermConfig->heads->isEmpty()) {
+                    throw new \RuntimeException('No mid-term score structure is currently configured for this class.');
+                }
+
+                foreach ($midtermConfig->heads as $item) {
+                    if ($item->scoreHead) {
+                        $scoreHeadMap[$item->score_head_id] = [
+                            'id'            => $item->score_head_id,
+                            'name'          => $item->scoreHead->name,
+                            'effective_max' => (int) ($item->max_score_override ?? $item->scoreHead->max_score),
+                        ];
+                    }
+                }
+            }
+        } else {
+            if ($snapshot) {
+                foreach ($snapshot->exam_heads as $item) {
+                    $scoreHeadMap[$item['id']] = [
+                        'id'            => $item['id'],
+                        'name'          => $item['name'],
+                        'effective_max' => (int) $item['effective_max'],
+                    ];
+                }
+            } else {
+                $structure = ClassScoreStructure::with(['items.scoreHead'])
+                    ->where('class_id', $classroomId)
+                    ->where('session_id', $sessionId)
+                    ->where('term_id', $termId)
+                    ->first();
+
+                if (! $structure || $structure->items->isEmpty()) {
+                    throw new \RuntimeException('No score structure is currently configured for this class.');
+                }
+
+                foreach ($structure->items as $item) {
+                    $scoreHeadMap[$item->score_head_id] = [
+                        'id'            => $item->score_head_id,
+                        'name'          => $item->scoreHead->name,
+                        'effective_max' => (int) ($item->max_score_override ?? $item->scoreHead->max_score),
+                    ];
+                }
+            }
         }
 
         // ── Load authorized subjects ─────────────────────────────────────────
@@ -480,7 +584,7 @@ class ScoreSpreadsheetService
             }
 
             $studentId = $student ? $student->id : null;
-            $studentName = $student ? $student->full_name : ($nameVal ?: "Unknown ({$admVal})");
+            $studentName = $student ? $student->name : ($nameVal ?: "Unknown ({$admVal})");
             $studentAdm  = $student ? ($student->admission_number ?? '—') : ($admVal ?: '—');
 
             $rowScores = [];
@@ -499,13 +603,18 @@ class ScoreSpreadsheetService
                 $error = null;
                 $parsedVal = '';
 
+                $isAbsent = false;
                 if (! $colDef['is_authorized']) {
                     $error = 'You are not assigned to grade this subject.';
                     $rowHasErrors = true;
                     $totalErrors++;
                 } elseif ($strVal !== '' && $cellVal !== null) {
-                    if (! is_numeric($strVal)) {
-                        $error = 'Must be a number.';
+                    if (strtoupper($strVal) === 'ABS') {
+                        $parsedVal = 'ABS';
+                        $isAbsent = true;
+                        $totalScoresCount++;
+                    } elseif (! is_numeric($strVal)) {
+                        $error = 'Must be a number or ABS.';
                         $rowHasErrors = true;
                         $totalErrors++;
                         $parsedVal = $strVal;
@@ -533,6 +642,7 @@ class ScoreSpreadsheetService
                     'score_head_id' => $colDef['score_head_id'],
                     'effective_max' => $colDef['effective_max'],
                     'value'         => $parsedVal,
+                    'is_absent'     => $isAbsent,
                     'error'         => $error,
                 ];
             }
@@ -567,6 +677,7 @@ class ScoreSpreadsheetService
         }
 
         return [
+            'type'               => $type,
             'classroom_id'       => $classroomId,
             'session_id'         => $sessionId,
             'term_id'            => $termId,

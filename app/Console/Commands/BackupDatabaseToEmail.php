@@ -198,7 +198,9 @@ class BackupDatabaseToEmail extends Command
 
                     $tableSummary = $this->collectTableCounts($defaultConn, [
                         'users', 'students', 'teachers', 'classrooms', 'subjects',
-                        'lesson_notes', 'lesson_plans', 'scores', 'assignments'
+                        'lesson_notes', 'lesson_plans', 'scores', 'assignments',
+                        'class_midterm_configs', 'term_scoring_snapshots',
+                        'midterm_subject_results', 'midterm_term_results', 'midterm_class_term_approvals',
                     ]);
 
                     $this->info("Generating compressed archive for Tenant [{$tenant->id}] DB [{$dbConfig['database']}]...");

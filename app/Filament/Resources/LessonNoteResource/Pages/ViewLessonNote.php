@@ -86,7 +86,7 @@ class ViewLessonNote extends ViewRecord
                         $this->record->id,
                         'approve',
                         auth()->id(),
-                        'Approved by ' . auth()->user()->name
+                        'Approved by ' . auth()->user()->full_name
                     );
 
                     Notification::make()
@@ -127,7 +127,7 @@ class ViewLessonNote extends ViewRecord
                         $this->record->id,
                         'reject',
                         auth()->id(),
-                        'Rejected by ' . auth()->user()->name
+                        'Rejected by ' . auth()->user()->full_name
                     );
 
                     Notification::make()

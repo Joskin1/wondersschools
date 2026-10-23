@@ -43,7 +43,7 @@
                 <span class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">Application Confirmed</span>
                 <h2 class="text-2xl sm:text-3xl font-serif font-bold text-[var(--ink)] mt-1 mb-2">Student Registration Received!</h2>
                 <p class="text-sm sm:text-base text-[var(--body)] max-w-md mx-auto mb-8 leading-relaxed">
-                    Thank you! The student application for <span class="font-bold text-[var(--ink)]">{{ $full_name }}</span> has been registered successfully.
+                    Thank you! The student application for <span class="font-bold text-[var(--ink)]">{{ $createdStudent?->full_name ?? trim($surname . ', ' . $first_name . ' ' . $other_name) }}</span> has been registered successfully.
                 </p>
 
                 {{-- Prominent Admission Number Box --}}
@@ -168,11 +168,23 @@
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            {{-- Full Name --}}
-                            <div class="sm:col-span-2">
-                                <label for="full_name" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Student Full Name <span class="text-red-500">*</span></label>
-                                <input type="text" wire:model.defer="full_name" id="full_name" placeholder="First Name Middle Name Last Name" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
-                                @error('full_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                            {{-- Name Fields: Surname, First Name, Other Name --}}
+                            <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="surname" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Surname <span class="text-red-500">*</span></label>
+                                    <input type="text" wire:model.defer="surname" id="surname" placeholder="e.g. Adeyemi" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                    @error('surname') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <label for="first_name" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">First Name <span class="text-red-500">*</span></label>
+                                    <input type="text" wire:model.defer="first_name" id="first_name" placeholder="e.g. Oluwadamilare" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                    @error('first_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <label for="other_name" class="block text-xs font-bold uppercase tracking-wider text-[var(--ink)] mb-2">Other Name</label>
+                                    <input type="text" wire:model.defer="other_name" id="other_name" placeholder="e.g. John (optional)" class="block w-full rounded-xl border border-[var(--rule)] bg-[var(--paper)] shadow-sm focus:border-transparent focus:ring-2 focus:ring-[var(--accent)] text-sm py-3.5 px-4 text-[var(--ink)] transition">
+                                    @error('other_name') <span class="text-xs text-red-600 mt-1 block font-medium">{{ $message }}</span> @enderror
+                                </div>
                             </div>
 
                             @if ($allowManualAdmissionNumber)

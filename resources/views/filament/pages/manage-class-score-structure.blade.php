@@ -62,6 +62,14 @@
         .ss-score-total.over { color: #f43f5e; }
         .ss-score-total.exact { color: #10b981; }
         .ss-score-total.under { color: #94a3b8; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 0.85s linear infinite;
+        }
     </style>
 
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
@@ -120,9 +128,10 @@
         @if($this->hasSelectedFilters)
 
             @php
-                $barBg = $totalScore === 100 ? '#10b981' : ($totalScore > 100 ? '#f43f5e' : '#6366f1');
-                $barWidth = min($totalScore, 100);
-                $scoreClass = $totalScore > 100 ? 'over' : ($totalScore === 100 ? 'exact' : 'under');
+                $expected = $this->expectedTotal;
+                $barBg = $totalScore === $expected ? '#10b981' : ($totalScore > $expected ? '#f43f5e' : '#6366f1');
+                $barWidth = min(100, (int) round(($totalScore / max(1, $expected)) * 100));
+                $scoreClass = $totalScore > $expected ? 'over' : ($totalScore === $expected ? 'exact' : 'under');
             @endphp
 
             <div class="ss-structure-card">
@@ -137,7 +146,7 @@
                     </div>
                     <div class="ss-score-total {{ $scoreClass }}" style="display: flex; align-items: baseline; gap: 0.25rem;">
                         <span style="font-size: 1.875rem; font-weight: 900; line-height: 1;">{{ $totalScore }}</span>
-                        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">/ 100</span>
+                        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">/ {{ $expected }}</span>
                     </div>
                 </div>
 
@@ -240,33 +249,42 @@
                     @endif
 
                     {{-- Validation banners --}}
-                    @if($totalScore > 100)
+                    @if($totalScore > $expected)
                         <div class="ss-alert ss-alert-danger">
                             <svg class="ss-alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <span>⚠️ <strong>Total score is {{ $totalScore }}/100 — exceeds the limit!</strong> Please adjust bracket overrides or remove a score head. The total must be exactly 100 to save.</span>
+                            <span>⚠️ <strong>Total score is {{ $totalScore }}/{{ $expected }} — exceeds the limit!</strong> Please adjust bracket overrides or remove a score head. The total must be exactly {{ $expected }} to save.</span>
                         </div>
-                    @elseif($totalScore > 0 && $totalScore < 100)
+                    @elseif($totalScore > 0 && $totalScore < $expected)
                         <div class="ss-alert ss-alert-warning">
                             <svg class="ss-alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                            <span>Total score is currently <strong>{{ $totalScore }}/100</strong>. Add more score heads or adjust bracket overrides to reach exactly 100.</span>
+                            <span>Total score is currently <strong>{{ $totalScore }}/{{ $expected }}</strong>. Add more score heads or adjust bracket overrides to reach exactly {{ $expected }}.</span>
                         </div>
                     @endif
 
                     {{-- Action row --}}
                     <div class="ss-action-row">
                         @if($structureId)
-                            <button type="button" wire:click="toggleLock" wire:loading.attr="disabled" class="ss-btn ss-btn-lock">
-                                {{ $locked ? '🔒 Unlock Structure' : '🔓 Lock Structure' }}
+                            <button type="button" wire:click="toggleLock" wire:loading.attr="disabled" wire:target="toggleLock" class="ss-btn ss-btn-lock" style="display: inline-flex; align-items: center; gap: 0.375rem;">
+                                <svg wire:loading wire:target="toggleLock" class="animate-spin" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24">
+                                    <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span wire:loading.remove wire:target="toggleLock">{{ $locked ? '🔒 Unlock Structure' : '🔓 Lock Structure' }}</span>
+                                <span wire:loading wire:target="toggleLock">{{ $locked ? 'Unlocking...' : 'Locking...' }}</span>
                             </button>
                         @else
                             <div></div>
                         @endif
 
                         @if(! $locked || auth()->user()?->isSudo())
-                            <button type="button" wire:click="saveStructure" wire:loading.attr="disabled"
-                                @disabled($totalScore !== 100 || empty($items))
+                            <button type="button" wire:click="saveStructure" wire:loading.attr="disabled" wire:target="saveStructure"
+                                @disabled($totalScore !== $expected || empty($items))
                                 class="ss-btn ss-btn-save">
-                                <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg wire:loading.remove wire:target="saveStructure" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                <svg wire:loading wire:target="saveStructure" class="animate-spin" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24">
+                                    <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
                                 <span wire:loading.remove wire:target="saveStructure">Save Structure</span>
                                 <span wire:loading wire:target="saveStructure">Saving…</span>
                             </button>

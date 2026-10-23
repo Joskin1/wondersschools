@@ -153,7 +153,7 @@ describe('Comprehensive Frontend Suite', function () {
             ->assertSee('Student Registration Received!')
             ->assertSee('Victoria Kimberly Adeleke');
 
-        $student = Student::where('full_name', 'Victoria Kimberly Adeleke')->first();
+        $student = Student::whereHas('user', fn ($q) => $q->where('surname', 'Victoria')->where('first_name', 'Kimberly'))->first();
         expect($student)->not->toBeNull();
         expect($student->admission_number)->not->toBeNull();
         expect($student->gender)->toBe('female');
@@ -180,14 +180,12 @@ describe('Comprehensive Frontend Suite', function () {
             ->set('password', 'FacultyMasterPass123!')
             ->set('password_confirmation', 'FacultyMasterPass123!')
             ->call('submit')
-            ->assertSet('submitted', true)
-            ->assertSee('Registration Submitted Successfully!')
-            ->assertSee('Dr. Bartholomew Higgins');
+            ->assertRedirect(route('filament.teacher.auth.login'));
 
         $user = User::where('email', 'bartholomew.higgins@example.org')->first();
         expect($user)->not->toBeNull();
         expect($user->role)->toBe('teacher');
-        expect($user->isActive())->toBeFalse();
+        expect($user->isActive())->toBeTrue();
 
         $teacher = Teacher::where('user_id', $user->id)->first();
         expect($teacher)->not->toBeNull();

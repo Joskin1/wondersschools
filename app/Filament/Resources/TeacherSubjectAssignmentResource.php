@@ -55,7 +55,8 @@ class TeacherSubjectAssignmentResource extends Resource
                 Select::make('teacher_id')
                     ->label('Teacher')
                     ->options(fn () => User::assignableTeachers()
-                        ->orderBy('name')
+                        ->orderBy('surname')
+                        ->orderBy('first_name')
                         ->get()
                         ->mapWithKeys(fn (User $user) => [
                             $user->id => $user->name . ($user->isAdmin() ? ' (Admin)' : ''),
@@ -178,9 +179,16 @@ class TeacherSubjectAssignmentResource extends Resource
                     ->size(40)
                     ->grow(false),
 
-                TextColumn::make('teacher.name')
+                TextColumn::make('teacher.surname')
                     ->label('Teacher')
-                    ->searchable()
+                    ->formatStateUsing(fn (TeacherSubjectAssignment $record): string => $record->teacher?->name ?? '—')
+                    ->searchable(query: function ($query, string $search) {
+                        return $query->whereHas('teacher', function ($q) use ($search) {
+                            $q->where('surname', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('other_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable(),
 
                 TextColumn::make('subject.name')
@@ -283,7 +291,8 @@ class TeacherSubjectAssignmentResource extends Resource
                 SelectFilter::make('teacher_id')
                     ->label('Teacher')
                     ->options(fn () => User::assignableTeachers()
-                        ->orderBy('name')
+                        ->orderBy('surname')
+                        ->orderBy('first_name')
                         ->get()
                         ->mapWithKeys(fn (User $user) => [
                             $user->id => $user->name . ($user->isAdmin() ? ' (Admin)' : ''),

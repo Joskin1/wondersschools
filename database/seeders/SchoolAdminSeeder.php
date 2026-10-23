@@ -17,7 +17,8 @@ class SchoolAdminSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'admin@wonders.test'],
             [
-                'name' => 'School Admin',
+                'surname' => 'Admin',
+                'first_name' => 'School',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
                 'is_active' => true,

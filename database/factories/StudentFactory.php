@@ -26,7 +26,8 @@ class StudentFactory extends Factory
     public function definition(): array
     {
         return [
-            'full_name' => fake()->name(),
+            'surname' => fake()->lastName(),
+            'first_name' => fake()->firstName(),
             'status' => 'pending',
         ];
     }
@@ -58,9 +59,10 @@ class StudentFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             $rawToken = Student::generateRegistrationToken();
+            $name = $attributes['full_name'] ?? trim(($attributes['surname'] ?? 'Student') . ' ' . ($attributes['first_name'] ?? 'User'));
             
             return [
-                'registration_slug' => Student::generateRegistrationSlug($attributes['full_name']),
+                'registration_slug' => Student::generateRegistrationSlug($name),
                 'registration_token' => Student::hashToken($rawToken),
                 'registration_expires_at' => now()->addDays(3),
             ];
@@ -74,9 +76,10 @@ class StudentFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             $rawToken = Student::generateRegistrationToken();
+            $name = $attributes['full_name'] ?? trim(($attributes['surname'] ?? 'Student') . ' ' . ($attributes['first_name'] ?? 'User'));
             
             return [
-                'registration_slug' => Student::generateRegistrationSlug($attributes['full_name']),
+                'registration_slug' => Student::generateRegistrationSlug($name),
                 'registration_token' => Student::hashToken($rawToken),
                 'registration_expires_at' => now()->subDay(),
             ];

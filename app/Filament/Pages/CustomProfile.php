@@ -31,8 +31,15 @@ class CustomProfile extends BaseEditProfile
 
                                 return new HtmlString('<img src="'.$avatarUrl.'" alt="Profile Picture" class="w-20 h-20 rounded-full object-cover border border-gray-200 shadow-sm">');
                             }),
-                        TextInput::make('name')
+                        TextInput::make('surname')
                             ->required()
+                            ->readOnly()
+                            ->maxLength(255),
+                        TextInput::make('first_name')
+                            ->required()
+                            ->readOnly()
+                            ->maxLength(255),
+                        TextInput::make('other_name')
                             ->readOnly()
                             ->maxLength(255),
                         Placeholder::make('admission_number')

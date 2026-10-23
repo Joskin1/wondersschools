@@ -75,7 +75,8 @@ class SeedScoresCommand extends Command
                 $teacher = User::where('role', 'teacher')->first();
                 if (!$teacher) {
                     $teacher = User::create([
-                        'name' => 'Seeded Teacher',
+                        'surname' => 'Teacher',
+                        'first_name' => 'Seeded',
                         'email' => 'teacher.seeded@wonders.test',
                         'password' => bcrypt('password'),
                         'role' => 'teacher',

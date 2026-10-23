@@ -235,8 +235,25 @@ describe('Automated Grade-Tied Principal Comments', function () {
             'times_school_opened' => 110,
             'next_term_begins'    => 'January 2026',
             'status'              => 'approved',
-            'approved_by'         => $ctx['admin']->id,
             'approved_at'         => now(),
+        ]);
+
+        // Create used PIN for student portal access
+        $pinBatch = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-PC',
+            'session_id' => $ctx['session']->id,
+            'term_id'    => $ctx['term']->id,
+            'quantity'   => 1,
+        ]);
+        \App\Models\ResultPin::create([
+            'batch_id'      => $pinBatch->id,
+            'student_id'    => $ctx['studentA']->id,
+            'session_id'    => $ctx['session']->id,
+            'term_id'       => $ctx['term']->id,
+            'serial_number' => 'SN-PC-01',
+            'pin'           => '123456',
+            'is_used'       => true,
+            'used_at'       => now(),
         ]);
 
         // Student Portal

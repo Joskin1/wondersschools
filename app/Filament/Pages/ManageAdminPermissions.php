@@ -68,7 +68,8 @@ class ManageAdminPermissions extends Page
         return User::query()
             ->whereIn('role', ['admin', 'teacher'])
             ->where('role', '!=', 'sudo')
-            ->orderBy('name')
+            ->orderBy('surname')
+            ->orderBy('first_name')
             ->get();
     }
 
@@ -138,7 +139,7 @@ class ManageAdminPermissions extends Page
 
         Notification::make()
             ->title('Principal Privilege Granted')
-            ->body("{$user->name} ({$user->email}) is now designated as Principal. They have unrestricted administrative access and can manage permissions for ordinary staff.")
+            ->body("{$user->full_name} ({$user->email}) is now designated as Principal. They have unrestricted administrative access and can manage permissions for ordinary staff.")
             ->success()
             ->send();
     }
@@ -162,7 +163,7 @@ class ManageAdminPermissions extends Page
 
             Notification::make()
                 ->title('Principal Privilege Revoked')
-                ->body("{$user->name} ({$user->email}) is no longer the designated Principal.")
+                ->body("{$user->full_name} ({$user->email}) is no longer the designated Principal.")
                 ->info()
                 ->send();
         }
@@ -179,7 +180,8 @@ class ManageAdminPermissions extends Page
             ->where('role', '!=', 'sudo')
             ->where('is_primary_admin', false)
             ->orderBy('role')
-            ->orderBy('name')
+            ->orderBy('surname')
+            ->orderBy('first_name')
             ->get();
     }
 
@@ -417,7 +419,7 @@ class ManageAdminPermissions extends Page
 
         Notification::make()
             ->title('Permissions updated successfully')
-            ->body("Access permissions saved for {$user->name} (" . ($user->admin_designation ?: ucfirst($user->role)) . ').')
+            ->body("Access permissions saved for {$user->full_name} (" . ($user->admin_designation ?: ucfirst($user->role)) . ').')
             ->success()
             ->send();
     }

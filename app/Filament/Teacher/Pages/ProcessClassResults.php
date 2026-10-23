@@ -13,6 +13,7 @@ use App\Models\SubjectResult;
 use App\Models\TeacherSubjectAssignment;
 use App\Models\Term;
 use App\Models\TermResult;
+use App\Services\AttendanceService;
 use App\Services\ClassRemarksSpreadsheetService;
 use App\Services\ResultCalculationService;
 use Filament\Notifications\Notification;
@@ -144,10 +145,22 @@ class ProcessClassResults extends Page
             ->where('session_id', $this->session_id)
             ->pluck('student_id');
 
+        $attendanceService = app(AttendanceService::class);
+
         foreach ($enrolledIds as $studentId) {
             $tr = $termResults->get($studentId);
+            $timesPresent = $tr?->times_present;
+
+            // Auto-calculate from Attendance records if unset
+            if ($timesPresent === null) {
+                $stats = $attendanceService->calculateStudentAttendance($studentId, $this->term_id, $this->session_id);
+                if ($stats['total_recorded'] > 0) {
+                    $timesPresent = $stats['times_present'];
+                }
+            }
+
             $this->remarks[$studentId] = [
-                'times_present'         => $tr?->times_present,
+                'times_present'         => $timesPresent,
                 'class_teacher_comment' => $tr?->class_teacher_comment ?? '',
                 'principal_comment'     => $tr?->principal_comment ?? '',
             ];
@@ -167,12 +180,47 @@ class ProcessClassResults extends Page
             $this->approvedAt          = $approval->approved_at?->format('d M Y, h:i A');
             $this->approvedByName      = $approval->approvedBy?->name;
         } else {
-            $this->times_school_opened = null;
+            // Default calculated school days from attendance
+            $classDays = $attendanceService->calculateClassSchoolDays($this->classroom_id, $this->term_id);
+            $this->times_school_opened = $classDays > 0 ? $classDays : null;
             $this->next_term_begins    = null;
             $this->approvalStatus      = 'pending';
             $this->approvedAt          = null;
             $this->approvedByName      = null;
         }
+    }
+
+    /**
+     * Force synchronization of student attendance and school days from daily attendance records.
+     */
+    public function syncFromAttendance(): void
+    {
+        if (! $this->session_id || ! $this->term_id || ! $this->classroom_id) {
+            Notification::make()->title('Please select session, term, and classroom first.')->warning()->send();
+            return;
+        }
+
+        $service = app(AttendanceService::class);
+        $updatedCount = 0;
+
+        foreach ($this->remarks as $studentId => $data) {
+            $stats = $service->calculateStudentAttendance($studentId, $this->term_id, $this->session_id);
+            if ($stats['total_recorded'] > 0) {
+                $this->remarks[$studentId]['times_present'] = $stats['times_present'];
+                $updatedCount++;
+            }
+        }
+
+        $classDays = $service->calculateClassSchoolDays($this->classroom_id, $this->term_id);
+        if ($classDays > 0) {
+            $this->times_school_opened = $classDays;
+        }
+
+        Notification::make()
+            ->title('Attendance metrics synchronized!')
+            ->body("Updated attendance for {$updatedCount} students based on daily roll-call records.")
+            ->success()
+            ->send();
     }
 
     public function getSessionsProperty()
@@ -270,7 +318,7 @@ class ProcessClassResults extends Page
 
         $query = StudentEnrollment::where('classroom_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
-            ->with(['student', 'department', 'classArm']);
+            ->with(['student.user', 'department', 'classArm']);
 
         if ($assignment?->department_id) {
             $query->where('department_id', $assignment->department_id);
@@ -344,6 +392,21 @@ class ProcessClassResults extends Page
             return;
         }
 
+        $isApproved = ($this->approvalStatus === 'approved') || ClassTermApproval::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->where('status', 'approved')
+            ->exists();
+
+        if ($isApproved) {
+            Notification::make()
+                ->title('Results Already Released')
+                ->body('Class results are currently approved and released to students. Please revert approval before recalculating.')
+                ->warning()
+                ->send();
+            return;
+        }
+
         try {
             app(ResultCalculationService::class)->calculateForClass(
                 $this->classroom_id,
@@ -353,11 +416,25 @@ class ProcessClassResults extends Page
 
             $this->loadClassData();
 
-            Notification::make()
-                ->title('Class results processed and published successfully!')
-                ->body('Scores calculated. You can now enter student remarks & attendance.')
-                ->success()
-                ->send();
+            $hasErrors = SubjectResult::where('classroom_id', $this->classroom_id)
+                ->where('session_id', $this->session_id)
+                ->where('term_id', $this->term_id)
+                ->where('has_error', true)
+                ->exists();
+
+            if ($hasErrors) {
+                Notification::make()
+                    ->title('Results Processed with Calculation Errors')
+                    ->body('Some subject results have calculation errors (e.g., prior term results have errors or scores exceed limits). These have been excluded from publication until resolved.')
+                    ->warning()
+                    ->send();
+            } else {
+                Notification::make()
+                    ->title('Class results processed and published successfully!')
+                    ->body('Scores calculated. You can now enter student remarks & attendance.')
+                    ->success()
+                    ->send();
+            }
         } catch (\Throwable $e) {
             Notification::make()
                 ->title('Processing Failed')
@@ -505,6 +582,21 @@ class ProcessClassResults extends Page
             return;
         }
 
+        $isApproved = ($this->approvalStatus === 'approved') || ClassTermApproval::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->where('status', 'approved')
+            ->exists();
+
+        if ($isApproved) {
+            Notification::make()
+                ->title('Results Already Released')
+                ->body('Class results are already released to students. Please revert approval first if you need to update dates or change release settings.')
+                ->warning()
+                ->send();
+            return;
+        }
+
         $this->validate([
             'times_school_opened' => 'required|integer|min:1',
             'next_term_begins'    => 'required|string|max:100',
@@ -512,6 +604,71 @@ class ProcessClassResults extends Page
             'times_school_opened.required' => 'Please enter the number of times school opened for this class.',
             'next_term_begins.required'    => 'Please enter the date or description when next term begins.',
         ]);
+
+        // Guard for midterm-mode classes: Midterm MUST be locked and complete before final approval
+        $snapshot = \App\Models\TermScoringSnapshot::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->first();
+
+        $isMidtermMode = ($snapshot && $snapshot->mode === 'midterm');
+        if (! $isMidtermMode) {
+            $useMidterm = filter_var(\App\Models\Setting::where('key', 'use_midterm_results')->value('value'), FILTER_VALIDATE_BOOLEAN);
+            $hasMidtermConfig = \App\Models\ClassMidtermConfig::where('classroom_id', $this->classroom_id)->exists();
+            $isMidtermMode = ($useMidterm && $hasMidtermConfig);
+        }
+
+        if ($isMidtermMode) {
+            $midtermApproval = \App\Models\MidtermClassTermApproval::where('classroom_id', $this->classroom_id)
+                ->where('session_id', $this->session_id)
+                ->where('term_id', $this->term_id)
+                ->first();
+
+            if (! $midtermApproval || ! $midtermApproval->is_locked) {
+                Notification::make()
+                    ->title('Cannot Approve Final Results')
+                    ->body('Mid-term results for this class and term must be locked before final results can be approved and released.')
+                    ->danger()
+                    ->send();
+                return;
+            }
+
+            $hasMissingMidterm = \App\Models\MidtermSubjectResult::where('classroom_id', $this->classroom_id)
+                ->where('session_id', $this->session_id)
+                ->where('term_id', $this->term_id)
+                ->where('status', 'missing')
+                ->exists();
+
+            $hasMissingMidtermSubject = \App\Models\SubjectResult::where('classroom_id', $this->classroom_id)
+                ->where('session_id', $this->session_id)
+                ->where('term_id', $this->term_id)
+                ->where('has_missing_midterm', true)
+                ->exists();
+
+            if ($hasMissingMidterm || $hasMissingMidtermSubject) {
+                Notification::make()
+                    ->title('Cannot Approve Final Results')
+                    ->body('One or more students have incomplete or missing mid-term scores. Mid-term scores must be complete before final release.')
+                    ->danger()
+                    ->send();
+                return;
+            }
+        }
+
+        $hasErrors = \App\Models\SubjectResult::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->where('has_error', true)
+            ->exists();
+
+        if ($hasErrors) {
+            Notification::make()
+                ->title('Cannot Approve Final Results')
+                ->body('One or more subjects have calculation errors. All errors must be resolved before final approval.')
+                ->danger()
+                ->send();
+            return;
+        }
 
         ClassTermApproval::updateOrCreate(
             [

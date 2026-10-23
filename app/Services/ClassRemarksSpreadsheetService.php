@@ -31,9 +31,9 @@ class ClassRemarksSpreadsheetService
         // Fetch enrolled students
         $enrollments = StudentEnrollment::where('classroom_id', $classroomId)
             ->where('session_id', $sessionId)
-            ->with(['student', 'department'])
+            ->with(['student.user', 'department'])
             ->get()
-            ->sortBy(fn ($e) => $e->student?->full_name ?? '');
+            ->sortBy(fn ($e) => $e->student?->name ?? '');
 
         // Fetch existing term results
         $termResults = TermResult::where('classroom_id', $classroomId)
@@ -127,7 +127,7 @@ class ClassRemarksSpreadsheetService
 
             $sheet->setCellValue("A{$rowIndex}", $sn);
             $sheet->setCellValueExplicit("B{$rowIndex}", $student->admission_number ?? '', \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-            $sheet->setCellValue("C{$rowIndex}", $student->full_name);
+            $sheet->setCellValue("C{$rowIndex}", $student->name);
             $sheet->setCellValue("D{$rowIndex}", $departmentName);
             $sheet->setCellValue("E{$rowIndex}", $average !== '' ? $average : '—');
             $sheet->setCellValue("F{$rowIndex}", $position !== '' ? $position : '—');

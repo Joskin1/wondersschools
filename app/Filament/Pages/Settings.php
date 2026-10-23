@@ -3,8 +3,11 @@
 namespace App\Filament\Pages;
 
 use App\Models\FrontendContent;
+use App\Models\Score;
 use App\Models\Setting;
+use App\Models\Term;
 use App\Services\FrontendLibrary;
+use App\Services\MidtermCalculationService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
@@ -72,12 +75,20 @@ class Settings extends Page
         'seo_description',
         'allow_manual_admission_number',
         'enable_class_arms',
+        'use_midterm_results',
+        'midterm_absent_policy',
+        'result_decimal_places',
+        'result_rounding_rule',
+        'custom_grade_scale',
+        'custom_remark_scale',
     ];
 
     /**
      * List of frontend content keys that are stored as JSON arrays.
      */
     protected array $jsonKeys = [
+        'custom_grade_scale',
+        'custom_remark_scale',
         'features_items',
         'stats_items',
         'stats_destinations',
@@ -139,6 +150,36 @@ class Settings extends Page
         ];
     }
 
+    public static function getDefaultWaecGradeScale(): array
+    {
+        return [
+            ['grade' => 'A1', 'min' => 75, 'max' => 100, 'remark' => 'Excellent'],
+            ['grade' => 'B2', 'min' => 70, 'max' => 74,  'remark' => 'Very Good'],
+            ['grade' => 'B3', 'min' => 65, 'max' => 69,  'remark' => 'Good'],
+            ['grade' => 'C4', 'min' => 60, 'max' => 64,  'remark' => 'Credit'],
+            ['grade' => 'C5', 'min' => 55, 'max' => 59,  'remark' => 'Credit'],
+            ['grade' => 'C6', 'min' => 50, 'max' => 54,  'remark' => 'Credit'],
+            ['grade' => 'D7', 'min' => 45, 'max' => 49,  'remark' => 'Pass'],
+            ['grade' => 'E8', 'min' => 40, 'max' => 44,  'remark' => 'Pass'],
+            ['grade' => 'F9', 'min' => 0,  'max' => 39,  'remark' => 'Fail'],
+        ];
+    }
+
+    public static function getDefaultWaecRemarkScale(): array
+    {
+        return [
+            ['remark' => 'Excellent', 'min' => 75, 'max' => 100],
+            ['remark' => 'Very Good', 'min' => 70, 'max' => 74],
+            ['remark' => 'Good',      'min' => 65, 'max' => 69],
+            ['remark' => 'Credit',    'min' => 60, 'max' => 64],
+            ['remark' => 'Credit',    'min' => 55, 'max' => 59],
+            ['remark' => 'Credit',    'min' => 50, 'max' => 54],
+            ['remark' => 'Pass',      'min' => 45, 'max' => 49],
+            ['remark' => 'Pass',      'min' => 40, 'max' => 44],
+            ['remark' => 'Fail',      'min' => 0,  'max' => 39],
+        ];
+    }
+
     public function mount(): void
     {
         $settings = Setting::all()->pluck('value', 'key')->toArray();
@@ -155,6 +196,24 @@ class Settings extends Page
                     $data[$jsonKey] = $decoded;
                 }
             }
+        }
+
+        // Pre-fill standard WAEC 9-point scale if not yet customized or ensure remarks are populated
+        if (empty($data['custom_grade_scale'])) {
+            $data['custom_grade_scale'] = self::getDefaultWaecGradeScale();
+        } elseif (is_array($data['custom_grade_scale'])) {
+            $defaultScale = self::getDefaultWaecGradeScale();
+            foreach ($data['custom_grade_scale'] as &$band) {
+                if (empty($band['remark'])) {
+                    $matched = collect($defaultScale)->first(fn ($d) => $d['grade'] === ($band['grade'] ?? ''));
+                    $band['remark'] = $matched['remark'] ?? 'Good';
+                }
+            }
+            unset($band);
+        }
+
+        if (empty($data['custom_remark_scale'])) {
+            $data['custom_remark_scale'] = self::getDefaultWaecRemarkScale();
         }
 
         // Normalize single file upload fields if stored as JSON array string or array
@@ -186,6 +245,10 @@ class Settings extends Page
 
         if (isset($data['enable_class_arms'])) {
             $data['enable_class_arms'] = filter_var($data['enable_class_arms'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        if (isset($data['use_midterm_results'])) {
+            $data['use_midterm_results'] = filter_var($data['use_midterm_results'], FILTER_VALIDATE_BOOLEAN);
         }
 
         $this->form->fill($data);
@@ -348,7 +411,100 @@ class Settings extends Page
                                     ]),
                             ]),
 
-                        // ── Tab 3: Navigation & Portals ─────────────────────────────────────────
+                        // ── Tab 3: Academic & Results ──────────────────────────────────────────
+                        Tab::make('Academic & Results')
+                            ->icon('heroicon-o-academic-cap')
+                            ->schema([
+                                Section::make('Mid-Term Results System')
+                                    ->description('Configure continuous assessment and mid-term progress reporting for your school.')
+                                    ->headerActions([
+                                        $this->makeSaveAction('Academic & Results', [
+                                            'use_midterm_results',
+                                            'midterm_absent_policy',
+                                            'result_decimal_places',
+                                            'result_rounding_rule',
+                                            'custom_grade_scale',
+                                            'custom_remark_scale',
+                                        ]),
+                                    ])
+                                    ->schema([
+                                        Grid::make(2)->schema([
+                                            Toggle::make('use_midterm_results')
+                                                ->label('Enable Mid-Term Results System')
+                                                ->helperText(function () {
+                                                    $activeTerm = Term::where('is_active', true)->first();
+                                                    $hasScores = $activeTerm ? Score::where('term_id', $activeTerm->id)->exists() : false;
+                                                    return $hasScores
+                                                        ? 'Locked because assessment scores have already been recorded for the active term.'
+                                                        : 'Toggle ON to activate the Mid-Term Results System for this school.';
+                                                })
+                                                ->disabled(function () {
+                                                    $activeTerm = Term::where('is_active', true)->first();
+                                                    return $activeTerm ? Score::where('term_id', $activeTerm->id)->exists() : false;
+                                                })
+                                                ->default(false),
+
+                                            Select::make('midterm_absent_policy')
+                                                ->label('Absent Student Policy')
+                                                ->options([
+                                                    'count_as_zero' => 'Absent counts as 0 (Score = 0, Raw Max Unchanged)',
+                                                    'excluded'      => 'Absent is excluded (Score = 0, Head Max Removed from Raw Max)',
+                                                ])
+                                                ->default('count_as_zero')
+                                                ->helperText('Defines how student absence is treated during continuous assessment scaling.'),
+                                        ]),
+
+                                        Grid::make(2)->schema([
+                                            TextInput::make('result_decimal_places')
+                                                ->label('Result Decimal Places (0 - 4)')
+                                                ->numeric()
+                                                ->minValue(0)
+                                                ->maxValue(4)
+                                                ->default(2)
+                                                ->helperText('Number of decimal places shown on student result slips and carry-forward totals.'),
+
+                                            Select::make('result_rounding_rule')
+                                                ->label('Result Rounding Method')
+                                                ->options([
+                                                    'half_up' => 'Half Up (Standard Commercial Rounding)',
+                                                    'floor'   => 'Floor (Always Round Down)',
+                                                    'ceil'    => 'Ceiling (Always Round Up)',
+                                                ])
+                                                ->default('half_up')
+                                                ->rules(['required', 'in:half_up,floor,ceil'])
+                                                ->helperText('Rounding method applied to final scaled and terminal totals.'),
+                                        ]),
+
+                                        Section::make('Custom Grade & Remark Scale')
+                                            ->description('Pre-filled with the standard WAEC 9-point grading scale (A1 to F9) and remarks. You can edit score cutoffs, change remarks, or add/remove bands to match your school policy.')
+                                            ->schema([
+                                                Repeater::make('custom_grade_scale')
+                                                    ->label('Grading & Remark Scale')
+                                                    ->default(self::getDefaultWaecGradeScale())
+                                                    ->schema([
+                                                        TextInput::make('grade')->required()->label('Grade (e.g. A1, B2)'),
+                                                        TextInput::make('min')->numeric()->required()->label('Min Score'),
+                                                        TextInput::make('max')->numeric()->required()->label('Max Score'),
+                                                        TextInput::make('remark')->required()->label('Teacher Remark (e.g. Credit, Excellent)'),
+                                                    ])
+                                                    ->columns(4)
+                                                    ->rules([
+                                                        fn () => function (string $attribute, $value, \Closure $fail) {
+                                                            if (! empty($value) && is_array($value)) {
+                                                                try {
+                                                                    $decimals = (int) (Setting::where('key', 'result_decimal_places')->value('value') ?? 2);
+                                                                    app(MidtermCalculationService::class)->validateBandsContiguity($value, $decimals);
+                                                                } catch (\InvalidArgumentException $e) {
+                                                                    $fail($e->getMessage());
+                                                                }
+                                                            }
+                                                        },
+                                                    ]),
+                                            ]),
+                                    ]),
+                            ]),
+
+                        // ── Tab 4: Navigation & Portals ─────────────────────────────────────────
                         Tab::make('Navigation & Portals')
                             ->icon('heroicon-o-bars-3')
                             ->schema([
@@ -1263,6 +1419,15 @@ class Settings extends Page
         $data = $this->form->getRawState();
         $singleFileKeys = ['school_logo', 'hero_image', 'about_image'];
 
+        if (in_array('result_rounding_rule', $keys, true) && array_key_exists('result_rounding_rule', $data)) {
+            $ruleVal = $data['result_rounding_rule'];
+            if (! in_array($ruleVal, ['half_up', 'floor', 'ceil'], true)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'data.result_rounding_rule' => 'The selected result rounding rule is invalid. Must be half_up, floor, or ceil.',
+                ]);
+            }
+        }
+
         // 1. Process Settings Table Keys
         foreach ($keys as $key) {
             if (in_array($key, $this->settingKeys, true) && array_key_exists($key, $data)) {
@@ -1274,7 +1439,19 @@ class Settings extends Page
                 if (is_bool($value)) {
                     $value = $value ? '1' : '0';
                 }
+                if (is_array($value) && in_array($key, $this->jsonKeys, true)) {
+                    $value = json_encode($value);
+                }
                 Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+
+                if ($key === 'custom_grade_scale' && is_array($data['custom_grade_scale'])) {
+                    $remarkScale = array_map(fn ($b) => [
+                        'min' => $b['min'],
+                        'max' => $b['max'],
+                        'remark' => $b['remark'] ?? '',
+                    ], $data['custom_grade_scale']);
+                    Setting::updateOrCreate(['key' => 'custom_remark_scale'], ['value' => json_encode($remarkScale)]);
+                }
 
                 if ($key === 'primary_color' && tenant()) {
                     tenant()->update(['primary_color' => $value]);
@@ -1333,7 +1510,19 @@ class Settings extends Page
                 if (is_bool($value)) {
                     $value = $value ? '1' : '0';
                 }
+                if (is_array($value) && in_array($key, $this->jsonKeys, true)) {
+                    $value = json_encode($value);
+                }
                 Setting::updateOrCreate(['key' => $key], ['value' => $value]);
+
+                if ($key === 'custom_grade_scale' && is_array($data['custom_grade_scale'])) {
+                    $remarkScale = array_map(fn ($b) => [
+                        'min' => $b['min'],
+                        'max' => $b['max'],
+                        'remark' => $b['remark'] ?? '',
+                    ], $data['custom_grade_scale']);
+                    Setting::updateOrCreate(['key' => 'custom_remark_scale'], ['value' => json_encode($remarkScale)]);
+                }
             }
         }
 

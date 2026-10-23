@@ -40,6 +40,8 @@ beforeEach(function () {
         'class_id'   => $this->classroom1->id,
         'session_id' => $this->session->id,
     ]);
+
+    \Filament\Facades\Filament::setCurrentPanel(\Filament\Facades\Filament::getPanel('teacher'));
 });
 
 it('authorizes only class teachers to access StudentResource in teacher panel', function () {
@@ -69,7 +71,7 @@ it('scopes student list to only students in the class teacher assigned classroom
 
     $this->actingAs($this->classTeacher);
 
-    $scopedStudents = StudentResource::getEloquentQuery()->pluck('full_name')->toArray();
+    $scopedStudents = StudentResource::getEloquentQuery()->with('user')->get()->pluck('name')->toArray();
 
     expect($scopedStudents)->toContain('Student In Class 1')
         ->and($scopedStudents)->not->toContain('Student In Class 2');
@@ -80,7 +82,8 @@ it('allows class teacher to create and enroll a student in their assigned classr
 
     Livewire::test(CreateStudent::class)
         ->fillForm([
-            'full_name'        => 'New Class 1 Pupil',
+            'surname'          => 'Pupil',
+            'first_name'       => 'New Class 1',
             'classroom_id'     => $this->classroom1->id,
             'session_id'       => $this->session->id,
             'initial_password' => 'Password123!',
@@ -88,7 +91,7 @@ it('allows class teacher to create and enroll a student in their assigned classr
         ->call('create')
         ->assertHasNoFormErrors();
 
-    $student = Student::where('full_name', 'New Class 1 Pupil')->first();
+    $student = Student::whereHas('user', fn ($q) => $q->where('surname', 'Pupil')->where('first_name', 'New Class 1'))->first();
     expect($student)->not->toBeNull();
 
     $enrollment = StudentEnrollment::where('student_id', $student->id)->first();
@@ -102,12 +105,13 @@ it('prevents class teacher from creating a student in an unassigned classroom', 
 
     Livewire::test(CreateStudent::class)
         ->fillForm([
-            'full_name'        => 'Unauthorized Pupil',
+            'surname'          => 'Pupil',
+            'first_name'       => 'Unauthorized',
             'classroom_id'     => $this->classroom2->id,
             'session_id'       => $this->session->id,
         ])
         ->call('create')
         ->assertHasFormErrors(['classroom_id']);
 
-    expect(Student::where('full_name', 'Unauthorized Pupil')->exists())->toBeFalse();
+    expect(Student::whereHas('user', fn ($q) => $q->where('surname', 'Pupil')->where('first_name', 'Unauthorized'))->exists())->toBeFalse();
 });

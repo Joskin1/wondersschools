@@ -269,8 +269,24 @@ describe('Live End-to-End Browser Flow: Score Head -> Student Results & PDF', fu
             ->and($tiwaResult->is_finalized)->toBeTrue();
 
         // ═════════════════════════════════════════════════════════════════════
-        // STEP 7: STUDENT PORTAL — Student views Scorecard & Downloads PDF
-        // ═════════════════════════════════════════════════════════════════════
+        // Create used PIN for student portal access
+        $livePinBatch = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-LIVE',
+            'session_id' => $session->id,
+            'term_id'    => $term->id,
+            'quantity'   => 1,
+        ]);
+        \App\Models\ResultPin::create([
+            'batch_id'      => $livePinBatch->id,
+            'student_id'    => $student1->id,
+            'session_id'    => $session->id,
+            'term_id'       => $term->id,
+            'serial_number' => 'SN-LIVE-01',
+            'pin'           => '123456',
+            'is_used'       => true,
+            'used_at'       => now(),
+        ]);
+
         $this->actingAs($sUser1);
 
         // David opens student result page

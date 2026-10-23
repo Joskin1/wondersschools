@@ -16,15 +16,22 @@ class SubmissionsRelationManager extends RelationManager
 {
     protected static string $relationship = 'submissions';
 
-    protected static ?string $recordTitleAttribute = 'student.full_name';
+    protected static ?string $recordTitleAttribute = 'id';
 
     public function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('student.full_name')
+                TextColumn::make('student.user.surname')
                     ->label('Student')
-                    ->searchable()
+                    ->formatStateUsing(fn ($record) => $record->student?->full_name ?? '—')
+                    ->searchable(query: function ($query, string $search) {
+                        return $query->whereHas('student.user', function ($q) use ($search) {
+                            $q->where('surname', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('other_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable(),
 
                 TextColumn::make('score')
@@ -59,7 +66,9 @@ class SubmissionsRelationManager extends RelationManager
                                 Section::make('Student Result')
                                     ->schema([
                                         Grid::make(3)->schema([
-                                            TextEntry::make('student.full_name')->label('Student'),
+                                            TextEntry::make('student.user.surname')
+                                                ->label('Student')
+                                                ->formatStateUsing(fn ($record) => $record->student?->full_name ?? '—'),
                                             TextEntry::make('score')
                                                 ->label('Score')
                                                 ->formatStateUsing(fn ($record) => "{$record->score} / {$record->total_points}")

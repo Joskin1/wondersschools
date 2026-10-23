@@ -15,6 +15,10 @@ class Student extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected ?string $tempSurname = null;
+    protected ?string $tempFirstName = null;
+    protected ?string $tempOtherName = null;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -22,8 +26,11 @@ class Student extends Model
      */
     protected $fillable = [
         'user_id',
-        'admission_number',
+        'surname',
+        'first_name',
+        'other_name',
         'full_name',
+        'admission_number',
         'profile_picture',
         'date_of_birth',
         'gender',
@@ -41,6 +48,115 @@ class Student extends Model
         'activated_at',
         'activated_by',
     ];
+
+    /**
+     * Get the student's full name from the linked User record.
+     */
+    public function getFullNameAttribute(): string
+    {
+        $userName = $this->user?->name;
+        if (! empty($userName)) {
+            return $userName;
+        }
+
+        $temp = trim(implode(' ', array_filter([$this->tempSurname, $this->tempFirstName, $this->tempOtherName])));
+        if (! empty($temp)) {
+            return $temp;
+        }
+
+        return (string) ($this->attributes['full_name'] ?? '');
+    }
+
+    /**
+     * Get the student's surname from the linked User record.
+     */
+    public function getSurnameAttribute(): ?string
+    {
+        return $this->user?->surname ?? $this->tempSurname;
+    }
+
+    /**
+     * Set the student's surname.
+     */
+    public function setSurnameAttribute($value): void
+    {
+        if ($this->user) {
+            $this->user->update(['surname' => $value]);
+        } else {
+            $this->tempSurname = $value;
+        }
+    }
+
+    /**
+     * Get the student's first name from the linked User record.
+     */
+    public function getFirstNameAttribute(): ?string
+    {
+        return $this->user?->first_name ?? $this->tempFirstName;
+    }
+
+    /**
+     * Set the student's first name.
+     */
+    public function setFirstNameAttribute($value): void
+    {
+        if ($this->user) {
+            $this->user->update(['first_name' => $value]);
+        } else {
+            $this->tempFirstName = $value;
+        }
+    }
+
+    /**
+     * Get the student's other name from the linked User record.
+     */
+    public function getOtherNameAttribute(): ?string
+    {
+        return $this->user?->other_name ?? $this->tempOtherName;
+    }
+
+    /**
+     * Set the student's other name.
+     */
+    public function setOtherNameAttribute($value): void
+    {
+        if ($this->user) {
+            $this->user->update(['other_name' => $value]);
+        } else {
+            $this->tempOtherName = $value;
+        }
+    }
+
+    /**
+     * Backward compatible name accessor.
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->full_name;
+    }
+
+    /**
+     * Mutator for full_name to update linked User if exists or store for creation.
+     */
+    public function setFullNameAttribute($value): void
+    {
+        $parts = preg_split('/\s+/', trim((string) $value));
+        $surname = $parts[0] ?? '';
+        $firstName = $parts[1] ?? '';
+        $otherName = count($parts) > 2 ? implode(' ', array_slice($parts, 2)) : null;
+
+        if ($this->user) {
+            $this->user->update([
+                'surname' => $surname,
+                'first_name' => $firstName,
+                'other_name' => $otherName,
+            ]);
+        } else {
+            $this->tempSurname = $surname;
+            $this->tempFirstName = $firstName;
+            $this->tempOtherName = $otherName;
+        }
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -65,6 +181,25 @@ class Student extends Model
                 $student->forceFill([
                     'admission_number' => self::generateAdmissionNumber($student->id),
                 ])->saveQuietly();
+            }
+
+            if (! $student->user_id) {
+                $surname = $student->tempSurname ?: 'Student';
+                $firstName = $student->tempFirstName ?: ('#' . $student->id);
+                $otherName = $student->tempOtherName;
+
+                app(\App\Services\StudentAccountService::class)->createOrLinkUser(
+                    $student,
+                    $surname,
+                    $firstName,
+                    $otherName
+                );
+            } elseif ($student->tempSurname || $student->tempFirstName) {
+                $student->user?->update(array_filter([
+                    'surname' => $student->tempSurname,
+                    'first_name' => $student->tempFirstName,
+                    'other_name' => $student->tempOtherName,
+                ]));
             }
         });
     }
@@ -141,8 +276,15 @@ class Student extends Model
     public static function generateAdmissionNumber(int $studentId): string
     {
         $tenantId = tenant('id');
-        $prefix = ($tenantId === 'livingsspring' || $tenantId === 'wonders' || str_contains(strtolower((string) tenant('name')), 'living')) ? 'LRS' : 'ADM';
-        $base = $prefix.now()->format('Y').str_pad((string) $studentId, 5, '0', STR_PAD_LEFT);
+        if ($tenantId === 'cathedral' || $tenantId === 'chizylite' || str_contains(strtolower((string) tenant('name')), 'cathedral')) {
+            $prefix = 'CCOSC';
+        } elseif ($tenantId === 'livingsspring' || $tenantId === 'wonders' || str_contains(strtolower((string) tenant('name')), 'living')) {
+            $prefix = 'LRSC';
+        } else {
+            $prefix = 'ADM';
+        }
+        $padLength = ($prefix === 'LRSC') ? 3 : 5;
+        $base = $prefix.now()->format('Y').str_pad((string) $studentId, $padLength, '0', STR_PAD_LEFT);
         $admissionNumber = $base;
         $suffix = 2;
 

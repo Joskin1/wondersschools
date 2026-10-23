@@ -21,6 +21,7 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use STS\FilamentImpersonate\Actions\Impersonate;
 
 class StudentResource extends Resource
@@ -44,10 +45,19 @@ class StudentResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('full_name')
+                TextInput::make('surname')
                     ->required()
                     ->maxLength(255)
-                    ->placeholder('e.g., John Doe'),
+                    ->placeholder('e.g., Adeyemi'),
+
+                TextInput::make('first_name')
+                    ->required()
+                    ->maxLength(255)
+                    ->placeholder('e.g., Oluwadamilare'),
+
+                TextInput::make('other_name')
+                    ->maxLength(255)
+                    ->placeholder('e.g., John (optional)'),
 
                 TextInput::make('initial_password')
                     ->label('Initial Password')
@@ -126,8 +136,16 @@ class StudentResource extends Resource
                     ->size(40)
                     ->grow(false),
 
-                TextColumn::make('full_name')
-                    ->searchable()
+                TextColumn::make('user.surname')
+                    ->label('Student Name')
+                    ->formatStateUsing(fn (Student $record): string => $record->full_name)
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('user', function ($q) use ($search) {
+                            $q->where('surname', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('other_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable()
                     ->weight('bold'),
 

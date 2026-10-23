@@ -56,7 +56,8 @@ class LessonNoteResource extends Resource
                     ->schema([
                         Grid::make(2)->schema([
                             Select::make('teacher_id')
-                                ->relationship('teacher', 'name')
+                                ->relationship('teacher', 'surname', fn (\Illuminate\Database\Eloquent\Builder $query) => $query->orderBy('surname')->orderBy('first_name'))
+                                ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name)
                                 ->disabled()
                                 ->dehydrated(false),
 
@@ -116,9 +117,15 @@ class LessonNoteResource extends Resource
                     ->sortable()
                     ->badge(),
 
-                Tables\Columns\TextColumn::make('teacher.name')
+                Tables\Columns\TextColumn::make('teacher.surname')
                     ->label('Teacher')
-                    ->sortable(),
+                    ->formatStateUsing(fn ($record) => $record->teacher?->full_name ?? '—')
+                    ->sortable(query: function ($query, string $direction) {
+                        $query->join('users as teacher_users', 'lesson_notes.teacher_id', '=', 'teacher_users.id')
+                            ->orderBy('teacher_users.surname', $direction)
+                            ->orderBy('teacher_users.first_name', $direction)
+                            ->select('lesson_notes.*');
+                    }),
 
                 Tables\Columns\TextColumn::make('latestVersion.file_name')
                     ->label('Note / Topic')

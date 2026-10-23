@@ -3,13 +3,17 @@
 namespace App\Services;
 
 use App\Models\ClassScoreStructure;
+use App\Models\MidtermSubjectResult;
 use App\Models\Score;
+use App\Models\Setting;
 use App\Models\StudentEnrollment;
 use App\Models\SubjectResult;
 use App\Models\Term;
 use App\Models\TermResult;
+use App\Models\TermScoringSnapshot;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ResultCalculationService
 {
@@ -202,6 +206,17 @@ class ResultCalculationService
      */
     private function computeSubjectResults(int $classroomId, int $sessionId, int $termId, ?int $targetSubjectId = null): void
     {
+        // Early dispatch: if snapshot exists with mode='midterm', run dedicated midterm pipeline
+        $snapshot = TermScoringSnapshot::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->first();
+
+        if ($snapshot && $snapshot->mode === 'midterm') {
+            $this->computeMidtermSubjectResults($classroomId, $sessionId, $termId, $targetSubjectId, $snapshot);
+            return;
+        }
+
         // Get all enrolled students
         $enrolledStudentIds = StudentEnrollment::where('classroom_id', $classroomId)
             ->where('session_id', $sessionId)
@@ -252,6 +267,16 @@ class ResultCalculationService
      */
     private function computeCumulativeSubjectResults(int $classroomId, int $sessionId, int $termId, ?int $targetSubjectId = null): void
     {
+        $snapshot = TermScoringSnapshot::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->first();
+
+        if ($snapshot && $snapshot->mode === 'midterm') {
+            $this->computeCumulativeMidtermSubjectResults($classroomId, $sessionId, $termId, $targetSubjectId, $snapshot);
+            return;
+        }
+
         $enrolledStudentIds = StudentEnrollment::where('classroom_id', $classroomId)
             ->where('session_id', $sessionId)
             ->pluck('student_id');
@@ -262,7 +287,7 @@ class ResultCalculationService
 
         $termIds = $this->resolveTermIds($sessionId);
 
-        // ── Get Term 1 & 2 subject results ──────────────────────────────────
+        // ── Get Term 1 & 2 subject results (including error rows) ───────────
         $priorQuery = SubjectResult::where('classroom_id', $classroomId)
             ->where('session_id', $sessionId)
             ->whereIn('term_id', [$termIds[1] ?? 0, $termIds[2] ?? 0])
@@ -295,12 +320,40 @@ class ResultCalculationService
             $key1 = $row->student_id . '-' . $row->subject_id . '-' . ($termIds[1] ?? 0);
             $key2 = $row->student_id . '-' . $row->subject_id . '-' . ($termIds[2] ?? 0);
 
-            $term1Total = $priorResults->has($key1)
-                ? (float) $priorResults[$key1]->first()->total
+            $res1 = $priorResults->get($key1)?->first();
+            $res2 = $priorResults->get($key2)?->first();
+
+            // If a prior term has errors, do NOT count it as 0 with a /3 divisor.
+            // Mark the cumulative row as error and unpublished.
+            if (($res1 && $res1->has_error) || ($res2 && $res2->has_error)) {
+                $errTerm = ($res1 && $res1->has_error) ? 'Term 1' : 'Term 2';
+                Log::warning("Cannot compute cumulative result for student {$row->student_id}, subject {$row->subject_id}: {$errTerm} has calculation errors.");
+                SubjectResult::updateOrCreate(
+                    [
+                        'student_id' => $row->student_id,
+                        'subject_id' => $row->subject_id,
+                        'session_id' => $sessionId,
+                        'term_id'    => $termId,
+                    ],
+                    [
+                        'classroom_id' => $classroomId,
+                        'total'        => 0.0,
+                        'grade'        => '',
+                        'remark'       => '',
+                        'is_published' => false,
+                        'has_error'    => true,
+                        'error_message'=> "Cannot compute cumulative result: {$errTerm} result has errors and must be resolved first.",
+                    ]
+                );
+                continue;
+            }
+
+            $term1Total = ($res1 && ! $res1->has_error && $res1->is_published)
+                ? (float) $res1->total
                 : 0.0;
 
-            $term2Total = $priorResults->has($key2)
-                ? (float) $priorResults[$key2]->first()->total
+            $term2Total = ($res2 && ! $res2->has_error && $res2->is_published)
+                ? (float) $res2->total
                 : 0.0;
 
             $average = round(($term1Total + $term2Total + $term3Raw) / 3, 2);
@@ -346,6 +399,8 @@ class ResultCalculationService
             ->where('subject_id', $subjectId)
             ->where('session_id', $sessionId)
             ->where('term_id', $termId)
+            ->where('is_published', true)
+            ->where('has_error', false)
             ->get();
 
         $ranked = $this->competitionRank($results, 'total', 'position');
@@ -360,19 +415,39 @@ class ResultCalculationService
      */
     private function computeTermResults(int $classroomId, int $sessionId, int $termId): void
     {
+        $snapshot = TermScoringSnapshot::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->first();
+
+        $isMidterm = ($snapshot && $snapshot->mode === 'midterm');
+        $decimalPlaces = $isMidterm ? (int) ($snapshot?->result_decimal_places ?? Setting::where('key', 'result_decimal_places')->value('value') ?? 2) : 2;
+        $roundingRule = $isMidterm ? (string) ($snapshot?->result_rounding_rule ?? Setting::where('key', 'result_rounding_rule')->value('value') ?? 'half_up') : 'half_up';
+        $midtermCalc = app(MidtermCalculationService::class);
+
         $studentAggregates = SubjectResult::where('classroom_id', $classroomId)
             ->where('session_id', $sessionId)
             ->where('term_id', $termId)
             ->where('is_published', true)
+            ->where('has_error', false)
             ->groupBy('student_id')
             ->selectRaw('student_id, SUM(total) as grand_total, COUNT(*) as subjects_count')
             ->get();
 
         foreach ($studentAggregates as $row) {
-            $grandTotal    = round((float) $row->grand_total, 2);
             $subjectsCount = (int) $row->subjects_count;
-            $average       = $subjectsCount > 0 ? round($grandTotal / $subjectsCount, 2) : 0;
-            $grading       = $this->resolveGrade($average);
+
+            if ($isMidterm) {
+                $grandTotal = (float) $midtermCalc->bcRound((string) $row->grand_total, $decimalPlaces, $roundingRule);
+                $average = $subjectsCount > 0
+                    ? (float) $midtermCalc->bcRound(bcdiv((string) $grandTotal, (string) $subjectsCount, 6), $decimalPlaces, $roundingRule)
+                    : 0;
+                $grading = $midtermCalc->resolveGradeAndRemark($average);
+            } else {
+                $grandTotal    = round((float) $row->grand_total, 2);
+                $average       = $subjectsCount > 0 ? round($grandTotal / $subjectsCount, 2) : 0;
+                $grading       = $this->resolveGrade($average);
+            }
 
             $existing = TermResult::where('student_id', $row->student_id)
                 ->where('session_id', $sessionId)
@@ -458,5 +533,312 @@ class ResultCalculationService
             unset($result->_temp_department_id, $result->_temp_class_arm_id);
             $result->save();
         }
+    }
+
+    /**
+     * Dedicated Midterm calculation pipeline (Term 1 & Term 2).
+     */
+    private function computeMidtermSubjectResults(int $classroomId, int $sessionId, int $termId, ?int $targetSubjectId, TermScoringSnapshot $snapshot): void
+    {
+        $enrolledStudentIds = StudentEnrollment::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->pluck('student_id');
+
+        if ($enrolledStudentIds->isEmpty()) {
+            return;
+        }
+
+        $examHeadIds = collect($snapshot->exam_heads)->pluck('id')->toArray();
+
+        $query = Score::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->whereIn('student_id', $enrolledStudentIds)
+            ->whereIn('score_head_id', $examHeadIds);
+
+        if ($targetSubjectId !== null) {
+            $query->where('subject_id', $targetSubjectId);
+        }
+
+        $examAggregates = $query->groupBy('student_id', 'subject_id')
+            ->selectRaw('student_id, subject_id, SUM(score) as exam_total')
+            ->get();
+
+        $midtermQuery = MidtermSubjectResult::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId);
+
+        if ($targetSubjectId !== null) {
+            $midtermQuery->where('subject_id', $targetSubjectId);
+        }
+
+        $midtermResults = $midtermQuery->get()->keyBy(fn ($r) => $r->student_id . '-' . $r->subject_id);
+
+        $decimalPlaces = (int) ($snapshot->result_decimal_places ?? Setting::where('key', 'result_decimal_places')->value('value') ?? 2);
+        $roundingRule = (string) ($snapshot->result_rounding_rule ?? Setting::where('key', 'result_rounding_rule')->value('value') ?? 'half_up');
+        $midtermCalc = app(MidtermCalculationService::class);
+
+        DB::transaction(function () use ($examAggregates, $midtermResults, $classroomId, $sessionId, $termId, $decimalPlaces, $roundingRule, $midtermCalc) {
+            foreach ($examAggregates as $row) {
+                $studentId = $row->student_id;
+                $subjectId = $row->subject_id;
+                $examScore = (float) $row->exam_total;
+                $key = $studentId . '-' . $subjectId;
+                $midterm = $midtermResults->get($key);
+
+                $midtermStatus = $midterm?->status ?? 'missing';
+                $isMissing = ($midtermStatus === 'missing');
+                $isAbsent = ($midtermStatus === 'absent');
+                $midtermScore = ($isMissing || $isAbsent) ? 0.0 : (float) $midterm->scaled_score;
+                $rawTotal = $midtermScore + $examScore;
+
+                if ($rawTotal > 100.0) {
+                    Log::error("Total exceeded 100: student={$studentId}, subj={$subjectId}, total={$rawTotal}");
+                    SubjectResult::updateOrCreate(
+                        ['student_id' => $studentId, 'subject_id' => $subjectId, 'session_id' => $sessionId, 'term_id' => $termId],
+                        [
+                            'classroom_id'        => $classroomId,
+                            'midterm_score'       => $midtermScore,
+                            'exam_score'          => $examScore,
+                            'midterm_status'      => $midtermStatus,
+                            'has_missing_midterm' => $isMissing,
+                            'has_error'           => true,
+                            'error_message'       => "Total score ({$rawTotal}) exceeded 100 marks.",
+                        ]
+                    );
+                    continue;
+                }
+
+                $total = (float) $midtermCalc->bcRound((string) $rawTotal, $decimalPlaces, $roundingRule);
+
+                try {
+                    $grading = $midtermCalc->resolveGradeAndRemark($total);
+                } catch (\OutOfBoundsException $e) {
+                    Log::error("Grade band missing: {$e->getMessage()}");
+                    SubjectResult::updateOrCreate(
+                        ['student_id' => $studentId, 'subject_id' => $subjectId, 'session_id' => $sessionId, 'term_id' => $termId],
+                        [
+                            'classroom_id'        => $classroomId,
+                            'midterm_score'       => $midtermScore,
+                            'exam_score'          => $examScore,
+                            'midterm_status'      => $midtermStatus,
+                            'has_missing_midterm' => $isMissing,
+                            'has_error'           => true,
+                            'error_message'       => $e->getMessage(),
+                        ]
+                    );
+                    continue;
+                }
+
+                $existing = SubjectResult::where('student_id', $studentId)
+                    ->where('subject_id', $subjectId)
+                    ->where('session_id', $sessionId)
+                    ->where('term_id', $termId)
+                    ->first();
+
+                $payload = [
+                    'classroom_id'        => $classroomId,
+                    'midterm_score'       => $midtermScore,
+                    'exam_score'          => $examScore,
+                    'midterm_status'      => $midtermStatus,
+                    'has_missing_midterm' => $isMissing,
+                    'has_error'           => false,
+                    'error_message'       => null,
+                    'total'               => $total,
+                    'grade'               => $grading['grade'],
+                    'remark'              => $grading['remark'],
+                    'is_published'        => true,
+                ];
+
+                SubjectResult::updateOrCreate(
+                    ['student_id' => $studentId, 'subject_id' => $subjectId, 'session_id' => $sessionId, 'term_id' => $termId],
+                    $payload
+                );
+            }
+        });
+    }
+
+    /**
+     * Dedicated Midterm cumulative calculation pipeline (Third Term).
+     */
+    private function computeCumulativeMidtermSubjectResults(int $classroomId, int $sessionId, int $termId, ?int $targetSubjectId, TermScoringSnapshot $snapshot): void
+    {
+        $enrolledStudentIds = StudentEnrollment::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->pluck('student_id');
+
+        if ($enrolledStudentIds->isEmpty()) {
+            return;
+        }
+
+        $termIds = $this->resolveTermIds($sessionId);
+
+        // Get Term 1 & 2 subject results (including error rows)
+        $priorQuery = SubjectResult::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->whereIn('term_id', [$termIds[1] ?? 0, $termIds[2] ?? 0])
+            ->whereIn('student_id', $enrolledStudentIds);
+
+        if ($targetSubjectId !== null) {
+            $priorQuery->where('subject_id', $targetSubjectId);
+        }
+
+        $priorResults = $priorQuery->get()
+            ->groupBy(fn ($r) => $r->student_id . '-' . $r->subject_id . '-' . $r->term_id);
+
+        $examHeadIds = collect($snapshot->exam_heads)->pluck('id')->toArray();
+
+        $query = Score::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->whereIn('student_id', $enrolledStudentIds)
+            ->whereIn('score_head_id', $examHeadIds);
+
+        if ($targetSubjectId !== null) {
+            $query->where('subject_id', $targetSubjectId);
+        }
+
+        $term3ExamAggregates = $query->groupBy('student_id', 'subject_id')
+            ->selectRaw('student_id, subject_id, SUM(score) as exam_total')
+            ->get();
+
+        $midtermQuery = MidtermSubjectResult::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId);
+
+        if ($targetSubjectId !== null) {
+            $midtermQuery->where('subject_id', $targetSubjectId);
+        }
+
+        $midtermResults = $midtermQuery->get()->keyBy(fn ($r) => $r->student_id . '-' . $r->subject_id);
+
+        $decimalPlaces = (int) ($snapshot->result_decimal_places ?? Setting::where('key', 'result_decimal_places')->value('value') ?? 2);
+        $roundingRule = (string) ($snapshot->result_rounding_rule ?? Setting::where('key', 'result_rounding_rule')->value('value') ?? 'half_up');
+        $midtermCalc = app(MidtermCalculationService::class);
+
+        DB::transaction(function () use ($term3ExamAggregates, $midtermResults, $priorResults, $termIds, $classroomId, $sessionId, $termId, $decimalPlaces, $roundingRule, $midtermCalc) {
+            foreach ($term3ExamAggregates as $row) {
+                $studentId = $row->student_id;
+                $subjectId = $row->subject_id;
+                $examScore = (float) $row->exam_total;
+                $key = $studentId . '-' . $subjectId;
+                $midterm = $midtermResults->get($key);
+
+                $midtermStatus = $midterm?->status ?? 'missing';
+                $isMissing = ($midtermStatus === 'missing');
+                $isAbsent = ($midtermStatus === 'absent');
+                $midtermScore = ($isMissing || $isAbsent) ? 0.0 : (float) $midterm->scaled_score;
+                $rawTotal = $midtermScore + $examScore;
+
+                if ($rawTotal > 100.0) {
+                    Log::error("Total exceeded 100 in Term 3 cumulative: student={$studentId}, subj={$subjectId}, total={$rawTotal}");
+                    SubjectResult::updateOrCreate(
+                        ['student_id' => $studentId, 'subject_id' => $subjectId, 'session_id' => $sessionId, 'term_id' => $termId],
+                        [
+                            'classroom_id'        => $classroomId,
+                            'midterm_score'       => $midtermScore,
+                            'exam_score'          => $examScore,
+                            'midterm_status'      => $midtermStatus,
+                            'has_missing_midterm' => $isMissing,
+                            'has_error'           => true,
+                            'error_message'       => "Total score ({$rawTotal}) exceeded 100 marks.",
+                            'is_published'        => false,
+                            'total'               => 0.0,
+                            'grade'               => '',
+                            'remark'              => '',
+                        ]
+                    );
+                    continue;
+                }
+
+                $term3Raw = (float) $midtermCalc->bcRound((string) $rawTotal, $decimalPlaces, $roundingRule);
+
+                $key1 = $studentId . '-' . $subjectId . '-' . ($termIds[1] ?? 0);
+                $key2 = $studentId . '-' . $subjectId . '-' . ($termIds[2] ?? 0);
+
+                $res1 = $priorResults->get($key1)?->first();
+                $res2 = $priorResults->get($key2)?->first();
+
+                // If a prior term has errors, do NOT count it as 0 with a /3 divisor.
+                // Mark the cumulative row as error and unpublished.
+                if (($res1 && $res1->has_error) || ($res2 && $res2->has_error)) {
+                    $errTerm = ($res1 && $res1->has_error) ? 'Term 1' : 'Term 2';
+                    Log::warning("Cannot compute cumulative midterm result for student {$studentId}, subject {$subjectId}: {$errTerm} has calculation errors.");
+                    SubjectResult::updateOrCreate(
+                        ['student_id' => $studentId, 'subject_id' => $subjectId, 'session_id' => $sessionId, 'term_id' => $termId],
+                        [
+                            'classroom_id'        => $classroomId,
+                            'midterm_score'       => $midtermScore,
+                            'exam_score'          => $examScore,
+                            'midterm_status'      => $midtermStatus,
+                            'has_missing_midterm' => $isMissing,
+                            'has_error'           => true,
+                            'error_message'       => "Cannot compute cumulative result: {$errTerm} result has errors and must be resolved first.",
+                            'is_published'        => false,
+                            'total'               => 0.0,
+                            'grade'               => '',
+                            'remark'              => '',
+                        ]
+                    );
+                    continue;
+                }
+
+                $term1Total = ($res1 && ! $res1->has_error && $res1->is_published)
+                    ? (float) $res1->total
+                    : 0.0;
+
+                $term2Total = ($res2 && ! $res2->has_error && $res2->is_published)
+                    ? (float) $res2->total
+                    : 0.0;
+
+                $sum3Terms = bcadd(bcadd((string) $term1Total, (string) $term2Total, 6), (string) $term3Raw, 6);
+                $averageUnrounded = bcdiv($sum3Terms, '3', 6);
+                $average = (float) $midtermCalc->bcRound($averageUnrounded, $decimalPlaces, $roundingRule);
+
+                try {
+                    $grading = $midtermCalc->resolveGradeAndRemark($average);
+                } catch (\OutOfBoundsException $e) {
+                    Log::error("Grade band missing: {$e->getMessage()}");
+                    SubjectResult::updateOrCreate(
+                        ['student_id' => $studentId, 'subject_id' => $subjectId, 'session_id' => $sessionId, 'term_id' => $termId],
+                        [
+                            'classroom_id'        => $classroomId,
+                            'midterm_score'       => $midtermScore,
+                            'exam_score'          => $examScore,
+                            'midterm_status'      => $midtermStatus,
+                            'has_missing_midterm' => $isMissing,
+                            'has_error'           => true,
+                            'error_message'       => $e->getMessage(),
+                        ]
+                    );
+                    continue;
+                }
+
+                $existing = SubjectResult::where('student_id', $studentId)
+                    ->where('subject_id', $subjectId)
+                    ->where('session_id', $sessionId)
+                    ->where('term_id', $termId)
+                    ->first();
+
+                $payload = [
+                    'classroom_id'        => $classroomId,
+                    'midterm_score'       => $midtermScore,
+                    'exam_score'          => $examScore,
+                    'midterm_status'      => $midtermStatus,
+                    'has_missing_midterm' => $isMissing,
+                    'has_error'           => false,
+                    'error_message'       => null,
+                    'total'               => $average,
+                    'grade'               => $grading['grade'],
+                    'remark'              => $grading['remark'],
+                    'is_published'        => true,
+                ];
+
+                SubjectResult::updateOrCreate(
+                    ['student_id' => $studentId, 'subject_id' => $subjectId, 'session_id' => $sessionId, 'term_id' => $termId],
+                    $payload
+                );
+            }
+        });
     }
 }

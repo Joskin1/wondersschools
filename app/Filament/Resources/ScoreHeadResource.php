@@ -7,6 +7,7 @@ use App\Models\ScoreHead;
 use Filament\Actions\EditAction;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Tables\Table;
@@ -38,6 +39,16 @@ class ScoreHeadResource extends Resource
                 ->unique(ignoreRecord: true)
                 ->placeholder('e.g. Classwork, Test 1, Exam'),
 
+            Select::make('type')
+                ->label('Head Type')
+                ->options([
+                    'exam'    => 'Exam Assessment',
+                    'midterm' => 'Mid-Term Assessment',
+                ])
+                ->default('exam')
+                ->required()
+                ->helperText('Midterm heads can be assigned to midterm continuous assessment structures.'),
+
             TextInput::make('max_score')
                 ->required()
                 ->integer()
@@ -61,6 +72,15 @@ class ScoreHeadResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
+
+                TextColumn::make('type')
+                    ->label('Type')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'midterm' => 'warning',
+                        default   => 'success',
+                    })
+                    ->sortable(),
 
                 TextColumn::make('max_score')
                     ->label('Max Score')

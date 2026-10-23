@@ -42,7 +42,9 @@ class ImportStudents extends Page
 
     /** @var array<int, string> */
     private const TEMPLATE_COLUMNS = [
-        'full_name',
+        'surname',
+        'first_name',
+        'other_name',
         'password',
         'classroom',
         'session',
@@ -79,7 +81,9 @@ class ImportStudents extends Page
         $sheet->setTitle('Students');
         $sheet->fromArray(self::TEMPLATE_COLUMNS, null, 'A1');
         $sheet->fromArray([
-            'Ada Johnson',
+            'Johnson',
+            'Ada',
+            'Grace',
             'Password123',
             Classroom::query()->orderBy('class_order')->orderBy('name')->value('name') ?? 'Primary 1',
             Session::active()->value('name') ?? '',
@@ -92,7 +96,7 @@ class ImportStudents extends Page
             'parent@example.com',
         ], null, 'A2');
 
-        foreach (range('A', 'K') as $column) {
+        foreach (range('A', 'M') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
@@ -187,7 +191,6 @@ class ImportStudents extends Page
 
             foreach ($this->previewRows as $row) {
                 $student = Student::create([
-                    'full_name' => $row['data']['full_name'],
                     'date_of_birth' => $row['data']['date_of_birth'],
                     'gender' => $row['data']['gender'],
                     'address' => $row['data']['address'],
@@ -198,19 +201,20 @@ class ImportStudents extends Page
                     'status' => 'pending',
                 ]);
 
+                $studentAccounts->createOrLinkUser(
+                    $student,
+                    $row['data']['surname'],
+                    $row['data']['first_name'],
+                    $row['data']['other_name'] ?: null,
+                    filled($row['data']['password']) ? $row['data']['password'] : null,
+                    auth()->id(),
+                );
+
                 StudentEnrollment::create([
                     'student_id' => $student->id,
                     'classroom_id' => $row['classroom_id'],
                     'session_id' => $row['session_id'],
                 ]);
-
-                if (filled($row['data']['password'])) {
-                    $studentAccounts->createOrUpdateLogin(
-                        $student,
-                        $row['data']['password'],
-                        auth()->id(),
-                    );
-                }
             }
         });
 
@@ -246,10 +250,11 @@ class ImportStudents extends Page
         }
 
         $headers = $this->headersFromRow(array_shift($rows));
-        $missing = array_diff(['full_name', 'classroom'], array_values($headers));
+        $hasName = (in_array('surname', $headers, true) && in_array('first_name', $headers, true))
+            || in_array('full_name', $headers, true);
 
-        if ($missing) {
-            throw new \RuntimeException('Missing required columns: '.implode(', ', $missing));
+        if (! $hasName || ! in_array('classroom', $headers, true)) {
+            throw new \RuntimeException('Missing required columns: classroom and either (surname, first_name) or full_name.');
         }
 
         $classrooms = Classroom::query()->get(['id', 'name']);
@@ -267,8 +272,21 @@ class ImportStudents extends Page
             $data = $this->dataFromRow($row, $headers);
             $errors = [];
 
-            if ($data['full_name'] === '') {
-                $errors[] = 'Full name is required.';
+            if ((empty($data['surname']) || empty($data['first_name'])) && ! empty($data['full_name'])) {
+                $parts = preg_split('/\s+/', trim((string) $data['full_name']));
+                $data['surname'] = $data['surname'] ?: ($parts[0] ?? '');
+                $data['first_name'] = $data['first_name'] ?: ($parts[1] ?? '');
+                $data['other_name'] = $data['other_name'] ?: (count($parts) > 2 ? implode(' ', array_slice($parts, 2)) : null);
+            }
+
+            $data['full_name'] = trim(($data['surname'] ?? '') . ', ' . ($data['first_name'] ?? '') . ' ' . ($data['other_name'] ?? ''));
+
+            if (($data['surname'] ?? '') === '') {
+                $errors[] = 'Surname is required.';
+            }
+
+            if (($data['first_name'] ?? '') === '') {
+                $errors[] = 'First name is required.';
             }
 
             if ($data['password'] !== '' && strlen((string) $data['password']) < 8) {
@@ -351,7 +369,8 @@ class ImportStudents extends Page
      */
     private function dataFromRow(array $row, array $headers): array
     {
-        $data = array_fill_keys(self::TEMPLATE_COLUMNS, '');
+        $allowed = array_merge(self::TEMPLATE_COLUMNS, ['full_name']);
+        $data = array_fill_keys($allowed, '');
 
         foreach ($headers as $column => $field) {
             if (array_key_exists($field, $data)) {

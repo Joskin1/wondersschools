@@ -2,13 +2,16 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\ClassMidtermConfig;
 use App\Models\ClassScoreStructure;
 use App\Models\ClassScoreStructureItem;
 use App\Models\Classroom;
 use App\Models\Score;
 use App\Models\ScoreHead;
 use App\Models\Session;
+use App\Models\Setting;
 use App\Models\Term;
+use App\Models\TermScoringSnapshot;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
@@ -105,8 +108,13 @@ class ManageClassScoreStructure extends Page
             return;
         }
 
+        $hasSnapshot = TermScoringSnapshot::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->exists();
+
         $this->structureId = $structure->id;
-        $this->locked      = $structure->locked;
+        $this->locked      = $structure->locked || $hasSnapshot;
         $this->items       = $structure->items
             ->map(fn ($item) => [
                 'score_head_id'      => $item->score_head_id,
@@ -121,6 +129,11 @@ class ManageClassScoreStructure extends Page
 
     public function toggleScoreHead(int $scoreHeadId): void
     {
+        if ($this->hasSnapshot()) {
+            Notification::make()->title('Structure is locked because scoring has already started and a term scoring snapshot exists.')->danger()->send();
+            return;
+        }
+
         if ($this->locked && ! Auth::user()?->isSudo()) {
             Notification::make()->title('Structure is locked.')->warning()->send();
             return;
@@ -167,6 +180,11 @@ class ManageClassScoreStructure extends Page
 
     public function removeItem(int $index): void
     {
+        if ($this->hasSnapshot()) {
+            Notification::make()->title('Structure is locked because scoring has already started and a term scoring snapshot exists.')->danger()->send();
+            return;
+        }
+
         if ($this->locked && ! Auth::user()?->isSudo()) {
             Notification::make()->title('Structure is locked.')->warning()->send();
             return;
@@ -198,6 +216,11 @@ class ManageClassScoreStructure extends Page
 
     public function saveStructure(): void
     {
+        if ($this->hasSnapshot()) {
+            Notification::make()->title('Cannot modify structure: scoring has already started and a snapshot exists for this term.')->danger()->send();
+            return;
+        }
+
         $user = Auth::user();
 
         if ($this->locked && ! $user?->isSudo()) {
@@ -216,10 +239,11 @@ class ManageClassScoreStructure extends Page
         }
 
         $total = $this->syncTotal();
+        $expectedTotal = $this->expectedTotal;
 
-        if ($total !== 100) {
+        if ($total !== $expectedTotal) {
             Notification::make()
-                ->title("Total score must be exactly 100. Current total is {$total}.")
+                ->title("Total score must be exactly {$expectedTotal}. Current total is {$total}.")
                 ->danger()
                 ->send();
             return;
@@ -274,6 +298,11 @@ class ManageClassScoreStructure extends Page
             return;
         }
 
+        if ($this->hasSnapshot()) {
+            Notification::make()->title('Cannot unlock: a scoring snapshot exists for this term.')->danger()->send();
+            return;
+        }
+
         $user = Auth::user();
 
         if ($this->locked && ! $user?->isSudo()) {
@@ -320,7 +349,7 @@ class ManageClassScoreStructure extends Page
 
         return ScoreHead::query()
             ->where(function ($query) use ($selectedIds) {
-                $query->active();
+                $query->active()->exam();
 
                 if (! empty($selectedIds)) {
                     $query->orWhereIn('id', $selectedIds);
@@ -328,6 +357,35 @@ class ManageClassScoreStructure extends Page
             })
             ->orderBy('name')
             ->get();
+    }
+
+    public function hasSnapshot(): bool
+    {
+        if (! $this->hasSelectedFilters) {
+            return false;
+        }
+
+        return TermScoringSnapshot::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->exists();
+    }
+
+    public function getExpectedTotalProperty(): int
+    {
+        if (! $this->classroom_id) {
+            return 100;
+        }
+
+        $useMidterm = filter_var(Setting::where('key', 'use_midterm_results')->value('value'), FILTER_VALIDATE_BOOLEAN);
+        if ($useMidterm) {
+            $config = ClassMidtermConfig::where('classroom_id', $this->classroom_id)->first();
+            if ($config) {
+                return 100 - (int) $config->midterm_weight;
+            }
+        }
+
+        return 100;
     }
 
     public function getHasSelectedFiltersProperty(): bool

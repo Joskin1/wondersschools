@@ -94,12 +94,12 @@ function setupPublishingContext(): array
     ]);
 
     // Enrolled Students
-    $studentUser1 = User::factory()->create(['role' => 'student', 'is_active' => true]);
-    $student1 = Student::create(['user_id' => $studentUser1->id, 'full_name' => 'Alice Smith', 'admission_number' => 'ADM001', 'status' => 'active']);
+    $studentUser1 = User::factory()->create(['role' => 'student', 'is_active' => true, 'surname' => 'Alice', 'first_name' => 'Smith']);
+    $student1 = Student::create(['user_id' => $studentUser1->id, 'surname' => 'Alice', 'first_name' => 'Smith', 'admission_number' => 'ADM001', 'status' => 'active']);
     StudentEnrollment::create(['student_id' => $student1->id, 'classroom_id' => $classroom->id, 'session_id' => $session->id]);
 
-    $studentUser2 = User::factory()->create(['role' => 'student', 'is_active' => true]);
-    $student2 = Student::create(['user_id' => $studentUser2->id, 'full_name' => 'Bob Jones', 'admission_number' => 'ADM002', 'status' => 'active']);
+    $studentUser2 = User::factory()->create(['role' => 'student', 'is_active' => true, 'surname' => 'Bob', 'first_name' => 'Jones']);
+    $student2 = Student::create(['user_id' => $studentUser2->id, 'surname' => 'Bob', 'first_name' => 'Jones', 'admission_number' => 'ADM002', 'status' => 'active']);
     StudentEnrollment::create(['student_id' => $student2->id, 'classroom_id' => $classroom->id, 'session_id' => $session->id]);
 
     return compact(
@@ -341,6 +341,23 @@ describe('Student Portal Result Visibility', function () {
             $ctx['session']->id,
             $ctx['term']->id
         );
+
+        $batch = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-PUB',
+            'session_id' => $ctx['session']->id,
+            'term_id'    => $ctx['term']->id,
+            'quantity'   => 1,
+        ]);
+        \App\Models\ResultPin::create([
+            'batch_id'      => $batch->id,
+            'student_id'    => $ctx['student1']->id,
+            'session_id'    => $ctx['session']->id,
+            'term_id'       => $ctx['term']->id,
+            'serial_number' => 'SN-PUB-01',
+            'pin'           => '123456',
+            'is_used'       => true,
+            'used_at'       => now(),
+        ]);
 
         $this->actingAs($ctx['studentUser1']);
 

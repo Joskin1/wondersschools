@@ -25,6 +25,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
      */
     protected $fillable = [
         'name',
+        'surname',
+        'first_name',
+        'other_name',
         'email',
         'password',
         'role',
@@ -35,6 +38,49 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         'email_verified_at',
         'registration_completed_at',
     ];
+
+    /**
+     * Get the user's full name formatted as "Surname, First Name Other Name".
+     */
+    public function getFullNameAttribute(): string
+    {
+        $parts = array_filter([$this->first_name, $this->other_name]);
+        $rest = implode(' ', $parts);
+
+        if ($this->surname && $rest) {
+            return "{$this->surname}, {$rest}";
+        }
+
+        if ($this->surname || $rest) {
+            return $this->surname ?: $rest;
+        }
+
+        return (string) ($this->attributes['name'] ?? '');
+    }
+
+    /**
+     * Backward compatible name accessor.
+     */
+    public function getNameAttribute(): string
+    {
+        $parts = array_filter([$this->surname, $this->first_name, $this->other_name]);
+        if (! empty($parts)) {
+            return implode(' ', $parts);
+        }
+
+        return (string) ($this->attributes['name'] ?? '');
+    }
+
+    /**
+     * Backward compatible name mutator.
+     */
+    public function setNameAttribute($value): void
+    {
+        $parts = preg_split('/\s+/', trim((string) $value));
+        $this->attributes['surname'] = $parts[0] ?? '';
+        $this->attributes['first_name'] = $parts[1] ?? '';
+        $this->attributes['other_name'] = count($parts) > 2 ? implode(' ', array_slice($parts, 2)) : null;
+    }
 
     /**
      * The attributes that should be hidden for serialization.

@@ -168,17 +168,20 @@ class SeniorStudentResultSeeder extends Seeder
         }
 
         $adminUser = User::where('role', 'admin')->first() ?? User::factory()->create([
-            'name'     => 'Principal Admin',
-            'email'    => 'admin@wonders.test',
-            'password' => Hash::make('password'),
-            'role'     => 'admin',
+            'surname'    => 'Admin',
+            'first_name' => 'Principal',
+            'email'      => 'admin@wonders.test',
+            'password'   => Hash::make('password'),
+            'role'       => 'admin',
         ]);
 
         // 7. Premier Senior Student
         $studentUser = User::updateOrCreate(
             ['email' => 'student@wonders.test'],
             [
-                'name'              => 'Chidubem Alexander Okafor',
+                'surname'           => 'Okafor',
+                'first_name'        => 'Chidubem',
+                'other_name'        => 'Alexander',
                 'password'          => Hash::make('password'),
                 'role'              => 'student',
                 'is_active'         => true,
@@ -189,7 +192,6 @@ class SeniorStudentResultSeeder extends Seeder
         $student = Student::updateOrCreate(
             ['user_id' => $studentUser->id],
             [
-                'full_name'        => 'Chidubem Alexander Okafor',
                 'admission_number' => 'WND/2026/SS2/007',
                 'gender'           => 'male',
                 'date_of_birth'    => '2009-04-15',
@@ -238,13 +240,24 @@ class SeniorStudentResultSeeder extends Seeder
         foreach ($sciencePeerNames as $idx => [$pName, $pAdm, $pGen]) {
             $pStu = Student::where('admission_number', $pAdm)->first();
             if (! $pStu) {
+                $parts = preg_split('/\s+/', trim($pName));
+                $sName = $parts[0] ?? '';
+                $fName = $parts[1] ?? '';
+                $oName = count($parts) > 2 ? implode(' ', array_slice($parts, 2)) : null;
+
                 $pUser = User::firstOrCreate(
                     ['email' => "sci_peer{$idx}@wonders.test"],
-                    ['name' => $pName, 'password' => Hash::make('password'), 'role' => 'student', 'is_active' => true]
+                    [
+                        'surname'    => $sName,
+                        'first_name' => $fName,
+                        'other_name' => $oName,
+                        'password'   => Hash::make('password'),
+                        'role'       => 'student',
+                        'is_active'  => true,
+                    ]
                 );
                 $pStu = Student::create([
                     'user_id'          => $pUser->id,
-                    'full_name'        => $pName,
                     'admission_number' => $pAdm,
                     'gender'           => $pGen,
                     'status'           => 'active',
@@ -265,13 +278,24 @@ class SeniorStudentResultSeeder extends Seeder
         foreach ($commercialPeerNames as $idx => [$pName, $pAdm, $pGen]) {
             $pStu = Student::where('admission_number', $pAdm)->first();
             if (! $pStu) {
+                $parts = preg_split('/\s+/', trim($pName));
+                $sName = $parts[0] ?? '';
+                $fName = $parts[1] ?? '';
+                $oName = count($parts) > 2 ? implode(' ', array_slice($parts, 2)) : null;
+
                 $pUser = User::firstOrCreate(
                     ['email' => "com_peer{$idx}@wonders.test"],
-                    ['name' => $pName, 'password' => Hash::make('password'), 'role' => 'student', 'is_active' => true]
+                    [
+                        'surname'    => $sName,
+                        'first_name' => $fName,
+                        'other_name' => $oName,
+                        'password'   => Hash::make('password'),
+                        'role'       => 'student',
+                        'is_active'  => true,
+                    ]
                 );
                 $pStu = Student::create([
                     'user_id'          => $pUser->id,
-                    'full_name'        => $pName,
                     'admission_number' => $pAdm,
                     'gender'           => $pGen,
                     'status'           => 'active',
@@ -292,13 +316,24 @@ class SeniorStudentResultSeeder extends Seeder
         foreach ($artsPeerNames as $idx => [$pName, $pAdm, $pGen]) {
             $pStu = Student::where('admission_number', $pAdm)->first();
             if (! $pStu) {
+                $parts = preg_split('/\s+/', trim($pName));
+                $sName = $parts[0] ?? '';
+                $fName = $parts[1] ?? '';
+                $oName = count($parts) > 2 ? implode(' ', array_slice($parts, 2)) : null;
+
                 $pUser = User::firstOrCreate(
                     ['email' => "art_peer{$idx}@wonders.test"],
-                    ['name' => $pName, 'password' => Hash::make('password'), 'role' => 'student', 'is_active' => true]
+                    [
+                        'surname'    => $sName,
+                        'first_name' => $fName,
+                        'other_name' => $oName,
+                        'password'   => Hash::make('password'),
+                        'role'       => 'student',
+                        'is_active'  => true,
+                    ]
                 );
                 $pStu = Student::create([
                     'user_id'          => $pUser->id,
-                    'full_name'        => $pName,
                     'admission_number' => $pAdm,
                     'gender'           => $pGen,
                     'status'           => 'active',

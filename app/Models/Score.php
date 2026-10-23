@@ -9,11 +9,12 @@ class Score extends Model
 {
     protected $fillable = [
         'student_id', 'classroom_id', 'subject_id', 'score_head_id',
-        'session_id', 'term_id', 'teacher_id', 'score',
+        'session_id', 'term_id', 'teacher_id', 'score', 'is_absent',
     ];
 
     protected $casts = [
-        'score' => 'decimal:2',
+        'score'     => 'decimal:2',
+        'is_absent' => 'boolean',
     ];
 
     public function student(): BelongsTo

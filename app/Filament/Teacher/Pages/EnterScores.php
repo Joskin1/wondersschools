@@ -3,11 +3,14 @@
 namespace App\Filament\Teacher\Pages;
 
 use App\Jobs\CalculateTermResults;
+use App\Models\ClassMidtermConfig;
 use App\Models\ClassScoreStructure;
 use App\Models\ClassTeacherAssignment;
 use App\Models\Classroom;
+use App\Models\MidtermSubjectResult;
 use App\Models\Score;
 use App\Models\Session;
+use App\Models\Setting;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Models\Subject;
@@ -15,6 +18,8 @@ use App\Models\SubjectResult;
 use App\Models\TeacherSubjectAssignment;
 use App\Models\Term;
 use App\Models\TermResult;
+use App\Models\TermScoringSnapshot;
+use App\Services\MidtermCalculationService;
 use App\Services\ResultCalculationService;
 use App\Services\ScoreSpreadsheetService;
 use Filament\Notifications\Notification;
@@ -54,6 +59,11 @@ class EnterScores extends Page
 
     /** @var array<int, array<int, string>> scores[studentId][scoreHeadId] = raw value */
     public array $scores     = [];
+
+    /** @var array<int, array{status: string, scaled_score: float|null}> */
+    public array $midtermResults = [];
+    public ?int $midtermWeight   = null;
+    public bool $isMidtermMode   = false;
 
     public bool  $loaded          = false;
     public bool  $structureExists = false;
@@ -145,28 +155,48 @@ class EnterScores extends Page
             return;
         }
 
-        // ── Load class score structure ────────────────────────────────────────
-        $structure = ClassScoreStructure::with(['items.scoreHead'])
-            ->where('class_id',   $this->classroom_id)
+        // ── Check Term Scoring Snapshot or Class Structure ─────────────────────
+        $snapshot = TermScoringSnapshot::where('classroom_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
-            ->where('term_id',    $this->term_id)
+            ->where('term_id', $this->term_id)
             ->first();
 
-        if (! $structure || $structure->items->isEmpty()) {
-            $this->structureExists = false;
-            $this->loaded          = true;
-            return;
+        $useMidterm = filter_var(Setting::where('key', 'use_midterm_results')->value('value'), FILTER_VALIDATE_BOOLEAN);
+        $midtermConfig = $useMidterm ? ClassMidtermConfig::where('classroom_id', $this->classroom_id)->first() : null;
+
+        if ($snapshot) {
+            $this->isMidtermMode = ($snapshot->mode === 'midterm');
+            $this->midtermWeight = $this->isMidtermMode ? (int) $snapshot->midterm_weight : null;
+            $this->scoreHeads    = $snapshot->exam_heads;
+            $this->structureExists = true;
+        } else {
+            $this->isMidtermMode = ($useMidterm && $midtermConfig !== null);
+            $this->midtermWeight = $this->isMidtermMode ? (int) $midtermConfig->midterm_weight : null;
+
+            // Load class score structure
+            $structure = ClassScoreStructure::with(['items.scoreHead'])
+                ->where('class_id',   $this->classroom_id)
+                ->where('session_id', $this->session_id)
+                ->where('term_id',    $this->term_id)
+                ->first();
+
+            if (! $structure || $structure->items->isEmpty()) {
+                $this->structureExists = false;
+                $this->loaded          = true;
+                return;
+            }
+
+            $this->structureExists = true;
+            $this->scoreHeads = $structure->items
+                ->filter(fn ($item) => $item->scoreHead !== null)
+                ->map(fn ($item) => [
+                    'id'            => $item->score_head_id,
+                    'name'          => $item->scoreHead->name,
+                    'effective_max' => (int) ($item->max_score_override ?? $item->scoreHead->max_score),
+                ])
+                ->values()
+                ->toArray();
         }
-
-        $this->structureExists = true;
-
-        $this->scoreHeads = $structure->items
-            ->map(fn ($item) => [
-                'id'            => $item->score_head_id,
-                'name'          => $item->scoreHead->name,
-                'effective_max' => $item->max_score_override ?? $item->scoreHead->max_score,
-            ])
-            ->toArray();
 
         // ── Load enrolled students with dynamic properties ────────────────────
         $enrolledIds = StudentEnrollment::where('classroom_id', $this->classroom_id)
@@ -175,14 +205,39 @@ class EnterScores extends Page
 
         $this->students = Student::whereIn('id', $enrolledIds)
             ->active()
-            ->orderBy('full_name')
+            ->with('user')
             ->get()
+            ->sortBy(fn ($s) => $s->full_name)
+            ->values()
             ->map(fn ($s) => [
                 'id' => $s->id, 
                 'full_name' => $s->full_name,
                 'admission_number' => $s->admission_number ?? '—',
             ])
             ->toArray();
+
+        // ── Load midterm carry-forward results if midterm mode ────────────────
+        if ($this->isMidtermMode) {
+            $midterms = MidtermSubjectResult::where('classroom_id', $this->classroom_id)
+                ->where('subject_id', $this->subject_id)
+                ->where('session_id', $this->session_id)
+                ->where('term_id', $this->term_id)
+                ->whereIn('student_id', $enrolledIds)
+                ->get()
+                ->keyBy('student_id');
+
+            $midtermMap = [];
+            foreach ($this->students as $st) {
+                $m = $midterms->get($st['id']);
+                $midtermMap[$st['id']] = [
+                    'status'       => $m?->status ?? 'missing',
+                    'scaled_score' => $m?->scaled_score !== null ? (float) $m->scaled_score : null,
+                ];
+            }
+            $this->midtermResults = $midtermMap;
+        } else {
+            $this->midtermResults = [];
+        }
 
         // ── Load existing scores into map ─────────────────────────────────────
         $scoresMap = [];
@@ -235,6 +290,18 @@ class EnterScores extends Page
             return ['status' => 'error', 'message' => 'Unauthorized action.'];
         }
 
+        // First-save auto-snapshot
+        try {
+            $snapshot = app(MidtermCalculationService::class)->getOrCreateSnapshot(
+                $this->classroom_id,
+                $this->session_id,
+                $this->term_id,
+                $user->id
+            );
+        } catch (\DomainException $e) {
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+
         $sh = collect($this->scoreHeads)->firstWhere('id', $scoreHeadId);
         if (! $sh) {
             return ['status' => 'error', 'message' => 'Invalid score head.'];
@@ -242,7 +309,10 @@ class EnterScores extends Page
 
         if ($value !== '' && $value !== null) {
             $numericValue = (float) $value;
-            if ($numericValue < 0 || $numericValue > $sh['effective_max']) {
+            if ($numericValue < 0) {
+                return ['status' => 'error', 'message' => 'Negative score not allowed.'];
+            }
+            if ($numericValue > $sh['effective_max']) {
                 return [
                     'status' => 'error', 
                     'message' => "exceeds maximum of {$sh['effective_max']}."
@@ -250,6 +320,33 @@ class EnterScores extends Page
             }
         } else {
             $numericValue = null;
+        }
+
+        // Test 12: Combined Total > 100 Rejection
+        if ($snapshot->mode === 'midterm') {
+            $midterm = MidtermSubjectResult::where('classroom_id', $this->classroom_id)
+                ->where('subject_id', $this->subject_id)
+                ->where('student_id', $studentId)
+                ->where('session_id', $this->session_id)
+                ->where('term_id', $this->term_id)
+                ->first();
+
+            $midtermScore = ($midterm && $midterm->status === 'complete') ? (float) $midterm->scaled_score : 0.0;
+            $otherExam = 0.0;
+            foreach ($this->scoreHeads as $h) {
+                if ($h['id'] === $scoreHeadId) {
+                    $otherExam += ($numericValue ?? 0.0);
+                } else {
+                    $otherExam += (float) ($this->scores[$studentId][$h['id']] ?? 0.0);
+                }
+            }
+            $combined = $midtermScore + $otherExam;
+            if ($combined > 100.0001) {
+                return [
+                    'status'  => 'error',
+                    'message' => "Combined Mid-Term + Exam score ({$combined}) exceeds 100 marks.",
+                ];
+            }
         }
 
         // ── Update local scores array state ──────────────────────────────────
@@ -278,24 +375,43 @@ class EnterScores extends Page
                         'classroom_id' => $this->classroom_id,
                         'teacher_id'   => $user->id,
                         'score'        => $numericValue,
+                        'is_absent'    => false,
                     ]
                 );
             }
         });
 
+        // Recalculate for this subject only if it is already published
+        if ($this->isSubjectPublished) {
+            app(ResultCalculationService::class)->calculateForSubject(
+                $this->classroom_id,
+                $this->subject_id,
+                $this->session_id,
+                $this->term_id
+            );
+        }
+
         // Recalculate values for this student
-        $studentTotal = collect($this->scoreHeads)->sum(
+        $examTotal = collect($this->scoreHeads)->sum(
             fn($h) => (float) ($this->scores[$studentId][$h['id']] ?? 0)
         );
         $hasAny = collect($this->scoreHeads)->contains(
             fn($h) => ($this->scores[$studentId][$h['id']] ?? '') !== ''
         );
 
-        $gradeInfo = app(\App\Services\ResultCalculationService::class)->resolveGrade($studentTotal);
+        if ($snapshot->mode === 'midterm') {
+            $midterm = $this->midtermResults[$studentId] ?? null;
+            $midScore = ($midterm && ($midterm['status'] ?? '') === 'complete') ? (float) $midterm['scaled_score'] : 0.0;
+            $finalTotal = $examTotal + $midScore;
+        } else {
+            $finalTotal = $examTotal;
+        }
+
+        $gradeInfo = app(ResultCalculationService::class)->resolveGrade($finalTotal);
 
         return [
             'status'        => 'success',
-            'student_total' => $hasAny ? number_format($studentTotal, 1) : '—',
+            'student_total' => $hasAny ? number_format($finalTotal, 1) : '—',
             'student_grade' => $hasAny ? $gradeInfo['grade'] : '—',
             'stats'         => $this->stats,
         ];
@@ -408,20 +524,16 @@ class EnterScores extends Page
 
         if ($user->canManageAcademics() || ClassTeacherAssignment::isClassTeacher($user->id, $this->classroom_id, $this->session_id)) {
             $classroom = Classroom::find($this->classroom_id);
-            if ($classroom) {
-                $subjects = $classroom->subjects()->active()->orderBy('name')->get();
-                if ($subjects->isNotEmpty()) {
-                    return $subjects;
-                }
-            }
-
-            $subjectIds = TeacherSubjectAssignment::where('classroom_id', $this->classroom_id)
+            $classSubjectIds = $classroom ? $classroom->subjects()->active()->pluck('subjects.id')->toArray() : [];
+            $assignedSubjectIds = TeacherSubjectAssignment::where('classroom_id', $this->classroom_id)
                 ->where('session_id', $this->session_id)
                 ->where('term_id',    $this->term_id)
                 ->pluck('subject_id')
-                ->unique();
+                ->unique()
+                ->toArray();
+            $allSubjectIds = array_values(array_unique(array_merge($classSubjectIds, $assignedSubjectIds)));
 
-            return Subject::whereIn('id', $subjectIds)->active()->orderBy('name')->get();
+            return Subject::whereIn('id', $allSubjectIds)->active()->orderBy('name')->get();
         }
 
         $subjectIds = TeacherSubjectAssignment::where('teacher_id',  $user->id)
@@ -733,6 +845,44 @@ class EnterScores extends Page
             return;
         }
 
+        try {
+            $snapshot = app(MidtermCalculationService::class)->getOrCreateSnapshot(
+                $this->classroom_id,
+                $this->session_id,
+                $this->term_id,
+                $user->id
+            );
+        } catch (\DomainException $e) {
+            Notification::make()->title($e->getMessage())->danger()->send();
+            return;
+        }
+
+        if ($snapshot->mode === 'midterm') {
+            $midterms = MidtermSubjectResult::where('classroom_id', $this->classroom_id)
+                ->where('session_id', $this->session_id)
+                ->where('term_id', $this->term_id)
+                ->get()
+                ->keyBy(fn ($r) => $r->student_id . '_' . $r->subject_id);
+
+            $stagedTotals = [];
+            foreach ($this->stagingData['students'] as $st) {
+                $sId = $st['student_id'];
+                foreach ($st['scores'] as $sc) {
+                    $key = $sId . '_' . $sc['subject_id'];
+                    $stagedTotals[$key] = ($stagedTotals[$key] ?? 0.0) + (float) ($sc['value'] ?? 0);
+                }
+            }
+
+            foreach ($stagedTotals as $k => $examSum) {
+                $m = $midterms->get($k);
+                $mScore = ($m && $m->status === 'complete') ? (float) $m->scaled_score : 0.0;
+                if ($mScore + $examSum > 100.0001) {
+                    Notification::make()->title("Combined Mid-Term + Exam score for {$k} exceeds 100 marks.")->danger()->send();
+                    return;
+                }
+            }
+        }
+
         $now = now();
         $records = [];
         foreach ($this->stagingData['students'] as $student) {
@@ -756,6 +906,7 @@ class EnterScores extends Page
                     'term_id'       => (int) $this->term_id,
                     'teacher_id'    => (int) $user->id,
                     'score'         => (float) $val,
+                    'is_absent'     => false,
                     'created_at'    => $now,
                     'updated_at'    => $now,
                 ];
@@ -769,10 +920,30 @@ class EnterScores extends Page
                     Score::upsert(
                         $chunk,
                         ['student_id', 'subject_id', 'score_head_id', 'session_id', 'term_id'],
-                        ['classroom_id', 'teacher_id', 'score', 'updated_at']
+                        ['classroom_id', 'teacher_id', 'score', 'is_absent', 'updated_at']
                     );
                 }
             });
+
+            // Recalculate results for affected subjects if they were already published
+            $affectedSubjectIds = collect($records)->pluck('subject_id')->unique();
+            foreach ($affectedSubjectIds as $subjId) {
+                $isPublished = SubjectResult::where('classroom_id', $this->classroom_id)
+                    ->where('subject_id', $subjId)
+                    ->where('session_id', $this->session_id)
+                    ->where('term_id', $this->term_id)
+                    ->where('is_published', true)
+                    ->exists();
+
+                if ($isPublished) {
+                    app(ResultCalculationService::class)->calculateForSubject(
+                        $this->classroom_id,
+                        $subjId,
+                        $this->session_id,
+                        $this->term_id
+                    );
+                }
+            }
         }
 
         $studentsCount = count($this->stagingData['students']);

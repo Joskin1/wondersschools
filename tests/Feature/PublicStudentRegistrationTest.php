@@ -56,7 +56,7 @@ class PublicStudentRegistrationTest extends TestCase
             ->assertSee('Keep It Safe');
 
         // Verify Student created
-        $student = Student::where('full_name', 'Alexander Michael Great')->first();
+        $student = Student::whereHas('user', fn ($q) => $q->where('surname', 'Alexander')->where('first_name', 'Michael'))->first();
         $this->assertNotNull($student);
         $this->assertNotEmpty($student->admission_number);
         $this->assertEquals('male', $student->gender);
@@ -117,7 +117,7 @@ class PublicStudentRegistrationTest extends TestCase
             ->assertHasNoErrors()
             ->assertSet('submitted', true);
 
-        $student = Student::where('full_name', 'Grace Hopper')->first();
+        $student = Student::whereHas('user', fn ($q) => $q->where('surname', 'Grace')->where('first_name', 'Hopper'))->first();
         $this->assertNotNull($student);
         $this->assertEquals('SCH/2026/077', $student->admission_number);
 
@@ -249,7 +249,7 @@ class PublicStudentRegistrationTest extends TestCase
             ->assertHasNoErrors()
             ->assertSet('submitted', true);
 
-        $student = Student::where('full_name', 'Chinedu Eze')->first();
+        $student = Student::whereHas('user', fn ($q) => $q->where('surname', 'Chinedu')->where('first_name', 'Eze'))->first();
         $this->assertNotNull($student);
 
         // Verify enrolled in JSS 1 with Gold arm
@@ -290,7 +290,7 @@ class PublicStudentRegistrationTest extends TestCase
             ->assertHasNoErrors()
             ->assertSet('submitted', true);
 
-        $student = Student::where('full_name', 'Amina Bello')->first();
+        $student = Student::whereHas('user', fn ($q) => $q->where('surname', 'Amina')->where('first_name', 'Bello'))->first();
         $this->assertNotNull($student);
 
         $enrollment = StudentEnrollment::where('student_id', $student->id)->first();

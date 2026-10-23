@@ -6,7 +6,12 @@
                     <label for="student-import-upload" class="block text-sm font-medium text-gray-950 dark:text-white">
                         Student spreadsheet
                     </label>
-                    <div class="mt-2">
+                    <div class="mt-2"
+                         x-data="{ isUploading: false, uploadProgress: 0 }"
+                         x-on:livewire-upload-start="isUploading = true; uploadProgress = 0"
+                         x-on:livewire-upload-finish="isUploading = false"
+                         x-on:livewire-upload-error="isUploading = false; alert('Spreadsheet upload failed. Please verify the file and try again.')"
+                         x-on:livewire-upload-progress="uploadProgress = $event.detail.progress">
                         <input
                             id="student-import-upload"
                             type="file"
@@ -14,6 +19,26 @@
                             accept=".xlsx,.xls,.csv"
                             class="block w-full rounded-lg border border-gray-300 bg-white text-sm text-gray-950 shadow-sm file:me-4 file:border-0 file:bg-gray-50 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-100 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5 dark:text-white dark:file:bg-white/10 dark:file:text-gray-200"
                         />
+
+                        {{-- Upload Progress Bar --}}
+                        <div x-show="isUploading" x-cloak class="mt-2">
+                            <div class="flex items-center justify-between text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-1">
+                                <span>Uploading spreadsheet...</span>
+                                <span x-text="uploadProgress + '%'"></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700 overflow-hidden">
+                                <div class="bg-indigo-600 h-2 rounded-full transition-all duration-150" :style="'width: ' + uploadProgress + '%'"></div>
+                            </div>
+                        </div>
+
+                        {{-- Server parsing status --}}
+                        <div wire:loading wire:target="upload" class="mt-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            Reading spreadsheet records on server...
+                        </div>
                     </div>
                     @error('upload')
                         <p class="mt-2 text-sm text-danger-600 dark:text-danger-400">{{ $message }}</p>
@@ -32,7 +57,8 @@
                         wire:loading.attr="disabled"
                         wire:target="preview,upload"
                     >
-                        Preview
+                        <span wire:loading.remove wire:target="preview">Preview</span>
+                        <span wire:loading wire:target="preview">Parsing...</span>
                     </x-filament::button>
 
                     <x-filament::button
@@ -41,6 +67,7 @@
                         icon="heroicon-o-x-mark"
                         wire:click="clearPreview"
                         wire:loading.attr="disabled"
+                        wire:target="clearPreview"
                     >
                         Clear
                     </x-filament::button>
@@ -53,8 +80,10 @@
                             wire:click="saveImport"
                             wire:confirm="Create {{ $validCount }} student records now?"
                             wire:loading.attr="disabled"
+                            wire:target="saveImport"
                         >
-                            Save Students
+                            <span wire:loading.remove wire:target="saveImport">Save Students</span>
+                            <span wire:loading wire:target="saveImport">Importing Students...</span>
                         </x-filament::button>
                     @endif
                 </div>

@@ -911,6 +911,8 @@ describe('EnterScores Livewire page', function () {
             $this->classroom, $this->session, $this->term,
             [$this->classwork, $this->exam]
         );
+        $this->structure->items()->where('score_head_id', $this->classwork->id)->update(['max_score_override' => 20]);
+        $this->structure->update(['total_score' => 100]);
 
         $this->enrolledStudent = makeEnrolledStudent($this->classroom, $this->session);
     });

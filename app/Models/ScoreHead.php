@@ -8,12 +8,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ScoreHead extends Model
 {
-    protected $fillable = ['name', 'max_score', 'is_active', 'created_by'];
+    protected $fillable = ['name', 'max_score', 'type', 'is_active', 'created_by'];
 
     protected $casts = [
         'max_score' => 'integer',
         'is_active' => 'boolean',
     ];
+
+    public function scopeMidterm($query)
+    {
+        return $query->where('type', 'midterm');
+    }
+
+    public function scopeExam($query)
+    {
+        return $query->where('type', 'exam');
+    }
 
     public function creator(): BelongsTo
     {

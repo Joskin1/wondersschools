@@ -16,12 +16,16 @@ class Term extends Model
         'session_id',
         'name',
         'order',
+        'start_date',
+        'end_date',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'order' => 'integer',
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
 
     /**
@@ -30,6 +34,30 @@ class Term extends Model
     public function session(): BelongsTo
     {
         return $this->belongsTo(Session::class);
+    }
+
+    /**
+     * Get the holidays declared in this term.
+     */
+    public function holidays(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SchoolHoliday::class, 'term_id');
+    }
+
+    /**
+     * Get the weekly attendances recorded for this term.
+     */
+    public function weeklyAttendances(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ClassWeeklyAttendance::class, 'term_id');
+    }
+
+    /**
+     * Get the daily attendances recorded for this term.
+     */
+    public function attendances(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Attendance::class, 'term_id');
     }
 
     /**

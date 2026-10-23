@@ -70,8 +70,15 @@ class UserResource extends Resource
 
         return $schema
             ->components([
-                TextInput::make('name')
+                TextInput::make('surname')
                     ->required()
+                    ->maxLength(255),
+
+                TextInput::make('first_name')
+                    ->required()
+                    ->maxLength(255),
+
+                TextInput::make('other_name')
                     ->maxLength(255),
 
                 TextInput::make('email')
@@ -116,14 +123,22 @@ class UserResource extends Resource
                         if ($avatarPath) {
                             return \Illuminate\Support\Facades\Storage::disk(config('filesystems.upload_disk', 'public'))->url($avatarPath);
                         }
-                        return 'https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&background=6366f1&color=fff&size=40';
+                        return 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name) . '&background=6366f1&color=fff&size=40';
                     })
                     ->size(40)
                     ->grow(false),
 
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('surname')
+                    ->label('Name')
+                    ->formatStateUsing(fn (User $record): string => $record->full_name)
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where(function ($q) use ($search) {
+                            $q->where('surname', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('other_name', 'like', "%{$search}%");
+                        });
+                    })
+                    ->sortable(['surname', 'first_name']),
 
                 Tables\Columns\TextColumn::make('email')
                     ->searchable()
@@ -171,14 +186,14 @@ class UserResource extends Resource
                                 \Log::error("Failed sending portal activation email to {$record->email}: " . $e->getMessage());
                                 Notification::make()
                                     ->title('Portal Activated (Email Failed)')
-                                    ->body("Activated {$record->name}, but email failed: " . $e->getMessage())
+                                    ->body("Activated {$record->full_name}, but email failed: " . $e->getMessage())
                                     ->warning()
                                     ->send();
                             }
                         } elseif (!$state && $record->role === 'teacher') {
                             Notification::make()
                                 ->title('Portal Access Disabled')
-                                ->body("Portal access disabled for {$record->name}.")
+                                ->body("Portal access disabled for {$record->full_name}.")
                                 ->info()
                                 ->send();
                         }
@@ -233,7 +248,7 @@ class UserResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Send Registration Link')
                     ->modalDescription(fn (User $record) => 
-                        "Send a registration link to {$record->name} ({$record->email})? The link will expire in 3 days."
+                        "Send a registration link to {$record->full_name} ({$record->email})? The link will expire in 3 days."
                     )
                     ->action(function (User $record) {
                         try {
@@ -286,8 +301,8 @@ class UserResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading(fn (User $record) => $record->is_primary_admin ? 'Revoke Principal Privilege' : 'Grant Principal Privilege')
                     ->modalDescription(fn (User $record) => $record->is_primary_admin
-                        ? "Revoke Principal privilege from {$record->name} ({$record->email})? They will no longer have access to Admin Permissions."
-                        : "Grant Principal privilege to {$record->name} ({$record->email})? They will gain unrestricted access and will be able to manage other administrators' permissions."
+                        ? "Revoke Principal privilege from {$record->full_name} ({$record->email})? They will no longer have access to Admin Permissions."
+                        : "Grant Principal privilege to {$record->full_name} ({$record->email})? They will gain unrestricted access and will be able to manage other administrators' permissions."
                     )
                     ->action(function (User $record) {
                         abort_unless(auth()->user()?->isSudo(), 403);
@@ -307,7 +322,7 @@ class UserResource extends Resource
 
                         Notification::make()
                             ->title($newState ? 'Principal Privilege Granted' : 'Principal Privilege Revoked')
-                            ->body("{$record->name} ({$record->email}) " . ($newState ? 'is now the Principal with Admin Permissions access.' : 'no longer has Admin Permissions access.'))
+                            ->body("{$record->full_name} ({$record->email}) " . ($newState ? 'is now the Principal with Admin Permissions access.' : 'no longer has Admin Permissions access.'))
                             ->success()
                             ->send();
                     }),
@@ -333,12 +348,12 @@ class UserResource extends Resource
                     ])
                     ->requiresConfirmation()
                     ->modalHeading('Change User Role')
-                    ->modalDescription(fn (User $record) => "Change role for {$record->name} ({$record->email})")
+                    ->modalDescription(fn (User $record) => "Change role for {$record->full_name} ({$record->email})")
                     ->action(function (User $record, array $data) {
                         $record->update(['role' => $data['role']]);
                         Notification::make()
                             ->title('Role Updated')
-                            ->body("{$record->name} is now a " . ucfirst($data['role']) . ".")
+                            ->body("{$record->full_name} is now a " . ucfirst($data['role']) . ".")
                             ->success()
                             ->send();
                     }),

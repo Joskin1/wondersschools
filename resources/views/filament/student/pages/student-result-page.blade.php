@@ -581,6 +581,14 @@
             max-width: 360px;
             margin: 0 auto;
         }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 0.85s linear infinite;
+        }
     </style>
 
     <div class="sr-page">
@@ -602,7 +610,7 @@
         {{-- ═══════════════════════════════════════════════════════════════
              FILTER BAR
         ═══════════════════════════════════════════════════════════════ --}}
-        <div class="sr-filters">
+        <div class="sr-filters" style="position: relative;">
             <div class="sr-filter-group">
                 <label for="session_id">Academic Session</label>
                 <select wire:model.live="session_id" id="session_id" @if($isImpersonating) disabled @endif>
@@ -620,6 +628,14 @@
                         <option value="{{ $term['id'] }}">{{ $term['name'] }}</option>
                     @endforeach
                 </select>
+            </div>
+
+            <div wire:loading wire:target="session_id,term_id" style="grid-column: span 2; font-size: 0.8rem; color: #4f46e5; font-weight: 700; display: flex; align-items: center; gap: 0.375rem; padding-top: 0.25rem;">
+                <svg class="animate-spin" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24">
+                    <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                Loading academic session results...
             </div>
         </div>
 
@@ -646,7 +662,11 @@
                             autocomplete="off"
                             class="sr-pin-input"
                         />
-                        <button type="submit" class="sr-pin-btn" wire:loading.attr="disabled">
+                        <button type="submit" class="sr-pin-btn" wire:loading.attr="disabled" wire:target="verifyPin" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;">
+                            <svg wire:loading wire:target="verifyPin" class="animate-spin" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
                             <span wire:loading.remove wire:target="verifyPin">Unlock Result</span>
                             <span wire:loading wire:target="verifyPin">Verifying...</span>
                         </button>
@@ -678,42 +698,85 @@
         @endif
 
         {{-- ═══════════════════════════════════════════════════════════════
-             RESULT CARD
+             RESULT CARD (TERMINAL & MID-TERM TABS)
         ═══════════════════════════════════════════════════════════════ --}}
-        @if ($loaded && !empty($resultData))
-            @php
-                $tr = $resultData['term_result'];
-            @endphp
+        @if ($loaded && ($hasMidterm || !empty($resultData)))
+            @if ($hasMidterm && !empty($resultData))
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem;">
+                    <button type="button" wire:click="$set('activeTab', 'terminal')" style="padding: 0.625rem 1.25rem; border-radius: 8px; font-weight: 700; font-size: 0.875rem; border: none; cursor: pointer; background: {{ $activeTab === 'terminal' ? '#4f46e5' : '#f1f5f9' }}; color: {{ $activeTab === 'terminal' ? '#ffffff' : '#475569' }};">
+                        Terminal Report Card
+                    </button>
+                    <button type="button" wire:click="$set('activeTab', 'midterm')" style="padding: 0.625rem 1.25rem; border-radius: 8px; font-weight: 700; font-size: 0.875rem; border: none; cursor: pointer; background: {{ $activeTab === 'midterm' ? '#4f46e5' : '#f1f5f9' }}; color: {{ $activeTab === 'midterm' ? '#ffffff' : '#475569' }};">
+                        Mid-Term Progress Report
+                    </button>
+                </div>
+            @endif
+
+            @if ($activeTab === 'terminal' && !empty($resultData))
+                @php
+                    $tr = $resultData['term_result'];
+                    $rcSettings = $resultData['settings'] ?? [];
+                    $isRc = fn(string $k) => \App\Services\ReportCardSettingsService::isEnabled($rcSettings, $k);
+
+                    $showAvg   = $isRc('rc_show_term_percentage');
+                    $showFinalGrd = $isRc('rc_show_final_grade');
+                    $showPos   = $isRc('rc_show_overall_position') || $isRc('rc_show_arm_dept_position');
+                    $showTotalGrand = $isRc('rc_show_total_obtained');
+
+                    $showScoreHeads = $isRc('rc_show_score_heads');
+                    $showCumTerms   = ($resultData['is_cumulative'] ?? false) && $isRc('rc_show_cumulative_terms');
+                    $showSubjTotal  = $isRc('rc_show_subject_total');
+                    $showSubjGrade  = $isRc('rc_show_subject_grade');
+                    $showSubjPos    = $isRc('rc_show_subject_position');
+                    $showSubjRemark = $isRc('rc_show_subject_teacher_remark');
+                @endphp
 
             {{-- Hero Stats --}}
+            @if ($showAvg || $showFinalGrd || $showPos || $showTotalGrand)
             <div class="sr-hero">
+                @if ($showAvg)
                 <div class="sr-stat-card avg-card">
                     <div class="stat-value">{{ (float) $tr['average'] }}%</div>
                     <div class="stat-label">Average</div>
                 </div>
+                @endif
+
+                @if ($showFinalGrd)
                 <div class="sr-stat-card grade-card">
                     <div class="stat-value">{{ $tr['grade'] }}</div>
                     <div class="stat-label">Overall Grade</div>
                 </div>
+                @endif
+
+                @if ($showPos)
                 <div class="sr-stat-card pos-card">
-                    @if(!empty($tr['department_position']))
+                    @if(!empty($tr['department_position']) && $isRc('rc_show_arm_dept_position'))
                         <div class="stat-value">{{ $tr['department_position'] }}<span style="font-size:0.85rem;font-weight:600;color:#9ca3af;"> / {{ $tr['department_population'] }}</span></div>
                         <div class="stat-label">Dept Position ({{ $resultData['student']['department'] ?? 'Dept' }})</div>
-                        <div style="font-size:0.7rem;color:#9ca3af;margin-top:2px;">Set: {{ $tr['overall_position'] }} of {{ $tr['class_population'] ?? $resultData['class_size'] }}</div>
-                    @elseif(!empty($tr['arm_position']))
+                        @if ($isRc('rc_show_overall_position'))
+                            <div style="font-size:0.7rem;color:#9ca3af;margin-top:2px;">Set: {{ $tr['overall_position'] }} of {{ $tr['class_population'] ?? $resultData['class_size'] }}</div>
+                        @endif
+                    @elseif(!empty($tr['arm_position']) && $isRc('rc_show_arm_dept_position'))
                         <div class="stat-value">{{ $tr['arm_position'] }}<span style="font-size:0.85rem;font-weight:600;color:#9ca3af;"> / {{ $tr['arm_population'] }}</span></div>
                         <div class="stat-label">Arm Position ({{ $resultData['student']['arm'] ?? 'Arm' }})</div>
-                        <div style="font-size:0.7rem;color:#9ca3af;margin-top:2px;">Set: {{ $tr['overall_position'] }} of {{ $tr['class_population'] ?? $resultData['class_size'] }}</div>
-                    @else
+                        @if ($isRc('rc_show_overall_position'))
+                            <div style="font-size:0.7rem;color:#9ca3af;margin-top:2px;">Set: {{ $tr['overall_position'] }} of {{ $tr['class_population'] ?? $resultData['class_size'] }}</div>
+                        @endif
+                    @elseif ($isRc('rc_show_overall_position'))
                         <div class="stat-value">{{ $tr['overall_position'] }}<span style="font-size:0.9rem;font-weight:400;color:#9ca3af;"> / {{ $tr['class_population'] ?? $resultData['class_size'] }}</span></div>
                         <div class="stat-label">Class Position</div>
                     @endif
                 </div>
+                @endif
+
+                @if ($showTotalGrand)
                 <div class="sr-stat-card total-card">
                     <div class="stat-value">{{ number_format($tr['grand_total'], 0) }}</div>
                     <div class="stat-label">Grand Total</div>
                 </div>
+                @endif
             </div>
+            @endif
 
             {{-- Info Bar + Table --}}
             <div class="sr-info-bar">
@@ -741,86 +804,123 @@
                     <thead>
                         <tr>
                             <th style="min-width:140px;">Subject</th>
-                            @foreach ($resultData['score_heads'] as $sh)
-                                <th>{{ $sh['name'] }}</th>
-                            @endforeach
-                            @if ($resultData['is_cumulative'] ?? false)
-                                <th>3rd Total</th>
-                                <th>1st Term</th>
-                                <th>2nd Term</th>
-                                <th>Average</th>
-                            @else
-                                <th>Total</th>
+                            @if ($showScoreHeads)
+                                @foreach ($resultData['score_heads'] as $sh)
+                                    <th>{{ $sh['name'] }}</th>
+                                @endforeach
                             @endif
-                            <th>Grade</th>
-                            <th>Pos</th>
-                            <th style="text-align:left;">Remark</th>
+                            @if ($resultData['is_cumulative'] ?? false)
+                                @if ($showCumTerms)
+                                    <th>3rd Total</th>
+                                    <th>1st Term</th>
+                                    <th>2nd Term</th>
+                                @endif
+                                @if ($showSubjTotal)
+                                    <th>Average</th>
+                                @endif
+                            @else
+                                @if ($showSubjTotal)
+                                    <th>Total</th>
+                                @endif
+                            @endif
+                            @if ($showSubjGrade)
+                                <th>Grade</th>
+                            @endif
+                            @if ($showSubjPos)
+                                <th>Pos</th>
+                            @endif
+                            @if ($showSubjRemark)
+                                <th style="text-align:left;">Remark</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($resultData['subjects'] as $row)
                             <tr>
                                 <td>{{ $row['subject'] }}</td>
-                                @foreach ($resultData['score_heads'] as $sh)
-                                    <td>{{ isset($row['scores'][$sh['id']]) ? (is_numeric($row['scores'][$sh['id']]) ? (float) $row['scores'][$sh['id']] : $row['scores'][$sh['id']]) : '–' }}</td>
-                                @endforeach
-                                @if ($resultData['is_cumulative'] ?? false)
-                                    <td class="total-cell">{{ (float) $row['term3_raw'] }}</td>
-                                    <td>{{ (float) $row['term1'] }}</td>
-                                    <td>{{ (float) $row['term2'] }}</td>
-                                    <td class="total-cell">{{ (float) $row['average'] }}</td>
-                                @else
-                                    <td class="total-cell">{{ (float) $row['total'] }}</td>
+                                @if ($showScoreHeads)
+                                    @foreach ($resultData['score_heads'] as $sh)
+                                        <td>{{ isset($row['scores'][$sh['id']]) ? (is_numeric($row['scores'][$sh['id']]) ? (int) ceil((float) $row['scores'][$sh['id']]) : $row['scores'][$sh['id']]) : '–' }}</td>
+                                    @endforeach
                                 @endif
-                                <td>
-                                    <span class="grade-badge grade-{{ $row['grade'] }}">{{ $row['grade'] }}</span>
-                                </td>
-                                <td>{{ $row['position'] }}</td>
-                                <td class="remark-cell" style="text-align:left;">{{ $row['remark'] }}</td>
+                                @if ($resultData['is_cumulative'] ?? false)
+                                    @if ($showCumTerms)
+                                        <td class="total-cell">{{ is_numeric($row['term3_raw'] ?? null) ? (int) ceil((float) $row['term3_raw']) : ($row['term3_raw'] ?? '—') }}</td>
+                                        <td>{{ is_numeric($row['term1'] ?? null) ? (int) ceil((float) $row['term1']) : ($row['term1'] ?? '—') }}</td>
+                                        <td>{{ is_numeric($row['term2'] ?? null) ? (int) ceil((float) $row['term2']) : ($row['term2'] ?? '—') }}</td>
+                                    @endif
+                                    @if ($showSubjTotal)
+                                        <td class="total-cell">{{ is_numeric($row['average'] ?? null) ? (int) ceil((float) $row['average']) : ($row['average'] ?? '—') }}</td>
+                                    @endif
+                                @else
+                                    @if ($showSubjTotal)
+                                        <td class="total-cell">{{ is_numeric($row['total'] ?? null) ? (int) ceil((float) $row['total']) : ($row['total'] ?? '—') }}</td>
+                                    @endif
+                                @endif
+                                @if ($showSubjGrade)
+                                    <td>
+                                        <span class="grade-badge grade-{{ $row['grade'] }}">{{ $row['grade'] }}</span>
+                                    </td>
+                                @endif
+                                @if ($showSubjPos)
+                                    <td>{{ $row['position'] }}</td>
+                                @endif
+                                @if ($showSubjRemark)
+                                    <td class="remark-cell" style="text-align:left;">{{ $row['remark'] }}</td>
+                                @endif
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
 
                 {{-- Summary Footer --}}
+                @if ($isRc('rc_show_performance_summary'))
                 <div class="sr-summary-footer">
+                    @if ($isRc('rc_show_total_obtained'))
                     <div class="sr-summary-item">
                         <div class="summary-label">Total Obtainable</div>
-                        <div class="summary-value">{{ $resultData['total_obtainable'] }}</div>
+                        <div class="summary-value">{{ is_numeric($resultData['total_obtainable'] ?? null) ? (int) ceil((float) $resultData['total_obtainable']) : ($resultData['total_obtainable'] ?? '—') }}</div>
                     </div>
                     <div class="sr-summary-item">
                         <div class="summary-label">Grand Total</div>
-                        <div class="summary-value">{{ number_format($tr['grand_total'], 0) }}</div>
+                        <div class="summary-value">{{ is_numeric($tr['grand_total'] ?? null) ? (int) ceil((float) $tr['grand_total']) : ($tr['grand_total'] ?? '—') }}</div>
                     </div>
+                    @endif
+                    @if ($isRc('rc_show_term_percentage'))
                     <div class="sr-summary-item">
                         <div class="summary-label">Average</div>
-                        <div class="summary-value">{{ (float) $tr['average'] }}%</div>
+                        <div class="summary-value">{{ is_numeric($tr['average'] ?? null) ? (int) ceil((float) $tr['average']) . '%' : ($tr['average'] ?? '—') }}</div>
                     </div>
+                    @endif
+                    @if ($isRc('rc_show_final_grade'))
                     <div class="sr-summary-item">
                         <div class="summary-label">Overall Grade</div>
                         <div class="summary-value">{{ $tr['grade'] }}</div>
                     </div>
+                    @endif
+                    @if ($isRc('rc_show_overall_position') || $isRc('rc_show_arm_dept_position'))
                     <div class="sr-summary-item">
                         <div class="summary-label">
-                            @if(!empty($tr['department_position']))
+                            @if(!empty($tr['department_position']) && $isRc('rc_show_arm_dept_position'))
                                 Dept Position
-                            @elseif(!empty($tr['arm_position']))
+                            @elseif(!empty($tr['arm_position']) && $isRc('rc_show_arm_dept_position'))
                                 Arm Position
-                            @else
+                            @elseif ($isRc('rc_show_overall_position'))
                                 Position
                             @endif
                         </div>
                         <div class="summary-value">
-                            @if(!empty($tr['department_position']))
+                            @if(!empty($tr['department_position']) && $isRc('rc_show_arm_dept_position'))
                                 {{ $tr['department_position'] }} of {{ $tr['department_population'] }}
-                            @elseif(!empty($tr['arm_position']))
+                            @elseif(!empty($tr['arm_position']) && $isRc('rc_show_arm_dept_position'))
                                 {{ $tr['arm_position'] }} of {{ $tr['arm_population'] }}
-                            @else
+                            @elseif ($isRc('rc_show_overall_position'))
                                 {{ $tr['overall_position'] }} of {{ $tr['class_population'] ?? $resultData['class_size'] }}
                             @endif
                         </div>
                     </div>
-                    @if(!empty($tr['department_position']) || !empty($tr['arm_position']))
+                    @endif
+                    @if((!empty($tr['department_position']) || !empty($tr['arm_position'])) && $isRc('rc_show_overall_position') && $isRc('rc_show_arm_dept_position'))
                         <div class="sr-summary-item">
                             <div class="summary-label">Overall Set Position</div>
                             <div class="summary-value">{{ $tr['overall_position'] }} of {{ $tr['class_population'] ?? $resultData['class_size'] }}</div>
@@ -831,7 +931,130 @@
                         <div class="summary-value">{{ $tr['subjects_count'] }}</div>
                     </div>
                 </div>
+                @endif
             </div>
+            @elseif ($activeTab === 'midterm' && !empty($midtermData))
+                @php
+                    $mtr = $midtermData['term_result'];
+                @endphp
+
+                {{-- Hero Stats --}}
+                <div class="sr-hero">
+                    <div class="sr-stat-card avg-card">
+                        <div class="stat-value">{{ is_numeric($mtr['percentage'] ?? null) ? (int) ceil((float) $mtr['percentage']) . '%' : '—' }}</div>
+                        <div class="stat-label">Mid-Term Average</div>
+                    </div>
+                    <div class="sr-stat-card grade-card">
+                        <div class="stat-value">{{ $mtr['grade'] ?? '—' }}</div>
+                        <div class="stat-label">Grade ({{ $mtr['remark'] ?? '—' }})</div>
+                    </div>
+                    <div class="sr-stat-card pos-card">
+                        <div class="stat-value">{{ is_numeric($mtr['total_obtained'] ?? null) ? (int) ceil((float) $mtr['total_obtained']) : '—' }}</div>
+                        <div class="stat-label">Total Obtained</div>
+                    </div>
+                    <div class="sr-stat-card total-card">
+                        <div class="stat-value">{{ is_numeric($mtr['total_obtainable'] ?? null) ? (int) ceil((float) $mtr['total_obtainable']) : '—' }}</div>
+                        <div class="stat-label">Total Obtainable</div>
+                    </div>
+                </div>
+
+                {{-- Info Bar + Download --}}
+                <div class="sr-info-bar">
+                    <div class="info-left">
+                        <div class="student-avatar">
+                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                        </div>
+                        <div>
+                            <div class="student-name">{{ Auth::user()->name }}</div>
+                            <div class="student-meta">Mid-Term Evaluation · Weight: {{ is_numeric($midtermData['midterm_weight'] ?? null) ? (int) ceil((float) $midtermData['midterm_weight']) : ($midtermData['midterm_weight'] ?? '—') }}%</div>
+                        </div>
+                    </div>
+                    <a href="{{ route('student.midterm-pdf', ['session_id' => $session_id, 'term_id' => $term_id]) }}"
+                       target="_blank"
+                       class="sr-download-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Download Mid-Term PDF
+                    </a>
+                </div>
+
+                <div class="sr-table-wrap">
+                    <table class="sr-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width:140px; text-align:left;">Subject</th>
+                                @foreach ($midtermData['midterm_heads'] as $head)
+                                    <th>{{ $head['name'] }} ({{ is_numeric($head['effective_max'] ?? null) ? (int) ceil((float) $head['effective_max']) : ($head['effective_max'] ?? '') }})</th>
+                                @endforeach
+                                <th>Raw Total ({{ is_numeric($midtermData['raw_max'] ?? null) ? (int) ceil((float) $midtermData['raw_max']) : ($midtermData['raw_max'] ?? '') }})</th>
+                                <th style="background:#e0e7ff; color:#3730a3;">Mid-Term ({{ is_numeric($midtermData['midterm_weight'] ?? null) ? (int) ceil((float) $midtermData['midterm_weight']) : ($midtermData['midterm_weight'] ?? '') }}%)</th>
+                                <th>% Score</th>
+                                <th>Grade</th>
+                                <th style="text-align:left;">Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($midtermData['subjects'] as $row)
+                                <tr>
+                                    <td class="subject-name" style="text-align:left;">{{ $row['subject'] }}</td>
+                                    @foreach ($midtermData['midterm_heads'] as $head)
+                                        <td>
+                                            @php $hVal = $row['head_scores'][$head['id']] ?? '—'; @endphp
+                                            @if($hVal === 'ABS')
+                                                <span style="font-weight:800; color:#e11d48;">ABS</span>
+                                            @else
+                                                {{ is_numeric($hVal) ? (int) ceil((float) $hVal) : $hVal }}
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                    <td style="font-weight:700;">
+                                        {{ is_numeric($row['raw_score']) ? (int) ceil((float) $row['raw_score']) : $row['raw_score'] }}
+                                    </td>
+                                    <td style="font-weight:800; background:#eef2ff; color:#4338ca;">
+                                        @if($row['scaled_score'] === 'ABS')
+                                            <span style="color:#e11d48;">ABS</span>
+                                        @elseif(is_numeric($row['scaled_score']))
+                                            {{ (int) ceil((float) $row['scaled_score']) }}
+                                        @else
+                                            {{ $row['scaled_score'] }}
+                                        @endif
+                                    </td>
+                                    <td style="font-weight:700;">
+                                        @if($row['percentage'] === 'ABS')
+                                            <span style="color:#e11d48;">ABS</span>
+                                        @elseif(is_numeric($row['percentage']))
+                                            {{ (int) ceil((float) $row['percentage']) }}%
+                                        @else
+                                            {{ $row['percentage'] }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="sr-grade-pill">{{ $row['grade'] ?? '—' }}</span>
+                                    </td>
+                                    <td class="remark-cell" style="text-align:left;">
+                                        {{ $row['remark'] ?? '—' }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Comments --}}
+                @if(!empty($mtr['teacher_comment']))
+                    <div style="background:white; border:1px solid #e5e7eb; border-radius:12px; padding:1.25rem; margin-bottom:1rem;">
+                        <h4 style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#6b7280; margin-bottom:0.25rem;">Class Teacher's Observation</h4>
+                        <p style="font-style:italic; color:#1e293b;">{{ $mtr['teacher_comment'] }}</p>
+                    </div>
+                @endif
+                @if(!empty($mtr['head_teacher_comment']))
+                    <div style="background:white; border:1px solid #e5e7eb; border-radius:12px; padding:1.25rem; margin-bottom:1.5rem;">
+                        <h4 style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#6b7280; margin-bottom:0.25rem;">Principal / Head Teacher's Remark</h4>
+                        <p style="font-style:italic; color:#1e293b;">{{ $mtr['head_teacher_comment'] }}</p>
+                    </div>
+                @endif
+            @endif
         @endif
 
         @if ($session_id && $term_id && ! $loaded)

@@ -87,12 +87,12 @@ function setupSpreadsheetContext(): array
     ]);
 
     // Enrolled Students
-    $u1 = User::factory()->create(['role' => 'student', 'is_active' => true]);
-    $student1 = Student::create(['user_id' => $u1->id, 'full_name' => 'Alice Johnson', 'admission_number' => 'P4-001', 'status' => 'active']);
+    $u1 = User::factory()->create(['role' => 'student', 'is_active' => true, 'surname' => 'Alice', 'first_name' => 'Johnson', 'other_name' => null]);
+    $student1 = Student::create(['user_id' => $u1->id, 'surname' => 'Alice', 'first_name' => 'Johnson', 'admission_number' => 'P4-001', 'status' => 'active']);
     StudentEnrollment::create(['student_id' => $student1->id, 'classroom_id' => $classroom->id, 'session_id' => $session->id]);
 
-    $u2 = User::factory()->create(['role' => 'student', 'is_active' => true]);
-    $student2 = Student::create(['user_id' => $u2->id, 'full_name' => 'Bob Davis', 'admission_number' => 'P4-002', 'status' => 'active']);
+    $u2 = User::factory()->create(['role' => 'student', 'is_active' => true, 'surname' => 'Bob', 'first_name' => 'Davis', 'other_name' => null]);
+    $student2 = Student::create(['user_id' => $u2->id, 'surname' => 'Bob', 'first_name' => 'Davis', 'admission_number' => 'P4-002', 'status' => 'active']);
     StudentEnrollment::create(['student_id' => $student2->id, 'classroom_id' => $classroom->id, 'session_id' => $session->id]);
 
     return compact('session', 'term', 'classroom', 'math', 'english', 'ca', 'exam', 'teacher', 'student1', 'student2');
@@ -443,12 +443,12 @@ describe('Complete End-to-End Lifecycle: From Score Head to Student Result & PDF
         ]);
 
         // Enrolled Students
-        $sUser1 = User::factory()->create(['role' => 'student', 'is_active' => true]);
-        $student1 = Student::create(['user_id' => $sUser1->id, 'full_name' => 'Emmanuel Adeyemi', 'admission_number' => 'JSS-101', 'status' => 'active']);
+        $sUser1 = User::factory()->create(['role' => 'student', 'is_active' => true, 'surname' => 'Emmanuel', 'first_name' => 'Adeyemi', 'other_name' => null]);
+        $student1 = Student::create(['user_id' => $sUser1->id, 'surname' => 'Emmanuel', 'first_name' => 'Adeyemi', 'admission_number' => 'JSS-101', 'status' => 'active']);
         StudentEnrollment::create(['student_id' => $student1->id, 'classroom_id' => $classroom->id, 'session_id' => $session->id]);
 
-        $sUser2 = User::factory()->create(['role' => 'student', 'is_active' => true]);
-        $student2 = Student::create(['user_id' => $sUser2->id, 'full_name' => 'Chiamaka Okonkwo', 'admission_number' => 'JSS-102', 'status' => 'active']);
+        $sUser2 = User::factory()->create(['role' => 'student', 'is_active' => true, 'surname' => 'Chiamaka', 'first_name' => 'Okonkwo', 'other_name' => null]);
+        $student2 = Student::create(['user_id' => $sUser2->id, 'surname' => 'Chiamaka', 'first_name' => 'Okonkwo', 'admission_number' => 'JSS-102', 'status' => 'active']);
         StudentEnrollment::create(['student_id' => $student2->id, 'classroom_id' => $classroom->id, 'session_id' => $session->id]);
 
         // ── 5. Teacher exports Excel template ────────────────────────────────
@@ -551,6 +551,33 @@ describe('Complete End-to-End Lifecycle: From Score Head to Student Result & PDF
             ->and($tr1->is_finalized)->toBeTrue();
 
         // ── 9. Student Portal: Student views results & downloads PDF ─────────
+        $batch = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-SCORE',
+            'session_id' => $session->id,
+            'term_id'    => $term->id,
+            'quantity'   => 2,
+        ]);
+        \App\Models\ResultPin::create([
+            'batch_id'      => $batch->id,
+            'student_id'    => $student1->id,
+            'session_id'    => $session->id,
+            'term_id'       => $term->id,
+            'serial_number' => 'SN-SCORE-01',
+            'pin'           => '111111',
+            'is_used'       => true,
+            'used_at'       => now(),
+        ]);
+        \App\Models\ResultPin::create([
+            'batch_id'      => $batch->id,
+            'student_id'    => $student2->id,
+            'session_id'    => $session->id,
+            'term_id'       => $term->id,
+            'serial_number' => 'SN-SCORE-02',
+            'pin'           => '222222',
+            'is_used'       => true,
+            'used_at'       => now(),
+        ]);
+
         // Test Emmanuel Adeyemi (Rank 2)
         $this->actingAs($sUser1);
 
@@ -587,6 +614,83 @@ describe('Complete End-to-End Lifecycle: From Score Head to Student Result & PDF
             ->assertHeader('content-type', 'application/pdf');
 
         expect(strlen($response->getContent()))->toBeGreaterThan(1000);
+    });
+
+    it('allows class teacher and admin to export all class subjects for both midterm and terminal score sheets', function () {
+        $context = setupSpreadsheetContext();
+        $classroom = $context['classroom'];
+        $session   = $context['session'];
+        $term      = $context['term'];
+        $math      = $context['math'];
+        $english   = $context['english'];
+
+        // Third subject
+        $science = Subject::create(['name' => 'Basic Science', 'code' => 'SCI', 'is_active' => true]);
+        $classroom->subjects()->attach($science->id);
+
+        // Teacher A is class teacher for the class, but only subject teacher for Math
+        $classTeacher = User::factory()->create(['role' => 'teacher', 'name' => 'Class Teacher']);
+        ClassTeacherAssignment::create([
+            'teacher_id' => $classTeacher->id,
+            'class_id'   => $classroom->id,
+            'session_id' => $session->id,
+        ]);
+        TeacherSubjectAssignment::create([
+            'teacher_id'   => $classTeacher->id,
+            'subject_id'   => $science->id,
+            'classroom_id' => $classroom->id,
+            'session_id'   => $session->id,
+            'term_id'      => $term->id,
+            'status'       => 'approved',
+        ]);
+
+        // Configure Midterm for the class
+        \App\Models\Setting::updateOrCreate(['key' => 'use_midterm_results'], ['value' => '1']);
+        $midHead = ScoreHead::create(['name' => 'Mid Test', 'max_score' => 40, 'type' => 'midterm', 'is_active' => true]);
+        $mConfig = \App\Models\ClassMidtermConfig::create([
+            'classroom_id'   => $classroom->id,
+            'midterm_weight' => 40,
+            'calculation_method' => 'sum_heads',
+        ]);
+        \App\Models\ClassMidtermConfigHead::create([
+            'class_midterm_config_id' => $mConfig->id,
+            'score_head_id'           => $midHead->id,
+        ]);
+
+        // 1. Verify Class Teacher on EnterMidtermScores exports all 3 subjects
+        $this->actingAs($classTeacher);
+        Livewire::test(\App\Filament\Teacher\Pages\EnterMidtermScores::class)
+            ->set('session_id', $session->id)
+            ->set('term_id', $term->id)
+            ->set('classroom_id', $classroom->id)
+            ->call('exportClassSubjects')
+            ->assertFileDownloaded();
+
+        // 2. Verify Class Teacher on EnterScores exports all 3 subjects
+        Livewire::test(\App\Filament\Teacher\Pages\EnterScores::class)
+            ->set('session_id', $session->id)
+            ->set('term_id', $term->id)
+            ->set('classroom_id', $classroom->id)
+            ->call('exportClassSubjects')
+            ->assertFileDownloaded();
+
+        // 3. Verify Admin on EnterMidtermScores exports all 3 subjects
+        $admin = User::factory()->create(['role' => 'admin', 'name' => 'Admin User']);
+        $this->actingAs($admin);
+        Livewire::test(\App\Filament\Teacher\Pages\EnterMidtermScores::class)
+            ->set('session_id', $session->id)
+            ->set('term_id', $term->id)
+            ->set('classroom_id', $classroom->id)
+            ->call('exportClassSubjects')
+            ->assertFileDownloaded();
+
+        // 4. Verify Admin on EnterScores exports all 3 subjects
+        Livewire::test(\App\Filament\Teacher\Pages\EnterScores::class)
+            ->set('session_id', $session->id)
+            ->set('term_id', $term->id)
+            ->set('classroom_id', $classroom->id)
+            ->call('exportClassSubjects')
+            ->assertFileDownloaded();
     });
 
 });

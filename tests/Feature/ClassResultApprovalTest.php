@@ -96,10 +96,11 @@ function setupClassApprovalContext(): array
     ]);
 
     // Student 1
-    $studentUser1 = User::factory()->create(['role' => 'student', 'is_active' => true]);
+    $studentUser1 = User::factory()->create(['role' => 'student', 'is_active' => true, 'surname' => 'Chinedu', 'first_name' => 'Eze', 'other_name' => null]);
     $student1 = Student::create([
         'user_id'          => $studentUser1->id,
-        'full_name'        => 'Chinedu Eze',
+        'surname'          => 'Chinedu',
+        'first_name'       => 'Eze',
         'admission_number' => 'SS1-001',
         'status'           => 'active',
     ]);
@@ -111,10 +112,11 @@ function setupClassApprovalContext(): array
     ]);
 
     // Student 2
-    $studentUser2 = User::factory()->create(['role' => 'student', 'is_active' => true]);
+    $studentUser2 = User::factory()->create(['role' => 'student', 'is_active' => true, 'surname' => 'Fatima', 'first_name' => 'Bello', 'other_name' => null]);
     $student2 = Student::create([
         'user_id'          => $studentUser2->id,
-        'full_name'        => 'Fatima Bello',
+        'surname'          => 'Fatima',
+        'first_name'       => 'Bello',
         'admission_number' => 'SS1-002',
         'status'           => 'active',
     ]);
@@ -333,6 +335,78 @@ describe('Admin Approval & Result Release Workflow', function () {
             ->and($approval->approved_by)->toBeNull();
     });
 
+    it('blocks recalculation and re-approval when results are already released', function () {
+        $ctx = setupClassApprovalContext();
+
+        ClassTermApproval::create([
+            'classroom_id'        => $ctx['classroom']->id,
+            'session_id'          => $ctx['session']->id,
+            'term_id'             => $ctx['term']->id,
+            'times_school_opened' => 110,
+            'next_term_begins'    => 'January 2026',
+            'status'              => 'approved',
+            'approved_by'         => $ctx['admin']->id,
+            'approved_at'         => now(),
+        ]);
+
+        $this->actingAs($ctx['admin']);
+
+        // Attempting to recalculate scores should be blocked
+        Livewire::test(ProcessClassResults::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id)
+            ->call('processClassResults')
+            ->assertNotified('Results Already Released');
+
+        // Attempting to re-approve/update should be blocked
+        Livewire::test(ProcessClassResults::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id)
+            ->set('times_school_opened', 115)
+            ->set('next_term_begins', 'February 2026')
+            ->call('approveClassResults')
+            ->assertNotified('Results Already Released');
+    });
+
+    it('re-enables calculation and approval after reverting approval', function () {
+        $ctx = setupClassApprovalContext();
+
+        ClassTermApproval::create([
+            'classroom_id'        => $ctx['classroom']->id,
+            'session_id'          => $ctx['session']->id,
+            'term_id'             => $ctx['term']->id,
+            'times_school_opened' => 110,
+            'next_term_begins'    => 'January 2026',
+            'status'              => 'approved',
+            'approved_by'         => $ctx['admin']->id,
+            'approved_at'         => now(),
+        ]);
+
+        $this->actingAs($ctx['admin']);
+
+        // Revert approval
+        Livewire::test(ProcessClassResults::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id)
+            ->call('unapproveClassResults')
+            ->assertNotified('Class result approval reverted.')
+            // Now recalculation succeeds
+            ->call('processClassResults')
+            ->assertNotified('Class results processed and published successfully!')
+            // And approval succeeds
+            ->set('times_school_opened', 112)
+            ->set('next_term_begins', '15th January 2026')
+            ->call('approveClassResults')
+            ->assertNotified('Class results approved and released to students!');
+
+        $approval = ClassTermApproval::where('classroom_id', $ctx['classroom']->id)->first();
+        expect($approval->status)->toBe('approved')
+            ->and($approval->times_school_opened)->toBe(112);
+    });
+
 });
 
 describe('Student Portal & Report Card PDF Integration', function () {
@@ -400,6 +474,23 @@ describe('Student Portal & Report Card PDF Integration', function () {
             'status'              => 'approved',
             'approved_by'         => $ctx['admin']->id,
             'approved_at'         => now(),
+        ]);
+
+        $batch1 = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-APP1',
+            'session_id' => $ctx['session']->id,
+            'term_id'    => $ctx['term']->id,
+            'quantity'   => 1,
+        ]);
+        \App\Models\ResultPin::create([
+            'batch_id'      => $batch1->id,
+            'student_id'    => $ctx['student1']->id,
+            'session_id'    => $ctx['session']->id,
+            'term_id'       => $ctx['term']->id,
+            'serial_number' => 'SN-APP-01',
+            'pin'           => '123456',
+            'is_used'       => true,
+            'used_at'       => now(),
         ]);
 
         $this->actingAs($ctx['studentUser1']);
@@ -475,6 +566,23 @@ describe('Student Portal & Report Card PDF Integration', function () {
             'status'              => 'approved',
             'approved_by'         => $ctx['admin']->id,
             'approved_at'         => now(),
+        ]);
+
+        $batch2 = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-APP2',
+            'session_id' => $ctx['session']->id,
+            'term_id'    => $ctx['term']->id,
+            'quantity'   => 1,
+        ]);
+        \App\Models\ResultPin::create([
+            'batch_id'      => $batch2->id,
+            'student_id'    => $ctx['student1']->id,
+            'session_id'    => $ctx['session']->id,
+            'term_id'       => $ctx['term']->id,
+            'serial_number' => 'SN-APP-02',
+            'pin'           => '654321',
+            'is_used'       => true,
+            'used_at'       => now(),
         ]);
 
         $this->actingAs($ctx['studentUser1']);

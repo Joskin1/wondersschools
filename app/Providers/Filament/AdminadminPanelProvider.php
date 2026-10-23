@@ -69,7 +69,10 @@ class AdminadminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
                 \App\Filament\Teacher\Pages\EnterScores::class,
+                \App\Filament\Teacher\Pages\EnterMidtermScores::class,
                 \App\Filament\Teacher\Pages\ProcessClassResults::class,
+                \App\Filament\Teacher\Pages\ProcessMidtermResults::class,
+                \App\Filament\Teacher\Pages\ClassAttendance::class,
             ])
             ->widgets([
                 \App\Filament\Widgets\SchoolOverviewWidget::class,

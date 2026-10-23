@@ -267,6 +267,24 @@ describe('Report Card PDF with Safe Margins and Multi-Level Positions', function
             'is_finalized'          => true,
         ]);
 
+        $batch = \App\Models\ResultPinBatch::create([
+            'batch_code' => 'BATCH-TEST-MLP',
+            'session_id' => $this->session->id,
+            'term_id'    => $this->term->id,
+            'quantity'   => 1,
+        ]);
+
+        \App\Models\ResultPin::create([
+            'batch_id'      => $batch->id,
+            'student_id'    => $student->id,
+            'session_id'    => $this->session->id,
+            'term_id'       => $this->term->id,
+            'serial_number' => 'SN-TEST-MLP',
+            'pin'           => 'PIN-TEST-MLP',
+            'is_used'       => true,
+            'used_at'       => now(),
+        ]);
+
         $this->actingAs($user);
 
         $request = Request::create('/result/download', 'GET', [

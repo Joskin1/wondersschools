@@ -37,6 +37,8 @@ class ResultPdfController extends Controller
             abort(403, 'No student profile linked.');
         }
 
+        $student->loadMissing('user');
+
         $sessionId = (int) $request->session_id;
         $termId    = (int) $request->term_id;
 
@@ -81,14 +83,32 @@ class ResultPdfController extends Controller
         // ── Detect cumulative (third term) ───────────────────────────────────
         $isCumulative = $term->order === 3;
 
-        // Score heads — always loaded
+        // Score heads & snapshot detection
+        $snapshot = \App\Models\TermScoringSnapshot::where('classroom_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->where('term_id', $termId)
+            ->first();
+
+        $isMidterm = ($snapshot && $snapshot->mode === 'midterm');
+
         $structure = ClassScoreStructure::where('class_id', $classroomId)
             ->where('session_id', $sessionId)
             ->where('term_id', $termId)
             ->first();
 
         $scoreHeads = [];
-        if ($structure) {
+        if ($isMidterm) {
+            $scoreHeads[] = [
+                'id'   => 'midterm',
+                'name' => 'Mid-Term (' . $snapshot->midterm_weight . '%)',
+            ];
+            foreach ($snapshot->exam_heads as $eh) {
+                $scoreHeads[] = [
+                    'id'   => $eh['id'],
+                    'name' => $eh['name'],
+                ];
+            }
+        } elseif ($structure) {
             $scoreHeads = ClassScoreStructureItem::where('class_score_structure_id', $structure->id)
                 ->join('score_heads', 'score_heads.id', '=', 'class_score_structure_items.score_head_id')
                 ->select('score_heads.id', 'score_heads.name')
@@ -146,13 +166,34 @@ class ResultPdfController extends Controller
                 $scores = [];
                 $t3Raw = 0;
                 $subjectScores = $allScores->get($subjectId, collect());
-                foreach ($scoreHeads as $sh) {
-                    $s = $subjectScores->firstWhere('score_head_id', $sh['id']);
-                    $val = $s ? $s->score : 0;
-                    $scores[$sh['id']] = $val;
-                    $t3Raw += (float) $val;
+
+                if ($isMidterm) {
+                    if ($sr->midterm_status === 'absent') {
+                        $midtermVal = 'ABS';
+                    } elseif ($sr->midterm_status === 'missing') {
+                        $midtermVal = '—';
+                    } else {
+                        $midtermVal = $sr->midterm_score !== null ? (float) $sr->midterm_score : '—';
+                    }
+                    $scores['midterm'] = $midtermVal;
                 }
-                $t3Raw = round($t3Raw, 2);
+
+                foreach ($scoreHeads as $sh) {
+                    if ($sh['id'] === 'midterm') {
+                        continue;
+                    }
+                    $s = $subjectScores->firstWhere('score_head_id', $sh['id']);
+                    $val = $s ? ($s->is_absent ? 'ABS' : $s->score) : 0;
+                    $scores[$sh['id']] = $s ? ($s->is_absent ? 'ABS' : $s->score) : '-';
+                    $t3Raw += (float) ($s && ! $s->is_absent ? $s->score : 0);
+                }
+
+                if ($isMidterm) {
+                    $midtermPart = ($sr->midterm_status === 'absent' || $sr->midterm_status === 'missing') ? 0.0 : (float) ($sr->midterm_score ?? 0);
+                    $t3Raw = round($midtermPart + $t3Raw, 2);
+                } else {
+                    $t3Raw = round($t3Raw, 2);
+                }
 
                 $subjectRows[] = [
                     'subject'           => $sr->subject->name ?? 'Unknown',
@@ -172,9 +213,24 @@ class ResultPdfController extends Controller
             foreach ($subjectResults as $sr) {
                 $scores = [];
                 $subjectScores = $allScores->get($sr->subject_id, collect());
+
+                if ($isMidterm) {
+                    if ($sr->midterm_status === 'absent') {
+                        $midtermVal = 'ABS';
+                    } elseif ($sr->midterm_status === 'missing') {
+                        $midtermVal = '—';
+                    } else {
+                        $midtermVal = $sr->midterm_score !== null ? (float) $sr->midterm_score : '—';
+                    }
+                    $scores['midterm'] = $midtermVal;
+                }
+
                 foreach ($scoreHeads as $sh) {
+                    if ($sh['id'] === 'midterm') {
+                        continue;
+                    }
                     $s = $subjectScores->firstWhere('score_head_id', $sh['id']);
-                    $scores[$sh['id']] = $s ? $s->score : '-';
+                    $scores[$sh['id']] = $s ? ($s->is_absent ? 'ABS' : $s->score) : '-';
                 }
 
                 $subjectRows[] = [
@@ -191,14 +247,32 @@ class ResultPdfController extends Controller
 
         $session         = Session::find($sessionId);
         $classSize       = StudentEnrollment::where('classroom_id', $classroomId)->where('session_id', $sessionId)->count();
-        $totalObtainable = $isCumulative
+        $armPopulation   = $termResult->arm_population ?? (
+            !empty($enrollment?->class_arm_id)
+                ? StudentEnrollment::where('classroom_id', $classroomId)->where('session_id', $sessionId)->where('class_arm_id', $enrollment->class_arm_id)->count()
+                : null
+        );
+        $departmentPopulation = $termResult->department_population ?? (
+            !empty($enrollment?->department_id)
+                ? StudentEnrollment::where('classroom_id', $classroomId)->where('session_id', $sessionId)->where('department_id', $enrollment->department_id)->count()
+                : null
+        );
+        $totalObtainable = ($isCumulative || $isMidterm)
             ? 100 * count($subjectRows)
             : ($structure?->total_score ?? 100) * count($subjectRows);
-        $settings        = Setting::all()->pluck('value', 'key')->toArray();
+        $rcDefaults      = \App\Services\ReportCardSettingsService::defaults();
+        $storedSettings  = Setting::all()->pluck('value', 'key')->toArray();
+        $settings        = array_merge($rcDefaults, $storedSettings);
+        foreach ($rcDefaults as $k => $v) {
+            if (is_bool($v) && isset($settings[$k])) {
+                $settings[$k] = filter_var($settings[$k], FILTER_VALIDATE_BOOLEAN);
+            }
+        }
+        $marginCss       = \App\Services\ReportCardSettingsService::getMarginCss($settings);
 
         $data = [
             'student'      => [
-                'name'           => $student->full_name,
+                'name'           => $student->name,
                 'gender'         => $student->gender ?? '-',
                 'dob'            => $student->date_of_birth?->format('d/m/Y') ?? '-',
                 'admission_no'   => $student->admission_number ?? '-',
@@ -206,15 +280,18 @@ class ResultPdfController extends Controller
                 'arm'            => $enrollment?->classArm?->name ?? null,
                 'passport_photo' => $student->profile_picture,
             ],
-            'classroom'        => $enrollment?->classroom?->name ?? '-',
-            'session_name'     => $session?->name ?? '-',
-            'term_name'        => $term->name ?? '-',
-            'is_cumulative'    => $isCumulative,
-            'score_heads'      => $scoreHeads,
-            'subjects'         => $subjectRows,
-            'times_school_opened' => $approval?->times_school_opened,
-            'next_term_begins'    => $approval?->next_term_begins,
-            'term_result'      => [
+            'classroom'             => $enrollment?->classroom?->name ?? '-',
+            'class_size'            => $classSize,
+            'arm_population'        => $armPopulation,
+            'department_population' => $departmentPopulation,
+            'session_name'          => $session?->name ?? '-',
+            'term_name'             => $term->name ?? '-',
+            'is_cumulative'         => $isCumulative,
+            'score_heads'           => $scoreHeads,
+            'subjects'              => $subjectRows,
+            'times_school_opened'   => $approval?->times_school_opened,
+            'next_term_begins'      => $approval?->next_term_begins,
+            'term_result'           => [
                 'subjects_count'        => $termResult->subjects_count,
                 'grand_total'           => $termResult->grand_total,
                 'average'               => $termResult->average,
@@ -223,22 +300,22 @@ class ResultPdfController extends Controller
                 'overall_position'      => $termResult->overall_position,
                 'class_population'      => $termResult->class_population ?? $classSize,
                 'department_position'   => $termResult->department_position,
-                'department_population' => $termResult->department_population,
+                'department_population' => $departmentPopulation,
                 'arm_position'          => $termResult->arm_position,
-                'arm_population'        => $termResult->arm_population,
+                'arm_population'        => $armPopulation,
                 'times_present'         => $termResult->times_present,
                 'class_teacher_comment' => $termResult->class_teacher_comment,
                 'principal_comment'     => $termResult->principal_comment,
             ],
-            'class_size'       => $classSize,
-            'total_obtainable' => $totalObtainable,
-            'settings'         => $settings,
+            'total_obtainable'      => $totalObtainable,
+            'settings'              => $settings,
+            'margin_css'            => $marginCss,
         ];
 
         $pdf = Pdf::loadView('results.result-sheet', ['data' => $data])
             ->setPaper('a4', 'portrait');
 
-        $studentName = str_replace(' ', '_', trim($student->full_name));
+        $studentName = str_replace(' ', '_', trim($student->name));
         $termName    = str_replace(' ', '_', $term->name);
 
         return $pdf->download("{$studentName}_{$termName}_result.pdf");

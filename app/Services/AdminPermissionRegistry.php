@@ -56,6 +56,10 @@ class AdminPermissionRegistry
                         'label' => 'Subject Teachers',
                         'description' => 'Assign teachers to subjects across classrooms',
                     ],
+                    'school_calendar' => [
+                        'label' => 'School Calendar & Holidays',
+                        'description' => 'Manage term dates, school holidays, and oversee weekly attendance locking',
+                    ],
                 ],
             ],
             'Results & Assessment' => [
@@ -69,6 +73,10 @@ class AdminPermissionRegistry
                         'label' => 'Class Score Structure',
                         'description' => 'Configure score allocations and weightings per classroom',
                     ],
+                    'report_card_settings' => [
+                        'label' => 'Report Card Settings',
+                        'description' => 'Configure visibility, modular layout, and paper margins for terminal report cards',
+                    ],
                     'enter_scores' => [
                         'label' => 'Enter Scores',
                         'description' => 'Direct access to enter and edit student CA and exam scores',
@@ -76,6 +84,10 @@ class AdminPermissionRegistry
                     'process_class_results' => [
                         'label' => 'Process & Publish Results',
                         'description' => 'Review class results, compute positions, enter comments, and publish',
+                    ],
+                    'process_midterm_results' => [
+                        'label' => 'Process Mid-Term Results',
+                        'description' => 'Review mid-term scores, compute summaries, enter comments, lock and publish',
                     ],
                 ],
             ],
@@ -232,6 +244,7 @@ class AdminPermissionRegistry
     {
         return in_array($key, [
             'class_score_structure',
+            'report_card_settings',
             'enter_scores',
             'process_class_results',
             'settings',

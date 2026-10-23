@@ -10,13 +10,19 @@ class SubjectResult extends Model
     protected $fillable = [
         'student_id', 'classroom_id', 'subject_id',
         'session_id', 'term_id',
+        'midterm_score', 'exam_score', 'midterm_status',
+        'has_missing_midterm', 'has_error', 'error_message',
         'total', 'grade', 'remark', 'position', 'is_published',
     ];
 
     protected $casts = [
-        'total'        => 'decimal:2',
-        'position'     => 'integer',
-        'is_published' => 'boolean',
+        'midterm_score'       => 'decimal:2',
+        'exam_score'          => 'decimal:2',
+        'has_missing_midterm' => 'boolean',
+        'has_error'           => 'boolean',
+        'total'               => 'decimal:2',
+        'position'            => 'integer',
+        'is_published'        => 'boolean',
     ];
 
     // ── Relationships ────────────────────────────────────────────────────────
