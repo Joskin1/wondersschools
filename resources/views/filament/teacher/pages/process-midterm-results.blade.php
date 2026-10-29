@@ -102,19 +102,90 @@
                 $hasCalculated = collect($students)->whereNotNull('total_obtained')->count() > 0;
             @endphp
 
-            {{-- Completeness Warning Banner --}}
+            {{-- Completeness Warning Banner & Detailed Breakdown --}}
             @if($missingCount > 0)
-                <div style="border-radius: 0.75rem; background: #fff1f2; border: 1px solid #fecdd3; padding: 1rem 1.25rem; display: flex; align-items: flex-start; gap: 0.75rem;">
-                    <div style="color: #e11d48; margin-top: 2px;">
-                        <svg style="width: 20px; height: 20px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                        </svg>
-                    </div>
-                    <div style="flex: 1;">
-                        <h4 style="font-size: 0.875rem; font-weight: 800; color: #9f1239;">Incomplete Mid-Term Scores Detected</h4>
-                        <p style="font-size: 0.75rem; color: #be123c; margin-top: 0.25rem;">
-                            {{ $missingCount }} student(s) have unrecorded or missing mid-term scores. Mid-term results cannot be locked or released to students until all assessment heads are entered or marked absent.
-                        </p>
+                @php
+                    $breakdown = $this->missingScoresBreakdown;
+                @endphp
+                <div x-data="{ showBreakdown: true }" style="border-radius: 0.75rem; background: #fff1f2; border: 1px solid #fecdd3; padding: 1.25rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                        <div style="color: #e11d48; margin-top: 2px;">
+                            <svg style="width: 22px; height: 22px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                                <div>
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: #9f1239;">Incomplete Mid-Term Scores Detected</h4>
+                                    <p style="font-size: 0.8rem; color: #be123c; margin-top: 0.25rem;">
+                                        <strong>{{ $missingCount }} student(s)</strong> have unrecorded or missing assessment heads. To lock or release results, the teacher must enter a score or mark <strong>ABS</strong> for each missing head below.
+                                    </p>
+                                </div>
+                                @if(!empty($breakdown))
+                                    <button type="button" @click="showBreakdown = !showBreakdown" style="font-size: 0.75rem; font-weight: 700; color: #be123c; background: #fee2e2; border: 1px solid #fca5a5; padding: 0.35rem 0.75rem; border-radius: 0.375rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                        <span x-show="showBreakdown">Hide Breakdown ▲</span>
+                                        <span x-show="!showBreakdown">View Breakdown ({{ count($breakdown) }} Items) ▼</span>
+                                    </button>
+                                @endif
+                            </div>
+
+                            @if(!empty($breakdown))
+                                <div x-show="showBreakdown" style="margin-top: 1rem; border-top: 1px solid #fecdd3; padding-top: 0.75rem;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #9f1239;">
+                                            Missing Scores Breakdown ({{ count($breakdown) }} Item{{ count($breakdown) > 1 ? 's' : '' }})
+                                        </span>
+                                    </div>
+
+                                    <div style="overflow-x: auto; background: white; border-radius: 0.5rem; border: 1px solid #fecdd3; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem; text-align: left;">
+                                            <thead>
+                                                <tr style="background: #fff5f5; border-bottom: 1px solid #fecdd3;">
+                                                    <th style="padding: 0.6rem 0.85rem; font-weight: 800; color: #9f1239; font-size: 11px; text-transform: uppercase;">Student</th>
+                                                    <th style="padding: 0.6rem 0.85rem; font-weight: 800; color: #9f1239; font-size: 11px; text-transform: uppercase;">Adm No.</th>
+                                                    <th style="padding: 0.6rem 0.85rem; font-weight: 800; color: #9f1239; font-size: 11px; text-transform: uppercase;">Subject</th>
+                                                    <th style="padding: 0.6rem 0.85rem; font-weight: 800; color: #9f1239; font-size: 11px; text-transform: uppercase;">Missing Assessment Head(s)</th>
+                                                    <th style="padding: 0.6rem 0.85rem; font-weight: 800; color: #9f1239; font-size: 11px; text-transform: uppercase; text-align: right;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($breakdown as $item)
+                                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                                        <td style="padding: 0.6rem 0.85rem; font-weight: 700; color: #1e293b;">
+                                                            {{ $item['student_name'] }}
+                                                        </td>
+                                                        <td style="padding: 0.6rem 0.85rem; color: #64748b; font-family: monospace;">
+                                                            {{ $item['admission_number'] }}
+                                                        </td>
+                                                        <td style="padding: 0.6rem 0.85rem; font-weight: 600; color: #334155;">
+                                                            {{ $item['subject_name'] }}
+                                                        </td>
+                                                        <td style="padding: 0.6rem 0.85rem;">
+                                                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+                                                                @forelse($item['missing_heads'] as $headName)
+                                                                    <span style="display: inline-flex; align-items: center; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.72rem; font-weight: 700; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">
+                                                                        ⚠️ {{ $headName }}
+                                                                    </span>
+                                                                @empty
+                                                                    <span style="color: #64748b; font-size: 0.75rem;">All heads missing</span>
+                                                                @endforelse
+                                                            </div>
+                                                        </td>
+                                                        <td style="padding: 0.6rem 0.85rem; text-align: right;">
+                                                            <a href="{{ $item['url'] }}" target="_blank" style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.35rem 0.75rem; border-radius: 0.375rem; background: #e11d48; color: white; text-decoration: none; font-size: 0.75rem; font-weight: 700; transition: background 0.15s;" onmouseover="this.style.background='#be123c'" onmouseout="this.style.background='#e11d48'">
+                                                                <span>Enter Score</span>
+                                                                <svg style="width: 12px; height: 12px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             @endif
@@ -341,9 +412,11 @@
                                         <div style="font-weight: 800; color: #0f172a;" class="dark:text-white">{{ $student['full_name'] }}</div>
                                         <div style="font-size: 11px; color: #64748b; font-family: monospace;">{{ $student['admission_number'] }}</div>
                                         @if($student['has_missing'])
-                                            <span style="display: inline-block; font-size: 10px; font-weight: 800; color: #e11d48; margin-top: 2px;">
-                                                ⚠️ {{ $student['missing_count'] }} subject(s) missing
-                                            </span>
+                                            <div style="margin-top: 3px;">
+                                                <span style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 10px; font-weight: 800; color: #be123c; background: #ffe4e6; padding: 0.15rem 0.45rem; border-radius: 0.25rem; border: 1px solid #fecdd3;" title="{{ implode(', ', $student['missing_subjects'] ?? []) }}">
+                                                    ⚠️ Incomplete: {{ !empty($student['missing_subjects']) ? implode(', ', $student['missing_subjects']) : $student['missing_count'] . ' subject(s)' }}
+                                                </span>
+                                            </div>
                                         @endif
                                     </td>
                                     <td style="padding: 0.875rem 1rem; text-align: center; font-weight: 700;">

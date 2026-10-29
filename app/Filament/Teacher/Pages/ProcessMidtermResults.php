@@ -277,9 +277,16 @@ class ProcessMidtermResults extends Page
             $tr = $termResults->get($student->id);
             $sResults = $subjectResults->get($student->id, collect());
 
-            $missingCount = $sResults->where('status', 'missing')->count();
+            $missingSubjectResults = $sResults->where('status', 'missing');
+            $missingCount = $missingSubjectResults->count();
             $absentCount = $sResults->where('status', 'absent')->count();
             $completeCount = $sResults->where('status', 'complete')->count();
+
+            $missingSubjectNames = $missingSubjectResults
+                ->map(fn ($r) => $r->subject?->name)
+                ->filter()
+                ->values()
+                ->toArray();
 
             $list[] = [
                 'student_id'       => $student->id,
@@ -294,6 +301,7 @@ class ProcessMidtermResults extends Page
                 'grade'            => $tr?->grade ?? '—',
                 'remark'           => $tr?->remark ?? '—',
                 'missing_count'    => $missingCount,
+                'missing_subjects' => $missingSubjectNames,
                 'absent_count'     => $absentCount,
                 'complete_count'   => $completeCount,
                 'has_missing'      => $missingCount > 0,
@@ -301,6 +309,76 @@ class ProcessMidtermResults extends Page
         }
 
         return $list;
+    }
+
+    public function getMissingScoresBreakdownProperty(): array
+    {
+        if (! $this->session_id || ! $this->term_id || ! $this->classroom_id) {
+            return [];
+        }
+
+        $missingResults = MidtermSubjectResult::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->where('status', 'missing')
+            ->with(['student', 'subject'])
+            ->get();
+
+        if ($missingResults->isEmpty()) {
+            return [];
+        }
+
+        $snapshot = $this->snapshot;
+        $expectedHeads = $snapshot?->midterm_heads ?? [];
+
+        $studentIds = $missingResults->pluck('student_id')->unique();
+        $subjectIds = $missingResults->pluck('subject_id')->unique();
+
+        $scores = Score::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->whereIn('student_id', $studentIds)
+            ->whereIn('subject_id', $subjectIds)
+            ->get()
+            ->groupBy(fn ($s) => "{$s->student_id}_{$s->subject_id}");
+
+        $breakdown = [];
+        foreach ($missingResults as $res) {
+            $key = "{$res->student_id}_{$res->subject_id}";
+            $studentScores = $scores->get($key, collect())->keyBy('score_head_id');
+
+            $missingHeads = [];
+            foreach ($expectedHeads as $head) {
+                $headId = (int) ($head['id'] ?? $head['score_head_id']);
+                $scoreRow = $studentScores->get($headId);
+                if (! $scoreRow || ($scoreRow->score === null && ! $scoreRow->is_absent)) {
+                    $maxScore = $head['effective_max'] ?? $head['max_score'] ?? null;
+                    $missingHeads[] = ($head['name'] ?? "Head #{$headId}") . ($maxScore ? " (Max: {$maxScore})" : '');
+                }
+            }
+
+            $breakdown[] = [
+                'student_id'       => $res->student_id,
+                'student_name'     => $res->student?->full_name ?? "Student #{$res->student_id}",
+                'admission_number' => $res->student?->admission_number ?? '—',
+                'subject_id'       => $res->subject_id,
+                'subject_name'     => $res->subject?->name ?? "Subject #{$res->subject_id}",
+                'missing_heads'    => $missingHeads,
+                'url'              => EnterMidtermScores::getUrl([
+                    'session_id'   => $this->session_id,
+                    'term_id'      => $this->term_id,
+                    'classroom_id' => $this->classroom_id,
+                    'subject_id'   => $res->subject_id,
+                ]),
+            ];
+        }
+
+        usort($breakdown, function ($a, $b) {
+            $cmp = strcmp($a['student_name'], $b['student_name']);
+            return $cmp !== 0 ? $cmp : strcmp($a['subject_name'], $b['subject_name']);
+        });
+
+        return $breakdown;
     }
 
     public function calculateMidtermResults(): void

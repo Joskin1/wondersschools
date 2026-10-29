@@ -1774,3 +1774,36 @@ test('ManageMidtermStructure: applyToMultipleClasses skips locked target classes
         ->and($openCfg->midterm_weight)->toBe(40);
 });
 
+test('ProcessMidtermResults: missingScoresBreakdown identifies incomplete heads and renders diagnostic details', function () {
+    $ctx = createMidtermContext(40, 80);
+
+    // Student has head1 scored (10/10), but head2 (10) is unrecorded -> missing status
+    createTestScore([
+        'student_id'    => $ctx['student']->id,
+        'subject_id'    => $ctx['math']->id,
+        'classroom_id'  => $ctx['classroom']->id,
+        'session_id'    => $ctx['session']->id,
+        'term_id'       => $ctx['term']->id,
+        'score_head_id' => $ctx['head1']->id,
+        'score'         => 10.0,
+        'is_absent'     => false,
+    ]);
+
+    $calc = app(MidtermCalculationService::class);
+    $snapshot = $calc->getOrCreateSnapshot($ctx['classroom']->id, $ctx['session']->id, $ctx['term']->id);
+    $calc->computeStudentSubjectMidterm($ctx['student']->id, $ctx['math']->id, $ctx['classroom']->id, $ctx['session']->id, $ctx['term']->id, $snapshot);
+
+    $admin = User::factory()->create(['role' => 'admin', 'is_active' => true, 'allowed_admin_pages' => ['*']]);
+
+    Livewire::actingAs($admin)
+        ->test(\App\Filament\Teacher\Pages\ProcessMidtermResults::class)
+        ->set('session_id', $ctx['session']->id)
+        ->set('term_id', $ctx['term']->id)
+        ->set('classroom_id', $ctx['classroom']->id)
+        ->assertSee('Incomplete Mid-Term Scores Detected')
+        ->assertSee('Missing Scores Breakdown')
+        ->assertSee($ctx['student']->full_name)
+        ->assertSee($ctx['math']->name)
+        ->assertSee($ctx['head2']->name);
+});
+
