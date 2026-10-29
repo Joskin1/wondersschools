@@ -82,8 +82,10 @@ class MidtermCalculationService
     /**
      * Compute single student-subject midterm row with 3 distinct states:
      * 1. 'missing': No scores entered or any required head unscored and not marked absent.
-     * 2. 'absent': All heads marked is_absent (or raw max is 0).
-     * 3. 'complete': Calculated scaled score.
+     * 1. null: No scores entered at all — student does not offer / is not taking this subject.
+     * 2. 'missing': Partial score entered — some head(s) scored or marked absent, but other required head(s) left blank.
+     * 3. 'absent': All heads marked is_absent (or raw max is 0).
+     * 4. 'complete': Calculated scaled score.
      */
     public function computeStudentSubjectMidterm(
         int $studentId,
@@ -94,7 +96,7 @@ class MidtermCalculationService
         TermScoringSnapshot $snapshot,
         string $absentPolicy = 'count_as_zero',
         int $decimalPlaces = 2,
-    ): MidtermSubjectResult {
+    ): ?MidtermSubjectResult {
         $absentPolicy = $snapshot->absent_policy ?: $absentPolicy;
         $decimalPlaces = $snapshot->result_decimal_places !== null ? (int) $snapshot->result_decimal_places : $decimalPlaces;
         $roundingRule = $snapshot->result_rounding_rule ?: $roundingRule;
@@ -138,8 +140,20 @@ class MidtermCalculationService
             $rawSum = bcadd($rawSum, $scoreVal, 4);
         }
 
-        // 1. Missing: any head without a score row and not marked absent
-        if ($scores->isEmpty() || $hasUnscoredHead) {
+        // 1. Unscored / Not Offered: student has no scores entered at all for this subject
+        if ($scores->isEmpty()) {
+            MidtermSubjectResult::where([
+                'student_id' => $studentId,
+                'subject_id' => $subjectId,
+                'session_id' => $sessionId,
+                'term_id'    => $termId,
+            ])->delete();
+
+            return null;
+        }
+
+        // 2. Missing / Incomplete: student offers subject (at least one head scored/absent), but other heads left unscored
+        if ($hasUnscoredHead) {
             return MidtermSubjectResult::updateOrCreate(
                 ['student_id' => $studentId, 'subject_id' => $subjectId, 'session_id' => $sessionId, 'term_id' => $termId],
                 [
@@ -234,6 +248,22 @@ class MidtermCalculationService
             $studentRows = $allMidtermResults->get($studentId, collect());
             // Total obtainable computed strictly from the subjects this student actually offers
             $subjectsCount = $studentRows->count();
+
+            if ($subjectsCount === 0) {
+                MidtermTermResult::updateOrCreate(
+                    ['student_id' => $studentId, 'session_id' => $sessionId, 'term_id' => $termId],
+                    [
+                        'classroom_id'     => $classroomId,
+                        'subjects_count'   => 0,
+                        'total_obtainable' => 0.0,
+                        'total_obtained'   => 0.0,
+                        'percentage'       => 0.0,
+                        'grade'            => '—',
+                        'remark'           => '—',
+                    ]
+                );
+                continue;
+            }
 
             $totalObtainable = (float) ($snapshot->midterm_weight * $subjectsCount);
             $totalObtained = (float) $studentRows->where('status', 'complete')->sum(fn ($r) => (float) $r->scaled_score);

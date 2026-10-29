@@ -47,6 +47,9 @@ class Student extends Model
         'is_portal_active',
         'activated_at',
         'activated_by',
+        'primary_biometric_template',
+        'backup_biometric_template',
+        'biometric_enrolled_at',
     ];
 
     /**
@@ -171,6 +174,7 @@ class Student extends Model
             'registration_completed_at' => 'datetime',
             'is_portal_active'         => 'boolean',
             'activated_at'             => 'datetime',
+            'biometric_enrolled_at'    => 'datetime',
         ];
     }
 
@@ -496,4 +500,25 @@ class Student extends Model
     {
         $query->where('status', 'pending');
     }
+
+    /**
+     * Determine if this student has registered biometrics.
+     */
+    public function isBiometricEnrolled(): bool
+    {
+        return ! empty($this->primary_biometric_template);
+    }
+
+    /**
+     * Clear and reset biometric templates for re-enrollment.
+     */
+    public function clearBiometrics(): void
+    {
+        $this->forceFill([
+            'primary_biometric_template' => null,
+            'backup_biometric_template' => null,
+            'biometric_enrolled_at' => null,
+        ])->save();
+    }
 }
+

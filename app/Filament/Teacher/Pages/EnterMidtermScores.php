@@ -291,7 +291,7 @@ class EnterMidtermScores extends Page
             $sId = $st['id'];
             $r = $midtermResults->get($sId);
             $resultsMap[$sId] = [
-                'status'       => $r?->status ?? 'missing',
+                'status'       => $r?->status ?? 'unscored',
                 'raw_score'    => (float) ($r?->raw_score ?? 0),
                 'scaled_score' => $r?->scaled_score !== null ? (float) $r->scaled_score : null,
                 'grade'        => $r?->grade ?? '—',
@@ -404,6 +404,17 @@ class EnterMidtermScores extends Page
             $decimalPlaces,
             $roundingRule
         );
+
+        if ($res === null) {
+            unset($this->studentResults[$studentId]);
+            return [
+                'status'        => 'success',
+                'raw_total'     => 0.0,
+                'scaled_score'  => '—',
+                'student_grade' => '—',
+                'midterm_status'=> null,
+            ];
+        }
 
         $this->studentResults[$studentId] = [
             'status'       => $res->status,

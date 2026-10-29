@@ -16,18 +16,23 @@ class ScoreHeadSeeder extends Seeder
     public function run(): void
     {
         $defaults = [
-            ['name' => 'Classwork', 'max_score' => 10],
-            ['name' => 'Test 1',    'max_score' => 10],
-            ['name' => 'Exam',      'max_score' => 80],
+            ['name' => 'Classwork',     'max_score' => 10, 'type' => 'midterm'],
+            ['name' => 'Assignment',    'max_score' => 10, 'type' => 'midterm'],
+            ['name' => 'Mid-Term Test', 'max_score' => 20, 'type' => 'midterm'],
+            ['name' => 'Exam',          'max_score' => 60, 'type' => 'exam'],
         ];
 
         foreach ($defaults as $item) {
             ScoreHead::firstOrCreate(
                 ['name' => $item['name']],
-                ['max_score' => $item['max_score'], 'is_active' => true]
+                [
+                    'max_score' => $item['max_score'],
+                    'type'      => $item['type'] ?? 'midterm',
+                    'is_active' => true,
+                ]
             );
         }
 
-        $this->command?->info('Score heads seeded: Classwork (10), Test 1 (10), Exam (80).');
+        $this->command?->info('Score heads seeded: Classwork, Assignment, Mid-Term Test, Exam.');
     }
 }

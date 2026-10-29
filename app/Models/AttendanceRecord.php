@@ -18,6 +18,7 @@ class AttendanceRecord extends Model
         'status',
         'remark',
         'arrival_time',
+        'departure_time',
     ];
 
     public function attendance(): BelongsTo

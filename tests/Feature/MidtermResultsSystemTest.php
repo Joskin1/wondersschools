@@ -761,14 +761,14 @@ test('Test 28 (Snapshot Integrity): Modifying score heads after scoring has star
         ->and($reloaded->midterm_heads[0]['effective_max'])->toBe(10);
 });
 
-test('Test 29 (Missing State): Unscored student-subject produces status missing, null scaled score, and dash grade', function () {
+test('Test 29 (Missing State): Unscored student-subject produces null (not offered), partial scores produce status missing', function () {
     $ctx = createMidtermContext(40, 80);
 
     $calc = app(MidtermCalculationService::class);
     $snapshot = $calc->getOrCreateSnapshot($ctx['classroom']->id, $ctx['session']->id, $ctx['term']->id);
 
-    // Student has no scores at all
-    $res = $calc->computeStudentSubjectMidterm(
+    // 1. Student has no scores at all -> returns null (not offering / not taking exam)
+    $resNoScores = $calc->computeStudentSubjectMidterm(
         $ctx['student']->id,
         $ctx['math']->id,
         $ctx['classroom']->id,
@@ -777,11 +777,25 @@ test('Test 29 (Missing State): Unscored student-subject produces status missing,
         $snapshot
     );
 
-    expect($res->status)->toBe('missing')
-        ->and($res->scaled_score)->toBeNull()
-        ->and($res->percentage)->toBeNull()
-        ->and($res->grade)->toBe('—')
-        ->and($res->remark)->toBe('Incomplete');
+    expect($resNoScores)->toBeNull();
+
+    // 2. Partial scores: student took head1 (10/10), but head2 is unscored and not marked absent -> missing
+    createTestScore(['student_id' => $ctx['student']->id, 'subject_id' => $ctx['math']->id, 'classroom_id' => $ctx['classroom']->id, 'session_id' => $ctx['session']->id, 'term_id' => $ctx['term']->id, 'score_head_id' => $ctx['head1']->id, 'score' => 10.0, 'is_absent' => false]);
+
+    $resPartial = $calc->computeStudentSubjectMidterm(
+        $ctx['student']->id,
+        $ctx['math']->id,
+        $ctx['classroom']->id,
+        $ctx['session']->id,
+        $ctx['term']->id,
+        $snapshot
+    );
+
+    expect($resPartial->status)->toBe('missing')
+        ->and($resPartial->scaled_score)->toBeNull()
+        ->and($resPartial->percentage)->toBeNull()
+        ->and($resPartial->grade)->toBe('—')
+        ->and($resPartial->remark)->toBe('Incomplete');
 });
 
 test('Test 30 (Unlock Then Recalculate): Unlocking midterm allows score modifications and triggers terminal recalculation', function () {
@@ -1642,3 +1656,121 @@ test('ManageMidtermStructure: applyToMultipleClasses skips class with active leg
     // Class with active legacy data was skipped
     expect(ClassMidtermConfig::where('classroom_id', $targetLegacyClass->id)->exists())->toBeFalse();
 });
+
+test('ManageMidtermStructure: admin can lock and unlock structure, and locked structure rejects edits', function () {
+    Setting::updateOrCreate(['key' => 'use_midterm_results'], ['value' => '1']);
+
+    $session = Session::factory()->active()->create();
+    $term = Term::create(['session_id' => $session->id, 'name' => 'First Term', 'order' => 1, 'is_active' => true]);
+    $classroom = Classroom::factory()->create(['is_active' => true]);
+
+    $head = ScoreHead::create(['name' => 'CA 1', 'max_score' => 20, 'type' => 'midterm', 'is_active' => true]);
+
+    $admin = User::factory()->create(['role' => 'admin', 'is_active' => true, 'allowed_admin_pages' => ['*']]);
+
+    // 1. Initial save
+    Livewire::actingAs($admin)
+        ->test(ManageMidtermStructure::class)
+        ->set('classroom_id', $classroom->id)
+        ->set('midterm_weight', 40)
+        ->set('items', [
+            [
+                'score_head_id'      => $head->id,
+                'name'               => $head->name,
+                'max_score'          => 20,
+                'max_score_override' => null,
+            ],
+        ])
+        ->call('saveConfig');
+
+    $config = ClassMidtermConfig::where('classroom_id', $classroom->id)->first();
+    expect($config)->not->toBeNull()
+        ->and($config->is_locked)->toBeFalse();
+
+    // 2. Lock structure
+    Livewire::actingAs($admin)
+        ->test(ManageMidtermStructure::class)
+        ->set('classroom_id', $classroom->id)
+        ->call('toggleLock');
+
+    $config->refresh();
+    expect($config->is_locked)->toBeTrue();
+
+    // 3. Modifying locked structure as non-sudo admin is rejected
+    Livewire::actingAs($admin)
+        ->test(ManageMidtermStructure::class)
+        ->set('classroom_id', $classroom->id)
+        ->set('midterm_weight', 50)
+        ->call('saveConfig');
+
+    $config->refresh();
+    expect($config->midterm_weight)->toBe(40); // Unchanged
+
+    // 4. Unlock structure
+    Livewire::actingAs($admin)
+        ->test(ManageMidtermStructure::class)
+        ->set('classroom_id', $classroom->id)
+        ->call('toggleLock');
+
+    $config->refresh();
+    expect($config->is_locked)->toBeFalse();
+
+    // 5. Now edits succeed
+    Livewire::actingAs($admin)
+        ->test(ManageMidtermStructure::class)
+        ->set('classroom_id', $classroom->id)
+        ->set('midterm_weight', 50)
+        ->call('saveConfig');
+
+    $config->refresh();
+    expect($config->midterm_weight)->toBe(50);
+});
+
+test('ManageMidtermStructure: applyToMultipleClasses skips locked target classes', function () {
+    Setting::updateOrCreate(['key' => 'use_midterm_results'], ['value' => '1']);
+
+    $session = Session::factory()->active()->create();
+    $term = Term::create(['session_id' => $session->id, 'name' => 'First Term', 'order' => 1, 'is_active' => true]);
+
+    $sourceClass = Classroom::factory()->create(['name' => 'Source', 'is_active' => true]);
+    $lockedClass = Classroom::factory()->create(['name' => 'Locked Class', 'is_active' => true]);
+    $openClass   = Classroom::factory()->create(['name' => 'Open Class', 'is_active' => true]);
+
+    $head1 = ScoreHead::create(['name' => 'CA Bulk', 'max_score' => 20, 'type' => 'midterm', 'is_active' => true]);
+
+    // Pre-create locked class configuration with weight 30
+    $lockedCfg = ClassMidtermConfig::create([
+        'classroom_id'       => $lockedClass->id,
+        'midterm_weight'     => 30,
+        'calculation_method' => 'scale_to_weight',
+        'is_locked'          => true,
+    ]);
+
+    $admin = User::factory()->create(['role' => 'admin', 'is_active' => true, 'allowed_admin_pages' => ['*']]);
+
+    Livewire::actingAs($admin)
+        ->test(ManageMidtermStructure::class)
+        ->set('classroom_id', $sourceClass->id)
+        ->set('midterm_weight', 40)
+        ->set('items', [
+            [
+                'score_head_id'      => $head1->id,
+                'name'               => $head1->name,
+                'max_score'          => 20,
+                'max_score_override' => null,
+            ],
+        ])
+        ->set('apply_target_classroom_ids', [$lockedClass->id, $openClass->id])
+        ->call('applyToMultipleClasses');
+
+    // Locked class was preserved and not overwritten
+    $lockedCfg->refresh();
+    expect($lockedCfg->midterm_weight)->toBe(30)
+        ->and($lockedCfg->is_locked)->toBeTrue();
+
+    // Open class received new configuration
+    $openCfg = ClassMidtermConfig::where('classroom_id', $openClass->id)->first();
+    expect($openCfg)->not->toBeNull()
+        ->and($openCfg->midterm_weight)->toBe(40);
+});
+

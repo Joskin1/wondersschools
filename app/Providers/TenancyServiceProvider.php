@@ -102,6 +102,14 @@ class TenancyServiceProvider extends ServiceProvider
                 PreventAccessFromCentralDomains::class,
             ])->group(base_path('routes/tenant.php'));
         }
+
+        if (file_exists(base_path('routes/tenant_api.php'))) {
+            Route::middleware([
+                'api',
+                InitializeTenancyByDomain::class,
+                PreventAccessFromCentralDomains::class,
+            ])->group(base_path('routes/tenant_api.php'));
+        }
     }
 
     protected function makeTenancyMiddlewareHighestPriority(): void

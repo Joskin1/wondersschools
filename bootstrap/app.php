@@ -26,6 +26,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'api/v1/desktop/*',
+            '*/api/v1/desktop/*',
+        ]);
+
         $middleware->redirectGuestsTo(function (\Illuminate\Http\Request $request): string {
             if ($request->is('teacher*')) {
                 return '/teacher/login';

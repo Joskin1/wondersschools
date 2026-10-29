@@ -290,14 +290,30 @@
                         </p>
                     </div>
 
-                    <button type="button" wire:click="saveComments" wire:loading.attr="disabled" wire:target="saveComments" @disabled($isLocked) style="padding: 0.625rem 1.25rem; border-radius: 0.625rem; background: {{ $isLocked ? '#94a3b8' : '#4f46e5' }}; color: white; font-size: 0.875rem; font-weight: 700; border: none; cursor: {{ $isLocked ? 'not-allowed' : 'pointer' }}; display: inline-flex; align-items: center; gap: 0.375rem;">
-                        <svg wire:loading wire:target="saveComments" class="animate-spin" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24">
-                            <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                        </svg>
-                        <span wire:loading.remove wire:target="saveComments">💾 Save Remarks</span>
-                        <span wire:loading wire:target="saveComments">Saving...</span>
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        @if($this->canApprove)
+                            @php
+                                $midtermClassPdfUrl = route('admin.results.midterm-class-pdf', [
+                                    'session_id'   => $session_id,
+                                    'term_id'      => $term_id,
+                                    'classroom_id' => $classroom_id,
+                                ]);
+                            @endphp
+                            <a href="{{ $midtermClassPdfUrl }}" target="_blank" style="padding: 0.625rem 1.25rem; border-radius: 0.625rem; background: #dc2626; color: white; font-size: 0.875rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.375rem; transition: background 0.15s;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                                <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                <span>Print Class Slips (PDF)</span>
+                            </a>
+                        @endif
+
+                        <button type="button" wire:click="saveComments" wire:loading.attr="disabled" wire:target="saveComments" @disabled($isLocked) style="padding: 0.625rem 1.25rem; border-radius: 0.625rem; background: {{ $isLocked ? '#94a3b8' : '#4f46e5' }}; color: white; font-size: 0.875rem; font-weight: 700; border: none; cursor: {{ $isLocked ? 'not-allowed' : 'pointer' }}; display: inline-flex; align-items: center; gap: 0.375rem;">
+                            <svg wire:loading wire:target="saveComments" class="animate-spin" style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="saveComments">💾 Save Remarks</span>
+                            <span wire:loading wire:target="saveComments">Saving...</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div style="overflow-x: auto;">
@@ -312,6 +328,9 @@
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: center;">Grade</th>
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; width: 220px;">Teacher Comment</th>
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; width: 220px;">Head Teacher Comment</th>
+                                @if($this->canApprove)
+                                    <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: center; width: 60px;">Print</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -368,10 +387,17 @@
                                                @disabled(! $this->canApprove || $isLocked)
                                                class="ss-input" />
                                     </td>
+                                    @if($this->canApprove)
+                                        <td style="padding: 0.75rem 1rem; text-align: center;">
+                                            <a href="{{ route('student.midterm-pdf', ['session_id' => $session_id, 'term_id' => $term_id, 'student_id' => $student['student_id']]) }}" target="_blank" title="Print Student Midterm Slip" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 0.375rem; background: #fee2e2; color: #dc2626; text-decoration: none; transition: background 0.15s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
+                                                <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                            </a>
+                                        </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" style="padding: 2.5rem; text-align: center; color: #94a3b8;">
+                                    <td colspan="{{ $this->canApprove ? 9 : 8 }}" style="padding: 2.5rem; text-align: center; color: #94a3b8;">
                                         No students enrolled in this class.
                                     </td>
                                 </tr>

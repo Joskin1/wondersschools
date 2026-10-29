@@ -362,6 +362,21 @@
                             <span wire:loading.remove wire:target="saveRemarks">Save Remarks &amp; Attendance</span>
                             <span wire:loading wire:target="saveRemarks">Saving...</span>
                         </button>
+
+                        @if($this->canApprove)
+                            {{-- Batch Class Results PDF (Admin Only) --}}
+                            @php
+                                $classPdfUrl = route('admin.results.class-pdf', [
+                                    'session_id'   => $session_id,
+                                    'term_id'      => $term_id,
+                                    'classroom_id' => $classroom_id,
+                                ]);
+                            @endphp
+                            <a href="{{ $classPdfUrl }}" target="_blank" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 0.875rem; border-radius: 0.625rem; background: #dc2626; color: white; font-size: 0.8rem; font-weight: 800; text-decoration: none; transition: background 0.15s;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                                <svg style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                <span>Print Class Results (PDF)</span>
+                            </a>
+                        @endif
                     </div>
                 </div>
 
@@ -381,6 +396,9 @@
                             <th style="padding: 0.875rem 1rem; width: 140px;">Times Present</th>
                             <th style="padding: 0.875rem 1rem;">Class Teacher's Comment</th>
                             <th style="padding: 0.875rem 1rem;">Principal's Comment</th>
+                            @if($this->canApprove)
+                                <th style="padding: 0.875rem 1rem; text-align: center; width: 60px;">Print</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -435,10 +453,17 @@
                                         </span>
                                     @endif
                                 </td>
+                                @if($this->canApprove)
+                                    <td style="padding: 0.5rem 1rem; text-align: center;">
+                                        <a href="{{ route('admin.results.student-pdf', ['session_id' => $session_id, 'term_id' => $term_id, 'student_id' => $st['student_id']]) }}" target="_blank" title="Print Student Report Card" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 0.375rem; background: #fee2e2; color: #dc2626; text-decoration: none; transition: background 0.15s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
+                                            <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                        </a>
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" style="padding: 2rem; text-align: center; color: #94a3b8;">
+                                <td colspan="{{ $this->canApprove ? 10 : 9 }}" style="padding: 2rem; text-align: center; color: #94a3b8;">
                                     No enrolled students found in this classroom for the selected session.
                                 </td>
                             </tr>

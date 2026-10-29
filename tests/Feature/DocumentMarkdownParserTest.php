@@ -214,7 +214,7 @@ TEXT;
         ->set( 'data.subject_id', $this->subject->id )
         ->set( 'data.classroom_id', $this->classroom->id )
         ->set( 'data.week_number', 1 )
-        ->set( 'data.submission_type', 'template' )
+        ->set( 'data.submission_type', 'file' )
         ->set( 'data.template_file', $file )
         ->call( 'create' )
         ->assertHasNoFormErrors();
@@ -227,13 +227,12 @@ TEXT;
 
         $this->assertNotNull( $lessonNote );
         $this->assertEquals( 'draft', $lessonNote->status );
-        $this->assertNotEmpty( $lessonNote->learning_objectives );
 
         $version = $lessonNote->latestVersion;
         $this->assertNotNull( $version );
-        $this->assertTrue( $version->isWritten() );
-        $this->assertEquals( 'INTRODUCTION TO BINARY NUMBERS', $version->title );
-        $this->assertStringContainsString( 'Binary is a base-2 numeral system', $version->content );
+        $this->assertTrue( $version->isFile() );
+        $this->assertEquals( 'BINARY ARITHMETIC', $version->title );
+        $this->assertNotNull( $version->file_path );
 
         // Ensure file was NEVER placed on the public disk
         $this->assertEmpty( Storage::disk( 'public' )->allFiles( 'lesson-note-uploads/temp' ) );

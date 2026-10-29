@@ -12,11 +12,18 @@ class ClassMidtermConfig extends Model
         'classroom_id',
         'midterm_weight',
         'calculation_method',
+        'is_locked',
     ];
 
     protected $casts = [
         'midterm_weight' => 'integer',
+        'is_locked'      => 'boolean',
     ];
+
+    public function isLocked(): bool
+    {
+        return (bool) $this->is_locked;
+    }
 
     public function classroom(): BelongsTo
     {

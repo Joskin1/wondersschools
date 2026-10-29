@@ -86,12 +86,30 @@
             <div class="ms-structure-card">
                 {{-- Header with Stats --}}
                 <div class="ms-header">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                         <span style="font-size: 0.875rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em;" class="dark:text-white">Assessment Weights</span>
-                        @if($locked)
+                        @if($hasActiveScoring)
                             <span class="ms-badge ms-badge-locked">🔒 Locked (Scores Recorded)</span>
+                        @elseif($locked)
+                            <span class="ms-badge ms-badge-locked" style="background: rgba(245, 158, 11, 0.1); color: #d97706; border-color: rgba(245, 158, 11, 0.2);">🔒 Locked (Protected)</span>
                         @else
                             <span class="ms-badge ms-badge-editable">🔓 Configurable</span>
+                        @endif
+
+                        @if(! $hasActiveScoring || auth()->user()?->isSudo())
+                            <button type="button" wire:click="toggleLock" wire:loading.attr="disabled" wire:target="toggleLock"
+                                class="ms-btn ms-btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.75rem; border-radius: 0.5rem; display: inline-flex; align-items: center; gap: 0.375rem;">
+                                <svg wire:loading wire:target="toggleLock" class="animate-spin" style="width: 12px; height: 12px;" fill="none" viewBox="0 0 24 24">
+                                    <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span wire:loading.remove wire:target="toggleLock">
+                                    {{ $locked ? '🔓 Unlock Structure' : '🔒 Lock Structure' }}
+                                </span>
+                                <span wire:loading wire:target="toggleLock">
+                                    {{ $locked ? 'Unlocking...' : 'Locking...' }}
+                                </span>
+                            </button>
                         @endif
                     </div>
 
@@ -238,6 +256,10 @@
                                     </svg>
                                     <span wire:loading.remove wire:target="saveConfig">Save Mid-Term Structure</span>
                                     <span wire:loading wire:target="saveConfig">Saving…</span>
+                                </button>
+                            @else
+                                <button type="button" disabled class="ms-btn" style="background: #e2e8f0; color: #64748b; cursor: not-allowed; font-weight: 700;">
+                                    🔒 Structure Locked (Unlock above to edit)
                                 </button>
                             @endif
                         </div>

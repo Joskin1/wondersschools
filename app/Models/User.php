@@ -37,6 +37,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         'is_active',
         'email_verified_at',
         'registration_completed_at',
+        'primary_biometric_template',
+        'backup_biometric_template',
+        'biometric_enrolled_at',
     ];
 
     /**
@@ -106,6 +109,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
             'allowed_admin_pages' => 'array',
             'is_active' => 'boolean',
             'registration_completed_at' => 'datetime',
+            'biometric_enrolled_at' => 'datetime',
         ];
     }
 
@@ -450,4 +454,25 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
     {
         return !$this->isSudo() && $this->isActive();
     }
+
+    /**
+     * Determine if this user has registered biometrics.
+     */
+    public function isBiometricEnrolled(): bool
+    {
+        return ! empty($this->primary_biometric_template);
+    }
+
+    /**
+     * Clear and reset biometric templates for re-enrollment.
+     */
+    public function clearBiometrics(): void
+    {
+        $this->forceFill([
+            'primary_biometric_template' => null,
+            'backup_biometric_template' => null,
+            'biometric_enrolled_at' => null,
+        ])->save();
+    }
 }
+

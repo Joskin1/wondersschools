@@ -19,6 +19,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -182,6 +183,15 @@ class StudentResource extends Resource
                         default => 'heroicon-o-question-mark-circle',
                     }),
 
+                TextColumn::make('biometric_status')
+                    ->label('Biometrics')
+                    ->badge()
+                    ->getStateUsing(fn (Student $record): string => $record->primary_biometric_template ? 'Enrolled' : 'Not Enrolled')
+                    ->color(fn (string $state): string => $state === 'Enrolled' ? 'success' : 'gray')
+                    ->icon(fn (string $state): string => $state === 'Enrolled' ? 'heroicon-o-finger-print' : 'heroicon-o-x-circle')
+                    ->description(fn (Student $record): ?string => $record->biometric_enrolled_at?->format('M d, Y'))
+                    ->sortable(query: fn ($query, $direction) => $query->orderBy('biometric_enrolled_at', $direction)),
+
                 ToggleColumn::make('is_portal_active')
                     ->label('Portal')
                     ->disabled(fn (Student $record): bool => ! $record->isRegistrationCompleted())
@@ -265,9 +275,30 @@ class StudentResource extends Resource
                         }
                     }),
 
+                TernaryFilter::make('biometrics')
+                    ->label('Biometric Enrollment')
+                    ->placeholder('All Students')
+                    ->trueLabel('Enrolled Only')
+                    ->falseLabel('Not Enrolled Only')
+                    ->queries(
+                        true: fn ($query) => $query->whereNotNull('primary_biometric_template'),
+                        false: fn ($query) => $query->whereNull('primary_biometric_template'),
+                    ),
+
                 TrashedFilter::make(),
             ])
             ->actions([
+                Action::make('biometrics')
+                    ->label('Biometrics')
+                    ->icon('heroicon-o-finger-print')
+                    ->color(fn (Student $record) => $record->primary_biometric_template ? 'success' : 'gray')
+                    ->modalHeading(fn (Student $record) => "Biometric Identity: {$record->full_name}")
+                    ->modalContent(fn (Student $record) => view('filament.modals.student-biometric-info', [
+                        'student' => $record,
+                    ]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close'),
+
                 Action::make('copy_registration_link')
                     ->label('Copy Registration Link')
                     ->icon('heroicon-o-link')
@@ -295,6 +326,22 @@ class StudentResource extends Resource
                     ->modalWidth('lg'),
 
                 ViewAction::make(),
+                Action::make('reset_biometrics')
+                    ->label('Reset Biometrics')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('danger')
+                    ->visible(fn (Student $record) => ! empty($record->primary_biometric_template))
+                    ->requiresConfirmation()
+                    ->modalHeading('Reset Biometric Data')
+                    ->modalDescription(fn (Student $record) => "Are you sure you want to clear biometric templates for {$record->full_name}? The student will need to be re-scanned on a biometric enrollment station.")
+                    ->action(function (Student $record) {
+                        $record->clearBiometrics();
+                        \Filament\Notifications\Notification::make()
+                            ->title('Biometric Data Cleared')
+                            ->body("Biometric templates for {$record->full_name} have been cleared.")
+                            ->warning()
+                            ->send();
+                    }),
                 DeleteAction::make(),
                 RestoreAction::make(),
                 Impersonate::make()

@@ -159,6 +159,11 @@ class CreateTeacherLessonNote extends CreateRecord
             // Store permanently on lesson_notes disk
             Storage::disk('lesson_notes')->put($permanentPath, $fileContents);
 
+            // Clean up temporary upload if on local disk
+            if ($sourceDisk === 'local' && Storage::disk('local')->exists($templateFile)) {
+                Storage::disk('local')->delete($templateFile);
+            }
+
             // Record metadata for afterCreate
             $this->uploadedFilePath = $permanentPath;
             $this->uploadedFileName = $originalName;

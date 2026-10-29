@@ -62,6 +62,19 @@ Route::get('/admin/result-pins/{batch}/pdf', [\App\Http\Controllers\ResultPinPdf
     ->middleware('auth')
     ->name('admin.result-pins.pdf');
 
+// Admin Class Batch & Individual Result PDF Downloads (auth-protected, admin only)
+Route::get('/admin/results/class-pdf', [\App\Http\Controllers\ClassResultPdfController::class, 'downloadTerminalClassPdf'])
+    ->middleware('auth')
+    ->name('admin.results.class-pdf');
+
+Route::get('/admin/results/midterm-class-pdf', [\App\Http\Controllers\ClassResultPdfController::class, 'downloadMidtermClassPdf'])
+    ->middleware('auth')
+    ->name('admin.results.midterm-class-pdf');
+
+Route::get('/admin/results/student-pdf', [\App\Http\Controllers\ClassResultPdfController::class, 'downloadSingleStudentPdf'])
+    ->middleware('auth')
+    ->name('admin.results.student-pdf');
+
 // Student Lesson Note PDF Download (auth-protected)
 Route::get('/student/lesson-notes/{lessonNote}/pdf', [\App\Http\Controllers\LessonNotePdfController::class, 'download'])
     ->middleware('auth')

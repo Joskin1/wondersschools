@@ -35,6 +35,7 @@ class ManageMidtermStructure extends Page
     public int $midterm_weight = 40;
     public int $rawMax = 0;
     public bool $locked = false;
+    public bool $hasActiveScoring = false;
 
     /** @var array<int, array{score_head_id: int, name: string, max_score: int, max_score_override: int|null}> */
     public array $items = [];
@@ -79,6 +80,7 @@ class ManageMidtermStructure extends Page
         $this->items = [];
         $this->rawMax = 0;
         $this->locked = false;
+        $this->hasActiveScoring = false;
 
         if (! $this->classroom_id) {
             return;
@@ -99,12 +101,14 @@ class ManageMidtermStructure extends Page
                 ->where('term_id', $activeTerm->id)
                 ->exists();
 
-            $this->locked = $hasSnapshot || $hasScores;
+            $this->hasActiveScoring = $hasSnapshot || $hasScores;
         }
 
         $config = ClassMidtermConfig::with(['heads.scoreHead'])
             ->where('classroom_id', $this->classroom_id)
             ->first();
+
+        $this->locked = $this->hasActiveScoring || (bool) ($config?->is_locked);
 
         if ($config) {
             $this->midterm_weight = (int) $config->midterm_weight;
@@ -210,7 +214,11 @@ class ManageMidtermStructure extends Page
         }
 
         if ($this->locked && ! Auth::user()?->isSudo()) {
-            Notification::make()->title('Configuration is locked because scoring has already started.')->danger()->send();
+            Notification::make()
+                ->title('Configuration is locked.')
+                ->body('Please unlock this class structure before saving changes.')
+                ->danger()
+                ->send();
             return;
         }
 
@@ -261,6 +269,41 @@ class ManageMidtermStructure extends Page
         Notification::make()->title('Mid-term structure saved successfully.')->success()->send();
     }
 
+    public function toggleLock(): void
+    {
+        if (! $this->classroom_id) {
+            Notification::make()->title('Please select a classroom first.')->warning()->send();
+            return;
+        }
+
+        $user = Auth::user();
+
+        if ($this->hasActiveScoring && ! $user?->isSudo()) {
+            Notification::make()
+                ->title('Cannot unlock structure')
+                ->body('Scores or snapshots already exist for this class in the current term. Only a super-admin can modify it.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $config = ClassMidtermConfig::where('classroom_id', $this->classroom_id)->first();
+        if (! $config) {
+            Notification::make()->title('Please save the configuration before locking.')->warning()->send();
+            return;
+        }
+
+        $newLocked = ! $config->is_locked;
+        $config->update(['is_locked' => $newLocked]);
+        $this->locked = $newLocked || $this->hasActiveScoring;
+
+        Notification::make()
+            ->title($newLocked ? 'Structure locked.' : 'Structure unlocked.')
+            ->body($newLocked ? 'Mid-Term score structure is now protected against accidental changes.' : 'Mid-Term score structure is now editable.')
+            ->success()
+            ->send();
+    }
+
     public function copyFromClassroom(): void
     {
         if (! $this->copy_source_classroom_id) {
@@ -307,6 +350,12 @@ class ManageMidtermStructure extends Page
 
         DB::transaction(function () use ($activeSession, $activeTerm) {
             foreach ($this->apply_target_classroom_ids as $targetClassId) {
+                // Skip any class that is locked
+                $targetConfig = ClassMidtermConfig::where('classroom_id', $targetClassId)->first();
+                if ($targetConfig?->is_locked) {
+                    continue;
+                }
+
                 if ($activeSession && $activeTerm) {
                     // Skip any class with existing legacy scores or results in active session & term
                     $hasLegacy = Score::where('classroom_id', $targetClassId)

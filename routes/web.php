@@ -12,4 +12,5 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-
+// Central device pairing fallback for desktop clients connecting to main domain
+Route::post('/api/v1/desktop/pair', [\App\Http\Controllers\Api\DesktopDeviceAuthController::class, 'pair']);

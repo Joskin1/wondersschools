@@ -251,6 +251,14 @@ class Settings extends Page
             $data['use_midterm_results'] = filter_var($data['use_midterm_results'], FILTER_VALIDATE_BOOLEAN);
         }
 
+        // Academic & Results safe defaults
+        $data['result_rounding_rule'] = ! empty($data['result_rounding_rule']) ? $data['result_rounding_rule'] : 'half_up';
+        $data['result_decimal_places'] = isset($data['result_decimal_places']) ? (int) $data['result_decimal_places'] : 2;
+        $data['midterm_absent_policy'] = ! empty($data['midterm_absent_policy']) ? $data['midterm_absent_policy'] : 'count_as_zero';
+        if (empty($data['custom_grade_scale'])) {
+            $data['custom_grade_scale'] = self::getDefaultWaecGradeScale();
+        }
+
         $this->form->fill($data);
     }
 
@@ -1420,12 +1428,13 @@ class Settings extends Page
         $singleFileKeys = ['school_logo', 'hero_image', 'about_image'];
 
         if (in_array('result_rounding_rule', $keys, true) && array_key_exists('result_rounding_rule', $data)) {
-            $ruleVal = $data['result_rounding_rule'];
+            $ruleVal = ! empty($data['result_rounding_rule']) ? $data['result_rounding_rule'] : 'half_up';
             if (! in_array($ruleVal, ['half_up', 'floor', 'ceil'], true)) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'data.result_rounding_rule' => 'The selected result rounding rule is invalid. Must be half_up, floor, or ceil.',
                 ]);
             }
+            $data['result_rounding_rule'] = $ruleVal;
         }
 
         // 1. Process Settings Table Keys

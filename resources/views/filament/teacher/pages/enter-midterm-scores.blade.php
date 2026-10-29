@@ -270,9 +270,9 @@
                             @foreach($students as $student)
                                 @php
                                     $res = $studentResults[$student['id']] ?? null;
-                                    $scaledDisplay = match ($res['status'] ?? 'missing') {
+                                    $scaledDisplay = match ($res['status'] ?? 'unscored') {
                                         'absent'  => 'ABS',
-                                        'missing' => '—',
+                                        'missing', 'unscored' => '—',
                                         default   => number_format((float) ($res['scaled_score'] ?? 0), 2),
                                     };
                                 @endphp
@@ -348,7 +348,7 @@
 
                                     <td style="text-align: center;">
                                         <span id="sync-text-{{ $student['id'] }}" class="text-slate-400 font-bold text-xs">
-                                            {{ ($res['status'] ?? 'missing') === 'missing' ? 'Draft' : 'Computed' }}
+                                            {{ in_array($res['status'] ?? 'unscored', ['missing', 'unscored'], true) ? 'Draft' : 'Computed' }}
                                         </span>
                                     </td>
                                 </tr>

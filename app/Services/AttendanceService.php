@@ -267,6 +267,7 @@ class AttendanceService
                         'status' => $data['status'] ?? 'present',
                         'remark' => ! empty($data['remark']) ? trim((string) $data['remark']) : null,
                         'arrival_time' => ! empty($data['arrival_time']) ? (string) $data['arrival_time'] : null,
+                        'departure_time' => ! empty($data['departure_time']) ? (string) $data['departure_time'] : null,
                     ]
                 );
             }

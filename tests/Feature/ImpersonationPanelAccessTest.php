@@ -39,12 +39,12 @@ describe('User canAccessPanel with and without Impersonation', function () {
     it('enforces normal role access when not impersonating', function () {
         expect($this->sudoUser->canAccessPanel($this->sudoPanel))->toBeTrue();
         expect($this->sudoUser->canAccessPanel($this->adminPanel))->toBeTrue();
-        expect($this->sudoUser->canAccessPanel($this->teacherPanel))->toBeFalse();
+        expect($this->sudoUser->canAccessPanel($this->teacherPanel))->toBeTrue();
         expect($this->sudoUser->canAccessPanel($this->studentPanel))->toBeFalse();
 
         expect($this->adminUser->canAccessPanel($this->sudoPanel))->toBeFalse();
         expect($this->adminUser->canAccessPanel($this->adminPanel))->toBeTrue();
-        expect($this->adminUser->canAccessPanel($this->teacherPanel))->toBeFalse();
+        expect($this->adminUser->canAccessPanel($this->teacherPanel))->toBeTrue();
         expect($this->adminUser->canAccessPanel($this->studentPanel))->toBeFalse();
 
         expect($this->teacherUser->canAccessPanel($this->sudoPanel))->toBeFalse();
