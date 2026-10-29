@@ -264,6 +264,15 @@ class ProcessMidtermResults extends Page
         $subjectResults = MidtermSubjectResult::where('classroom_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
             ->where('term_id', $this->term_id)
+            ->whereExists(function ($query) {
+                $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                    ->from('scores')
+                    ->whereColumn('scores.student_id', 'midterm_subject_results.student_id')
+                    ->whereColumn('scores.subject_id', 'midterm_subject_results.subject_id')
+                    ->whereColumn('scores.classroom_id', 'midterm_subject_results.classroom_id')
+                    ->whereColumn('scores.session_id', 'midterm_subject_results.session_id')
+                    ->whereColumn('scores.term_id', 'midterm_subject_results.term_id');
+            })
             ->get()
             ->groupBy('student_id');
 
@@ -321,6 +330,15 @@ class ProcessMidtermResults extends Page
             ->where('session_id', $this->session_id)
             ->where('term_id', $this->term_id)
             ->where('status', 'missing')
+            ->whereExists(function ($query) {
+                $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                    ->from('scores')
+                    ->whereColumn('scores.student_id', 'midterm_subject_results.student_id')
+                    ->whereColumn('scores.subject_id', 'midterm_subject_results.subject_id')
+                    ->whereColumn('scores.classroom_id', 'midterm_subject_results.classroom_id')
+                    ->whereColumn('scores.session_id', 'midterm_subject_results.session_id')
+                    ->whereColumn('scores.term_id', 'midterm_subject_results.term_id');
+            })
             ->with(['student', 'subject'])
             ->get();
 
@@ -346,6 +364,12 @@ class ProcessMidtermResults extends Page
         foreach ($missingResults as $res) {
             $key = "{$res->student_id}_{$res->subject_id}";
             $studentScores = $scores->get($key, collect())->keyBy('score_head_id');
+
+            // If student has NO scores at all for this subject, it's not an incomplete score, it's unoffered!
+            if ($studentScores->isEmpty()) {
+                $res->delete();
+                continue;
+            }
 
             $missingHeads = [];
             foreach ($expectedHeads as $head) {
