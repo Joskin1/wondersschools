@@ -325,6 +325,66 @@ describe('Livewire EnterScores: Staging Preview, In-Place Correction & Import', 
         @unlink($tempPath);
     });
 
+    it('imports spreadsheet with ABS and persists is_absent true with 0.0 score', function () {
+        $ctx = setupSpreadsheetContext();
+        $service = app(ScoreSpreadsheetService::class);
+
+        $spreadsheet = $service->generateTemplate(
+            $ctx['classroom']->id,
+            [$ctx['math']->id],
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+        $sheet = $spreadsheet->getActiveSheet();
+        // Alice CA = 15, Exam = 'ABS'
+        $sheet->setCellValue('D6', 15);
+        $sheet->setCellValue('E6', 'ABS');
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'livewire_upload_abs_') . '.xlsx';
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save($tempPath);
+
+        $fakeFile = UploadedFile::fake()->createWithContent('scores_abs.xlsx', file_get_contents($tempPath));
+
+        $this->actingAs($ctx['teacher']);
+
+        $comp = Livewire::test(EnterScores::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id)
+            ->set('subject_id', $ctx['math']->id)
+            ->set('uploadFile', $fakeFile);
+
+        $comp->assertSet('showImportModal', true);
+
+        // Confirm import
+        $comp->call('confirmImport')
+            ->assertSet('showImportModal', false)
+            ->assertNotified('Scores imported successfully!');
+
+        // Verify Alice's Exam score is stored with is_absent = true and score = 0.0
+        $examScore = Score::where('student_id', $ctx['student1']->id)
+            ->where('subject_id', $ctx['math']->id)
+            ->where('score_head_id', $ctx['exam']->id)
+            ->first();
+
+        expect($examScore)->not->toBeNull()
+            ->and((bool) $examScore->is_absent)->toBeTrue()
+            ->and((float) $examScore->score)->toBe(0.0);
+
+        // Alice's CA score is normal
+        $caScore = Score::where('student_id', $ctx['student1']->id)
+            ->where('subject_id', $ctx['math']->id)
+            ->where('score_head_id', $ctx['ca']->id)
+            ->first();
+
+        expect($caScore)->not->toBeNull()
+            ->and((bool) $caScore->is_absent)->toBeFalse()
+            ->and((float) $caScore->score)->toBe(15.0);
+
+        @unlink($tempPath);
+    });
+
     it('blocks import if term results are already finalized for the class', function () {
         $ctx = setupSpreadsheetContext();
 
@@ -549,6 +609,18 @@ describe('Complete End-to-End Lifecycle: From Score Head to Student Result & PDF
             ->and($tr1->grade)->toBe('B')
             ->and($tr1->overall_position)->toBe(2)
             ->and($tr1->is_finalized)->toBeTrue();
+
+        // ── 8b. Stage 3: Admin approves class results for student release ─────
+        \App\Models\ClassTermApproval::create([
+            'classroom_id'        => $classroom->id,
+            'session_id'          => $session->id,
+            'term_id'             => $term->id,
+            'status'              => 'approved',
+            'times_school_opened' => 110,
+            'next_term_begins'    => 'January 2027',
+            'approved_by'         => $admin->id,
+            'approved_at'         => now(),
+        ]);
 
         // ── 9. Student Portal: Student views results & downloads PDF ─────────
         $batch = \App\Models\ResultPinBatch::create([

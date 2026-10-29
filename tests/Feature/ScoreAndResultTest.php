@@ -1262,6 +1262,46 @@ describe('ResultCalculationService — grade resolution', function () {
             ->and($service->resolveGrade(100)['grade'])->toBe('A');
     });
 
+    it('resolves grade correctly for decimal scores bridging integer gaps', function () {
+        $service = new \App\Services\ResultCalculationService();
+
+        expect($service->resolveGrade(69.5)['grade'])->toBe('B')
+            ->and($service->resolveGrade(69.5)['remark'])->toBe('Very Good')
+            ->and($service->resolveGrade(59.5)['grade'])->toBe('C')
+            ->and($service->resolveGrade(59.5)['remark'])->toBe('Good')
+            ->and($service->resolveGrade(49.5)['grade'])->toBe('D')
+            ->and($service->resolveGrade(49.5)['remark'])->toBe('Fair')
+            ->and($service->resolveGrade(44.5)['grade'])->toBe('E')
+            ->and($service->resolveGrade(44.5)['remark'])->toBe('Pass')
+            ->and($service->resolveGrade(39.5)['grade'])->toBe('F')
+            ->and($service->resolveGrade(39.5)['remark'])->toBe('Fail');
+    });
+
+    it('resolves grade using custom grade scale in settings when present', function () {
+        $customScale = [
+            ['grade' => 'A1', 'min' => 75, 'max' => 100, 'remark' => 'Excellent'],
+            ['grade' => 'B2', 'min' => 70, 'max' => 74,  'remark' => 'Very Good'],
+            ['grade' => 'B3', 'min' => 65, 'max' => 69,  'remark' => 'Good'],
+            ['grade' => 'C4', 'min' => 60, 'max' => 64,  'remark' => 'Credit'],
+            ['grade' => 'F9', 'min' => 0,  'max' => 59,  'remark' => 'Fail'],
+        ];
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'custom_grade_scale'],
+            ['value' => json_encode($customScale)]
+        );
+
+        $service = new \App\Services\ResultCalculationService();
+
+        expect($service->resolveGrade(75)['grade'])->toBe('A1')
+            ->and($service->resolveGrade(72.5)['grade'])->toBe('B2')
+            ->and($service->resolveGrade(69.5)['grade'])->toBe('B3')
+            ->and($service->resolveGrade(62)['grade'])->toBe('C4')
+            ->and($service->resolveGrade(58.5)['grade'])->toBe('F9');
+
+        // Cleanup custom setting so other tests use default
+        \App\Models\Setting::where('key', 'custom_grade_scale')->delete();
+    });
+
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1300,6 +1340,28 @@ describe('ResultCalculationService — competition ranking', function () {
         $ranked = $service->competitionRank($items, 'total');
 
         $ranked->each(fn ($item) => expect($item['position'])->toBe(1));
+    });
+
+    it('handles all students scoring zero and assigns position 1', function () {
+        $service = new \App\Services\ResultCalculationService();
+
+        $items = collect([
+            ['name' => 'Zero1', 'total' => 0],
+            ['name' => 'Zero2', 'total' => 0],
+        ]);
+
+        $ranked = $service->competitionRank($items, 'total');
+
+        $ranked->each(fn ($item) => expect($item['position'])->toBe(1));
+    });
+
+    it('handles single student with zero score', function () {
+        $service = new \App\Services\ResultCalculationService();
+
+        $items = collect([['name' => 'SoloZero', 'total' => 0]]);
+        $ranked = $service->competitionRank($items, 'total');
+
+        expect($ranked->first()['position'])->toBe(1);
     });
 
     it('handles single student', function () {
@@ -1486,9 +1548,11 @@ describe('Data integrity — finalization guard', function () {
 
         $heads            = makeScoreHeads();
         $this->classwork  = $heads['classwork'];
+        $this->exam       = $heads['exam'];
 
-        $this->structure = makeStructure($this->classroom, $this->session, $this->term, [$this->classwork]);
-        $this->structure->update(['locked' => true]);
+        $this->structure = makeStructure($this->classroom, $this->session, $this->term, [$this->classwork, $this->exam]);
+        $this->structure->items()->where('score_head_id', $this->classwork->id)->update(['max_score_override' => 20]);
+        $this->structure->update(['locked' => true, 'total_score' => 100]);
 
         $this->enrolledStudent = makeEnrolledStudent($this->classroom, $this->session);
 
@@ -1533,4 +1597,28 @@ describe('Data integrity — finalization guard', function () {
         expect(Score::count())->toBe(0);
     });
 
+    it('allows score editing when term result is unfinalized', function () {
+        // Unfinalize the term result
+        \App\Models\TermResult::where('student_id', $this->enrolledStudent->id)
+            ->where('session_id', $this->session->id)
+            ->where('term_id', $this->term->id)
+            ->update(['is_finalized' => false]);
+
+        $this->actingAs($this->teacher);
+
+        $sid = $this->enrolledStudent->id;
+        $cid = $this->classwork->id;
+
+        Livewire::test(EnterScores::class)
+            ->set('session_id', $this->session->id)
+            ->set('term_id', $this->term->id)
+            ->set('classroom_id', $this->classroom->id)
+            ->set('subject_id', $this->math->id)
+            ->call('saveScores', $sid, $cid, '8');
+
+        // Score should have been saved
+        expect((float) Score::where('student_id', $sid)->where('score_head_id', $cid)->value('score'))->toBe(8.0);
+    });
+
 });
+

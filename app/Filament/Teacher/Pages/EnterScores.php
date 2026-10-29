@@ -893,7 +893,8 @@ class EnterScores extends Page
 
             foreach ($student['scores'] as $score) {
                 $val = $score['value'];
-                if ($val === '' || $val === null) {
+                $isAbsent = (bool) ($score['is_absent'] ?? false);
+                if (($val === '' || $val === null) && ! $isAbsent) {
                     continue;
                 }
 
@@ -905,8 +906,8 @@ class EnterScores extends Page
                     'session_id'    => (int) $this->session_id,
                     'term_id'       => (int) $this->term_id,
                     'teacher_id'    => (int) $user->id,
-                    'score'         => (float) $val,
-                    'is_absent'     => false,
+                    'score'         => $isAbsent ? 0.0 : (float) $val,
+                    'is_absent'     => $isAbsent,
                     'created_at'    => $now,
                     'updated_at'    => $now,
                 ];

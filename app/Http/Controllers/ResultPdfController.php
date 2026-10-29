@@ -76,7 +76,7 @@ class ResultPdfController extends Controller
             ->where('term_id', $termId)
             ->first();
 
-        if ($approval && $approval->status !== 'approved') {
+        if (! $approval || $approval->status !== 'approved') {
             abort(403, 'Results for this term are pending final administrative approval and have not yet been released.');
         }
 

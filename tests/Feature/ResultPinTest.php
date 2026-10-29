@@ -108,6 +108,13 @@ describe('Student PIN Redemption Flow', function () {
             'is_finalized'     => 1,
         ]);
 
+        \App\Models\ClassTermApproval::create([
+            'classroom_id' => $this->classroom->id,
+            'session_id'   => $this->session->id,
+            'term_id'      => $this->term->id,
+            'status'       => 'approved',
+        ]);
+
         $this->batch = ResultPinBatch::create([
             'batch_code' => 'BATCH-TEST-REDEMPTION',
             'session_id' => $this->session->id,

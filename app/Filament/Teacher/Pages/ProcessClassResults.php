@@ -724,6 +724,11 @@ class ProcessClassResults extends Page
             ]);
         }
 
+        TermResult::where('classroom_id', $this->classroom_id)
+            ->where('session_id', $this->session_id)
+            ->where('term_id', $this->term_id)
+            ->update(['is_finalized' => false]);
+
         $this->loadClassData();
 
         Notification::make()

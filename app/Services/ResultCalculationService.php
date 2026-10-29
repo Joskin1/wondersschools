@@ -129,29 +129,70 @@ class ResultCalculationService
     }
 
     /**
-     * Resolve a numeric score to a grade + remark using config/grading.php.
+     * Resolve a numeric score to a grade + remark using tenant settings or config/grading.php.
      *
-     * @return array{grade: string, remark: string}
+     * @return array{grade: string, remark: string, principal_comment: string}
      */
     public function resolveGrade(float $score): array
     {
-        $scale = config('grading.scale', []);
+        $scale = null;
+        try {
+            $customScaleJson = Setting::where('key', 'custom_grade_scale')->value('value');
+            if ($customScaleJson) {
+                $decoded = json_decode($customScaleJson, true);
+                if (is_array($decoded) && ! empty($decoded)) {
+                    $scale = $decoded;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fall back to config if settings table unavailable (e.g. during certain migrations/tests)
+        }
+
+        if (empty($scale)) {
+            $scale = config('grading.scale', []);
+        }
+
+        if (empty($scale)) {
+            return [
+                'grade'             => 'F',
+                'remark'            => 'Fail',
+                'principal_comment' => 'A poor result. Needs urgent academic support, seriousness, and dedication.',
+            ];
+        }
+
+        // Sort descending by min so highest matching threshold wins and decimal values between integer bands are captured
+        usort($scale, fn ($a, $b) => $b['min'] <=> $a['min']);
 
         foreach ($scale as $band) {
-            if ($score >= $band['min'] && $score <= $band['max']) {
+            if ($score >= $band['min']) {
+                $comment = $band['principal_comment'] ?? null;
+                if (empty($comment)) {
+                    $remark = strtolower($band['remark'] ?? '');
+                    if (str_contains($remark, 'excellent') || str_contains($remark, 'outstanding')) {
+                        $comment = 'An excellent and outstanding performance. Keep it up!';
+                    } elseif (str_contains($remark, 'good') || str_contains($remark, 'credit')) {
+                        $comment = 'A good effort, maintain this standard and aim higher.';
+                    } elseif (str_contains($remark, 'pass') || str_contains($remark, 'fair')) {
+                        $comment = 'A fair performance. More commitment and focus are required next term.';
+                    } else {
+                        $comment = 'A poor result. Needs urgent academic support, seriousness, and dedication.';
+                    }
+                }
+
                 return [
                     'grade'             => $band['grade'],
-                    'remark'            => $band['remark'],
-                    'principal_comment' => $band['principal_comment'] ?? '',
+                    'remark'            => $band['remark'] ?? '',
+                    'principal_comment' => $comment,
                 ];
             }
         }
 
-        // Fallback — should never happen if config covers 0–100
+        // Fallback for negative or below lowest min
+        $lastBand = end($scale);
         return [
-            'grade'             => 'F',
-            'remark'            => 'Fail',
-            'principal_comment' => 'A poor result. Needs urgent academic support, seriousness, and dedication.',
+            'grade'             => $lastBand['grade'] ?? 'F',
+            'remark'            => $lastBand['remark'] ?? 'Fail',
+            'principal_comment' => $lastBand['principal_comment'] ?? 'A poor result. Needs urgent academic support, seriousness, and dedication.',
         ];
     }
 
@@ -180,7 +221,7 @@ class ResultCalculationService
 
             $score = is_array($item) ? $item[$scoreKey] : $item->{$scoreKey};
 
-            if ((float) $score !== (float) $previousScore) {
+            if ($previousScore === null || (float) $score !== (float) $previousScore) {
                 $currentRank = $actualPosition;
             }
 

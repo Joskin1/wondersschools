@@ -286,7 +286,7 @@ class StudentResultPage extends Page
             ->where('term_id', $this->term_id)
             ->first() : null;
 
-        $hasApprovedTerminal = ($termResult && (! $approval || $approval->status === 'approved'));
+        $hasApprovedTerminal = ($termResult && $approval && $approval->status === 'approved');
 
         if ($hasApprovedTerminal) {
             $isCumulative = $term->order === 3;

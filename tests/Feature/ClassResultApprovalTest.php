@@ -407,6 +407,80 @@ describe('Admin Approval & Result Release Workflow', function () {
             ->and($approval->times_school_opened)->toBe(112);
     });
 
+    it('unapproving class results resets term result is_finalized to false and unlocks score entry for teachers', function () {
+        $ctx = setupClassApprovalContext();
+
+        // Calculate subject and class results (finalizes term result)
+        app(ResultCalculationService::class)->calculateForSubject(
+            $ctx['classroom']->id,
+            $ctx['math']->id,
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+        app(ResultCalculationService::class)->calculateForClass(
+            $ctx['classroom']->id,
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+
+        // Term results are finalized
+        expect(TermResult::where('classroom_id', $ctx['classroom']->id)->first()->is_finalized)->toBeTrue();
+
+        // Admin approves results
+        ClassTermApproval::create([
+            'classroom_id'        => $ctx['classroom']->id,
+            'session_id'          => $ctx['session']->id,
+            'term_id'             => $ctx['term']->id,
+            'times_school_opened' => 110,
+            'next_term_begins'    => 'January 2026',
+            'status'              => 'approved',
+            'approved_by'         => $ctx['admin']->id,
+            'approved_at'         => now(),
+        ]);
+
+        // Teacher is blocked from saving scores while finalized
+        $examHead = ScoreHead::where('name', 'Examination')->first();
+        $this->actingAs($ctx['classTeacher']);
+        Livewire::test(\App\Filament\Teacher\Pages\EnterScores::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id)
+            ->set('subject_id', $ctx['math']->id)
+            ->call('saveScores', $ctx['student1']->id, $examHead->id, '77');
+
+        // Verify score was NOT updated (remains 85.0)
+        expect((float) Score::where('student_id', $ctx['student1']->id)->where('score_head_id', $examHead->id)->value('score'))->toBe(85.0);
+
+        // Admin reverts approval
+        $this->actingAs($ctx['admin']);
+        Livewire::test(ProcessClassResults::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id)
+            ->call('unapproveClassResults')
+            ->assertNotified('Class result approval reverted.');
+
+        // Term results are now unfinalized
+        expect(TermResult::where('classroom_id', $ctx['classroom']->id)->first()->is_finalized)->toBeFalse();
+
+        // Teacher can now successfully edit scores!
+        $this->actingAs($ctx['classTeacher']);
+        Livewire::test(\App\Filament\Teacher\Pages\EnterScores::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id)
+            ->set('subject_id', $ctx['math']->id)
+            ->call('saveScores', $ctx['student1']->id, $examHead->id, '77');
+
+        $updatedScore = Score::where('student_id', $ctx['student1']->id)
+            ->where('subject_id', $ctx['math']->id)
+            ->where('score_head_id', $examHead->id)
+            ->first();
+
+        expect($updatedScore)->not->toBeNull()
+            ->and((float) $updatedScore->score)->toBe(77.0);
+    });
+
 });
 
 describe('Student Portal & Report Card PDF Integration', function () {
@@ -435,6 +509,31 @@ describe('Student Portal & Report Card PDF Integration', function () {
             'status'       => 'pending',
         ]);
 
+        $this->actingAs($ctx['studentUser1']);
+
+        Livewire::test(StudentResultPage::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->assertSet('loaded', false);
+    });
+
+    it('hides result on student portal if class approval record does not exist at all', function () {
+        $ctx = setupClassApprovalContext();
+
+        // Calculate results
+        app(ResultCalculationService::class)->calculateForSubject(
+            $ctx['classroom']->id,
+            $ctx['math']->id,
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+        app(ResultCalculationService::class)->calculateForClass(
+            $ctx['classroom']->id,
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+
+        // DO NOT create ClassTermApproval
         $this->actingAs($ctx['studentUser1']);
 
         Livewire::test(StudentResultPage::class)
@@ -527,6 +626,32 @@ describe('Student Portal & Report Card PDF Integration', function () {
             'status'       => 'pending',
         ]);
 
+        $this->actingAs($ctx['studentUser1']);
+
+        $response = $this->get(route('student.result-pdf', [
+            'session_id' => $ctx['session']->id,
+            'term_id'    => $ctx['term']->id,
+        ]));
+
+        $response->assertStatus(403);
+    });
+
+    it('blocks PDF download if class approval record does not exist at all', function () {
+        $ctx = setupClassApprovalContext();
+
+        app(ResultCalculationService::class)->calculateForSubject(
+            $ctx['classroom']->id,
+            $ctx['math']->id,
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+        app(ResultCalculationService::class)->calculateForClass(
+            $ctx['classroom']->id,
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+
+        // DO NOT create ClassTermApproval
         $this->actingAs($ctx['studentUser1']);
 
         $response = $this->get(route('student.result-pdf', [

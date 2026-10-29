@@ -135,6 +135,13 @@ describe('Student Result Page rendering and filtering', function () {
             'is_finalized'     => 1,
         ]);
 
+        \App\Models\ClassTermApproval::create([
+            'classroom_id' => $this->classroom->id,
+            'session_id'   => $this->session->id,
+            'term_id'      => $this->term->id,
+            'status'       => 'approved',
+        ]);
+
         $batch = \App\Models\ResultPinBatch::create([
             'batch_code' => 'BATCH-TEST-001',
             'session_id' => $this->session->id,
@@ -185,6 +192,13 @@ describe('Student Result Page rendering and filtering', function () {
             'overall_position' => 1,
             'grade'            => 'A',
             'is_finalized'     => 1,
+        ]);
+
+        \App\Models\ClassTermApproval::create([
+            'classroom_id' => $this->classroom->id,
+            'session_id'   => $this->session->id,
+            'term_id'      => $this->term->id,
+            'status'       => 'approved',
         ]);
 
         $this->student->update([
@@ -286,6 +300,13 @@ describe('Student Result PDF Download', function () {
             'overall_position' => 1,
             'grade'            => 'B',
             'is_finalized'     => 1, // FINALIZED
+        ]);
+
+        \App\Models\ClassTermApproval::create([
+            'classroom_id' => $this->classroom->id,
+            'session_id'   => $this->session->id,
+            'term_id'      => $this->term->id,
+            'status'       => 'approved',
         ]);
 
         $batch = \App\Models\ResultPinBatch::create([

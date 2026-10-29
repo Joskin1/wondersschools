@@ -342,6 +342,13 @@ describe('Student Portal Result Visibility', function () {
             $ctx['term']->id
         );
 
+        \App\Models\ClassTermApproval::create([
+            'classroom_id' => $ctx['classroom']->id,
+            'session_id'   => $ctx['session']->id,
+            'term_id'      => $ctx['term']->id,
+            'status'       => 'approved',
+        ]);
+
         $batch = \App\Models\ResultPinBatch::create([
             'batch_code' => 'BATCH-TEST-PUB',
             'session_id' => $ctx['session']->id,

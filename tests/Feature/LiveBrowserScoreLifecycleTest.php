@@ -269,6 +269,21 @@ describe('Live End-to-End Browser Flow: Score Head -> Student Results & PDF', fu
             ->and($tiwaResult->is_finalized)->toBeTrue();
 
         // ═════════════════════════════════════════════════════════════════════
+        // STEP 5: ADMIN APPROVAL — Admin approves class results release
+        // ═════════════════════════════════════════════════════════════════════
+        $this->actingAs($admin);
+        Livewire::test(ProcessClassResults::class)
+            ->set('session_id', $session->id)
+            ->set('term_id', $term->id)
+            ->set('classroom_id', $classroom->id)
+            ->set('times_school_opened', 110)
+            ->set('next_term_begins', '2026-01-12')
+            ->call('approveClassResults')
+            ->assertNotified('Class results approved and released to students!');
+
+        // ═════════════════════════════════════════════════════════════════════
+        // STEP 6: STUDENT PORTAL VIEW & PDF DOWNLOAD (PIN UNLOCKED)
+        // ═════════════════════════════════════════════════════════════════════
         // Create used PIN for student portal access
         $livePinBatch = \App\Models\ResultPinBatch::create([
             'batch_code' => 'BATCH-TEST-LIVE',
