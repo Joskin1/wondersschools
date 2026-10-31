@@ -204,10 +204,16 @@ class ClassResultPdfService
         }
         $marginCss = ReportCardSettingsService::getMarginCss($settings);
 
-        // Pre-resolve school logo once
+        // Pre-resolve school logo, signature, and stamp once
         $schoolLogoPath = $settings['school_logo'] ?? null;
         $logoBase64 = self::resolveImageBase64($schoolLogoPath);
         $settings['school_logo_data_uri'] = $logoBase64;
+
+        $sigPath = $settings['rc_principal_signature'] ?? null;
+        $settings['principal_signature_data_uri'] = self::resolveImageBase64($sigPath);
+
+        $stampPath = $settings['rc_school_stamp_image'] ?? null;
+        $settings['school_stamp_data_uri'] = self::resolveImageBase64($stampPath);
 
         $studentsData = [];
 
@@ -467,6 +473,12 @@ class ClassResultPdfService
         $schoolLogoPath = $storedSettings['school_logo'] ?? null;
         $logoBase64 = self::resolveImageBase64($schoolLogoPath);
         $storedSettings['school_logo_data_uri'] = $logoBase64;
+
+        $sigPath = $storedSettings['rc_principal_signature'] ?? null;
+        $storedSettings['principal_signature_data_uri'] = self::resolveImageBase64($sigPath);
+
+        $stampPath = $storedSettings['rc_school_stamp_image'] ?? null;
+        $storedSettings['school_stamp_data_uri'] = self::resolveImageBase64($stampPath);
 
         $reportTitle = $storedSettings['midterm_report_title'] ?? 'Mid-Term Progress Report';
 

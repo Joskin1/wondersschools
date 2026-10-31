@@ -270,6 +270,12 @@ class ResultPdfController extends Controller
         }
         $marginCss       = \App\Services\ReportCardSettingsService::getMarginCss($settings);
 
+        $sigPath = $settings['rc_principal_signature'] ?? null;
+        $settings['principal_signature_data_uri'] = \App\Services\ClassResultPdfService::resolveImageBase64($sigPath);
+
+        $stampPath = $settings['rc_school_stamp_image'] ?? null;
+        $settings['school_stamp_data_uri'] = \App\Services\ClassResultPdfService::resolveImageBase64($stampPath);
+
         $data = [
             'student'      => [
                 'name'           => $student->name,

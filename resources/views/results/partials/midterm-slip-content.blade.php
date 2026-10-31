@@ -36,8 +36,11 @@
         return null;
     };
 
-    $logoSrc  = $settings['school_logo_data_uri'] ?? $resolveImage($settings['school_logo'] ?? null);
-    $photoSrc = !empty($student['passport_photo']) ? (str_starts_with($student['passport_photo'], 'data:') ? $student['passport_photo'] : $resolveImage($student['passport_photo'])) : null;
+    $logoSrc         = $settings['school_logo_data_uri'] ?? $resolveImage($settings['school_logo'] ?? null);
+    $photoSrc        = !empty($student['passport_photo']) ? (str_starts_with($student['passport_photo'], 'data:') ? $student['passport_photo'] : $resolveImage($student['passport_photo'])) : null;
+    $principalSigSrc = $settings['principal_signature_data_uri'] ?? $resolveImage($settings['rc_principal_signature'] ?? null);
+    $stampSrc        = $settings['school_stamp_data_uri'] ?? $resolveImage($settings['rc_school_stamp_image'] ?? null);
+    $principalName   = $settings['rc_principal_name'] ?? null;
 @endphp
 
 {{-- Header Section --}}
@@ -255,13 +258,35 @@
 <table class="sig-table">
     <tr>
         <td class="sig-col">
+            <div class="sig-placeholder"></div>
             <div class="sig-line">Class Teacher</div>
         </td>
         <td class="sig-col">
+            @if (!empty($stampSrc))
+                <div class="stamp-img-box">
+                    <img src="{{ $stampSrc }}" class="stamp-img" alt="Official Stamp">
+                </div>
+            @else
+                <div class="stamp-box">
+                    &bull; OFFICIAL SEAL &bull;
+                </div>
+            @endif
             <div class="sig-line">Date Issued: {{ date('d M Y') }}</div>
         </td>
         <td class="sig-col">
-            <div class="sig-line">Principal / Head of School</div>
+            @if (!empty($principalSigSrc))
+                <div class="sig-img-box">
+                    <img src="{{ $principalSigSrc }}" class="sig-img" alt="Principal Signature">
+                </div>
+            @else
+                <div class="sig-placeholder"></div>
+            @endif
+            <div class="sig-line">
+                Principal / Head of School
+                @if (!empty($principalName))
+                    <div class="sig-subname">{{ $principalName }}</div>
+                @endif
+            </div>
         </td>
     </tr>
 </table>

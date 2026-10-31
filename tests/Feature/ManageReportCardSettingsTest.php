@@ -100,3 +100,32 @@ test('admin can trigger reset_defaults header action', function () {
             'rc_show_school_logo'   => true,
         ]);
 });
+
+test('admin can set principal name and upload signature and stamp in settings', function () {
+    Livewire::test(ManageReportCardSettings::class)
+        ->fillForm([
+            'rc_principal_name'      => 'Dr. Jane Doe, Ph.D.',
+            'rc_principal_signature' => ['signatures/principal_sig.png'],
+            'rc_school_stamp_image'  => ['stamps/official_seal.png'],
+        ])
+        ->call('submit')
+        ->assertHasNoFormErrors()
+        ->assertNotified('Report card settings saved successfully');
+
+    expect(Setting::where('key', 'rc_principal_name')->value('value'))->toBe('Dr. Jane Doe, Ph.D.')
+        ->and(Setting::where('key', 'rc_principal_signature')->value('value'))->toBe('signatures/principal_sig.png')
+        ->and(Setting::where('key', 'rc_school_stamp_image')->value('value'))->toBe('stamps/official_seal.png');
+});
+
+test('page mounts successfully with pre-existing saved signature and stamp in database', function () {
+    Setting::updateOrCreate(['key' => 'rc_principal_signature'], ['value' => 'signatures/saved_sig.png']);
+    Setting::updateOrCreate(['key' => 'rc_school_stamp_image'], ['value' => 'stamps/saved_stamp.png']);
+    Setting::updateOrCreate(['key' => 'rc_principal_name'], ['value' => 'Rev. Father Superior']);
+
+    Livewire::test(ManageReportCardSettings::class)
+        ->assertSuccessful()
+        ->assertSchemaStateSet([
+            'rc_principal_name' => 'Rev. Father Superior',
+        ]);
+});
+

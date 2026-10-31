@@ -67,7 +67,10 @@ class ReportCardSettingsService
             // ── Group 7: Signatories & Verification ─────────────────────────
             'rc_show_teacher_signature'      => true,
             'rc_show_principal_signature'    => true,
+            'rc_principal_signature'         => null,
+            'rc_principal_name'              => null,
             'rc_show_school_stamp'           => true,
+            'rc_school_stamp_image'          => null,
             'rc_show_footer_note'            => true,
 
             // ── Group 8: Margins & Spacing ──────────────────────────────────
@@ -380,9 +383,21 @@ class ReportCardSettingsService
                         'label'       => 'Show Principal Signature & Date Line',
                         'helper'      => 'Displays executive signature and validation date line.',
                     ],
+                    'rc_principal_signature' => [
+                        'label'       => 'Principal Digital Signature Image',
+                        'helper'      => 'Scanned signature image affixed above the principal signature line.',
+                    ],
+                    'rc_principal_name' => [
+                        'label'       => 'Principal Full Name & Title',
+                        'helper'      => 'Full name and qualifications displayed below the signature line.',
+                    ],
                     'rc_show_school_stamp' => [
                         'label'       => 'Show Official School Seal / Stamp Box',
                         'helper'      => 'Displays designated border box for physical or digital school stamp.',
+                    ],
+                    'rc_school_stamp_image' => [
+                        'label'       => 'Official School Stamp / Seal Image',
+                        'helper'      => 'Digital stamp or seal image affixed inside the school seal area.',
                     ],
                     'rc_show_footer_note' => [
                         'label'       => 'Show Computer-Generated Security Footer',

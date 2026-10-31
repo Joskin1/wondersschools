@@ -156,6 +156,12 @@ class MidtermPdfController extends Controller
         $session = Session::find($sessionId);
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
+        $sigPath = $settings['rc_principal_signature'] ?? null;
+        $settings['principal_signature_data_uri'] = \App\Services\ClassResultPdfService::resolveImageBase64($sigPath);
+
+        $stampPath = $settings['rc_school_stamp_image'] ?? null;
+        $settings['school_stamp_data_uri'] = \App\Services\ClassResultPdfService::resolveImageBase64($stampPath);
+
         $classSize = StudentEnrollment::where('classroom_id', $classroomId)
             ->where('session_id', $sessionId)
             ->count();

@@ -244,11 +244,54 @@
     }
     .sig-line {
         border-top: 1px solid #64748b;
-        margin-top: 35px;
         padding-top: 3px;
         font-size: 8px;
         font-weight: 700;
         color: #475569;
         text-transform: uppercase;
+    }
+    .sig-img-box {
+        height: 38px;
+        line-height: 38px;
+        text-align: center;
+        margin-bottom: 2px;
+    }
+    .sig-img {
+        max-height: 36px;
+        max-width: 140px;
+        display: inline-block;
+        vertical-align: bottom;
+    }
+    .sig-placeholder {
+        height: 38px;
+    }
+    .sig-subname {
+        margin-top: 2px;
+        font-size: 7.5px;
+        font-weight: 600;
+        color: #1e293b;
+        text-transform: none;
+    }
+    .stamp-img-box {
+        text-align: center;
+        margin-bottom: 2px;
+    }
+    .stamp-img {
+        max-height: 48px;
+        max-width: 90px;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    .stamp-box {
+        display: inline-block;
+        border: 1px dashed #94a3b8;
+        border-radius: 4px;
+        padding: 2.5px 8px;
+        font-size: 7px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
     }
 </style>

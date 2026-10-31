@@ -6,6 +6,7 @@ use App\Http\Controllers\ResultPdfController;
 use App\Models\Classroom;
 use App\Models\ClassScoreStructure;
 use App\Models\ClassScoreStructureItem;
+use App\Models\ClassTermApproval;
 use App\Models\ResultPin;
 use App\Models\ResultPinBatch;
 use App\Models\Score;
@@ -134,6 +135,15 @@ beforeEach(function () {
         'used_at'       => now(),
     ]);
 
+    ClassTermApproval::create([
+        'classroom_id' => $this->classroom->id,
+        'session_id'   => $this->session->id,
+        'term_id'      => $this->term->id,
+        'status'       => 'approved',
+        'approved_by'  => $this->studentUser->id,
+        'approved_at'  => now(),
+    ]);
+
     $this->actingAs($this->studentUser);
 });
 
@@ -242,3 +252,96 @@ test('blade view selectively excludes toggled-off elements and applies margin ru
         ->toContain('Mathematics')
         ->toContain('ADM-001');
 });
+
+test('report card renders principal signature, principal name, and school stamp when configured', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+    \Illuminate\Support\Facades\Storage::disk('public')->put('signatures/test_sig.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
+    \Illuminate\Support\Facades\Storage::disk('public')->put('stamps/test_stamp.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
+
+    Setting::updateOrCreate(['key' => 'rc_principal_signature'], ['value' => 'signatures/test_sig.png']);
+    Setting::updateOrCreate(['key' => 'rc_principal_name'], ['value' => 'Dr. Adewale Adeyemi']);
+    Setting::updateOrCreate(['key' => 'rc_school_stamp_image'], ['value' => 'stamps/test_stamp.png']);
+
+    $request = Request::create('/result/download', 'GET', [
+        'session_id' => $this->session->id,
+        'term_id'    => $this->term->id,
+    ]);
+
+    $response = app(ResultPdfController::class)->download($request);
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->headers->get('content-type'))->toBe('application/pdf');
+
+    // Also assert directly on the rendered HTML view
+    $pdfService = app(\App\Services\ClassResultPdfService::class);
+    $batchData = $pdfService->buildTerminalClassData($this->classroom->id, $this->session->id, $this->term->id);
+    expect($batchData['studentsData'])->not->toBeEmpty();
+
+    $studentData = $batchData['studentsData'][0];
+    expect($studentData['settings']['rc_principal_name'])->toBe('Dr. Adewale Adeyemi')
+        ->and($studentData['settings']['principal_signature_data_uri'])->toContain('data:image/png;base64,')
+        ->and($studentData['settings']['school_stamp_data_uri'])->toContain('data:image/png;base64,');
+
+    $html = view('results.result-sheet', ['data' => $studentData])->render();
+    expect($html)->toContain('data:image/png;base64,')
+        ->and($html)->toContain('Dr. Adewale Adeyemi')
+        ->and($html)->toContain('class="sig-img"')
+        ->and($html)->toContain('class="stamp-img"');
+});
+
+test('midterm slip renders principal signature, principal name, and school stamp when configured', function () {
+    \Illuminate\Support\Facades\Storage::fake('public');
+    \Illuminate\Support\Facades\Storage::disk('public')->put('signatures/test_sig.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
+    \Illuminate\Support\Facades\Storage::disk('public')->put('stamps/test_stamp.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='));
+
+    Setting::updateOrCreate(['key' => 'rc_principal_signature'], ['value' => 'signatures/test_sig.png']);
+    Setting::updateOrCreate(['key' => 'rc_principal_name'], ['value' => 'Mrs. Folashade Adeleke']);
+    Setting::updateOrCreate(['key' => 'rc_school_stamp_image'], ['value' => 'stamps/test_stamp.png']);
+
+    \App\Models\TermScoringSnapshot::create([
+        'classroom_id'   => $this->classroom->id,
+        'session_id'     => $this->session->id,
+        'term_id'        => $this->term->id,
+        'mode'           => 'midterm',
+        'midterm_weight' => 40,
+        'raw_max'        => 80,
+        'midterm_heads'  => [
+            ['id' => 1, 'name' => 'CA 1', 'max' => 40],
+            ['id' => 2, 'name' => 'CA 2', 'max' => 40],
+        ],
+        'exam_heads'     => [
+            ['id' => 3, 'name' => 'Exam', 'max' => 60],
+        ],
+    ]);
+
+    \App\Models\MidtermTermResult::create([
+        'student_id'       => $this->student->id,
+        'classroom_id'     => $this->classroom->id,
+        'session_id'       => $this->session->id,
+        'term_id'          => $this->term->id,
+        'subjects_count'   => 1,
+        'total_obtainable' => 100,
+        'total_obtained'   => 80,
+        'percentage'       => 80,
+        'grade'            => 'A',
+        'remark'           => 'Distinction',
+        'is_finalized'     => true,
+    ]);
+
+    $pdfService = app(\App\Services\ClassResultPdfService::class);
+    $batchData = $pdfService->buildMidtermClassData($this->classroom->id, $this->session->id, $this->term->id);
+    expect($batchData['studentsData'])->not->toBeEmpty();
+
+    $studentData = $batchData['studentsData'][0];
+    expect($studentData['settings']['rc_principal_name'])->toBe('Mrs. Folashade Adeleke')
+        ->and($studentData['settings']['principal_signature_data_uri'])->toContain('data:image/png;base64,')
+        ->and($studentData['settings']['school_stamp_data_uri'])->toContain('data:image/png;base64,');
+
+    $html = view('results.midterm-slip', ['data' => $studentData])->render();
+    expect($html)->toContain('data:image/png;base64,')
+        ->and($html)->toContain('Mrs. Folashade Adeleke')
+        ->and($html)->toContain('class="sig-img"')
+        ->and($html)->toContain('class="stamp-img"');
+});
+
+

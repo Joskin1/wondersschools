@@ -525,6 +525,10 @@
     $showStamp        = $is('rc_show_school_stamp');
     $showPrincipalSig = $is('rc_show_principal_signature');
 
+    $principalSigSrc  = $showPrincipalSig ? ($settings['principal_signature_data_uri'] ?? $resolveImage($settings['rc_principal_signature'] ?? null)) : null;
+    $stampSrc         = $showStamp ? ($settings['school_stamp_data_uri'] ?? $resolveImage($settings['rc_school_stamp_image'] ?? null)) : null;
+    $principalName    = $settings['rc_principal_name'] ?? null;
+
     $sigColumns = [];
     if ($showTeacherSig)   $sigColumns[] = 'teacher';
     if ($showStamp)        $sigColumns[] = 'stamp';
@@ -539,13 +543,32 @@
             @foreach ($sigColumns as $type)
                 <td class="sig-col" style="width: {{ $colWidth }};">
                     @if ($type === 'teacher')
+                        <div class="sig-placeholder"></div>
                         <div class="sig-line">Class Teacher's Signature</div>
                     @elseif ($type === 'stamp')
-                        <div class="stamp-box">
-                            &bull; OFFICIAL SCHOOL SEAL &bull;
-                        </div>
+                        @if (!empty($stampSrc))
+                            <div class="stamp-img-box">
+                                <img src="{{ $stampSrc }}" class="stamp-img" alt="Official Stamp">
+                            </div>
+                        @else
+                            <div class="stamp-box">
+                                &bull; OFFICIAL SCHOOL SEAL &bull;
+                            </div>
+                        @endif
                     @elseif ($type === 'principal')
-                        <div class="sig-line">Principal's Signature &amp; Date</div>
+                        @if (!empty($principalSigSrc))
+                            <div class="sig-img-box">
+                                <img src="{{ $principalSigSrc }}" class="sig-img" alt="Principal Signature">
+                            </div>
+                        @else
+                            <div class="sig-placeholder"></div>
+                        @endif
+                        <div class="sig-line">
+                            Principal's Signature &amp; Date
+                            @if (!empty($principalName))
+                                <div class="sig-subname">{{ $principalName }}</div>
+                            @endif
+                        </div>
                     @endif
                 </td>
             @endforeach

@@ -7,6 +7,7 @@ namespace App\Filament\Pages;
 use App\Models\Setting;
 use App\Services\ReportCardSettingsService;
 use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -353,7 +354,7 @@ class ManageReportCardSettings extends Page
                         Tab::make('Signatories & Seal')
                             ->icon('heroicon-o-pencil-square')
                             ->schema([
-                                Section::make('Validation Lines & Official Stamp')
+                                Section::make('Validation Lines & Official Verification')
                                     ->description('Manage verification sign-off lines, official school stamp, and security notes.')
                                     ->schema([
                                         Grid::make(2)->schema([
@@ -369,7 +370,7 @@ class ManageReportCardSettings extends Page
 
                                             Toggle::make('rc_show_school_stamp')
                                                 ->label('Official School Seal / Stamp Box')
-                                                ->helperText('Displays border box for the official school stamp.')
+                                                ->helperText('Displays designated area for the official school seal or stamp.')
                                                 ->default(true),
 
                                             Toggle::make('rc_show_footer_note')
@@ -377,6 +378,42 @@ class ManageReportCardSettings extends Page
                                                 ->helperText('Displays bottom security note with generation date and time.')
                                                 ->default(true),
                                         ]),
+                                    ]),
+
+                                Section::make('Principal Digital Signature & Identification')
+                                    ->description('Upload the official digital signature of the Principal or Head of School to automatically affix it to results.')
+                                    ->schema([
+                                        Grid::make(2)->schema([
+                                            FileUpload::make('rc_principal_signature')
+                                                ->label('Principal Signature Image')
+                                                ->image()
+                                                ->imageEditor()
+                                                ->directory('signatures')
+                                                ->disk(config('filesystems.upload_disk', 'public'))
+                                                ->maxSize(2048)
+                                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
+                                                ->helperText('Upload a clear scan of the Principal\'s signature (transparent PNG recommended, max 2 MB). Automatically placed above the signature line.'),
+
+                                            TextInput::make('rc_principal_name')
+                                                ->label('Principal / Head of School Full Name & Title')
+                                                ->placeholder('e.g. Dr. (Mrs.) A. B. Adeleke, Ph.D')
+                                                ->maxLength(120)
+                                                ->helperText('Optional. Full name and title displayed directly beneath the signature line on the report card.'),
+                                        ]),
+                                    ]),
+
+                                Section::make('Official School Stamp / Seal')
+                                    ->description('Upload the official rubber stamp or round seal image to be digitally placed in the school seal area.')
+                                    ->schema([
+                                        FileUpload::make('rc_school_stamp_image')
+                                            ->label('Official Stamp / Seal Image')
+                                            ->image()
+                                            ->imageEditor()
+                                            ->directory('stamps')
+                                            ->disk(config('filesystems.upload_disk', 'public'))
+                                            ->maxSize(2048)
+                                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
+                                            ->helperText('Upload official school stamp or seal (transparent PNG recommended, max 2 MB). Affixed in the official seal area on report sheets and slips.'),
                                     ]),
                             ]),
 
@@ -443,7 +480,17 @@ class ManageReportCardSettings extends Page
 
         foreach ($state as $key => $val) {
             if (in_array($key, $allKeys, true)) {
-                $storageVal = is_bool($val) ? ($val ? '1' : '0') : (string) $val;
+                if (is_array($val)) {
+                    $first = reset($val);
+                    $storageVal = is_string($first) ? $first : null;
+                } elseif (is_bool($val)) {
+                    $storageVal = $val ? '1' : '0';
+                } elseif ($val === null || $val === '') {
+                    $storageVal = null;
+                } else {
+                    $storageVal = (string) $val;
+                }
+
                 Setting::updateOrCreate(['key' => $key], ['value' => $storageVal]);
             }
         }
