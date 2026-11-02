@@ -97,31 +97,35 @@ class TenantDatabaseSeeder extends Seeder
         $this->command?->info('Seeding staff…');
 
         Staff::firstOrCreate(
-            ['name' => 'Mrs. Jane Doe'],
+            ['surname' => 'Doe', 'first_name' => 'Jane'],
             [
-                'role'  => 'Head of School',
-                'bio'   => 'Mrs. Doe has over 20 years of experience in early childhood education.',
-                'image' => null,
+                'other_name' => 'Mrs.',
+                'role'       => 'Head of School',
+                'bio'        => 'Mrs. Doe has over 20 years of experience in early childhood education.',
+                'image'      => null,
             ]
         );
 
         Staff::firstOrCreate(
-            ['name' => 'Mr. John Smith'],
+            ['surname' => 'Smith', 'first_name' => 'John'],
             [
-                'role'  => 'Head of Academics',
-                'bio'   => 'Mr. Smith ensures our curriculum meets international standards and challenges every student to reach their full potential.',
-                'image' => null,
+                'other_name' => 'Mr.',
+                'role'       => 'Head of Academics',
+                'bio'        => 'Mr. Smith ensures our curriculum meets international standards and challenges every student to reach their full potential.',
+                'image'      => null,
             ]
         );
 
-        foreach ([
-            ['name' => 'Mrs. Grace Williams', 'role' => 'Nursery Lead', 'bio' => 'Mrs. Williams supports early learners with patient, play-based teaching.', 'order' => 3],
-            ['name' => 'Mr. Daniel Okafor', 'role' => 'Mathematics Teacher', 'bio' => 'Mr. Okafor helps pupils build confidence with numbers and problem solving.', 'order' => 4],
-            ['name' => 'Mrs. Amina Bello', 'role' => 'Literacy Coordinator', 'bio' => 'Mrs. Bello leads reading and writing activities across the school.', 'order' => 5],
-            ['name' => 'Mr. Peter Adeyemi', 'role' => 'Sports Coordinator', 'bio' => 'Mr. Adeyemi encourages teamwork, fitness, and healthy competition.', 'order' => 6],
-        ] as $staff) {
+        $staffMembers = [
+            ['surname' => 'Williams', 'first_name' => 'Grace', 'other_name' => 'Mrs.', 'role' => 'Nursery Lead', 'bio' => 'Mrs. Williams supports early learners with patient, play-based teaching.', 'order' => 3],
+            ['surname' => 'Okafor', 'first_name' => 'Daniel', 'other_name' => 'Mr.', 'role' => 'Mathematics Teacher', 'bio' => 'Mr. Okafor helps pupils build confidence with numbers and problem solving.', 'order' => 4],
+            ['surname' => 'Bello', 'first_name' => 'Amina', 'other_name' => 'Mrs.', 'role' => 'Literacy Coordinator', 'bio' => 'Mrs. Bello leads reading and writing activities across the school.', 'order' => 5],
+            ['surname' => 'Adeyemi', 'first_name' => 'Peter', 'other_name' => 'Mr.', 'role' => 'Sports Coordinator', 'bio' => 'Mr. Adeyemi encourages teamwork, fitness, and healthy competition.', 'order' => 6],
+        ];
+
+        foreach ($staffMembers as $staff) {
             Staff::firstOrCreate(
-                ['name' => $staff['name']],
+                ['surname' => $staff['surname'], 'first_name' => $staff['first_name']],
                 array_merge($staff, ['image' => null])
             );
         }
