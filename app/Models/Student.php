@@ -289,8 +289,31 @@ class Student extends Model
         } else {
             $prefix = 'ADM';
         }
-        $padLength = ($prefix === 'LRSC') ? 3 : 5;
-        $base = $prefix.now()->format('Y').str_pad((string) $studentId, $padLength, '0', STR_PAD_LEFT);
+        $padLength = ($prefix === 'LRSC' || $prefix === 'AVS') ? 3 : 5;
+        $year = now()->format('Y');
+
+        if ($prefix === 'AVS') {
+            $pattern = "{$prefix}{$year}%";
+            $existing = self::query()
+                ->where('admission_number', 'like', $pattern)
+                ->whereKeyNot($studentId)
+                ->pluck('admission_number');
+
+            $maxSeq = 0;
+            foreach ($existing as $adm) {
+                if (preg_match('/^' . preg_quote($prefix, '/') . $year . '(\d+)$/', (string) $adm, $matches)) {
+                    $val = intval($matches[1]);
+                    if ($val > $maxSeq) {
+                        $maxSeq = $val;
+                    }
+                }
+            }
+            $nextSeq = $maxSeq + 1;
+
+            return $prefix . $year . str_pad((string) $nextSeq, $padLength, '0', STR_PAD_LEFT);
+        }
+
+        $base = $prefix.$year.str_pad((string) $studentId, $padLength, '0', STR_PAD_LEFT);
         $admissionNumber = $base;
         $suffix = 2;
 
