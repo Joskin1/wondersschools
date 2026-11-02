@@ -107,6 +107,16 @@ if (! \$t3) {
 }
 Domain::firstOrCreate(['domain' => 'cathedral-college.duckdns.org'], ['tenant_id' => \$t3->id]);
 echo \"Tenant cathedral: {\$t3->id}\n\";
+
+// New: AVOOS SCHOOLS
+\$t4 = Tenant::find('avoos');
+if (! \$t4) {
+    \$t4 = Tenant::create(['id' => 'avoos', 'name' => 'AVOOS SCHOOLS']);
+} elseif (\$t4->status !== \App\Enums\TenantStatus::Active) {
+    \App\Jobs\Tenancy\ProvisionTenantJob::dispatchSync(\$t4);
+}
+Domain::firstOrCreate(['domain' => 'avoosschools.duckdns.org'], ['tenant_id' => \$t4->id]);
+echo \"Tenant avoos: {\$t4->id}\n\";
 "
 
 echo "=== 6c. Seeding Tenant Content ==="
@@ -122,7 +132,7 @@ cat << 'NGINXEOF' | sudo tee /etc/nginx/sites-available/wonder > /dev/null
 server {
     listen 80;
     listen [::]:80;
-    server_name livingsspring.duckdns.org betaschool.duckdns.org cathedral-college.duckdns.org;
+    server_name livingsspring.duckdns.org betaschool.duckdns.org cathedral-college.duckdns.org avoosschools.duckdns.org;
     root /var/www/Wonder/public;
 
     add_header X-Frame-Options "SAMEORIGIN";
@@ -157,7 +167,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 
 echo "=== 9. Requesting SSL Certificate ==="
-sudo certbot --nginx --expand -d livingsspring.duckdns.org -d betaschool.duckdns.org -d cathedral-college.duckdns.org --redirect --non-interactive --agree-tos -m admin@livingsspring.duckdns.org || echo "Certbot check complete."
+sudo certbot --nginx --expand -d livingsspring.duckdns.org -d betaschool.duckdns.org -d cathedral-college.duckdns.org -d avoosschools.duckdns.org --redirect --non-interactive --agree-tos -m admin@livingsspring.duckdns.org || echo "Certbot check complete."
 
 echo "=== DEPLOYMENT COMPLETE! ==="
 echo "Tenant URL: https://livingsspring.duckdns.org"
@@ -166,3 +176,5 @@ echo "BETA School: https://betaschool.duckdns.org"
 echo "BETA Admin:  https://betaschool.duckdns.org/admin"
 echo "Cathedral College: https://cathedral-college.duckdns.org"
 echo "Cathedral Admin:   https://cathedral-college.duckdns.org/admin"
+echo "AVOOS SCHOOLS:     https://avoosschools.duckdns.org"
+echo "AVOOS Admin:       https://avoosschools.duckdns.org/admin"
