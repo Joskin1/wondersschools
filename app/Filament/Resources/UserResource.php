@@ -9,6 +9,7 @@ use App\Notifications\TeacherRegistrationInvitation;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\FileUpload;
 use Filament\Resources\Resource;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -100,6 +101,15 @@ class UserResource extends Resource
                     ->placeholder('e.g. Bursar, Exam Officer, Vice Principal')
                     ->maxLength(255)
                     ->visible(fn ($get) => $get('role') === 'admin'),
+
+                FileUpload::make('signature')
+                    ->label('Digital Signature')
+                    ->image()
+                    ->directory('signatures')
+                    ->disk(config('filesystems.upload_disk', 'public'))
+                    ->maxSize(2048)
+                    ->helperText('Upload official digital signature (transparent PNG recommended, max 2 MB). Automatically placed on class report cards if assigned as a class teacher.')
+                    ->columnSpanFull(),
             ]);
     }
 

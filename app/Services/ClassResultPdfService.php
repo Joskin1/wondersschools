@@ -14,9 +14,11 @@ use App\Models\Session;
 use App\Models\Setting;
 use App\Models\StudentEnrollment;
 use App\Models\SubjectResult;
+use App\Models\ClassTeacherAssignment;
 use App\Models\Term;
 use App\Models\TermResult;
 use App\Models\TermScoringSnapshot;
+use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 
 class ClassResultPdfService
@@ -56,6 +58,37 @@ class ClassResultPdfService
         }
 
         return null;
+    }
+
+    /**
+     * Resolve the assigned class teacher for a classroom, session, and optional arm/department.
+     */
+    public static function resolveClassTeacher(
+        int $classroomId,
+        int $sessionId,
+        ?int $classArmId = null,
+        ?int $departmentId = null
+    ): ?User {
+        $query = ClassTeacherAssignment::where('class_id', $classroomId)
+            ->where('session_id', $sessionId)
+            ->with('teacher');
+
+        if ($classArmId) {
+            $armTeacher = (clone $query)->where('class_arm_id', $classArmId)->first();
+            if ($armTeacher?->teacher) {
+                return $armTeacher->teacher;
+            }
+        }
+
+        if ($departmentId) {
+            $deptTeacher = (clone $query)->where('department_id', $departmentId)->first();
+            if ($deptTeacher?->teacher) {
+                return $deptTeacher->teacher;
+            }
+        }
+
+        $generalTeacher = $query->first();
+        return $generalTeacher?->teacher;
     }
 
     /**
@@ -327,6 +360,10 @@ class ClassResultPdfService
 
             $studentPhotoBase64 = self::resolveImageBase64($student->profile_picture);
 
+            $teacher = self::resolveClassTeacher($classroomId, $sessionId, $enrollment->class_arm_id, $enrollment->department_id);
+            $teacherSigDataUri = self::resolveImageBase64($teacher?->signature);
+            $teacherName = $teacher?->full_name ?: $teacher?->name;
+
             $studentsData[] = [
                 'student'      => [
                     'id'             => $student->id,
@@ -338,17 +375,19 @@ class ClassResultPdfService
                     'arm'            => $enrollment->classArm?->name ?? null,
                     'passport_photo' => $studentPhotoBase64,
                 ],
-                'classroom'             => $enrollment->classroom?->name ?? $classroom->name,
-                'class_size'            => $classSize,
-                'arm_population'        => $armPopulation,
-                'department_population' => $departmentPopulation,
-                'session_name'          => $session->name ?? '-',
-                'term_name'             => $term->name ?? '-',
-                'is_cumulative'         => $isCumulative,
-                'score_heads'           => $scoreHeads,
-                'subjects'              => $subjectRows,
-                'times_school_opened'   => $approval?->times_school_opened,
-                'next_term_begins'      => $approval?->next_term_begins,
+                'classroom'                  => $enrollment->classroom?->name ?? $classroom->name,
+                'class_size'                 => $classSize,
+                'arm_population'             => $armPopulation,
+                'department_population'      => $departmentPopulation,
+                'session_name'               => $session->name ?? '-',
+                'term_name'                  => $term->name ?? '-',
+                'is_cumulative'              => $isCumulative,
+                'score_heads'                => $scoreHeads,
+                'subjects'                   => $subjectRows,
+                'times_school_opened'        => $approval?->times_school_opened,
+                'next_term_begins'           => $approval?->next_term_begins,
+                'teacher_signature_data_uri' => $teacherSigDataUri,
+                'teacher_name'               => $teacherName,
                 'term_result'           => [
                     'subjects_count'        => $termResult->subjects_count,
                     'grand_total'           => $termResult->grand_total,
@@ -533,18 +572,24 @@ class ClassResultPdfService
 
             $studentPhotoBase64 = self::resolveImageBase64($student->profile_picture);
 
+            $teacher = self::resolveClassTeacher($classroomId, $sessionId, $enrollment->class_arm_id, $enrollment->department_id);
+            $teacherSigDataUri = self::resolveImageBase64($teacher?->signature);
+            $teacherName = $teacher?->full_name ?: $teacher?->name;
+
             $studentsData[] = [
-                'report_title'          => strtoupper($term->name) . ' MID-TERM ACADEMIC PROGRESS REPORT',
-                'settings'              => $storedSettings,
-                'session_name'          => $session->name ?? '-',
-                'term_name'             => $term->name ?? '-',
-                'classroom'             => $enrollment->classroom?->name ?? $classroom->name,
-                'class_size'            => $classSize,
-                'arm_population'        => $armPopulation,
-                'department_population' => $departmentPopulation,
-                'midterm_weight'        => $snapshot->midterm_weight,
-                'raw_max'               => $snapshot->raw_max,
-                'midterm_heads'         => $snapshot->midterm_heads,
+                'report_title'               => strtoupper($term->name) . ' MID-TERM ACADEMIC PROGRESS REPORT',
+                'settings'                   => $storedSettings,
+                'session_name'               => $session->name ?? '-',
+                'term_name'                  => $term->name ?? '-',
+                'classroom'                  => $enrollment->classroom?->name ?? $classroom->name,
+                'class_size'                 => $classSize,
+                'arm_population'             => $armPopulation,
+                'department_population'      => $departmentPopulation,
+                'midterm_weight'             => $snapshot->midterm_weight,
+                'raw_max'                    => $snapshot->raw_max,
+                'midterm_heads'              => $snapshot->midterm_heads,
+                'teacher_signature_data_uri' => $teacherSigDataUri,
+                'teacher_name'               => $teacherName,
                 'student'               => [
                     'id'              => $student->id,
                     'name'            => $student->name,

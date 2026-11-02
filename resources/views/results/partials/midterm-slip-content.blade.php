@@ -41,6 +41,8 @@
     $principalSigSrc = $settings['principal_signature_data_uri'] ?? $resolveImage($settings['rc_principal_signature'] ?? null);
     $stampSrc        = $settings['school_stamp_data_uri'] ?? $resolveImage($settings['rc_school_stamp_image'] ?? null);
     $principalName   = $settings['rc_principal_name'] ?? null;
+    $teacherSigSrc   = $data['teacher_signature_data_uri'] ?? null;
+    $teacherName     = $data['teacher_name'] ?? null;
 @endphp
 
 {{-- Header Section --}}
@@ -258,8 +260,19 @@
 <table class="sig-table">
     <tr>
         <td class="sig-col">
-            <div class="sig-placeholder"></div>
-            <div class="sig-line">Class Teacher</div>
+            @if (!empty($teacherSigSrc))
+                <div class="sig-img-box">
+                    <img src="{{ $teacherSigSrc }}" class="sig-img" alt="Teacher Signature">
+                </div>
+            @else
+                <div class="sig-placeholder"></div>
+            @endif
+            <div class="sig-line">
+                Class Teacher
+                @if (!empty($teacherName))
+                    <div class="sig-subname">{{ $teacherName }}</div>
+                @endif
+            </div>
         </td>
         <td class="sig-col">
             @if (!empty($stampSrc))

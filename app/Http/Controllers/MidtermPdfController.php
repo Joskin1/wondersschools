@@ -180,9 +180,18 @@ class MidtermPdfController extends Controller
                 ->count()
             : null;
 
+        $teacher = \App\Services\ClassResultPdfService::resolveClassTeacher(
+            $classroomId,
+            $sessionId,
+            $enrollment?->class_arm_id,
+            $enrollment?->department_id
+        );
+        $teacherSigDataUri = \App\Services\ClassResultPdfService::resolveImageBase64($teacher?->signature);
+        $teacherName = $teacher?->full_name ?: $teacher?->name;
+
         $data = [
-            'report_title'          => strtoupper($term->name) . ' MID-TERM ACADEMIC PROGRESS REPORT',
-            'student'               => [
+            'report_title'               => strtoupper($term->name) . ' MID-TERM ACADEMIC PROGRESS REPORT',
+            'student'                    => [
                 'name'           => $student->name,
                 'gender'         => $student->gender ?? '-',
                 'dob'            => $student->date_of_birth?->format('d/m/Y') ?? '-',
@@ -191,16 +200,18 @@ class MidtermPdfController extends Controller
                 'arm'            => $enrollment?->classArm?->name ?? null,
                 'passport_photo' => $student->profile_picture,
             ],
-            'classroom'             => $enrollment?->classroom?->name ?? '-',
-            'class_size'            => $classSize,
-            'arm_population'        => $armPopulation,
-            'department_population' => $departmentPopulation,
-            'session_name'          => $session?->name ?? '-',
-            'term_name'             => $term->name ?? '-',
-            'midterm_weight'        => $snapshot->midterm_weight,
-            'raw_max'               => $snapshot->raw_max,
-            'midterm_heads'         => $snapshot->midterm_heads,
-            'subjects'              => $subjectRows,
+            'classroom'                  => $enrollment?->classroom?->name ?? '-',
+            'class_size'                 => $classSize,
+            'arm_population'             => $armPopulation,
+            'department_population'      => $departmentPopulation,
+            'session_name'               => $session?->name ?? '-',
+            'term_name'                  => $term->name ?? '-',
+            'midterm_weight'             => $snapshot->midterm_weight,
+            'raw_max'                    => $snapshot->raw_max,
+            'midterm_heads'              => $snapshot->midterm_heads,
+            'teacher_signature_data_uri' => $teacherSigDataUri,
+            'teacher_name'               => $teacherName,
+            'subjects'                   => $subjectRows,
             'term_result'           => $midtermTermResult ? [
                 'subjects_count'        => $midtermTermResult->subjects_count,
                 'total_obtainable'      => (float) $midtermTermResult->total_obtainable,

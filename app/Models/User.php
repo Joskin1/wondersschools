@@ -40,6 +40,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         'primary_biometric_template',
         'backup_biometric_template',
         'biometric_enrolled_at',
+        'signature',
     ];
 
     /**
@@ -474,5 +475,26 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
             'biometric_enrolled_at' => null,
         ])->save();
     }
+
+    /**
+     * Check if user has an uploaded digital signature.
+     */
+    public function hasSignature(): bool
+    {
+        return ! empty($this->signature);
+    }
+
+    /**
+     * Get the public URL for the user's digital signature.
+     */
+    public function getSignatureUrlAttribute(): ?string
+    {
+        if (empty($this->signature)) {
+            return null;
+        }
+
+        return Storage::disk(config('filesystems.upload_disk', 'public'))->url($this->signature);
+    }
 }
+
 

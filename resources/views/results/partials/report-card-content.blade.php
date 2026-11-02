@@ -525,6 +525,8 @@
     $showStamp        = $is('rc_show_school_stamp');
     $showPrincipalSig = $is('rc_show_principal_signature');
 
+    $teacherSigSrc    = $showTeacherSig ? ($data['teacher_signature_data_uri'] ?? null) : null;
+    $teacherName      = $data['teacher_name'] ?? null;
     $principalSigSrc  = $showPrincipalSig ? ($settings['principal_signature_data_uri'] ?? $resolveImage($settings['rc_principal_signature'] ?? null)) : null;
     $stampSrc         = $showStamp ? ($settings['school_stamp_data_uri'] ?? $resolveImage($settings['rc_school_stamp_image'] ?? null)) : null;
     $principalName    = $settings['rc_principal_name'] ?? null;
@@ -543,8 +545,19 @@
             @foreach ($sigColumns as $type)
                 <td class="sig-col" style="width: {{ $colWidth }};">
                     @if ($type === 'teacher')
-                        <div class="sig-placeholder"></div>
-                        <div class="sig-line">Class Teacher's Signature</div>
+                        @if (!empty($teacherSigSrc))
+                            <div class="sig-img-box">
+                                <img src="{{ $teacherSigSrc }}" class="sig-img" alt="Teacher Signature">
+                            </div>
+                        @else
+                            <div class="sig-placeholder"></div>
+                        @endif
+                        <div class="sig-line">
+                            Class Teacher's Signature
+                            @if (!empty($teacherName))
+                                <div class="sig-subname">{{ $teacherName }}</div>
+                            @endif
+                        </div>
                     @elseif ($type === 'stamp')
                         @if (!empty($stampSrc))
                             <div class="stamp-img-box">

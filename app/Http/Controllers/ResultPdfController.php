@@ -276,6 +276,15 @@ class ResultPdfController extends Controller
         $stampPath = $settings['rc_school_stamp_image'] ?? null;
         $settings['school_stamp_data_uri'] = \App\Services\ClassResultPdfService::resolveImageBase64($stampPath);
 
+        $teacher = \App\Services\ClassResultPdfService::resolveClassTeacher(
+            $classroomId,
+            $sessionId,
+            $enrollment?->class_arm_id,
+            $enrollment?->department_id
+        );
+        $teacherSigDataUri = \App\Services\ClassResultPdfService::resolveImageBase64($teacher?->signature);
+        $teacherName = $teacher?->full_name ?: $teacher?->name;
+
         $data = [
             'student'      => [
                 'name'           => $student->name,
@@ -286,17 +295,19 @@ class ResultPdfController extends Controller
                 'arm'            => $enrollment?->classArm?->name ?? null,
                 'passport_photo' => $student->profile_picture,
             ],
-            'classroom'             => $enrollment?->classroom?->name ?? '-',
-            'class_size'            => $classSize,
-            'arm_population'        => $armPopulation,
-            'department_population' => $departmentPopulation,
-            'session_name'          => $session?->name ?? '-',
-            'term_name'             => $term->name ?? '-',
-            'is_cumulative'         => $isCumulative,
-            'score_heads'           => $scoreHeads,
-            'subjects'              => $subjectRows,
-            'times_school_opened'   => $approval?->times_school_opened,
-            'next_term_begins'      => $approval?->next_term_begins,
+            'classroom'                  => $enrollment?->classroom?->name ?? '-',
+            'class_size'                 => $classSize,
+            'arm_population'             => $armPopulation,
+            'department_population'      => $departmentPopulation,
+            'session_name'               => $session?->name ?? '-',
+            'term_name'                  => $term->name ?? '-',
+            'is_cumulative'              => $isCumulative,
+            'score_heads'                => $scoreHeads,
+            'subjects'                   => $subjectRows,
+            'times_school_opened'        => $approval?->times_school_opened,
+            'next_term_begins'           => $approval?->next_term_begins,
+            'teacher_signature_data_uri' => $teacherSigDataUri,
+            'teacher_name'               => $teacherName,
             'term_result'           => [
                 'subjects_count'        => $termResult->subjects_count,
                 'grand_total'           => $termResult->grand_total,

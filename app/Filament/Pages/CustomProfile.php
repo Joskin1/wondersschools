@@ -94,6 +94,18 @@ class CustomProfile extends BaseEditProfile
                             ->maxLength(255),
                     ])
                     ->columns(2),
+                Section::make('Digital Signature')
+                    ->description('Upload your official digital signature to affix to class report cards, result slips, and official documents.')
+                    ->visible(fn () => ! auth()->user()->isStudent())
+                    ->schema([
+                        FileUpload::make('signature')
+                            ->label('Signature Image')
+                            ->image()
+                            ->directory('signatures')
+                            ->disk(config('filesystems.upload_disk', 'public'))
+                            ->maxSize(2048)
+                            ->helperText('Upload a clear scan or image of your signature (transparent PNG recommended, max 2 MB). If you are assigned as a class teacher, this signature will be placed automatically above the Class Teacher\'s Signature line on report cards.'),
+                    ]),
                 Section::make('Change Password')
                     ->description('Ensure your account is using a long, random password to stay secure.')
                     ->schema([
@@ -106,6 +118,8 @@ class CustomProfile extends BaseEditProfile
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
+        $data['signature'] = $this->getUser()->signature;
+
         $student = $this->getUser()->student;
 
         if (! $student) {
