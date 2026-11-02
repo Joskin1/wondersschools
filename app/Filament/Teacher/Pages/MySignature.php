@@ -5,11 +5,11 @@ namespace App\Filament\Teacher\Pages;
 use App\Models\User;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -99,7 +99,8 @@ class MySignature extends Page implements HasForms
         $user = Auth::user();
 
         if ($user) {
-            $user->signature = $state['signature'] ?? null;
+            $raw = $state['signature'] ?? null;
+            $user->signature = is_array($raw) ? (reset($raw) ?: null) : $raw;
             $user->save();
 
             Notification::make()
