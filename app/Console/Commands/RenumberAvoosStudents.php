@@ -3,12 +3,15 @@
 namespace App\Console\Commands;
 
 use App\Models\Classroom;
+use App\Models\Setting;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Models\Tenant;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -24,7 +27,7 @@ class RenumberAvoosStudents extends Command
                             {--dry-run : Preview changes without saving} 
                             {--export-dir= : Directory to save credentials}';
 
-    protected $description = 'Renumber AVOOS students sequentially (highest class to least class) with 3-digit year format and export login credentials';
+    protected $description = 'Renumber AVOOS students sequentially (highest class to least class) with 3-digit year format and export login credentials to XLSX, CSV, and PDF';
 
     public function handle(): int
     {
@@ -57,6 +60,7 @@ class RenumberAvoosStudents extends Command
 
         $globalSeq = 1;
         $records = [];
+        $studentsByClass = [];
         $totalProcessed = 0;
 
         $this->info("Found {$classrooms->count()} classrooms. Beginning sequential numbering from highest class to least class...\n");
@@ -78,6 +82,8 @@ class RenumberAvoosStudents extends Command
             })->values();
 
             $this->line("<comment>=== {$classroom->name} (Order: {$classroom->class_order}) - {$sortedEnrollments->count()} Students ===</comment>");
+
+            $classStudentIndex = 1;
 
             foreach ($sortedEnrollments as $enrollment) {
                 $student = $enrollment->student;
@@ -126,8 +132,9 @@ class RenumberAvoosStudents extends Command
                     }
                 }
 
-                $records[] = [
-                    'sn' => $globalSeq,
+                $studentItem = [
+                    'sn' => $classStudentIndex,
+                    'global_sn' => $globalSeq,
                     'class' => $classroom->name,
                     'name' => $studentName,
                     'admission_number' => $newAdm,
@@ -136,7 +143,11 @@ class RenumberAvoosStudents extends Command
                     'portal_url' => $portalUrl,
                 ];
 
+                $records[] = $studentItem;
+                $studentsByClass[$classroom->name][] = $studentItem;
+
                 $globalSeq++;
+                $classStudentIndex++;
                 $totalProcessed++;
             }
         }
@@ -144,7 +155,7 @@ class RenumberAvoosStudents extends Command
         $this->newLine();
         $this->info("Completed numbering: {$totalProcessed} students processed.");
 
-        // Export to Excel and CSV
+        // Export to Excel, CSV, and PDF
         $exportDir = $this->option('export-dir')
             ? (string) $this->option('export-dir')
             : public_path('downloads/credentials');
@@ -155,18 +166,26 @@ class RenumberAvoosStudents extends Command
 
         $xlsxFile = rtrim($exportDir, '/') . '/AVOOS_Students_Login_Credentials.xlsx';
         $csvFile = rtrim($exportDir, '/') . '/AVOOS_Students_Login_Credentials.csv';
+        $masterPdfFile = rtrim($exportDir, '/') . '/AVOOS_Students_Login_Credentials_All_Classes.pdf';
 
         $this->generateSpreadsheets($records, $xlsxFile, $csvFile, $portalUrl);
+        $this->generatePdfs($studentsByClass, $exportDir, $masterPdfFile, $portalUrl);
 
         @chmod($xlsxFile, 0664);
         @chmod($csvFile, 0664);
+        @chmod($masterPdfFile, 0664);
 
-        $this->info("Credentials Spreadsheet (.xlsx) saved to: {$xlsxFile}");
-        $this->info("Credentials CSV (.csv) saved to: {$csvFile}");
+        $this->newLine();
+        $this->info("Export Files Generated Successfully:");
+        $this->info("Spreadsheet (.xlsx): {$xlsxFile}");
+        $this->info("CSV (.csv):          {$csvFile}");
+        $this->info("Master PDF (.pdf):   {$masterPdfFile}");
         $this->newLine();
         $this->info("Public Download Links:");
-        $this->info("Excel: https://avoosschools.duckdns.org/downloads/credentials/AVOOS_Students_Login_Credentials.xlsx");
-        $this->info("CSV:   https://avoosschools.duckdns.org/downloads/credentials/AVOOS_Students_Login_Credentials.csv");
+        $this->info("All Classes PDF: https://avoosschools.duckdns.org/downloads/credentials/AVOOS_Students_Login_Credentials_All_Classes.pdf");
+        $this->info("Excel:           https://avoosschools.duckdns.org/downloads/credentials/AVOOS_Students_Login_Credentials.xlsx");
+        $this->info("CSV:             https://avoosschools.duckdns.org/downloads/credentials/AVOOS_Students_Login_Credentials.csv");
+        $this->info("Individual Class PDFs available in: https://avoosschools.duckdns.org/downloads/credentials/classes/");
 
         return 0;
     }
@@ -283,5 +302,74 @@ class RenumberAvoosStudents extends Command
         $csvWriter = new Csv($spreadsheet);
         $csvWriter->setSheetIndex(0);
         $csvWriter->save($csvPath);
+    }
+
+    /**
+     * @param array<string, array<int, array<string, mixed>>> $studentsByClass
+     */
+    protected function generatePdfs(array $studentsByClass, string $exportDir, string $masterPdfPath, string $portalUrl): void
+    {
+        $schoolName = "AVOOS INT'L SCHOOLS";
+        $sessionName = '2025/2026';
+        $generatedDate = now()->format('F j, Y');
+
+        // Look for school logo
+        $logoSetting = Setting::where('key', 'school_logo')->value('value');
+        $logoBase64 = null;
+        if ($logoSetting) {
+            $logoPath = storage_path('app/public/' . $logoSetting);
+            if (file_exists($logoPath)) {
+                $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+            }
+        }
+
+        // 1. Generate Master PDF (All classes in order from Highest to Least)
+        $masterHtml = view('pdf.students-credentials-roster', [
+            'schoolName' => $schoolName,
+            'logoBase64' => $logoBase64,
+            'studentsByClass' => $studentsByClass,
+            'sessionName' => $sessionName,
+            'generatedDate' => $generatedDate,
+            'portalUrl' => $portalUrl,
+        ])->render();
+
+        $pdf = Pdf::loadHTML($masterHtml)
+            ->setPaper('A4', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'sans-serif',
+            ]);
+        $pdf->save($masterPdfPath);
+
+        // 2. Generate Individual Class PDFs
+        $classesDir = rtrim($exportDir, '/') . '/classes';
+        if (! file_exists($classesDir)) {
+            mkdir($classesDir, 0755, true);
+        }
+
+        foreach ($studentsByClass as $className => $classStudents) {
+            $classSlug = Str::slug($className, '_');
+            $classPdfPath = $classesDir . '/' . strtoupper($classSlug) . '_Login_Credentials.pdf';
+
+            $classHtml = view('pdf.students-credentials-roster', [
+                'schoolName' => $schoolName,
+                'logoBase64' => $logoBase64,
+                'studentsByClass' => [$className => $classStudents],
+                'sessionName' => $sessionName,
+                'generatedDate' => $generatedDate,
+                'portalUrl' => $portalUrl,
+            ])->render();
+
+            $classPdf = Pdf::loadHTML($classHtml)
+                ->setPaper('A4', 'portrait')
+                ->setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => true,
+                    'defaultFont' => 'sans-serif',
+                ]);
+            $classPdf->save($classPdfPath);
+            @chmod($classPdfPath, 0664);
+        }
     }
 }

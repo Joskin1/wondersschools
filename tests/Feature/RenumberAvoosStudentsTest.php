@@ -110,9 +110,16 @@ test('avoos:renumber-students renumbers from highest class to least class and ex
     // Check files
     expect(file_exists($exportDir . '/AVOOS_Students_Login_Credentials.xlsx'))->toBeTrue();
     expect(file_exists($exportDir . '/AVOOS_Students_Login_Credentials.csv'))->toBeTrue();
+    expect(file_exists($exportDir . '/AVOOS_Students_Login_Credentials_All_Classes.pdf'))->toBeTrue();
+    expect(file_exists($exportDir . '/classes/YEAR_5_Login_Credentials.pdf'))->toBeTrue();
+    expect(file_exists($exportDir . '/classes/CRECHE_Login_Credentials.pdf'))->toBeTrue();
 
     // Clean up
     @unlink($exportDir . '/AVOOS_Students_Login_Credentials.xlsx');
     @unlink($exportDir . '/AVOOS_Students_Login_Credentials.csv');
+    @unlink($exportDir . '/AVOOS_Students_Login_Credentials_All_Classes.pdf');
+    @unlink($exportDir . '/classes/YEAR_5_Login_Credentials.pdf');
+    @unlink($exportDir . '/classes/CRECHE_Login_Credentials.pdf');
+    @rmdir($exportDir . '/classes');
     @rmdir($exportDir);
 });
