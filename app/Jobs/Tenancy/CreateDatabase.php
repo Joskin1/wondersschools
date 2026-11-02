@@ -23,10 +23,14 @@ class CreateDatabase implements ShouldQueue
         try {
             $this->tenant->database()->manager()->createDatabase($this->tenant);
         } catch (QueryException $e) {
-            // HY000 / 1007 — database already exists; treat as a no-op so
+            // HY000 (MySQL) / 42P04 (PostgreSQL) — database already exists; treat as a no-op so
             // re-seeding (migrate:fresh --seed) and idempotent tenant creation
             // don't blow up.
-            if ($e->getCode() !== 'HY000' || ! str_contains($e->getMessage(), 'database exists')) {
+            $isDuplicate = in_array((string) $e->getCode(), ['HY000', '42P04'], true)
+                || str_contains(strtolower($e->getMessage()), 'already exists')
+                || str_contains(strtolower($e->getMessage()), 'database exists');
+
+            if (! $isDuplicate) {
                 throw $e;
             }
         }

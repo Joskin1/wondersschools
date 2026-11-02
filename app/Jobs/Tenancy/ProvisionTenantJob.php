@@ -161,7 +161,11 @@ class ProvisionTenantJob implements ShouldQueue
         try {
             $this->tenant->database()->manager()->createDatabase($this->tenant);
         } catch (QueryException $e) {
-            if ($e->getCode() !== 'HY000' || ! str_contains($e->getMessage(), 'database exists')) {
+            $isDuplicate = in_array((string) $e->getCode(), ['HY000', '42P04'], true)
+                || str_contains(strtolower($e->getMessage()), 'already exists')
+                || str_contains(strtolower($e->getMessage()), 'database exists');
+
+            if (! $isDuplicate) {
                 throw $e;
             }
             // Database already exists — idempotent no-op.
