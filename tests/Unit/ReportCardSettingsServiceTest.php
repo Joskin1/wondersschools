@@ -29,7 +29,7 @@ test('ReportCardSettingsService returns standard defaults where all elements def
         ->and($defaults['rc_principal_title'])->toBe('Head Teacher')
         ->and($defaults['rc_school_stamp_image'])->toBeNull()
         ->and($defaults['rc_page_margin_preset'])->toBe('standard')
-        ->and($defaults['rc_page_margin_top'])->toBe(18);
+        ->and($defaults['rc_page_margin_top'])->toBe(10);
 });
 
 test('ReportCardSettingsService correctly checks isEnabled with various types', function () {
@@ -50,13 +50,13 @@ test('ReportCardSettingsService correctly checks isEnabled with various types', 
 
 test('ReportCardSettingsService generates appropriate page margin CSS', function () {
     expect(ReportCardSettingsService::getMarginCss(['rc_page_margin_preset' => 'standard']))
-        ->toBe('18mm 18mm 18mm 18mm');
+        ->toBe('10mm 18mm 10mm 18mm');
 
     expect(ReportCardSettingsService::getMarginCss(['rc_page_margin_preset' => 'generous']))
-        ->toBe('22mm 20mm 22mm 20mm');
+        ->toBe('12mm 22mm 12mm 22mm');
 
     expect(ReportCardSettingsService::getMarginCss(['rc_page_margin_preset' => 'compact']))
-        ->toBe('14mm 14mm 14mm 14mm');
+        ->toBe('8mm 15mm 8mm 15mm');
 
     expect(ReportCardSettingsService::getMarginCss([
         'rc_page_margin_preset' => 'custom',

@@ -76,8 +76,8 @@ class ReportCardSettingsService
 
             // ── Group 8: Margins & Spacing ──────────────────────────────────
             'rc_page_margin_preset'          => 'standard', // 'compact', 'standard', 'generous', 'custom'
-            'rc_page_margin_top'             => 18,
-            'rc_page_margin_bottom'          => 18,
+            'rc_page_margin_top'             => 10,
+            'rc_page_margin_bottom'          => 10,
             'rc_page_margin_left'            => 18,
             'rc_page_margin_right'           => 18,
         ];
@@ -154,18 +154,18 @@ class ReportCardSettingsService
 
         switch ($preset) {
             case 'compact':
-                return '14mm 14mm 14mm 14mm';
+                return '8mm 15mm 8mm 15mm';
             case 'generous':
-                return '22mm 20mm 22mm 20mm';
+                return '12mm 22mm 12mm 22mm';
             case 'custom':
-                $top    = (int) ($settings['rc_page_margin_top'] ?? 18);
+                $top    = (int) ($settings['rc_page_margin_top'] ?? 10);
                 $right  = (int) ($settings['rc_page_margin_right'] ?? 18);
-                $bottom = (int) ($settings['rc_page_margin_bottom'] ?? 18);
+                $bottom = (int) ($settings['rc_page_margin_bottom'] ?? 10);
                 $left   = (int) ($settings['rc_page_margin_left'] ?? 18);
                 return "{$top}mm {$right}mm {$bottom}mm {$left}mm";
             case 'standard':
             default:
-                return '18mm 18mm 18mm 18mm';
+                return '10mm 18mm 10mm 18mm';
         }
     }
 
