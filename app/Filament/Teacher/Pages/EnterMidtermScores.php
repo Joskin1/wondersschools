@@ -788,7 +788,11 @@ class EnterMidtermScores extends Page
                 ->toArray();
             $allSubjectIds = array_values(array_unique(array_merge($classSubjectIds, $assignedSubjectIds)));
 
-            return Subject::whereIn('id', $allSubjectIds)->active()->orderBy('name')->get();
+            if (! empty($allSubjectIds)) {
+                return Subject::whereIn('id', $allSubjectIds)->active()->orderBy('name')->get();
+            }
+
+            return Subject::active()->orderBy('name')->get();
         }
 
         $assignedSubjectIds = TeacherSubjectAssignment::where('teacher_id', $user->id)
