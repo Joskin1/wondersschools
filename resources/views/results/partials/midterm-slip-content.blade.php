@@ -41,6 +41,7 @@
     $principalSigSrc = $settings['principal_signature_data_uri'] ?? $resolveImage($settings['rc_principal_signature'] ?? null);
     $stampSrc        = $settings['school_stamp_data_uri'] ?? $resolveImage($settings['rc_school_stamp_image'] ?? null);
     $principalName   = $settings['rc_principal_name'] ?? null;
+    $principalTitle  = !empty($settings['rc_principal_title']) ? trim($settings['rc_principal_title']) : 'Head Teacher';
     $teacherSigSrc   = $data['teacher_signature_data_uri'] ?? null;
     $teacherName     = $data['teacher_name'] ?? null;
 @endphp
@@ -250,7 +251,7 @@
 </div>
 
 <div class="remark-card">
-    <div class="remark-title">Principal / Head of School's Remark</div>
+    <div class="remark-title">{{ $principalTitle }}'s Remark</div>
     <div class="remark-text">
         {{ !empty($termRes['head_teacher_comment']) ? $termRes['head_teacher_comment'] : 'A good mid-term effort. Keep up the focus and determination towards final exams.' }}
     </div>
@@ -289,13 +290,13 @@
         <td class="sig-col">
             @if (!empty($principalSigSrc))
                 <div class="sig-img-box">
-                    <img src="{{ $principalSigSrc }}" class="sig-img" alt="Principal Signature">
+                    <img src="{{ $principalSigSrc }}" class="sig-img" alt="{{ $principalTitle }} Signature">
                 </div>
             @else
                 <div class="sig-placeholder"></div>
             @endif
             <div class="sig-line">
-                Principal / Head of School
+                {{ $principalTitle }}
                 @if (!empty($principalName))
                     <div class="sig-subname">{{ $principalName }}</div>
                 @endif

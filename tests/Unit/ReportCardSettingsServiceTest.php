@@ -26,6 +26,7 @@ test('ReportCardSettingsService returns standard defaults where all elements def
         ->and($defaults['rc_show_school_stamp'])->toBeTrue()
         ->and($defaults['rc_principal_signature'])->toBeNull()
         ->and($defaults['rc_principal_name'])->toBeNull()
+        ->and($defaults['rc_principal_title'])->toBe('Head Teacher')
         ->and($defaults['rc_school_stamp_image'])->toBeNull()
         ->and($defaults['rc_page_margin_preset'])->toBe('standard')
         ->and($defaults['rc_page_margin_top'])->toBe(18);

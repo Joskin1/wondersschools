@@ -69,6 +69,7 @@ class ReportCardSettingsService
             'rc_show_principal_signature'    => true,
             'rc_principal_signature'         => null,
             'rc_principal_name'              => null,
+            'rc_principal_title'             => 'Head Teacher',
             'rc_show_school_stamp'           => true,
             'rc_school_stamp_image'          => null,
             'rc_show_footer_note'            => true,
@@ -380,15 +381,19 @@ class ReportCardSettingsService
                         'helper'      => 'Displays signature sign-off line for the class teacher.',
                     ],
                     'rc_show_principal_signature' => [
-                        'label'       => 'Show Principal Signature & Date Line',
+                        'label'       => 'Show Principal / Head Teacher Signature Line',
                         'helper'      => 'Displays executive signature and validation date line.',
                     ],
+                    'rc_principal_title' => [
+                        'label'       => 'School Leader Title / Designation',
+                        'helper'      => 'Custom leadership designation printed on reports (e.g. Head Teacher, Principal, Administrator).',
+                    ],
                     'rc_principal_signature' => [
-                        'label'       => 'Principal Digital Signature Image',
-                        'helper'      => 'Scanned signature image affixed above the principal signature line.',
+                        'label'       => 'Principal / Head Teacher Digital Signature Image',
+                        'helper'      => 'Scanned signature image affixed above the executive signature line.',
                     ],
                     'rc_principal_name' => [
-                        'label'       => 'Principal Full Name & Title',
+                        'label'       => 'Principal / Head Teacher Full Name & Title',
                         'helper'      => 'Full name and qualifications displayed below the signature line.',
                     ],
                     'rc_show_school_stamp' => [

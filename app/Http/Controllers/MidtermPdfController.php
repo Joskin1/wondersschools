@@ -154,7 +154,9 @@ class MidtermPdfController extends Controller
         }
 
         $session = Session::find($sessionId);
-        $settings = Setting::all()->pluck('value', 'key')->toArray();
+        $rcDefaults = \App\Services\ReportCardSettingsService::defaults();
+        $storedSettings = Setting::all()->pluck('value', 'key')->toArray();
+        $settings = array_merge($rcDefaults, $storedSettings);
 
         $sigPath = $settings['rc_principal_signature'] ?? null;
         $settings['principal_signature_data_uri'] = \App\Services\ClassResultPdfService::resolveImageBase64($sigPath);

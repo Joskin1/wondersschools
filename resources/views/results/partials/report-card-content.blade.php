@@ -501,9 +501,13 @@
     </div>
 @endif
 
+@php
+    $principalTitle = !empty($settings['rc_principal_title']) ? trim($settings['rc_principal_title']) : 'Head Teacher';
+@endphp
+
 @if ($is('rc_show_principal_remark'))
     <div class="remark-card">
-        <div class="remark-title">Principal's Executive Comment:</div>
+        <div class="remark-title">{{ $principalTitle }}'s Executive Comment:</div>
         <div class="remark-text">
             {{ $termRes['principal_comment'] ?? 'An exceptional and commendable performance. Keep maintaining this exemplary standard!' }}
         </div>
@@ -571,13 +575,13 @@
                     @elseif ($type === 'principal')
                         @if (!empty($principalSigSrc))
                             <div class="sig-img-box">
-                                <img src="{{ $principalSigSrc }}" class="sig-img" alt="Principal Signature">
+                                <img src="{{ $principalSigSrc }}" class="sig-img" alt="{{ $principalTitle }} Signature">
                             </div>
                         @else
                             <div class="sig-placeholder"></div>
                         @endif
                         <div class="sig-line">
-                            Principal's Signature &amp; Date
+                            {{ $principalTitle }}'s Signature &amp; Date
                             @if (!empty($principalName))
                                 <div class="sig-subname">{{ $principalName }}</div>
                             @endif

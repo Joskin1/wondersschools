@@ -384,6 +384,9 @@
                     Uploading &amp; parsing spreadsheet... Please wait.
                 </div>
 
+                @php
+                    $principalTitle = \App\Models\Setting::where('key', 'rc_principal_title')->value('value') ?: 'Head Teacher';
+                @endphp
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
                     <thead>
                         <tr style="text-align: left; border-bottom: 1px solid rgba(148,163,184,0.1); font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 800;">
@@ -395,7 +398,7 @@
                             <th style="padding: 0.875rem 1rem; text-align: center; width: 90px;">Position</th>
                             <th style="padding: 0.875rem 1rem; width: 140px;">Times Present</th>
                             <th style="padding: 0.875rem 1rem;">Class Teacher's Comment</th>
-                            <th style="padding: 0.875rem 1rem;">Principal's Comment</th>
+                            <th style="padding: 0.875rem 1rem;">{{ $principalTitle }}'s Comment</th>
                             @if($this->canApprove)
                                 <th style="padding: 0.875rem 1rem; text-align: center; width: 60px;">Print</th>
                             @endif
@@ -446,7 +449,7 @@
                                 </td>
                                 <td style="padding: 0.5rem 1rem;">
                                     @if($this->canApprove)
-                                        <input type="text" wire:model.defer="remarks.{{ $st['student_id'] }}.principal_comment" placeholder="Principal remark (auto-assigned by grade, editable)" class="ss-input" style="padding: 0.375rem 0.5rem; font-size: 0.8rem;" />
+                                        <input type="text" wire:model.defer="remarks.{{ $st['student_id'] }}.principal_comment" placeholder="{{ $principalTitle }} remark (auto-assigned by grade, editable)" class="ss-input" style="padding: 0.375rem 0.5rem; font-size: 0.8rem;" />
                                     @else
                                         <span style="font-size: 0.8rem; color: #475569; font-style: italic;">
                                             {{ $st['principal_comment'] ?? 'Auto-assigned by grade' }}

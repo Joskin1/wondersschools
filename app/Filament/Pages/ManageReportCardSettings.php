@@ -380,26 +380,43 @@ class ManageReportCardSettings extends Page
                                         ]),
                                     ]),
 
-                                Section::make('Principal Digital Signature & Identification')
-                                    ->description('Upload the official digital signature of the Principal or Head of School to automatically affix it to results.')
+                                Section::make('School Head / Principal Digital Signature & Identification')
+                                    ->description('Configure the title, name, and official digital signature of the school leader (Head Teacher, Principal, Administrator, etc.) to automatically affix to terminal reports.')
                                     ->schema([
                                         Grid::make(2)->schema([
-                                            FileUpload::make('rc_principal_signature')
-                                                ->label('Principal Signature Image')
-                                                ->image()
-                                                ->imageEditor()
-                                                ->directory('signatures')
-                                                ->disk(config('filesystems.upload_disk', 'public'))
-                                                ->maxSize(2048)
-                                                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
-                                                ->helperText('Upload a clear scan of the Principal\'s signature (transparent PNG recommended, max 2 MB). Automatically placed above the signature line.'),
+                                            TextInput::make('rc_principal_title')
+                                                ->label('School Leader Title / Designation')
+                                                ->placeholder('e.g. Head Teacher, Principal, Administrator')
+                                                ->datalist([
+                                                    'Head Teacher',
+                                                    'Principal',
+                                                    'School Administrator',
+                                                    'Head of School',
+                                                    'Proprietor',
+                                                    'Proprietress',
+                                                    'Directress',
+                                                    'Director of Studies',
+                                                ])
+                                                ->default('Head Teacher')
+                                                ->maxLength(60)
+                                                ->helperText('Custom title printed on reports (e.g. "Head Teacher\'s Signature", "Principal\'s Executive Comment").'),
 
                                             TextInput::make('rc_principal_name')
-                                                ->label('Principal / Head of School Full Name & Title')
-                                                ->placeholder('e.g. Dr. (Mrs.) A. B. Adeleke, Ph.D')
+                                                ->label('School Leader Full Name & Qualifications')
+                                                ->placeholder('e.g. Mrs. Abiodun or Dr. (Mrs.) A. B. Adeleke, Ph.D')
                                                 ->maxLength(120)
                                                 ->helperText('Optional. Full name and title displayed directly beneath the signature line on the report card.'),
                                         ]),
+
+                                        FileUpload::make('rc_principal_signature')
+                                            ->label('Official Signature Image')
+                                            ->image()
+                                            ->imageEditor()
+                                            ->directory('signatures')
+                                            ->disk(config('filesystems.upload_disk', 'public'))
+                                            ->maxSize(2048)
+                                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'])
+                                            ->helperText('Upload a clear scan of the official signature (transparent PNG recommended, max 2 MB). Automatically placed above the signature line.'),
                                     ]),
 
                                 Section::make('Official School Stamp / Seal')
