@@ -284,6 +284,8 @@ class Student extends Model
             $prefix = 'CCOSC';
         } elseif ($tenantId === 'livingsspring' || $tenantId === 'wonders' || str_contains(strtolower((string) tenant('name')), 'living')) {
             $prefix = 'LRSC';
+        } elseif ($tenantId === 'avoos' || str_contains(strtolower((string) tenant('name')), 'avoos')) {
+            $prefix = 'AVS';
         } else {
             $prefix = 'ADM';
         }
