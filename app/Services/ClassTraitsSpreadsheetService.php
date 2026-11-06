@@ -9,6 +9,7 @@ use App\Models\StudentEnrollment;
 use App\Models\Term;
 use App\Models\TermResult;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -20,37 +21,23 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class ClassTraitsSpreadsheetService
 {
     /**
-     * Get the standard 6 Affective Domain traits.
+     * Get active Affective Domain traits.
      *
      * @return array<string, string>
      */
     public static function getAffectiveTraits(): array
     {
-        return [
-            'punctuality'             => 'Punctuality & Regularity',
-            'neatness'                => 'Neatness & Personal Hygiene',
-            'attentiveness'           => 'Attentiveness in Class',
-            'honesty'                 => 'Honesty & Integrity',
-            'relationship_with_peers' => 'Relationship with Peers',
-            'leadership'              => 'Leadership & Initiative',
-        ];
+        return ReportCardSettingsService::getAffectiveTraits();
     }
 
     /**
-     * Get the standard 6 Psychomotor Skills.
+     * Get active Psychomotor Skills.
      *
      * @return array<string, string>
      */
     public static function getPsychomotorSkills(): array
     {
-        return [
-            'handwriting'      => 'Handwriting & Presentation',
-            'sports'           => 'Sports, Games & Athletics',
-            'crafts'           => 'Craft, Design & Projects',
-            'verbal_fluency'   => 'Verbal Fluency & Communication',
-            'musical_skills'   => 'Musical & Creative Arts',
-            'practical_skills' => 'Laboratory / Practical Skills',
-        ];
+        return ReportCardSettingsService::getPsychomotorSkills();
     }
 
     /**
@@ -78,8 +65,35 @@ class ClassTraitsSpreadsheetService
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle(substr(preg_replace('/[^A-Za-z0-9_\-]/', '_', $classroom->name), 0, 30));
 
+        $affTraits = static::getAffectiveTraits();
+        $psySkills = static::getPsychomotorSkills();
+
+        $colIdx = 5;
+        $affCols = [];
+        foreach ($affTraits as $k => $label) {
+            $letter = Coordinate::stringFromColumnIndex($colIdx);
+            $affCols[$letter] = ['key' => $k, 'title' => $label];
+            $colIdx++;
+        }
+        $affStartCol = ! empty($affCols) ? array_key_first($affCols) : 'E';
+        $affEndCol   = ! empty($affCols) ? array_key_last($affCols) : 'E';
+
+        $psyCols = [];
+        foreach ($psySkills as $k => $label) {
+            $letter = Coordinate::stringFromColumnIndex($colIdx);
+            $psyCols[$letter] = ['key' => $k, 'title' => $label];
+            $colIdx++;
+        }
+        $psyStartCol = ! empty($psyCols) ? array_key_first($psyCols) : Coordinate::stringFromColumnIndex(count($affCols) + 5);
+        $psyEndCol   = ! empty($psyCols) ? array_key_last($psyCols) : $psyStartCol;
+
+        $lastDataCol = ! empty($psyCols) ? $psyEndCol : $affEndCol;
+
+        // Hidden ID column
+        $idCol = Coordinate::stringFromColumnIndex($colIdx);
+
         // ── Title Banner (Row 1) ─────────────────────────────────────────────
-        $sheet->mergeCells('A1:P1');
+        $sheet->mergeCells("A1:{$lastDataCol}1");
         $sheet->setCellValue('A1', "BEHAVIORAL TRAITS & SKILLS RATING — {$classroom->name} ({$session->name} / {$term->name})");
         $sheet->getStyle('A1')->applyFromArray([
             'font' => ['bold' => true, 'size' => 13, 'color' => ['rgb' => 'FFFFFF']],
@@ -89,7 +103,7 @@ class ClassTraitsSpreadsheetService
         $sheet->getRowDimension(1)->setRowHeight(32);
 
         // ── Subtitle / Instructions (Row 2) ──────────────────────────────────
-        $sheet->mergeCells('A2:P2');
+        $sheet->mergeCells("A2:{$lastDataCol}2");
         $sheet->setCellValue('A2', 'Instructions: Enter ratings from 1 to 5 for each trait (5 = Excellent, 4 = Very Good, 3 = Good, 2 = Fair, 1 = Poor). Do not modify Admission No or Student ID.');
         $sheet->getStyle('A2')->applyFromArray([
             'font' => ['italic' => true, 'size' => 9, 'color' => ['rgb' => '475569']],
@@ -106,21 +120,25 @@ class ClassTraitsSpreadsheetService
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
-        $sheet->mergeCells('E3:J3');
-        $sheet->setCellValue('E3', 'AFFECTIVE DOMAIN (CHARACTER & CONDUCT) [1 - 5]');
-        $sheet->getStyle('E3:J3')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E3A8A']], // Navy Blue
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-        ]);
+        if (! empty($affCols)) {
+            $sheet->mergeCells("{$affStartCol}3:{$affEndCol}3");
+            $sheet->setCellValue("{$affStartCol}3", 'AFFECTIVE DOMAIN (CHARACTER & CONDUCT) [1 - 5]');
+            $sheet->getStyle("{$affStartCol}3:{$affEndCol}3")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E3A8A']], // Navy Blue
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            ]);
+        }
 
-        $sheet->mergeCells('K3:P3');
-        $sheet->setCellValue('K3', 'PSYCHOMOTOR SKILLS & ACTIVITIES [1 - 5]');
-        $sheet->getStyle('K3:P3')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '047857']], // Emerald 700
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-        ]);
+        if (! empty($psyCols)) {
+            $sheet->mergeCells("{$psyStartCol}3:{$psyEndCol}3");
+            $sheet->setCellValue("{$psyStartCol}3", 'PSYCHOMOTOR SKILLS & ACTIVITIES [1 - 5]');
+            $sheet->getStyle("{$psyStartCol}3:{$psyEndCol}3")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '047857']], // Emerald 700
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            ]);
+        }
         $sheet->getRowDimension(3)->setRowHeight(22);
 
         // ── Table Column Headers (Row 4) ─────────────────────────────────────
@@ -129,23 +147,17 @@ class ClassTraitsSpreadsheetService
             'B' => ['title' => 'Admission No', 'width' => 16],
             'C' => ['title' => 'Student Full Name', 'width' => 28],
             'D' => ['title' => 'Division / Arm', 'width' => 16],
-            // Affective traits (E to J)
-            'E' => ['title' => "Punctuality\n(1-5)", 'width' => 14],
-            'F' => ['title' => "Neatness\n(1-5)", 'width' => 14],
-            'G' => ['title' => "Attentiveness\n(1-5)", 'width' => 14],
-            'H' => ['title' => "Honesty\n(1-5)", 'width' => 14],
-            'I' => ['title' => "Peers Rel.\n(1-5)", 'width' => 14],
-            'J' => ['title' => "Leadership\n(1-5)", 'width' => 14],
-            // Psychomotor skills (K to P)
-            'K' => ['title' => "Handwriting\n(1-5)", 'width' => 14],
-            'L' => ['title' => "Sports & Games\n(1-5)", 'width' => 15],
-            'L' => ['title' => "Sports\n(1-5)", 'width' => 14],
-            'M' => ['title' => "Crafts\n(1-5)", 'width' => 14],
-            'N' => ['title' => "Verbal Fluency\n(1-5)", 'width' => 15],
-            'O' => ['title' => "Musical Arts\n(1-5)", 'width' => 14],
-            'P' => ['title' => "Practical Skills\n(1-5)", 'width' => 15],
-            'Q' => ['title' => 'Student ID', 'width' => 12], // Hidden
         ];
+
+        foreach ($affCols as $col => $info) {
+            $headers[$col] = ['title' => "{$info['title']}\n(1-5)", 'width' => 14];
+        }
+
+        foreach ($psyCols as $col => $info) {
+            $headers[$col] = ['title' => "{$info['title']}\n(1-5)", 'width' => 14];
+        }
+
+        $headers[$idCol] = ['title' => 'Student ID', 'width' => 12];
 
         foreach ($headers as $col => $cfg) {
             $sheet->setCellValue("{$col}4", $cfg['title']);
@@ -158,23 +170,27 @@ class ClassTraitsSpreadsheetService
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
         ]);
 
-        $sheet->getStyle('E4:J4')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']], // Blue 600
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
-        ]);
+        if (! empty($affCols)) {
+            $sheet->getStyle("{$affStartCol}4:{$affEndCol}4")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']], // Blue 600
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            ]);
+        }
 
-        $sheet->getStyle('K4:P4')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '059669']], // Emerald 600
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
-        ]);
+        if (! empty($psyCols)) {
+            $sheet->getStyle("{$psyStartCol}4:{$psyEndCol}4")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '059669']], // Emerald 600
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            ]);
+        }
 
-        $sheet->getStyle('Q4')->applyFromArray([
+        $sheet->getStyle("{$idCol}4")->applyFromArray([
             'font' => ['bold' => true, 'size' => 9, 'color' => ['rgb' => '94A3B8']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E2E8F0']],
         ]);
-        $sheet->getColumnDimension('Q')->setVisible(false);
+        $sheet->getColumnDimension($idCol)->setVisible(false);
 
         $sheet->getRowDimension(4)->setRowHeight(30);
 
@@ -214,26 +230,20 @@ class ClassTraitsSpreadsheetService
             $sheet->setCellValue("D{$rowIndex}", $division);
 
             // Affective traits
-            $sheet->setCellValue("E{$rowIndex}", $aff['punctuality'] ?? '');
-            $sheet->setCellValue("F{$rowIndex}", $aff['neatness'] ?? '');
-            $sheet->setCellValue("G{$rowIndex}", $aff['attentiveness'] ?? '');
-            $sheet->setCellValue("H{$rowIndex}", $aff['honesty'] ?? '');
-            $sheet->setCellValue("I{$rowIndex}", $aff['relationship_with_peers'] ?? '');
-            $sheet->setCellValue("J{$rowIndex}", $aff['leadership'] ?? '');
+            foreach ($affCols as $col => $info) {
+                $sheet->setCellValue("{$col}{$rowIndex}", $aff[$info['key']] ?? '');
+            }
 
             // Psychomotor skills
-            $sheet->setCellValue("K{$rowIndex}", $psy['handwriting'] ?? '');
-            $sheet->setCellValue("L{$rowIndex}", $psy['sports'] ?? '');
-            $sheet->setCellValue("M{$rowIndex}", $psy['crafts'] ?? '');
-            $sheet->setCellValue("N{$rowIndex}", $psy['verbal_fluency'] ?? '');
-            $sheet->setCellValue("O{$rowIndex}", $psy['musical_skills'] ?? '');
-            $sheet->setCellValue("P{$rowIndex}", $psy['practical_skills'] ?? '');
+            foreach ($psyCols as $col => $info) {
+                $sheet->setCellValue("{$col}{$rowIndex}", $psy[$info['key']] ?? '');
+            }
 
             // Hidden ID
-            $sheet->setCellValue("Q{$rowIndex}", $student->id);
+            $sheet->setCellValue("{$idCol}{$rowIndex}", $student->id);
 
-            // Apply data validation to trait columns E through P
-            foreach (range('E', 'P') as $colLetter) {
+            // Apply data validation to trait columns
+            foreach (array_merge(array_keys($affCols), array_keys($psyCols)) as $colLetter) {
                 $sheet->getCell("{$colLetter}{$rowIndex}")->setDataValidation(clone $validation);
             }
 
@@ -250,15 +260,19 @@ class ClassTraitsSpreadsheetService
             $sheet->getStyle("D{$rowIndex}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
             // Soft highlight for editable cells
-            $sheet->getStyle("E{$rowIndex}:J{$rowIndex}")->applyFromArray([
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $isEven ? 'EFF6FF' : 'F8FAFC']], // Light blue
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            ]);
+            if (! empty($affCols)) {
+                $sheet->getStyle("{$affStartCol}{$rowIndex}:{$affEndCol}{$rowIndex}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $isEven ? 'EFF6FF' : 'F8FAFC']], // Light blue
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                ]);
+            }
 
-            $sheet->getStyle("K{$rowIndex}:P{$rowIndex}")->applyFromArray([
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $isEven ? 'ECFDF5' : 'F8FAFC']], // Light green
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            ]);
+            if (! empty($psyCols)) {
+                $sheet->getStyle("{$psyStartCol}{$rowIndex}:{$psyEndCol}{$rowIndex}")->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $isEven ? 'ECFDF5' : 'F8FAFC']], // Light green
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                ]);
+            }
 
             $sheet->getRowDimension($rowIndex)->setRowHeight(22);
             $rowIndex++;
@@ -267,7 +281,7 @@ class ClassTraitsSpreadsheetService
 
         $lastRow = $rowIndex - 1;
         if ($lastRow >= 5) {
-            $sheet->getStyle("A3:P{$lastRow}")->applyFromArray([
+            $sheet->getStyle("A3:{$lastDataCol}{$lastRow}")->applyFromArray([
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
@@ -314,6 +328,26 @@ class ClassTraitsSpreadsheetService
             ->pluck('id', 'admission_number')
             ->toArray();
 
+        $affTraits = static::getAffectiveTraits();
+        $psySkills = static::getPsychomotorSkills();
+
+        $colIdx = 5;
+        $affCols = [];
+        foreach ($affTraits as $k => $label) {
+            $letter = Coordinate::stringFromColumnIndex($colIdx);
+            $affCols[$letter] = $k;
+            $colIdx++;
+        }
+
+        $psyCols = [];
+        foreach ($psySkills as $k => $label) {
+            $letter = Coordinate::stringFromColumnIndex($colIdx);
+            $psyCols[$letter] = $k;
+            $colIdx++;
+        }
+
+        $idColLetter = Coordinate::stringFromColumnIndex($colIdx);
+
         $updatedCount = 0;
         $errors = [];
 
@@ -325,21 +359,27 @@ class ClassTraitsSpreadsheetService
             $classroomId,
             $sessionId,
             $termId,
+            $affCols,
+            $psyCols,
+            $idColLetter,
             &$updatedCount,
             &$errors
         ) {
             for ($row = 5; $row <= $highestRow; $row++) {
-                $rawColQ  = trim((string) $sheet->getCell("Q{$row}")->getValue());
+                $rawColId = trim((string) $sheet->getCell("{$idColLetter}{$row}")->getValue());
+                if ($rawColId === '') {
+                    $rawColId = trim((string) $sheet->getCell("Q{$row}")->getValue());
+                }
                 $rawAdmNo = trim((string) $sheet->getCell("B{$row}")->getValue());
                 $name     = trim((string) $sheet->getCell("C{$row}")->getValue());
 
-                if ($rawColQ === '' && $rawAdmNo === '' && $name === '') {
+                if ($rawColId === '' && $rawAdmNo === '' && $name === '') {
                     continue;
                 }
 
                 $studentId = null;
-                if ($rawColQ !== '' && is_numeric($rawColQ)) {
-                    $candidateId = (int) $rawColQ;
+                if ($rawColId !== '' && is_numeric($rawColId)) {
+                    $candidateId = (int) $rawColId;
                     if (in_array($candidateId, $enrolledStudents)) {
                         $studentId = $candidateId;
                     }
@@ -354,20 +394,11 @@ class ClassTraitsSpreadsheetService
                     continue;
                 }
 
-                // Parse 6 Affective traits (Col E to J)
-                $affectiveKeys = [
-                    'E' => 'punctuality',
-                    'F' => 'neatness',
-                    'G' => 'attentiveness',
-                    'H' => 'honesty',
-                    'I' => 'relationship_with_peers',
-                    'J' => 'leadership',
-                ];
-
+                // Parse Affective traits
                 $affectiveData = [];
                 $rowHasError = false;
 
-                foreach ($affectiveKeys as $col => $key) {
+                foreach ($affCols as $col => $key) {
                     $val = trim((string) $sheet->getCell("{$col}{$row}")->getValue());
                     if ($val === '') {
                         continue;
@@ -384,18 +415,9 @@ class ClassTraitsSpreadsheetService
                     continue;
                 }
 
-                // Parse 6 Psychomotor skills (Col K to P)
-                $psychomotorKeys = [
-                    'K' => 'handwriting',
-                    'L' => 'sports',
-                    'M' => 'crafts',
-                    'N' => 'verbal_fluency',
-                    'O' => 'musical_skills',
-                    'P' => 'practical_skills',
-                ];
-
+                // Parse Psychomotor skills
                 $psychomotorData = [];
-                foreach ($psychomotorKeys as $col => $key) {
+                foreach ($psyCols as $col => $key) {
                     $val = trim((string) $sheet->getCell("{$col}{$row}")->getValue());
                     if ($val === '') {
                         continue;

@@ -556,35 +556,44 @@
                 </div>
 
                 <div style="overflow-x: auto;">
+                    @php
+                        $affTraits = \App\Services\ClassTraitsSpreadsheetService::getAffectiveTraits();
+                        $psySkills = \App\Services\ClassTraitsSpreadsheetService::getPsychomotorSkills();
+                        $affCount = count($affTraits);
+                        $psyCount = count($psySkills);
+                        $totalCols = 3 + $affCount + $psyCount;
+                    @endphp
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
                         <thead>
                             <tr style="border-bottom: 1px solid rgba(148,163,184,0.15); font-size: 11px; text-transform: uppercase; font-weight: 800;">
                                 <th rowspan="2" style="padding: 0.625rem 0.75rem; width: 45px; text-align: center; vertical-align: middle; color: #94a3b8; border-right: 1px solid rgba(148,163,184,0.1);">S/N</th>
                                 <th rowspan="2" style="padding: 0.625rem 0.75rem; width: 110px; vertical-align: middle; color: #94a3b8; border-right: 1px solid rgba(148,163,184,0.1);">Adm No</th>
                                 <th rowspan="2" style="padding: 0.625rem 0.75rem; min-width: 170px; vertical-align: middle; color: #94a3b8; border-right: 1px solid rgba(148,163,184,0.1);">Student Name</th>
-                                <th colspan="6" style="padding: 0.5rem 0.75rem; text-align: center; background: #eff6ff; color: #1e40af; border-right: 2px solid #93c5fd;" class="dark:bg-blue-950/60 dark:text-blue-300">
-                                    Affective Domain (Character &amp; Conduct)
-                                </th>
-                                <th colspan="6" style="padding: 0.5rem 0.75rem; text-align: center; background: #ecfdf5; color: #065f46;" class="dark:bg-emerald-950/60 dark:text-emerald-300">
-                                    Psychomotor Skills &amp; Activities
-                                </th>
+                                @if($affCount > 0)
+                                    <th colspan="{{ $affCount }}" style="padding: 0.5rem 0.75rem; text-align: center; background: #eff6ff; color: #1e40af; border-right: 2px solid #93c5fd;" class="dark:bg-blue-950/60 dark:text-blue-300">
+                                        Affective Domain (Character &amp; Conduct)
+                                    </th>
+                                @endif
+                                @if($psyCount > 0)
+                                    <th colspan="{{ $psyCount }}" style="padding: 0.5rem 0.75rem; text-align: center; background: #ecfdf5; color: #065f46;" class="dark:bg-emerald-950/60 dark:text-emerald-300">
+                                        Psychomotor Skills &amp; Activities
+                                    </th>
+                                @endif
                             </tr>
                             <tr style="border-bottom: 2px solid rgba(148,163,184,0.2); font-size: 10px; font-weight: 800; text-transform: uppercase;">
                                 {{-- Affective --}}
-                                <th title="Punctuality &amp; Regularity" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af;" class="dark:bg-blue-950/40 dark:text-blue-200">Punct.</th>
-                                <th title="Neatness &amp; Personal Hygiene" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af;" class="dark:bg-blue-950/40 dark:text-blue-200">Neat.</th>
-                                <th title="Attentiveness in Class" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af;" class="dark:bg-blue-950/40 dark:text-blue-200">Attent.</th>
-                                <th title="Honesty &amp; Integrity" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af;" class="dark:bg-blue-950/40 dark:text-blue-200">Honest.</th>
-                                <th title="Relationship with Peers" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af;" class="dark:bg-blue-950/40 dark:text-blue-200">Peers</th>
-                                <th title="Leadership &amp; Initiative" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af; border-right: 2px solid #93c5fd;" class="dark:bg-blue-950/40 dark:text-blue-200">Leader</th>
+                                @foreach($affTraits as $k => $label)
+                                    <th title="{{ $label }}" style="padding: 0.35rem 0.2rem; width: 52px; text-align: center; background: #f0f7ff; color: #1e40af; {{ $loop->last ? 'border-right: 2px solid #93c5fd;' : '' }}" class="dark:bg-blue-950/40 dark:text-blue-200">
+                                        {{ \Illuminate\Support\Str::limit($label, 8, '.') }}
+                                    </th>
+                                @endforeach
 
                                 {{-- Psychomotor --}}
-                                <th title="Handwriting &amp; Presentation" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Handw.</th>
-                                <th title="Sports, Games &amp; Athletics" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Sports</th>
-                                <th title="Craft, Design &amp; Projects" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Crafts</th>
-                                <th title="Verbal Fluency &amp; Communication" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Fluency</th>
-                                <th title="Musical &amp; Creative Arts" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Music</th>
-                                <th title="Laboratory / Practical Skills" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Pract.</th>
+                                @foreach($psySkills as $k => $label)
+                                    <th title="{{ $label }}" style="padding: 0.35rem 0.2rem; width: 52px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">
+                                        {{ \Illuminate\Support\Str::limit($label, 8, '.') }}
+                                    </th>
+                                @endforeach
                             </tr>
                         </thead>
                         <tbody>
@@ -596,48 +605,22 @@
                                     <td style="padding: 0.5rem 0.75rem; font-weight: 800; border-right: 1px solid rgba(148,163,184,0.08);" class="dark:text-white">{{ $st['full_name'] }}</td>
 
                                     {{-- Affective --}}
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.punctuality" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.neatness" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.attentiveness" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.honesty" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.relationship_with_peers" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25); border-right: 2px solid #93c5fd;">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.leadership" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
+                                    @foreach($affTraits as $k => $label)
+                                        <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25); {{ $loop->last ? 'border-right: 2px solid #93c5fd;' : '' }}">
+                                            <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.{{ $k }}" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                        </td>
+                                    @endforeach
 
                                     {{-- Psychomotor --}}
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.handwriting" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.sports" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.crafts" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.verbal_fluency" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.musical_skills" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
-                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
-                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.practical_skills" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
-                                    </td>
+                                    @foreach($psySkills as $k => $label)
+                                        <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
+                                            <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.{{ $k }}" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                        </td>
+                                    @endforeach
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="15" style="padding: 2rem; text-align: center; color: #94a3b8;">
+                                    <td colspan="{{ $totalCols }}" style="padding: 2rem; text-align: center; color: #94a3b8;">
                                         No enrolled students found in this classroom for the selected session.
                                     </td>
                                 </tr>

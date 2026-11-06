@@ -9,6 +9,40 @@ use App\Models\Setting;
 class ReportCardSettingsService
 {
     /**
+     * Standard 6 default Affective Domain traits.
+     *
+     * @return list<array{key: string, name: string}>
+     */
+    public static function defaultAffectiveTraits(): array
+    {
+        return [
+            ['key' => 'punctuality', 'name' => 'Punctuality & Regularity'],
+            ['key' => 'neatness', 'name' => 'Neatness & Personal Hygiene'],
+            ['key' => 'attentiveness', 'name' => 'Attentiveness in Class'],
+            ['key' => 'honesty', 'name' => 'Honesty & Integrity'],
+            ['key' => 'relationship_with_peers', 'name' => 'Relationship with Peers'],
+            ['key' => 'leadership', 'name' => 'Leadership & Initiative'],
+        ];
+    }
+
+    /**
+     * Standard 6 default Psychomotor Skills.
+     *
+     * @return list<array{key: string, name: string}>
+     */
+    public static function defaultPsychomotorSkills(): array
+    {
+        return [
+            ['key' => 'handwriting', 'name' => 'Handwriting & Presentation'],
+            ['key' => 'sports', 'name' => 'Sports, Games & Athletics'],
+            ['key' => 'crafts', 'name' => 'Craft, Design & Projects'],
+            ['key' => 'verbal_fluency', 'name' => 'Verbal Fluency & Communication'],
+            ['key' => 'musical_skills', 'name' => 'Musical & Creative Arts'],
+            ['key' => 'practical_skills', 'name' => 'Laboratory / Practical Skills'],
+        ];
+    }
+
+    /**
      * Default values for all report card settings.
      * All options default to true so existing tenants preserve complete report cards.
      */
@@ -58,6 +92,8 @@ class ReportCardSettingsService
             'rc_show_affective_domain'       => true,
             'rc_show_psychomotor_skills'     => true,
             'rc_show_domain_scale'           => true,
+            'rc_affective_traits'            => static::defaultAffectiveTraits(),
+            'rc_psychomotor_traits'          => static::defaultPsychomotorSkills(),
 
             // ── Group 6: Remarks & Resumption ──────────────────────────────
             'rc_show_class_teacher_remark'   => true,
@@ -113,7 +149,10 @@ class ReportCardSettingsService
             }
 
             $raw = $stored[$key];
-            if (is_bool($defaultVal)) {
+            if ($key === 'rc_affective_traits' || $key === 'rc_psychomotor_traits') {
+                $decoded = is_string($raw) ? json_decode($raw, true) : null;
+                $result[$key] = is_array($decoded) && ! empty($decoded) ? $decoded : $defaultVal;
+            } elseif (is_bool($defaultVal)) {
                 $result[$key] = filter_var($raw, FILTER_VALIDATE_BOOLEAN);
             } elseif (is_int($defaultVal)) {
                 $result[$key] = is_numeric($raw) ? (int) $raw : $defaultVal;
@@ -123,6 +162,78 @@ class ReportCardSettingsService
         }
 
         return $result;
+    }
+
+    /**
+     * Get active Affective Domain traits as [key => displayName].
+     *
+     * @return array<string, string>
+     */
+    public static function getAffectiveTraits(): array
+    {
+        $raw = Setting::where('key', 'rc_affective_traits')->value('value');
+        $items = ! empty($raw) ? json_decode($raw, true) : null;
+        if (! is_array($items) || empty($items)) {
+            $items = static::defaultAffectiveTraits();
+        }
+
+        $result = [];
+        foreach ($items as $item) {
+            $name = trim($item['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $key = trim($item['key'] ?? '');
+            if ($key === '') {
+                $key = \Illuminate\Support\Str::slug($name, '_');
+            }
+            $result[$key] = $name;
+        }
+
+        return ! empty($result) ? $result : [
+            'punctuality'             => 'Punctuality & Regularity',
+            'neatness'                => 'Neatness & Personal Hygiene',
+            'attentiveness'           => 'Attentiveness in Class',
+            'honesty'                 => 'Honesty & Integrity',
+            'relationship_with_peers' => 'Relationship with Peers',
+            'leadership'              => 'Leadership & Initiative',
+        ];
+    }
+
+    /**
+     * Get active Psychomotor Skills as [key => displayName].
+     *
+     * @return array<string, string>
+     */
+    public static function getPsychomotorSkills(): array
+    {
+        $raw = Setting::where('key', 'rc_psychomotor_traits')->value('value');
+        $items = ! empty($raw) ? json_decode($raw, true) : null;
+        if (! is_array($items) || empty($items)) {
+            $items = static::defaultPsychomotorSkills();
+        }
+
+        $result = [];
+        foreach ($items as $item) {
+            $name = trim($item['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $key = trim($item['key'] ?? '');
+            if ($key === '') {
+                $key = \Illuminate\Support\Str::slug($name, '_');
+            }
+            $result[$key] = $name;
+        }
+
+        return ! empty($result) ? $result : [
+            'handwriting'      => 'Handwriting & Presentation',
+            'sports'           => 'Sports, Games & Athletics',
+            'crafts'           => 'Craft, Design & Projects',
+            'verbal_fluency'   => 'Verbal Fluency & Communication',
+            'musical_skills'   => 'Musical & Creative Arts',
+            'practical_skills' => 'Laboratory / Practical Skills',
+        ];
     }
 
     /**

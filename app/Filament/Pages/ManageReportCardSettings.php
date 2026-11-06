@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Services\ReportCardSettingsService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -302,18 +303,18 @@ class ManageReportCardSettings extends Page
                         Tab::make('Domains & Skills')
                             ->icon('heroicon-o-sparkles')
                             ->schema([
-                                Section::make('Character & Psychomotor Traits')
-                                    ->description('Manage qualitative evaluation grids for character conduct and practical motor abilities.')
+                                Section::make('Visibility & Legend')
+                                    ->description('Enable or disable qualitative evaluation sections and scale footnotes.')
                                     ->schema([
                                         Grid::make(2)->schema([
                                             Toggle::make('rc_show_affective_domain')
                                                 ->label('Affective Domain (Character & Conduct)')
-                                                ->helperText('Displays Punctuality, Neatness, Attentiveness, Honesty, Leadership ratings.')
+                                                ->helperText('Displays character conduct assessment grid.')
                                                 ->default(true),
 
                                             Toggle::make('rc_show_psychomotor_skills')
                                                 ->label('Psychomotor Skills & Practical Activities')
-                                                ->helperText('Displays Handwriting, Sports, Crafts, Verbal Fluency, Lab work ratings.')
+                                                ->helperText('Displays practical and physical capabilities assessment grid.')
                                                 ->default(true),
                                         ]),
 
@@ -321,6 +322,58 @@ class ManageReportCardSettings extends Page
                                             ->label('Rating Scale Legend')
                                             ->helperText('Displays scale footnote: 5 - Excellent, 4 - Very Good, 3 - Good, 2 - Fair, 1 - Poor.')
                                             ->default(true),
+                                    ]),
+
+                                Section::make('Affective Domain Traits (Character & Conduct)')
+                                    ->description('Customize the behavioral traits evaluated on student terminal report cards. You can edit existing titles, reorder them, remove traits, or add new traits according to your school taste.')
+                                    ->schema([
+                                        Repeater::make('rc_affective_traits')
+                                            ->label('Affective Traits List')
+                                            ->schema([
+                                                Grid::make(12)->schema([
+                                                    TextInput::make('name')
+                                                        ->label('Trait Title')
+                                                        ->placeholder('e.g. Politeness & Respect')
+                                                        ->required()
+                                                        ->columnSpan(8),
+                                                    TextInput::make('key')
+                                                        ->label('Code / Slug')
+                                                        ->placeholder('auto-generated if empty')
+                                                        ->columnSpan(4)
+                                                        ->helperText('Storage key'),
+                                                ]),
+                                            ])
+                                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                                            ->reorderable()
+                                            ->collapsible()
+                                            ->addActionLabel('+ Add Affective Trait')
+                                            ->default(ReportCardSettingsService::defaultAffectiveTraits()),
+                                    ]),
+
+                                Section::make('Psychomotor Skills & Practical Activities')
+                                    ->description('Customize the practical and physical skills evaluated on student terminal report cards. You can edit existing titles, reorder them, remove skills, or add new skills.')
+                                    ->schema([
+                                        Repeater::make('rc_psychomotor_traits')
+                                            ->label('Psychomotor Skills List')
+                                            ->schema([
+                                                Grid::make(12)->schema([
+                                                    TextInput::make('name')
+                                                        ->label('Skill / Activity Title')
+                                                        ->placeholder('e.g. Public Speaking & Debate')
+                                                        ->required()
+                                                        ->columnSpan(8),
+                                                    TextInput::make('key')
+                                                        ->label('Code / Slug')
+                                                        ->placeholder('auto-generated if empty')
+                                                        ->columnSpan(4)
+                                                        ->helperText('Storage key'),
+                                                ]),
+                                            ])
+                                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                                            ->reorderable()
+                                            ->collapsible()
+                                            ->addActionLabel('+ Add Psychomotor Skill')
+                                            ->default(ReportCardSettingsService::defaultPsychomotorSkills()),
                                     ]),
                             ]),
 
@@ -497,7 +550,26 @@ class ManageReportCardSettings extends Page
 
         foreach ($state as $key => $val) {
             if (in_array($key, $allKeys, true)) {
-                if (is_array($val)) {
+                if ($key === 'rc_affective_traits' || $key === 'rc_psychomotor_traits') {
+                    $cleanItems = [];
+                    if (is_array($val)) {
+                        foreach ($val as $item) {
+                            $name = trim($item['name'] ?? '');
+                            if ($name === '') {
+                                continue;
+                            }
+                            $slug = trim($item['key'] ?? '');
+                            if ($slug === '') {
+                                $slug = \Illuminate\Support\Str::slug($name, '_');
+                            }
+                            $cleanItems[] = [
+                                'key'  => $slug,
+                                'name' => $name,
+                            ];
+                        }
+                    }
+                    $storageVal = json_encode(array_values($cleanItems));
+                } elseif (is_array($val)) {
                     $first = reset($val);
                     $storageVal = is_string($first) ? $first : null;
                 } elseif (is_bool($val)) {

@@ -3,6 +3,7 @@
 use App\Filament\Teacher\Pages\ProcessClassResults;
 use App\Models\Classroom;
 use App\Models\Session;
+use App\Models\Setting;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
 use App\Models\Term;
@@ -10,6 +11,7 @@ use App\Models\TermResult;
 use App\Models\User;
 use App\Services\ClassResultPdfService;
 use App\Services\ClassTraitsSpreadsheetService;
+use App\Services\ReportCardSettingsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -288,3 +290,115 @@ test('report card blade partial renders custom traits accurately', function () {
     expect($rendered)->toContain('Neatness &amp; Personal Hygiene');
     expect($rendered)->toContain('Rating (1 - 5)');
 });
+
+test('admin configured custom traits propagate to template, livewire grid, and report card', function () {
+    $ctx = setupTraitsTestContext();
+
+    // 1. Simulate admin custom traits in settings
+    Setting::create([
+        'key'   => 'rc_affective_traits',
+        'value' => json_encode([
+            ['name' => 'Respect & Politeness', 'key' => 'respect'],
+            ['name' => 'Leadership & Initiative', 'key' => 'leadership'],
+        ]),
+    ]);
+
+    Setting::create([
+        'key'   => 'rc_psychomotor_traits',
+        'value' => json_encode([
+            ['name' => 'Public Speaking & Debate', 'key' => 'public_speaking'],
+            ['name' => 'Sports & Athletics', 'key' => 'sports'],
+        ]),
+    ]);
+
+    // Verify service returns the custom traits
+    $aff = ReportCardSettingsService::getAffectiveTraits();
+    expect($aff)->toBe([
+        'respect'    => 'Respect & Politeness',
+        'leadership' => 'Leadership & Initiative',
+    ]);
+
+    $psy = ReportCardSettingsService::getPsychomotorSkills();
+    expect($psy)->toBe([
+        'public_speaking' => 'Public Speaking & Debate',
+        'sports'          => 'Sports & Athletics',
+    ]);
+
+    // 2. Verify Excel Template exports custom columns
+    $spreadsheetService = app(ClassTraitsSpreadsheetService::class);
+    $tempPath = $spreadsheetService->exportToTempFile(
+        $ctx['classroom']->id,
+        $ctx['session']->id,
+        $ctx['term']->id
+    );
+
+    expect(file_exists($tempPath))->toBeTrue();
+    $spreadsheet = IOFactory::load($tempPath);
+    $sheet = $spreadsheet->getActiveSheet();
+
+    // E4: First affective trait, F4: Second affective trait
+    expect($sheet->getCell('E4')->getValue())->toContain('Respect');
+    expect($sheet->getCell('F4')->getValue())->toContain('Leadership');
+    // G4: First psychomotor, H4: Second psychomotor
+    expect($sheet->getCell('G4')->getValue())->toContain('Public Speaking');
+    expect($sheet->getCell('H4')->getValue())->toContain('Sports');
+
+    unlink($tempPath);
+
+    // 3. Verify Livewire Teacher component processes custom traits
+    Livewire::actingAs($ctx['teacher'])
+        ->test(ProcessClassResults::class, [
+            'session_id'   => $ctx['session']->id,
+            'term_id'      => $ctx['term']->id,
+            'classroom_id' => $ctx['classroom']->id,
+        ])
+        ->assertOk()
+        ->call('prefillAllTraits', 5)
+        ->set("traits.{$ctx['students'][0]->id}.affective.respect", 4)
+        ->set("traits.{$ctx['students'][0]->id}.psychomotor.public_speaking", 3)
+        ->call('saveTraits')
+        ->assertNotified('Behavioral traits & skills ratings saved successfully!');
+
+    $tr1 = TermResult::where('student_id', $ctx['students'][0]->id)
+        ->where('term_id', $ctx['term']->id)
+        ->first();
+
+    expect($tr1->affective_domain['respect'])->toBe(4);
+    expect($tr1->affective_domain['leadership'])->toBe(5);
+    expect($tr1->psychomotor_skills['public_speaking'])->toBe(3);
+    expect($tr1->psychomotor_skills['sports'])->toBe(5);
+
+    // 4. Verify Report Card Blade renders custom traits
+    $data = [
+        'settings' => [
+            'rc_show_affective_domain'   => true,
+            'rc_show_psychomotor_skills' => true,
+            'rc_show_domain_scale'       => true,
+        ],
+        'student' => [
+            'id'               => $ctx['students'][0]->id,
+            'name'             => 'Test Student',
+            'admission_number' => 'TRAIT001',
+        ],
+        'term_result' => [
+            'times_present'         => 80,
+            'class_teacher_comment' => 'Great performance!',
+            'principal_comment'     => 'Keep it up!',
+            'affective_domain'      => [
+                'respect'    => 4,
+                'leadership' => 5,
+            ],
+            'psychomotor_skills'    => [
+                'public_speaking' => 3,
+                'sports'          => 5,
+            ],
+        ],
+        'times_school_opened' => 90,
+    ];
+
+    $rendered = view('results.partials.report-card-content', ['data' => $data])->render();
+
+    expect($rendered)->toContain('Respect &amp; Politeness');
+    expect($rendered)->toContain('Public Speaking &amp; Debate');
+});
+
