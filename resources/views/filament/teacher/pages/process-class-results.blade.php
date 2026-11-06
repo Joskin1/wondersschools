@@ -91,6 +91,21 @@
                 </p>
             </div>
         </div>
+
+        <div wire:loading.flex wire:target="traitsFile" style="display:none; position: fixed; inset: 0; z-index: 99999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 1.25rem; padding: 2rem 2.5rem; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);" class="dark:bg-slate-900">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #ecfdf5; color: #059669; margin-bottom: 1.25rem;" class="dark:bg-emerald-950 dark:text-emerald-400">
+                    <svg class="animate-spin" style="width: 36px; height: 36px;" fill="none" viewBox="0 0 24 24">
+                        <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path style="opacity: 0.85;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </div>
+                <h3 style="font-size: 1.125rem; font-weight: 900; color: #0f172a; margin-bottom: 0.5rem;" class="dark:text-white">Parsing Behavioral Traits Spreadsheet</h3>
+                <p style="font-size: 0.875rem; color: #64748b; line-height: 1.5; margin: 0;" class="dark:text-slate-400">
+                    Reading spreadsheet records and updating student affective and psychomotor ratings. Please wait...
+                </p>
+            </div>
+        </div>
         {{-- Parameters Header Card --}}
         <div class="ss-card">
             <div style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -473,6 +488,178 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            {{-- ══════════════════════════════════════════════════════════════════
+                 BEHAVIORAL TRAITS & PSYCHOMOTOR SKILLS SECTION
+            ══════════════════════════════════════════════════════════════════ --}}
+            <div class="ss-card" style="padding: 0; overflow: hidden;">
+                <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(148,163,184,0.1); background: rgba(248,250,252,0.5); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;" class="dark:bg-slate-900/40">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <h3 style="font-size: 0.95rem; font-weight: 900;" class="dark:text-white">Affective Domain &amp; Psychomotor Skills Rating</h3>
+                            <span style="font-size: 0.7rem; font-weight: 800; padding: 0.15rem 0.5rem; border-radius: 9999px; background: #e0e7ff; color: #4338ca;">1 – 5 Scale</span>
+                        </div>
+                        <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.2rem;">Class Teacher: rate character traits (6 affective) and practical skills (6 psychomotor), or export/import via Excel spreadsheet.</p>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                        {{-- Pre-fill All with 5 --}}
+                        <button type="button" wire:click="prefillAllTraits(5)" wire:loading.attr="disabled" wire:target="prefillAllTraits" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 0.875rem; border-radius: 0.625rem; background: #f59e0b; color: white; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                            <svg wire:loading.remove wire:target="prefillAllTraits" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            <svg wire:loading wire:target="prefillAllTraits" class="animate-spin" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="prefillAllTraits">Pre-fill All with 5</span>
+                            <span wire:loading wire:target="prefillAllTraits">Pre-filling...</span>
+                        </button>
+
+                        {{-- Export Traits Excel Template --}}
+                        <button type="button" wire:click="exportTraitsSpreadsheet" wire:loading.attr="disabled" wire:target="exportTraitsSpreadsheet" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 0.875rem; border-radius: 0.625rem; background: #059669; color: white; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
+                            <svg wire:loading.remove wire:target="exportTraitsSpreadsheet" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            <svg wire:loading wire:target="exportTraitsSpreadsheet" class="animate-spin" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="exportTraitsSpreadsheet">Export Traits (.xlsx)</span>
+                            <span wire:loading wire:target="exportTraitsSpreadsheet">Exporting...</span>
+                        </button>
+
+                        {{-- Import Traits Excel File --}}
+                        <label style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 0.875rem; border-radius: 0.625rem; background: #0284c7; color: white; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s; margin: 0;" onmouseover="this.style.background='#0369a1'" onmouseout="this.style.background='#0284c7'">
+                            <svg wire:loading.remove wire:target="traitsFile" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                            <svg wire:loading wire:target="traitsFile" class="animate-spin" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="traitsFile">Import Filled Traits</span>
+                            <span wire:loading wire:target="traitsFile">Uploading...</span>
+                            <input type="file" wire:model.live="traitsFile" accept=".xlsx,.xls" style="display: none;" />
+                        </label>
+
+                        {{-- Save Traits --}}
+                        <button type="button" wire:click="saveTraits" wire:loading.attr="disabled" wire:target="saveTraits" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; border-radius: 0.625rem; background: #4f46e5; color: white; font-size: 0.8rem; font-weight: 800; cursor: pointer; border: none; transition: background 0.15s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+                            <svg wire:loading.remove wire:target="saveTraits" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            <svg wire:loading wire:target="saveTraits" class="animate-spin" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24">
+                                <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="saveTraits">Save Traits &amp; Skills</span>
+                            <span wire:loading wire:target="saveTraits">Saving...</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div wire:loading wire:target="traitsFile" style="padding: 1rem; background: #ecfdf5; color: #065f46; text-align: center; font-size: 0.875rem; font-weight: 700;">
+                    Uploading &amp; parsing traits spreadsheet... Please wait.
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(148,163,184,0.15); font-size: 11px; text-transform: uppercase; font-weight: 800;">
+                                <th rowspan="2" style="padding: 0.625rem 0.75rem; width: 45px; text-align: center; vertical-align: middle; color: #94a3b8; border-right: 1px solid rgba(148,163,184,0.1);">S/N</th>
+                                <th rowspan="2" style="padding: 0.625rem 0.75rem; width: 110px; vertical-align: middle; color: #94a3b8; border-right: 1px solid rgba(148,163,184,0.1);">Adm No</th>
+                                <th rowspan="2" style="padding: 0.625rem 0.75rem; min-width: 170px; vertical-align: middle; color: #94a3b8; border-right: 1px solid rgba(148,163,184,0.1);">Student Name</th>
+                                <th colspan="6" style="padding: 0.5rem 0.75rem; text-align: center; background: #eff6ff; color: #1e40af; border-right: 2px solid #93c5fd;" class="dark:bg-blue-950/60 dark:text-blue-300">
+                                    Affective Domain (Character &amp; Conduct)
+                                </th>
+                                <th colspan="6" style="padding: 0.5rem 0.75rem; text-align: center; background: #ecfdf5; color: #065f46;" class="dark:bg-emerald-950/60 dark:text-emerald-300">
+                                    Psychomotor Skills &amp; Activities
+                                </th>
+                            </tr>
+                            <tr style="border-bottom: 2px solid rgba(148,163,184,0.2); font-size: 10px; font-weight: 800; text-transform: uppercase;">
+                                {{-- Affective --}}
+                                <th title="Punctuality &amp; Regularity" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af;" class="dark:bg-blue-950/40 dark:text-blue-200">Punct.</th>
+                                <th title="Neatness &amp; Personal Hygiene" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af;" class="dark:bg-blue-950/40 dark:text-blue-200">Neat.</th>
+                                <th title="Attentiveness in Class" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af;" class="dark:bg-blue-950/40 dark:text-blue-200">Attent.</th>
+                                <th title="Honesty &amp; Integrity" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af;" class="dark:bg-blue-950/40 dark:text-blue-200">Honest.</th>
+                                <th title="Relationship with Peers" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af;" class="dark:bg-blue-950/40 dark:text-blue-200">Peers</th>
+                                <th title="Leadership &amp; Initiative" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0f7ff; color: #1e40af; border-right: 2px solid #93c5fd;" class="dark:bg-blue-950/40 dark:text-blue-200">Leader</th>
+
+                                {{-- Psychomotor --}}
+                                <th title="Handwriting &amp; Presentation" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Handw.</th>
+                                <th title="Sports, Games &amp; Athletics" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Sports</th>
+                                <th title="Craft, Design &amp; Projects" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Crafts</th>
+                                <th title="Verbal Fluency &amp; Communication" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Fluency</th>
+                                <th title="Musical &amp; Creative Arts" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Music</th>
+                                <th title="Laboratory / Practical Skills" style="padding: 0.35rem 0.2rem; width: 50px; text-align: center; background: #f0fdf4; color: #065f46;" class="dark:bg-emerald-950/40 dark:text-emerald-200">Pract.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($students as $idx => $st)
+                                @php $sid = $st['student_id']; @endphp
+                                <tr style="border-bottom: 1px solid rgba(148,163,184,0.06);">
+                                    <td style="padding: 0.5rem 0.75rem; text-align: center; color: #64748b; border-right: 1px solid rgba(148,163,184,0.08);">{{ $idx + 1 }}</td>
+                                    <td style="padding: 0.5rem 0.75rem; font-weight: 700; color: #475569; border-right: 1px solid rgba(148,163,184,0.08);">{{ $st['admission_number'] }}</td>
+                                    <td style="padding: 0.5rem 0.75rem; font-weight: 800; border-right: 1px solid rgba(148,163,184,0.08);" class="dark:text-white">{{ $st['full_name'] }}</td>
+
+                                    {{-- Affective --}}
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.punctuality" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.neatness" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.attentiveness" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.honesty" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.relationship_with_peers" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(239,246,255,0.25); border-right: 2px solid #93c5fd;">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.affective.leadership" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+
+                                    {{-- Psychomotor --}}
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.handwriting" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.sports" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.crafts" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.verbal_fluency" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.musical_skills" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                    <td style="padding: 0.35rem 0.25rem; text-align: center; background: rgba(236,253,245,0.25);">
+                                        <input type="number" min="1" max="5" step="1" wire:model.defer="traits.{{ $sid }}.psychomotor.practical_skills" placeholder="—" class="ss-input" style="padding: 0.25rem 0.15rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 38px; font-weight: 800;" />
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="15" style="padding: 2rem; text-align: center; color: #94a3b8;">
+                                        No enrolled students found in this classroom for the selected session.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Scale legend footer --}}
+                <div style="padding: 0.75rem 1.5rem; background: rgba(248,250,252,0.6); border-top: 1px solid rgba(148,163,184,0.1); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; color: #64748b;" class="dark:bg-slate-900/40">
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <span style="font-weight: 800; color: #334155;" class="dark:text-slate-300">Rating Scale:</span>
+                        <span><strong style="color: #059669;">5</strong> = Excellent</span>
+                        <span><strong style="color: #2563eb;">4</strong> = Very Good</span>
+                        <span><strong style="color: #d97706;">3</strong> = Good</span>
+                        <span><strong style="color: #ea580c;">2</strong> = Fair</span>
+                        <span><strong style="color: #dc2626;">1</strong> = Poor</span>
+                    </div>
+                    <div style="font-size: 0.7rem; color: #94a3b8;">
+                        * Leave blank to use system standard defaults on report cards.
+                    </div>
+                </div>
             </div>
 
             {{-- ══════════════════════════════════════════════════════════════════

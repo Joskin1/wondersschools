@@ -16,6 +16,7 @@ class TermResult extends Model
         'department_position', 'department_population',
         'class_population',
         'times_present', 'class_teacher_comment', 'principal_comment',
+        'affective_domain', 'psychomotor_skills',
         'is_finalized',
     ];
 
@@ -30,6 +31,8 @@ class TermResult extends Model
         'department_population' => 'integer',
         'class_population'      => 'integer',
         'times_present'         => 'integer',
+        'affective_domain'      => 'array',
+        'psychomotor_skills'    => 'array',
         'is_finalized'          => 'boolean',
     ];
 

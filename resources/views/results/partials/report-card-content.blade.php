@@ -429,6 +429,27 @@
     $showAffective   = $is('rc_show_affective_domain');
     $showPsychomotor = $is('rc_show_psychomotor_skills');
     $showLegend      = $is('rc_show_domain_scale');
+
+    $studentAff = (isset($termRes['affective_domain']) && is_array($termRes['affective_domain'])) ? $termRes['affective_domain'] : [];
+    $studentPsy = (isset($termRes['psychomotor_skills']) && is_array($termRes['psychomotor_skills'])) ? $termRes['psychomotor_skills'] : [];
+
+    $affectiveTraitsList = [
+        'punctuality'             => ['name' => 'Punctuality & Regularity', 'default' => 5],
+        'neatness'                => ['name' => 'Neatness & Personal Hygiene', 'default' => 5],
+        'attentiveness'           => ['name' => 'Attentiveness in Class', 'default' => 4],
+        'honesty'                 => ['name' => 'Honesty & Integrity', 'default' => 5],
+        'relationship_with_peers' => ['name' => 'Relationship with Peers', 'default' => 4],
+        'leadership'              => ['name' => 'Leadership & Initiative', 'default' => 5],
+    ];
+
+    $psychomotorSkillsList = [
+        'handwriting'      => ['name' => 'Handwriting & Presentation', 'default' => 4],
+        'sports'           => ['name' => 'Sports, Games & Athletics', 'default' => 4],
+        'crafts'           => ['name' => 'Craft, Design & Projects', 'default' => 4],
+        'verbal_fluency'   => ['name' => 'Verbal Fluency & Communication', 'default' => 5],
+        'musical_skills'   => ['name' => 'Musical & Creative Arts', 'default' => 4],
+        'practical_skills' => ['name' => 'Laboratory / Practical Skills', 'default' => 5],
+    ];
 @endphp
 
 @if ($showAffective || $showPsychomotor)
@@ -446,12 +467,16 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td>Punctuality &amp; Regularity</td><td class="td-ctr">5</td></tr>
-                            <tr><td>Neatness &amp; Personal Hygiene</td><td class="td-ctr">5</td></tr>
-                            <tr><td>Attentiveness in Class</td><td class="td-ctr">4</td></tr>
-                            <tr><td>Honesty &amp; Integrity</td><td class="td-ctr">5</td></tr>
-                            <tr><td>Relationship with Peers</td><td class="td-ctr">4</td></tr>
-                            <tr><td>Leadership &amp; Initiative</td><td class="td-ctr">5</td></tr>
+                            @foreach ($affectiveTraitsList as $traitKey => $traitCfg)
+                                @php
+                                    $val = $studentAff[$traitKey] ?? null;
+                                    $rating = ($val !== null && $val !== '' && is_numeric($val)) ? (int)$val : $traitCfg['default'];
+                                @endphp
+                                <tr>
+                                    <td>{{ $traitCfg['name'] }}</td>
+                                    <td class="td-ctr">{{ $rating }}</td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </td>
@@ -469,12 +494,16 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td>Handwriting &amp; Presentation</td><td class="td-ctr">4</td></tr>
-                            <tr><td>Sports, Games &amp; Athletics</td><td class="td-ctr">4</td></tr>
-                            <tr><td>Craft, Design &amp; Projects</td><td class="td-ctr">4</td></tr>
-                            <tr><td>Verbal Fluency &amp; Communication</td><td class="td-ctr">5</td></tr>
-                            <tr><td>Musical &amp; Creative Arts</td><td class="td-ctr">4</td></tr>
-                            <tr><td>Laboratory / Practical Skills</td><td class="td-ctr">5</td></tr>
+                            @foreach ($psychomotorSkillsList as $skillKey => $skillCfg)
+                                @php
+                                    $val = $studentPsy[$skillKey] ?? null;
+                                    $rating = ($val !== null && $val !== '' && is_numeric($val)) ? (int)$val : $skillCfg['default'];
+                                @endphp
+                                <tr>
+                                    <td>{{ $skillCfg['name'] }}</td>
+                                    <td class="td-ctr">{{ $rating }}</td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </td>

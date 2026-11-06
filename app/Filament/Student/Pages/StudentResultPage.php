@@ -489,6 +489,8 @@ class StudentResultPage extends Page
                     'times_present'         => $termResult->times_present,
                     'class_teacher_comment' => $termResult->class_teacher_comment,
                     'principal_comment'     => $termResult->principal_comment,
+                    'affective_domain'      => $termResult->affective_domain,
+                    'psychomotor_skills'    => $termResult->psychomotor_skills,
                 ],
                 'class_size'          => $classSize,
                 'total_obtainable'    => $totalObtainable,

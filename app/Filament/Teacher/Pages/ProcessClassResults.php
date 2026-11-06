@@ -15,6 +15,7 @@ use App\Models\Term;
 use App\Models\TermResult;
 use App\Services\AttendanceService;
 use App\Services\ClassRemarksSpreadsheetService;
+use App\Services\ClassTraitsSpreadsheetService;
 use App\Services\ResultCalculationService;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -57,8 +58,13 @@ class ProcessClassResults extends Page
     /** @var array<int, array{times_present: int|string|null, class_teacher_comment: string}> */
     public array $remarks = [];
 
-    // ── Spreadsheet file upload ──────────────────────────────────────────────
+    // ── Behavioral Traits & Skills Rating state ──────────────────────────────
+    /** @var array<int, array{affective: array<string, int|string|null>, psychomotor: array<string, int|string|null>}> */
+    public array $traits = [];
+
+    // ── Spreadsheet file uploads ─────────────────────────────────────────────
     public $uploadFile = null;
+    public $traitsFile = null;
 
     // ── Admin Final Approval state ───────────────────────────────────────────
     public ?int $times_school_opened = null;
@@ -145,6 +151,9 @@ class ProcessClassResults extends Page
             ->where('session_id', $this->session_id)
             ->pluck('student_id');
 
+        $this->remarks = [];
+        $this->traits = [];
+
         $attendanceService = app(AttendanceService::class);
 
         foreach ($enrolledIds as $studentId) {
@@ -163,6 +172,11 @@ class ProcessClassResults extends Page
                 'times_present'         => $timesPresent,
                 'class_teacher_comment' => $tr?->class_teacher_comment ?? '',
                 'principal_comment'     => $tr?->principal_comment ?? '',
+            ];
+
+            $this->traits[$studentId] = [
+                'affective'   => is_array($tr?->affective_domain) ? $tr->affective_domain : [],
+                'psychomotor' => is_array($tr?->psychomotor_skills) ? $tr->psychomotor_skills : [],
             ];
         }
 
@@ -566,6 +580,186 @@ class ProcessClassResults extends Page
             }
         } catch (\Throwable $e) {
             $this->uploadFile = null;
+            Notification::make()->title('Import Failed')->body($e->getMessage())->danger()->send();
+        }
+    }
+
+    /**
+     * Pre-fill all affective traits and psychomotor skills with a default rating (e.g., 5).
+     */
+    public function prefillAllTraits(int $default = 5): void
+    {
+        $affKeys = array_keys(ClassTraitsSpreadsheetService::getAffectiveTraits());
+        $psyKeys = array_keys(ClassTraitsSpreadsheetService::getPsychomotorSkills());
+
+        foreach ($this->traits as $studentId => $data) {
+            $aff = [];
+            foreach ($affKeys as $k) {
+                $aff[$k] = $default;
+            }
+
+            $psy = [];
+            foreach ($psyKeys as $k) {
+                $psy[$k] = $default;
+            }
+
+            $this->traits[$studentId] = [
+                'affective'   => $aff,
+                'psychomotor' => $psy,
+            ];
+        }
+
+        Notification::make()
+            ->title("All traits pre-filled with {$default}!")
+            ->body('Click "Save Traits & Skills" to persist these baseline ratings, or adjust individuals as needed.')
+            ->info()
+            ->send();
+    }
+
+    /**
+     * Save online behavioral traits and psychomotor ratings to database.
+     */
+    public function saveTraits(): void
+    {
+        if (! $this->session_id || ! $this->term_id || ! $this->classroom_id) {
+            Notification::make()->title('Please select session, term, and classroom.')->warning()->send();
+            return;
+        }
+
+        $affKeys = array_keys(ClassTraitsSpreadsheetService::getAffectiveTraits());
+        $psyKeys = array_keys(ClassTraitsSpreadsheetService::getPsychomotorSkills());
+
+        foreach ($this->traits as $studentId => $data) {
+            $cleanAff = [];
+            if (! empty($data['affective']) && is_array($data['affective'])) {
+                foreach ($affKeys as $k) {
+                    $val = $data['affective'][$k] ?? null;
+                    if ($val !== null && $val !== '' && is_numeric($val)) {
+                        $intVal = (int) $val;
+                        if ($intVal >= 1 && $intVal <= 5) {
+                            $cleanAff[$k] = $intVal;
+                        }
+                    }
+                }
+            }
+
+            $cleanPsy = [];
+            if (! empty($data['psychomotor']) && is_array($data['psychomotor'])) {
+                foreach ($psyKeys as $k) {
+                    $val = $data['psychomotor'][$k] ?? null;
+                    if ($val !== null && $val !== '' && is_numeric($val)) {
+                        $intVal = (int) $val;
+                        if ($intVal >= 1 && $intVal <= 5) {
+                            $cleanPsy[$k] = $intVal;
+                        }
+                    }
+                }
+            }
+
+            $termResult = TermResult::where('student_id', $studentId)
+                ->where('session_id', $this->session_id)
+                ->where('term_id', $this->term_id)
+                ->first();
+
+            if (! $termResult) {
+                $termResult = new TermResult([
+                    'student_id'   => $studentId,
+                    'classroom_id' => $this->classroom_id,
+                    'session_id'   => $this->session_id,
+                    'term_id'      => $this->term_id,
+                    'is_finalized' => false,
+                ]);
+            }
+
+            $termResult->affective_domain = ! empty($cleanAff) ? $cleanAff : null;
+            $termResult->psychomotor_skills = ! empty($cleanPsy) ? $cleanPsy : null;
+            $termResult->save();
+        }
+
+        Notification::make()
+            ->title('Behavioral traits & skills ratings saved successfully!')
+            ->success()
+            ->send();
+    }
+
+    /**
+     * Export Behavioral Traits & Psychomotor Skills spreadsheet template.
+     */
+    public function exportTraitsSpreadsheet()
+    {
+        if (! $this->session_id || ! $this->term_id || ! $this->classroom_id) {
+            Notification::make()->title('Please select session, term, and classroom first.')->warning()->send();
+            return null;
+        }
+
+        try {
+            $service = app(ClassTraitsSpreadsheetService::class);
+            $tempPath = $service->exportToTempFile(
+                $this->classroom_id,
+                $this->session_id,
+                $this->term_id
+            );
+
+            $classroom = Classroom::find($this->classroom_id);
+            $session   = Session::find($this->session_id);
+            $term      = Term::find($this->term_id);
+
+            $cleanClass = preg_replace('/[^A-Za-z0-9_\-]/', '_', $classroom?->name ?? 'Class');
+            $cleanTerm  = preg_replace('/[^A-Za-z0-9_\-]/', '_', $term?->name ?? 'Term');
+            $cleanSess  = preg_replace('/[^A-Za-z0-9_\-]/', '_', $session?->name ?? 'Session');
+
+            $fileName = "Behavioral_Traits_{$cleanClass}_{$cleanTerm}_{$cleanSess}.xlsx";
+
+            return response()->download($tempPath, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ])->deleteFileAfterSend(true);
+        } catch (\Throwable $e) {
+            Notification::make()->title('Export Failed')->body($e->getMessage())->danger()->send();
+            return null;
+        }
+    }
+
+    /**
+     * Import Behavioral Traits from uploaded Excel spreadsheet.
+     */
+    public function updatedTraitsFile(): void
+    {
+        if (! $this->traitsFile) {
+            return;
+        }
+
+        if (! $this->session_id || ! $this->term_id || ! $this->classroom_id) {
+            Notification::make()->title('Please select session, term, and classroom first.')->warning()->send();
+            $this->traitsFile = null;
+            return;
+        }
+
+        try {
+            $service = app(ClassTraitsSpreadsheetService::class);
+            $result = $service->importSpreadsheet(
+                $this->traitsFile->getRealPath(),
+                $this->classroom_id,
+                $this->session_id,
+                $this->term_id
+            );
+
+            $this->loadClassData();
+            $this->traitsFile = null;
+
+            if (! empty($result['errors'])) {
+                Notification::make()
+                    ->title("Import Completed with {$result['updated']} updated students")
+                    ->body(implode(' ', array_slice($result['errors'], 0, 3)))
+                    ->warning()
+                    ->send();
+            } else {
+                Notification::make()
+                    ->title("Successfully imported traits & skills for {$result['updated']} students!")
+                    ->success()
+                    ->send();
+            }
+        } catch (\Throwable $e) {
+            $this->traitsFile = null;
             Notification::make()->title('Import Failed')->body($e->getMessage())->danger()->send();
         }
     }
