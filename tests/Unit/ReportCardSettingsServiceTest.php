@@ -14,6 +14,7 @@ test('ReportCardSettingsService returns standard defaults where all elements def
         ->and($defaults['rc_show_student_name'])->toBeTrue()
         ->and($defaults['rc_show_admission_number'])->toBeTrue()
         ->and($defaults['rc_show_score_heads'])->toBeTrue()
+        ->and($defaults['rc_show_score_head_max_score'])->toBeTrue()
         ->and($defaults['rc_show_students_examined'])->toBeTrue()
         ->and($defaults['rc_show_subject_grade'])->toBeTrue()
         ->and($defaults['rc_show_subject_position'])->toBeTrue()

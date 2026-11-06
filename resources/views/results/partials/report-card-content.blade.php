@@ -51,15 +51,22 @@
     $photoSrc  = $showPhoto ? (!empty($student['passport_photo']) ? (str_starts_with($student['passport_photo'], 'data:') ? $student['passport_photo'] : $resolveImage($student['passport_photo'])) : null) : null;
 
     // Dynamic column counts for results table
-    $showScoreHeads = $is('rc_show_score_heads');
-    $showCumulative = ($data['is_cumulative'] ?? false) && $is('rc_show_cumulative_terms');
-    $showTotal      = $is('rc_show_subject_total');
-    $showExamined   = $is('rc_show_students_examined');
-    $showGrade      = $is('rc_show_subject_grade');
-    $showPosition   = $is('rc_show_subject_position');
-    $showRemark     = $is('rc_show_subject_teacher_remark');
+    $showScoreHeads   = $is('rc_show_score_heads');
+    $showScoreHeadMax = $is('rc_show_score_head_max_score');
+    $showCumulative   = ($data['is_cumulative'] ?? false) && $is('rc_show_cumulative_terms');
+    $showTotal        = $is('rc_show_subject_total');
+    $showExamined     = $is('rc_show_students_examined');
+    $showGrade        = $is('rc_show_subject_grade');
+    $showPosition     = $is('rc_show_subject_position');
+    $showRemark       = $is('rc_show_subject_teacher_remark');
 
-    $scoreHeadsList = $showScoreHeads ? ($data['score_heads'] ?? []) : [];
+    $scoreHeadsList   = $showScoreHeads ? ($data['score_heads'] ?? []) : [];
+    $subjectMaxTotal  = !empty($scoreHeadsList)
+        ? array_sum(array_filter(array_column($scoreHeadsList, 'max_score'), 'is_numeric'))
+        : 100;
+    if ($subjectMaxTotal <= 0) {
+        $subjectMaxTotal = 100;
+    }
     $colCount = 1 + count($scoreHeadsList)
         + ($showCumulative ? 3 : 0)
         + ($showTotal ? 1 : 0)
@@ -268,18 +275,48 @@
         <tr>
             <th class="th-left" style="width: {{ $showRemark ? '26%' : '35%' }};">Subject</th>
             @foreach ($scoreHeadsList as $sh)
-                <th>{{ $sh['name'] }}</th>
+                <th>
+                    {{ $sh['name'] }}
+                    @if ($showScoreHeadMax && isset($sh['max_score']) && is_numeric($sh['max_score']))
+                        <div style="font-size: 7.5px; opacity: 0.9; font-weight: normal; margin-top: 1px;">({{ (int)$sh['max_score'] }})</div>
+                    @endif
+                </th>
             @endforeach
             @if ($showCumulative)
-                <th>3rd Raw</th>
-                <th>1st Term</th>
-                <th>2nd Term</th>
+                <th>
+                    3rd Raw
+                    @if ($showScoreHeadMax && !empty($subjectMaxTotal))
+                        <div style="font-size: 7.5px; opacity: 0.9; font-weight: normal; margin-top: 1px;">({{ (int)$subjectMaxTotal }})</div>
+                    @endif
+                </th>
+                <th>
+                    1st Term
+                    @if ($showScoreHeadMax)
+                        <div style="font-size: 7.5px; opacity: 0.9; font-weight: normal; margin-top: 1px;">(100)</div>
+                    @endif
+                </th>
+                <th>
+                    2nd Term
+                    @if ($showScoreHeadMax)
+                        <div style="font-size: 7.5px; opacity: 0.9; font-weight: normal; margin-top: 1px;">(100)</div>
+                    @endif
+                </th>
                 @if ($showTotal)
-                    <th>Cum. Avg</th>
+                    <th>
+                        Cum. Avg
+                        @if ($showScoreHeadMax)
+                            <div style="font-size: 7.5px; opacity: 0.9; font-weight: normal; margin-top: 1px;">(100)</div>
+                        @endif
+                    </th>
                 @endif
             @else
                 @if ($showTotal)
-                    <th>Total</th>
+                    <th>
+                        Total
+                        @if ($showScoreHeadMax && !empty($subjectMaxTotal))
+                            <div style="font-size: 7.5px; opacity: 0.9; font-weight: normal; margin-top: 1px;">({{ (int)$subjectMaxTotal }})</div>
+                        @endif
+                    </th>
                 @endif
             @endif
             @if ($showExamined)

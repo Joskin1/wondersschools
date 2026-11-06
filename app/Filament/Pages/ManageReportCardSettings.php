@@ -225,6 +225,11 @@ class ManageReportCardSettings extends Page
                                                 ->helperText('Displays per-test columns (e.g. 1st CA, 2nd CA, Mid-Term, Exam).')
                                                 ->default(true),
 
+                                            Toggle::make('rc_show_score_head_max_score')
+                                                ->label('Show Maximum Obtainable Scores')
+                                                ->helperText('Displays maximum marks under each assessment header (e.g. (10), (60), (100)).')
+                                                ->default(true),
+
                                             Toggle::make('rc_show_cumulative_terms')
                                                 ->label('Cumulative Terms (3rd Term)')
                                                 ->helperText('Displays 1st Term, 2nd Term, and 3rd Raw columns during 3rd term reporting.')

@@ -73,6 +73,7 @@ class ReportCardSettingsService
 
             // ── Group 3: Subject Assessment Table ───────────────────────────
             'rc_show_score_heads'            => true,
+            'rc_show_score_head_max_score'   => true,
             'rc_show_cumulative_terms'       => true,
             'rc_show_subject_total'          => true,
             'rc_show_students_examined'      => true,
@@ -382,6 +383,10 @@ class ReportCardSettingsService
                     'rc_show_score_heads' => [
                         'label'       => 'Show Assessment Breakdown Columns',
                         'helper'      => 'Displays continuous assessment columns (e.g. 1st Test, 2nd Test, Mid-Term, Exam).',
+                    ],
+                    'rc_show_score_head_max_score' => [
+                        'label'       => 'Show Maximum Obtainable Scores',
+                        'helper'      => 'Displays maximum obtainable marks under each score column header (e.g. (10), (60), (100)).',
                     ],
                     'rc_show_cumulative_terms' => [
                         'label'       => 'Show Cumulative Terms Breakdown (3rd Term)',

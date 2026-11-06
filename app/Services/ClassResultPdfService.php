@@ -10,6 +10,7 @@ use App\Models\MidtermClassTermApproval;
 use App\Models\MidtermSubjectResult;
 use App\Models\MidtermTermResult;
 use App\Models\Score;
+use App\Models\ScoreHead;
 use App\Models\Session;
 use App\Models\Setting;
 use App\Models\StudentEnrollment;
@@ -19,6 +20,7 @@ use App\Models\Term;
 use App\Models\TermResult;
 use App\Models\TermScoringSnapshot;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ClassResultPdfService
@@ -128,21 +130,34 @@ class ClassResultPdfService
         $scoreHeads = [];
         if ($isMidterm) {
             $scoreHeads[] = [
-                'id'   => 'midterm',
-                'name' => 'Mid-Term (' . $snapshot->midterm_weight . '%)',
+                'id'        => 'midterm',
+                'name'      => 'Mid-Term (' . $snapshot->midterm_weight . '%)',
+                'max_score' => (int) $snapshot->midterm_weight,
             ];
             foreach ($snapshot->exam_heads ?? [] as $eh) {
                 $scoreHeads[] = [
-                    'id'   => $eh['id'],
-                    'name' => $eh['name'],
+                    'id'        => $eh['id'],
+                    'name'      => $eh['name'],
+                    'max_score' => isset($eh['effective_max']) ? (int) $eh['effective_max'] : (isset($eh['max_score']) ? (int) $eh['max_score'] : null),
                 ];
             }
         } elseif ($structure) {
             $scoreHeads = ClassScoreStructureItem::where('class_score_structure_id', $structure->id)
                 ->join('score_heads', 'score_heads.id', '=', 'class_score_structure_items.score_head_id')
-                ->select('score_heads.id', 'score_heads.name')
+                ->select(
+                    'score_heads.id',
+                    'score_heads.name',
+                    DB::raw('COALESCE(class_score_structure_items.max_score_override, score_heads.max_score) as max_score')
+                )
                 ->orderBy('score_heads.id')
                 ->get()
+                ->toArray();
+        }
+
+        if (empty($scoreHeads)) {
+            $scoreHeads = ScoreHead::active()
+                ->orderBy('id')
+                ->get(['id', 'name', 'max_score'])
                 ->toArray();
         }
 

@@ -344,4 +344,75 @@ test('midterm slip renders principal signature, principal name, and school stamp
         ->and($html)->toContain('class="stamp-img"');
 });
 
+test('report card renders maximum obtainable scores under score head columns and total column', function () {
+    $viewData = [
+        'data' => [
+            'student' => [
+                'name'         => 'Adewale Johnson',
+                'admission_no' => 'AVS2026001',
+            ],
+            'classroom'             => 'Year 3 Gold',
+            'session_name'          => '2025/2026',
+            'term_name'             => 'First Term',
+            'is_cumulative'         => false,
+            'score_heads'           => [
+                ['id' => 1, 'name' => 'Home Work', 'max_score' => 5],
+                ['id' => 2, 'name' => 'Class Work', 'max_score' => 5],
+                ['id' => 3, 'name' => 'Attitude Work', 'max_score' => 10],
+                ['id' => 4, 'name' => 'CA', 'max_score' => 20],
+                ['id' => 5, 'name' => 'Examination', 'max_score' => 60],
+            ],
+            'subjects'              => [
+                [
+                    'subject'           => 'History',
+                    'total'             => 80,
+                    'grade'             => 'A',
+                    'position'          => 1,
+                    'remark'            => 'Excellent',
+                    'scores'            => [1 => 4, 2 => 5, 3 => 9, 4 => 17, 5 => 47],
+                    'students_examined' => 7,
+                ],
+            ],
+            'term_result'           => [
+                'grand_total'           => 80,
+                'average'               => 80,
+                'grade'                 => 'A',
+                'remark'                => 'Distinction',
+                'overall_position'      => 1,
+                'class_population'      => 7,
+            ],
+            'total_obtainable'      => 100,
+            'settings'              => [
+                'rc_show_score_heads'          => true,
+                'rc_show_score_head_max_score' => true,
+                'rc_show_subject_total'        => true,
+            ],
+        ],
+    ];
+
+    $html = view('results.result-sheet', $viewData)->render();
+
+    // Verify each score head has its max score displayed in parentheses
+    expect($html)->toContain('Home Work')
+        ->and($html)->toContain('(5)')
+        ->and($html)->toContain('Attitude Work')
+        ->and($html)->toContain('(10)')
+        ->and($html)->toContain('CA')
+        ->and($html)->toContain('(20)')
+        ->and($html)->toContain('Examination')
+        ->and($html)->toContain('(60)')
+        ->and($html)->toContain('Total')
+        ->and($html)->toContain('(100)');
+
+    // Now test with rc_show_score_head_max_score = false
+    $viewData['data']['settings']['rc_show_score_head_max_score'] = false;
+    $htmlDisabled = view('results.result-sheet', $viewData)->render();
+
+    expect($htmlDisabled)->toContain('Home Work')
+        ->and($htmlDisabled)->not->toContain('(5)')
+        ->and($htmlDisabled)->not->toContain('(60)')
+        ->and($htmlDisabled)->not->toContain('(100)');
+});
+
+
 

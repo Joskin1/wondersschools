@@ -200,6 +200,7 @@
         padding: 2.5px 2px;
         text-align: center;
         border: 1px solid {{ $brandColor }};
+        vertical-align: middle;
     }
     .results-table th.th-left { text-align: left; padding-left: 5px; }
     .results-table td {

@@ -723,12 +723,20 @@
                     $showPos   = $isRc('rc_show_overall_position') || $isRc('rc_show_arm_dept_position');
                     $showTotalGrand = $isRc('rc_show_total_obtained');
 
-                    $showScoreHeads = $isRc('rc_show_score_heads');
-                    $showCumTerms   = ($resultData['is_cumulative'] ?? false) && $isRc('rc_show_cumulative_terms');
-                    $showSubjTotal  = $isRc('rc_show_subject_total');
-                    $showSubjGrade  = $isRc('rc_show_subject_grade');
-                    $showSubjPos    = $isRc('rc_show_subject_position');
-                    $showSubjRemark = $isRc('rc_show_subject_teacher_remark');
+                    $showScoreHeads   = $isRc('rc_show_score_heads');
+                    $showScoreHeadMax = $isRc('rc_show_score_head_max_score');
+                    $showCumTerms     = ($resultData['is_cumulative'] ?? false) && $isRc('rc_show_cumulative_terms');
+                    $showSubjTotal    = $isRc('rc_show_subject_total');
+                    $showSubjGrade    = $isRc('rc_show_subject_grade');
+                    $showSubjPos      = $isRc('rc_show_subject_position');
+                    $showSubjRemark   = $isRc('rc_show_subject_teacher_remark');
+
+                    $subjectMaxTotal  = !empty($resultData['score_heads'] ?? [])
+                        ? array_sum(array_filter(array_column($resultData['score_heads'], 'max_score'), 'is_numeric'))
+                        : 100;
+                    if ($subjectMaxTotal <= 0) {
+                        $subjectMaxTotal = 100;
+                    }
                 @endphp
 
             {{-- Hero Stats --}}
@@ -806,21 +814,31 @@
                             <th style="min-width:140px;">Subject</th>
                             @if ($showScoreHeads)
                                 @foreach ($resultData['score_heads'] as $sh)
-                                    <th>{{ $sh['name'] }}</th>
+                                    <th>
+                                        {{ $sh['name'] }}
+                                        @if ($showScoreHeadMax && isset($sh['max_score']) && is_numeric($sh['max_score']))
+                                            <div style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">({{ (int)$sh['max_score'] }})</div>
+                                        @endif
+                                    </th>
                                 @endforeach
                             @endif
                             @if ($resultData['is_cumulative'] ?? false)
                                 @if ($showCumTerms)
-                                    <th>3rd Total</th>
-                                    <th>1st Term</th>
-                                    <th>2nd Term</th>
+                                    <th>3rd Total @if($showScoreHeadMax && !empty($subjectMaxTotal))<div style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">({{ (int)$subjectMaxTotal }})</div>@endif</th>
+                                    <th>1st Term @if($showScoreHeadMax)<div style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">(100)</div>@endif</th>
+                                    <th>2nd Term @if($showScoreHeadMax)<div style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">(100)</div>@endif</th>
                                 @endif
                                 @if ($showSubjTotal)
-                                    <th>Average</th>
+                                    <th>Average @if($showScoreHeadMax)<div style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">(100)</div>@endif</th>
                                 @endif
                             @else
                                 @if ($showSubjTotal)
-                                    <th>Total</th>
+                                    <th>
+                                        Total
+                                        @if ($showScoreHeadMax && !empty($subjectMaxTotal))
+                                            <div style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">({{ (int)$subjectMaxTotal }})</div>
+                                        @endif
+                                    </th>
                                 @endif
                             @endif
                             @if ($showSubjGrade)
