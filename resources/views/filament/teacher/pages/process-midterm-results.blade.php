@@ -423,6 +423,7 @@
                             <label style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; white-space: nowrap;">Sort by:</label>
                             <select wire:model.live="sortBy" class="ss-select" style="font-size: 0.8rem; height: 38px; min-width: 200px; font-weight: 700;">
                                 <option value="name">Student Name (A - Z)</option>
+                                <option value="position">Position (1st - Last)</option>
                                 <option value="mark_obtained">Mark Obtained (Highest - Lowest)</option>
                                 <option value="percentage">Percentage Overall (Highest - Lowest)</option>
                                 <option value="admission_number">Admission Number</option>
@@ -489,6 +490,14 @@
                                         @endif
                                     </div>
                                 </th>
+                                <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: center; cursor: pointer; user-select: none;" wire:click="setSort('position')" title="Click to sort by Position">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                                        <span>Position</span>
+                                        @if($sortBy === 'position')
+                                            <span style="color: #4f46e5; font-size: 10px;">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                        @endif
+                                    </div>
+                                </th>
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: center;">Grade</th>
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; width: 220px;">Teacher Comment</th>
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; width: 220px;">Head Teacher Comment</th>
@@ -530,6 +539,18 @@
                                             <span style="color: #94a3b8;">—</span>
                                         @endif
                                     </td>
+                                    <td style="padding: 0.875rem 1rem; text-align: center; font-weight: 800;">
+                                        @if(!empty($student['position']))
+                                            <span style="display: inline-flex; align-items: center; padding: 0.2rem 0.55rem; border-radius: 0.375rem; background: #e0f2fe; color: #0369a1; font-weight: 900; font-size: 0.85rem;">
+                                                {{ $this->formatOrdinal($student['position']) }}
+                                            </span>
+                                            @if(!empty($student['class_population']))
+                                                <span style="font-size:0.7rem;color:#64748b;font-weight:normal; margin-left: 2px;">/{{ $student['class_population'] }}</span>
+                                            @endif
+                                        @else
+                                            <span style="color: #94a3b8;">—</span>
+                                        @endif
+                                    </td>
                                     <td style="padding: 0.875rem 1rem; text-align: center;">
                                         @if($student['grade'] && $student['grade'] !== '—')
                                             <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 0.5rem; font-weight: 900; font-size: 12px; background: #e0e7ff; color: #4338ca;">
@@ -563,7 +584,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ $this->canApprove ? 9 : 8 }}" style="padding: 2.5rem; text-align: center; color: #94a3b8;">
+                                    <td colspan="{{ $this->canApprove ? 10 : 9 }}" style="padding: 2.5rem; text-align: center; color: #94a3b8;">
                                         @if(!empty($search))
                                             No students match "{{ $search }}". <button type="button" wire:click="$set('search', '')" style="color: #4f46e5; font-weight: 700; text-decoration: underline; background: none; border: none; cursor: pointer;">Clear search</button>
                                         @else

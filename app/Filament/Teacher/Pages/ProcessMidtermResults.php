@@ -308,10 +308,15 @@ class ProcessMidtermResults extends Page
                 'full_name'        => $student->full_name,
                 'department'       => $enrollment->department?->name ?? null,
                 'arm'              => $enrollment->classArm?->name ?? null,
+                'arm_id'           => $enrollment->class_arm_id,
+                'department_id'    => $enrollment->department_id,
                 'subjects_count'   => $tr?->subjects_count ?? $sResults->count(),
                 'total_obtainable' => $tr ? (float) $tr->total_obtainable : null,
                 'total_obtained'   => $tr ? (float) $tr->total_obtained : null,
                 'percentage'       => $tr ? (float) $tr->percentage : null,
+                'position'         => null,
+                'effective_position' => null,
+                'class_population' => null,
                 'grade'            => $tr?->grade ?? '—',
                 'remark'           => $tr?->remark ?? '—',
                 'missing_count'    => $missingCount,
@@ -321,6 +326,41 @@ class ProcessMidtermResults extends Page
                 'has_missing'      => $missingCount > 0,
             ];
         }
+
+        // Dynamically compute rankings using competition ranking by percentage / total_obtained
+        $toRank = collect($list)
+            ->filter(fn ($st) => $st['percentage'] !== null || $st['total_obtained'] !== null)
+            ->sortByDesc(fn ($st) => $st['percentage'] ?? $st['total_obtained'])
+            ->values();
+
+        $totalClassPop = $toRank->count();
+        $prevScore = null;
+        $currentRank = 0;
+        $actualPos = 0;
+        $cohortRanks = [];
+
+        foreach ($toRank as $item) {
+            $actualPos++;
+            $score = $item['percentage'] ?? $item['total_obtained'];
+            if ($prevScore === null || (float) $score !== (float) $prevScore) {
+                $currentRank = $actualPos;
+            }
+            $prevScore = $score;
+            $cohortRanks[$item['student_id']] = [
+                'rank' => $currentRank,
+                'population' => $totalClassPop,
+            ];
+        }
+
+        foreach ($list as &$st) {
+            $sid = $st['student_id'];
+            if (isset($cohortRanks[$sid])) {
+                $st['position'] = $cohortRanks[$sid]['rank'];
+                $st['effective_position'] = $cohortRanks[$sid]['rank'];
+                $st['class_population'] = $cohortRanks[$sid]['population'];
+            }
+        }
+        unset($st);
 
         // Apply search filter
         if (! empty(trim($this->search))) {
@@ -336,6 +376,15 @@ class ProcessMidtermResults extends Page
             $dir = $this->sortDirection === 'desc' ? -1 : 1;
 
             switch ($this->sortBy) {
+                case 'position':
+                    $posA = $a['effective_position'] ?? $a['position'];
+                    $posB = $b['effective_position'] ?? $b['position'];
+                    if ($posA === null && $posB === null) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    if ($posA === null) return 1;
+                    if ($posB === null) return -1;
+                    if ($posA === $posB) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    return ($posA <=> $posB) * $dir;
+
                 case 'mark_obtained':
                     $markA = $a['total_obtained'];
                     $markB = $b['total_obtained'];
@@ -364,6 +413,29 @@ class ProcessMidtermResults extends Page
         });
 
         return $list;
+    }
+
+    public function formatOrdinal($number): string
+    {
+        if ($number === null || $number === '' || $number === '—') {
+            return '—';
+        }
+        if (! is_numeric($number)) {
+            return (string) $number;
+        }
+        $num = (int) $number;
+        if ($num <= 0) {
+            return '—';
+        }
+        if ($num % 100 >= 11 && $num % 100 <= 13) {
+            return $num . 'th';
+        }
+        return match ($num % 10) {
+            1 => $num . 'st',
+            2 => $num . 'nd',
+            3 => $num . 'rd',
+            default => $num . 'th',
+        };
     }
 
     public function setSort(string $column): void

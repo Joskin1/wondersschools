@@ -836,4 +836,64 @@ describe('Student Results Table Sorting & Filtering', function () {
             ->and($filteredAdm[0]['student_id'])->toBe($ctx['student1']->id);
     });
 
+    it('seamlessly displays midterm scores and dynamically ranks students when final results are not yet calculated', function () {
+        $ctx = setupClassApprovalContext();
+
+        // Ensure TermResult has NO grand_total or does not exist
+        TermResult::truncate();
+
+        // Create MidtermTermResults for student1 and student2
+        \App\Models\MidtermTermResult::create([
+            'student_id'       => $ctx['student1']->id,
+            'classroom_id'     => $ctx['classroom']->id,
+            'session_id'       => $ctx['session']->id,
+            'term_id'          => $ctx['term']->id,
+            'subjects_count'   => 1,
+            'total_obtainable' => 40.0,
+            'total_obtained'   => 32.0,
+            'percentage'       => 80.0,
+            'grade'            => 'B',
+            'remark'           => 'Good',
+        ]);
+
+        \App\Models\MidtermTermResult::create([
+            'student_id'       => $ctx['student2']->id,
+            'classroom_id'     => $ctx['classroom']->id,
+            'session_id'       => $ctx['session']->id,
+            'term_id'          => $ctx['term']->id,
+            'subjects_count'   => 1,
+            'total_obtainable' => 40.0,
+            'total_obtained'   => 38.0,
+            'percentage'       => 95.0,
+            'grade'            => 'A',
+            'remark'           => 'Excellent',
+        ]);
+
+        $this->actingAs($ctx['admin']);
+
+        $component = Livewire::test(ProcessClassResults::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id)
+            ->assertSee('Displaying compiled')
+            ->assertSee('95%')
+            ->assertSee('80%')
+            ->assertSee('38')
+            ->assertSee('32')
+            ->assertSee('1st')
+            ->assertSee('2nd');
+
+        // Sort by position asc -> student2 (95%, 1st) must be first
+        $component->set('sortBy', 'position')->set('sortDirection', 'asc');
+        $list = $component->get('studentsList');
+        expect($list[0]['student_id'])->toBe($ctx['student2']->id)
+            ->and($list[0]['position'])->toBe(1)
+            ->and((float) $list[0]['grand_total'])->toBe(38.0)
+            ->and((float) $list[0]['average'])->toBe(95.0)
+            ->and($list[1]['student_id'])->toBe($ctx['student1']->id)
+            ->and($list[1]['position'])->toBe(2)
+            ->and((float) $list[1]['grand_total'])->toBe(32.0)
+            ->and((float) $list[1]['average'])->toBe(80.0);
+    });
+
 });
