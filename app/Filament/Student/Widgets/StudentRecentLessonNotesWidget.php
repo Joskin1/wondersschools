@@ -86,22 +86,20 @@ class StudentRecentLessonNotesWidget extends TableWidget
                     ->sortable(),
             ])
             ->actions([
-                Tables\Actions\Action::make('download_note')
-                    ->label(fn (LessonNote $record) => $record->latestVersion?->isFile() ? 'Download File' : 'Download Note PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
+                Tables\Actions\Action::make('open_note')
+                    ->label('Read Note')
+                    ->icon('heroicon-o-book-open')
                     ->color('primary')
+                    ->url(fn (LessonNote $record) => LessonNoteResource::getUrl('index', ['subject' => $record->subject_id, 'note' => $record->id])),
+
+                Tables\Actions\Action::make('download_note')
+                    ->label(fn (LessonNote $record) => $record->latestVersion?->isFile() ? 'Download File' : 'Download PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
                     ->url(fn (LessonNote $record) => $record->latestVersion?->isFile()
                         ? route('tenant.lesson-note.file', ['version' => $record->latestVersion->id, 'download' => 1])
                         : route('student.lesson-note.pdf', $record))
                     ->openUrlInNewTab(),
-
-                Tables\Actions\Action::make('download_plan')
-                    ->label('Plan PDF')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->color('gray')
-                    ->url(fn (LessonNote $record) => route('student.lesson-plan.pdf', $record))
-                    ->openUrlInNewTab()
-                    ->visible(fn (LessonNote $record): bool => $record->getPairedLessonPlan()?->status === 'approved'),
             ])
             ->headerActions([
                 Tables\Actions\Action::make('view_all')

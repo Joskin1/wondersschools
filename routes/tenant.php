@@ -80,11 +80,6 @@ Route::get('/student/lesson-notes/{lessonNote}/pdf', [\App\Http\Controllers\Less
     ->middleware('auth')
     ->name('student.lesson-note.pdf');
 
-// Student Lesson Plan PDF Download (auth-protected)
-Route::get('/student/lesson-notes/{lessonNote}/lesson-plan.pdf', [\App\Http\Controllers\LessonPlanPdfController::class, 'download'])
-    ->middleware('auth')
-    ->name('student.lesson-plan.pdf');
-
 // Admin Lesson Note & Plan PDF Download (auth-protected)
 Route::get('/admin/lesson-notes/{lessonNote}/pdf', [\App\Http\Controllers\LessonNotePdfController::class, 'download'])
     ->middleware('auth')

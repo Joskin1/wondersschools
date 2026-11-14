@@ -98,14 +98,6 @@ class LessonNoteResource extends Resource
                             ->view('filament.components.lesson-note-preview')
                             ->columnSpanFull(),
                     ]),
-
-                Section::make('Lesson Plan')
-                    ->schema([
-                        ViewField::make('lesson_plan_preview')
-                            ->view('filament.components.lesson-plan-review')
-                            ->columnSpanFull(),
-                    ])
-                    ->visible(fn (LessonNote $record): bool => $record->getPairedLessonPlan()?->status === 'approved'),
             ]);
     }
 
@@ -181,13 +173,6 @@ class LessonNoteResource extends Resource
                         ? route('tenant.lesson-note.file', ['version' => $record->latestVersion->id, 'download' => 1])
                         : route('student.lesson-note.pdf', $record))
                     ->openUrlInNewTab(),
-                Action::make('download_lesson_plan_pdf')
-                    ->label('Download Lesson Plan PDF')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->color('gray')
-                    ->url(fn (LessonNote $record) => route('student.lesson-plan.pdf', $record))
-                    ->openUrlInNewTab()
-                    ->visible(fn (LessonNote $record): bool => $record->getPairedLessonPlan()?->status === 'approved'),
             ])
             ->bulkActions([
                 // No bulk actions for students

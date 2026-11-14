@@ -38,16 +38,7 @@ class LessonPlanPdfController extends Controller
         }
 
         if ($user->role === 'student') {
-            if ($lessonPlan->status !== 'approved') {
-                abort(403, 'Only approved lesson plans can be viewed by students.');
-            }
-
-            $student = $user->student;
-            $enrollment = $student?->currentEnrollment();
-
-            if (! $enrollment || $lessonPlan->classroom_id !== $enrollment->classroom_id) {
-                abort(403, 'Access denied.');
-            }
+            abort(403, 'Students are not authorized to view or download lesson plans.');
         } elseif ($user->role === 'teacher') {
             if ($lessonPlan->teacher_id !== $user->id && ! in_array($user->role, ['admin', 'sudo'], true)) {
                 abort(403, 'You do not have permission to download this lesson plan.');
