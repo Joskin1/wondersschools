@@ -5,18 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title }} - Lesson Note</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        * {
+            box-sizing: border-box;
+        }
+
         @page {
-            margin: 16mm 14mm 16mm 14mm;
+            margin: 20mm 18mm 20mm 18mm;
         }
 
         body {
             font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
             font-size: 11px;
             color: #1f2937;
-            line-height: 1.6;
+            line-height: 1.65;
             position: relative;
+            margin: 0;
+            padding: 0;
         }
 
         /* ── Watermark ────────────────────────────────────────────────────────── */
@@ -26,9 +30,9 @@
             left: 5%;
             width: 90%;
             text-align: center;
-            opacity: 0.05;
+            opacity: 0.04;
             transform: rotate(-35deg);
-            font-size: 48px;
+            font-size: 46px;
             font-weight: bold;
             color: #000000;
             text-transform: uppercase;
@@ -61,23 +65,23 @@
         }
 
         .school-name {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: bold;
             color: {{ $brand_color }};
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 2px;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
         }
 
         .school-motto {
             font-size: 10px;
             font-style: italic;
             color: #4b5563;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .school-address {
-            font-size: 9px;
+            font-size: 9.5px;
             color: #6b7280;
         }
 
@@ -85,11 +89,12 @@
         .meta-bar {
             background-color: {{ $brand_color }};
             color: #ffffff;
-            padding: 6px 12px;
+            padding: 7px 12px;
             font-size: 11px;
             font-weight: bold;
             margin-bottom: 10px;
             border-radius: 3px;
+            letter-spacing: 0.5px;
         }
 
         .meta-grid {
@@ -101,7 +106,7 @@
         }
 
         .meta-grid td {
-            padding: 6px 10px;
+            padding: 7px 12px;
             font-size: 10.5px;
             border-bottom: 1px solid #e5e7eb;
         }
@@ -109,20 +114,21 @@
         .meta-grid td.label {
             font-weight: bold;
             color: #4b5563;
-            width: 18%;
+            width: 16%;
         }
 
         .meta-grid td.val {
             color: #111827;
-            width: 32%;
+            width: 34%;
         }
 
         /* ── Topic Banner ─────────────────────────────────────────────────────── */
         .topic-box {
-            background-color: #f3f4f6;
+            background-color: #f1f5f9;
             border-left: 4px solid {{ $brand_color }};
             padding: 10px 14px;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
+            border-radius: 0 3px 3px 0;
         }
 
         .topic-label {
@@ -131,30 +137,31 @@
             color: #6b7280;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .topic-title {
             font-size: 14px;
             font-weight: bold;
             color: #111827;
+            line-height: 1.4;
         }
 
         /* ── Section Titles ───────────────────────────────────────────────────── */
         .section-heading {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: bold;
             color: {{ $brand_color }};
             border-bottom: 1.5px solid #cbd5e1;
             padding-bottom: 4px;
-            margin-top: 16px;
+            margin-top: 18px;
             margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .objectives-list {
-            padding-left: 22px;
+            padding-left: 24px;
             margin-bottom: 14px;
         }
 
@@ -168,70 +175,75 @@
         /* ── Content ──────────────────────────────────────────────────────────── */
         .lesson-content {
             font-size: 11px;
-            color: #374151;
+            color: #2d3748;
             line-height: 1.7;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
 
         .lesson-content p {
-            margin-bottom: 10px;
+            margin: 0 0 10px 0;
+            line-height: 1.7;
+        }
+
+        .lesson-content div {
+            margin-bottom: 8px;
+            line-height: 1.7;
         }
 
         .lesson-content h1 {
             font-size: 15px;
             font-weight: bold;
             color: #111827;
-            margin-top: 14px;
-            margin-bottom: 6px;
+            margin: 16px 0 8px;
         }
 
         .lesson-content h2 {
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: bold;
             color: #111827;
-            margin-top: 12px;
-            margin-bottom: 5px;
+            margin: 14px 0 6px;
         }
 
         .lesson-content h3, .lesson-content h4 {
             font-size: 12px;
             font-weight: bold;
             color: #111827;
-            margin-top: 10px;
-            margin-bottom: 4px;
+            margin: 12px 0 4px;
         }
 
         .lesson-content ul, .lesson-content ol {
-            padding-left: 22px;
-            margin-bottom: 10px;
+            padding-left: 24px;
+            margin: 0 0 12px 0;
         }
 
         .lesson-content li {
-            margin-bottom: 4px;
+            margin-bottom: 5px;
+            line-height: 1.6;
         }
 
         .lesson-content table {
             width: 100%;
             border-collapse: collapse;
-            margin: 12px 0;
+            margin: 14px 0;
         }
 
         .lesson-content th, .lesson-content td {
-            border: 1px solid #d1d5db;
-            padding: 6px 8px;
+            border: 1px solid #cbd5e1;
+            padding: 7px 10px;
             font-size: 10.5px;
             text-align: left;
         }
 
         .lesson-content th {
-            background-color: #f3f4f6;
+            background-color: #f1f5f9;
             font-weight: bold;
+            color: #1f2937;
         }
 
         .lesson-content blockquote {
-            border-left: 3px solid #9ca3af;
-            padding-left: 12px;
-            margin: 10px 0;
+            border-left: 3px solid #94a3b8;
+            padding-left: 14px;
+            margin: 12px 0;
             font-style: italic;
             color: #4b5563;
         }
@@ -285,12 +297,16 @@
 
     {{-- School Header --}}
     <div class="header">
-        @if(!empty($school_logo) && file_exists(public_path('storage/' . $school_logo)))
+        @if(!empty($school_logo_data_uri))
             <div class="header-logo-cell">
-                <img src="{{ public_path('storage/' . $school_logo) }}" alt="Logo" style="max-height: 55px; max-width: 55px;">
+                <img src="{{ $school_logo_data_uri }}" alt="Logo" style="max-height: 60px; max-width: 60px;">
+            </div>
+        @elseif(!empty($school_logo) && file_exists(public_path('storage/' . $school_logo)))
+            <div class="header-logo-cell">
+                <img src="{{ public_path('storage/' . $school_logo) }}" alt="Logo" style="max-height: 60px; max-width: 60px;">
             </div>
         @endif
-        <div class="header-text-cell" style="{{ empty($school_logo) || !file_exists(public_path('storage/' . $school_logo)) ? 'padding-right: 0; width: 100%;' : '' }}">
+        <div class="header-text-cell" style="{{ empty($school_logo_data_uri) && (empty($school_logo) || !file_exists(public_path('storage/' . $school_logo))) ? 'padding-right: 0; width: 100%;' : '' }}">
             <div class="school-name">{{ $school_name }}</div>
             @if(!empty($school_motto))
                 <div class="school-motto">&ldquo;{{ $school_motto }}&rdquo;</div>
@@ -321,7 +337,7 @@
         </tr>
         <tr>
             <td class="label">Teacher:</td>
-            <td class="val">{{ $lesson_note->teacher->name ?? '—' }}</td>
+            <td class="val">{{ $lesson_note->teacher?->full_name ?? $lesson_note->teacher->name ?? '—' }}</td>
             <td class="label">Week:</td>
             <td class="val">Week {{ $lesson_note->week_number }}</td>
         </tr>

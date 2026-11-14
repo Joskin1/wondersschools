@@ -257,7 +257,7 @@ it('forbids students from downloading or viewing lesson plans', function () {
     $response->assertForbidden();
 });
 
-it('opens modal only for approved notes belonging to student classroom', function () {
+it('selects and reads only approved notes belonging to student classroom', function () {
     $approvedNote = createTestNote([
         'week_number' => 1,
         'status' => 'approved',
@@ -281,20 +281,28 @@ it('opens modal only for approved notes belonging to student classroom', functio
     $this->actingAs($this->studentUser1);
 
     \Livewire\Livewire::test(\App\Filament\Student\Resources\LessonNoteResource\Pages\ListLessonNotes::class)
-        // 1. Try viewing pending note -> rejected
-        ->call('viewNote', $pendingNote->id)
-        ->assertSet('showViewModal', false)
-        ->assertSet('viewingNoteId', null)
-        // 2. Try viewing note from other classroom -> rejected
-        ->call('viewNote', $otherClassNote->id)
-        ->assertSet('showViewModal', false)
-        ->assertSet('viewingNoteId', null)
-        // 3. View approved note from student classroom -> success!
-        ->call('viewNote', $approvedNote->id)
-        ->assertSet('showViewModal', true)
-        ->assertSet('viewingNoteId', $approvedNote->id)
-        ->assertSee('Week1.pdf')
-        // 4. Close modal
-        ->call('closeViewModal')
-        ->assertSet('showViewModal', false);
+        // 1. Try selecting pending note -> rejected
+        ->call('selectNote', $pendingNote->id)
+        ->assertNotSet('selectedNoteId', $pendingNote->id)
+        // 2. Try selecting note from other classroom -> rejected
+        ->call('selectNote', $otherClassNote->id)
+        ->assertNotSet('selectedNoteId', $otherClassNote->id)
+        // 3. Select approved note from student classroom -> success!
+        ->call('selectNote', $approvedNote->id)
+        ->assertSet('selectedNoteId', $approvedNote->id)
+        ->assertSee('Week1.pdf');
+});
+
+it('allows student to download pdf for approved note with proper headers', function () {
+    $approvedNote = createTestNote([
+        'week_number' => 1,
+        'status' => 'approved',
+        'title' => 'INTRODUCTION TO BUSINESS STUDIES',
+    ]);
+
+    $this->actingAs($this->studentUser1);
+
+    $response = $this->get(route('student.lesson-note.pdf', $approvedNote));
+    $response->assertOk();
+    expect($response->headers->get('content-type'))->toBe('application/pdf');
 });

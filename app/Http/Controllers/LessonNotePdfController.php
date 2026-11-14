@@ -84,7 +84,8 @@ class LessonNotePdfController extends Controller
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
         $schoolName = $settings['school_name'] ?? config('app.name', 'School Portal');
-        $schoolLogo = $settings['school_logo'] ?? null;
+        $schoolLogoPath = $settings['school_logo'] ?? null;
+        $schoolLogoDataUri = \App\Services\ClassResultPdfService::resolveImageBase64($schoolLogoPath);
         $schoolAddress = $settings['school_address'] ?? null;
         $schoolMotto = $settings['school_motto'] ?? null;
         $brandColor = $settings['primary_color'] ?? '#1a365d';
@@ -93,7 +94,8 @@ class LessonNotePdfController extends Controller
             'lesson_note' => $lessonNote,
             'version' => $latestVersion,
             'school_name' => $schoolName,
-            'school_logo' => $schoolLogo,
+            'school_logo' => $schoolLogoPath,
+            'school_logo_data_uri' => $schoolLogoDataUri,
             'school_address' => $schoolAddress,
             'school_motto' => $schoolMotto,
             'brand_color' => $brandColor,

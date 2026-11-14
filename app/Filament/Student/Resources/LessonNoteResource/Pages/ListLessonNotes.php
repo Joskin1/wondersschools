@@ -19,15 +19,15 @@ class ListLessonNotes extends Page
 
     public ?int $selectedSubjectId = null;
 
-    public ?int $viewingNoteId = null;
-
-    public bool $showViewModal = false;
+    public ?int $selectedNoteId = null;
 
     public function mount(): void
     {
         $subjects = $this->getSubjects();
 
         $paramSubjectId = (int) request()->query('subject');
+        $paramNoteId = (int) request()->query('note');
+
         if ($paramSubjectId && $subjects->contains('id', $paramSubjectId)) {
             $this->selectedSubjectId = $paramSubjectId;
         } elseif ($subjects->isNotEmpty()) {
@@ -35,17 +35,45 @@ class ListLessonNotes extends Page
             $this->selectedSubjectId = $firstWithNotes ? $firstWithNotes->id : $subjects->first()->id;
         }
 
-        $paramNoteId = (int) request()->query('note');
         if ($paramNoteId) {
-            $this->viewNote($paramNoteId);
+            $this->selectNote($paramNoteId);
+        } else {
+            // Auto-select the first available weekly note for the selected subject
+            $notes = $this->getWeeklyNotes();
+            if ($notes->isNotEmpty()) {
+                $this->selectedNoteId = $notes->first()->id;
+            }
         }
     }
 
     public function selectSubject(int $subjectId): void
     {
         $this->selectedSubjectId = $subjectId;
-        $this->showViewModal = false;
-        $this->viewingNoteId = null;
+        
+        // Auto-select the first available week note for this subject
+        $notes = $this->getWeeklyNotes();
+        $this->selectedNoteId = $notes->isNotEmpty() ? $notes->first()->id : null;
+    }
+
+    public function selectNote(int $noteId): void
+    {
+        $student = auth()->user()?->student;
+        $enrollment = $student?->currentEnrollment();
+
+        if (! $enrollment) {
+            return;
+        }
+
+        // STRICT: Verify note belongs to student's classroom and is approved
+        $note = LessonNote::where('id', $noteId)
+            ->where('classroom_id', $enrollment->classroom_id)
+            ->where('status', 'approved')
+            ->first();
+
+        if ($note) {
+            $this->selectedSubjectId = $note->subject_id;
+            $this->selectedNoteId = $note->id;
+        }
     }
 
     public function getSubjects(): Collection
@@ -62,13 +90,11 @@ class ListLessonNotes extends Page
 
         $classroomId = $enrollment->classroom_id;
 
-        // Get subjects from teacher assignments for this classroom
         $assignedSubjectIds = TeacherSubjectAssignment::where('classroom_id', $classroomId)
             ->active()
             ->pluck('subject_id')
             ->unique();
 
-        // Also merge any subject that has approved lesson notes for this classroom
         $noteSubjectIds = LessonNote::where('classroom_id', $classroomId)
             ->approved()
             ->active()
@@ -118,41 +144,16 @@ class ListLessonNotes extends Page
         return $this->selectedSubjectId ? Subject::find($this->selectedSubjectId) : null;
     }
 
-    public function viewNote(int $noteId): void
+    public function getSelectedNote(): ?LessonNote
     {
-        $student = auth()->user()?->student;
-        $enrollment = $student?->currentEnrollment();
-
-        if (! $enrollment) {
-            return;
-        }
-
-        // STRICT: Only approved notes for this student's classroom are viewable
-        $note = LessonNote::with(['subject', 'teacher', 'latestVersion'])
-            ->where('id', $noteId)
-            ->where('classroom_id', $enrollment->classroom_id)
-            ->where('status', 'approved')
-            ->first();
-
-        if (! $note) {
-            return;
-        }
-
-        $this->selectedSubjectId = $note->subject_id;
-        $this->viewingNoteId = $note->id;
-        $this->showViewModal = true;
-    }
-
-    public function closeViewModal(): void
-    {
-        $this->showViewModal = false;
-        $this->viewingNoteId = null;
-    }
-
-    public function getViewingNote(): ?LessonNote
-    {
-        if (! $this->viewingNoteId) {
-            return null;
+        if (! $this->selectedNoteId) {
+            // Fallback to first available note
+            $notes = $this->getWeeklyNotes();
+            if ($notes->isNotEmpty()) {
+                $this->selectedNoteId = $notes->first()->id;
+            } else {
+                return null;
+            }
         }
 
         $student = auth()->user()?->student;
@@ -162,10 +163,30 @@ class ListLessonNotes extends Page
             return null;
         }
 
-        return LessonNote::with(['subject', 'teacher', 'latestVersion'])
-            ->where('id', $this->viewingNoteId)
+        return LessonNote::with(['subject', 'teacher', 'latestVersion', 'classroom'])
+            ->where('id', $this->selectedNoteId)
             ->where('classroom_id', $enrollment->classroom_id)
             ->where('status', 'approved')
             ->first();
+    }
+
+    public function goToPreviousWeek(): void
+    {
+        $notes = $this->getWeeklyNotes();
+        $currentIndex = $notes->search(fn ($n) => $n->id === $this->selectedNoteId);
+
+        if ($currentIndex !== false && $currentIndex > 0) {
+            $this->selectedNoteId = $notes[$currentIndex - 1]->id;
+        }
+    }
+
+    public function goToNextWeek(): void
+    {
+        $notes = $this->getWeeklyNotes();
+        $currentIndex = $notes->search(fn ($n) => $n->id === $this->selectedNoteId);
+
+        if ($currentIndex !== false && $currentIndex < $notes->count() - 1) {
+            $this->selectedNoteId = $notes[$currentIndex + 1]->id;
+        }
     }
 }
