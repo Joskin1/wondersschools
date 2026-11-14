@@ -33,6 +33,14 @@
         .lpo-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 1rem; }
         .lpo-modal-box { background: white; border-radius: 1rem; max-width: 32rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); }
         .dark .lpo-modal-box { background: #0f172a; border: 1px solid rgba(148,163,184,0.15); color: #f8fafc; }
+        /* Force SVG icon sizing since Tailwind classes may not be scanned in production */
+        .lpo-icon-3, .lpo-icon-3half, .lpo-icon-4, .lpo-icon-5, .lpo-icon-6, .lpo-icon-10 { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .lpo-icon-3, .lpo-icon-3 svg { width: 0.75rem; height: 0.75rem; }
+        .lpo-icon-3half, .lpo-icon-3half svg { width: 0.875rem; height: 0.875rem; }
+        .lpo-icon-4, .lpo-icon-4 svg { width: 1rem; height: 1rem; }
+        .lpo-icon-5, .lpo-icon-5 svg { width: 1.25rem; height: 1.25rem; }
+        .lpo-icon-6, .lpo-icon-6 svg { width: 1.5rem; height: 1.5rem; }
+        .lpo-icon-10, .lpo-icon-10 svg { width: 2.5rem; height: 2.5rem; }
     </style>
 
     <div class="space-y-6">
@@ -41,7 +49,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="flex items-start gap-3">
                     <div class="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
-                        <x-heroicon-o-swatch class="w-6 h-6" />
+                        <span class="lpo-icon-6"><x-heroicon-o-swatch /></span>
                     </div>
                     <div>
                         <h2 class="text-base font-bold text-gray-900 dark:text-white">Saved Dropdown Options Management</h2>
@@ -52,7 +60,7 @@
                 </div>
                 <div class="shrink-0">
                     <button type="button" wire:click="openCreateModal" class="lpo-btn lpo-btn-primary shadow-sm w-full sm:w-auto">
-                        <x-heroicon-m-plus class="w-4 h-4" />
+                        <span class="lpo-icon-4"><x-heroicon-m-plus /></span>
                         Add {{ $this->getTabSingular() }}
                     </button>
                 </div>
@@ -66,7 +74,7 @@
                 wire:click="setTab('reference_materials')"
                 class="lpo-tab-btn {{ $activeTab === 'reference_materials' ? 'lpo-tab-active' : 'lpo-tab-inactive' }}"
             >
-                <x-heroicon-o-book-open class="w-4 h-4" />
+                <span class="lpo-icon-4"><x-heroicon-o-book-open /></span>
                 <span>Reference Materials</span>
                 <span class="lpo-badge {{ $activeTab === 'reference_materials' ? 'lpo-badge-count' : 'lpo-badge-count-inactive' }}">
                     {{ $this->counts['reference_materials'] }}
@@ -78,7 +86,7 @@
                 wire:click="setTab('instructional_materials')"
                 class="lpo-tab-btn {{ $activeTab === 'instructional_materials' ? 'lpo-tab-active' : 'lpo-tab-inactive' }}"
             >
-                <x-heroicon-o-cube class="w-4 h-4" />
+                <span class="lpo-icon-4"><x-heroicon-o-cube /></span>
                 <span>Instructional Materials</span>
                 <span class="lpo-badge {{ $activeTab === 'instructional_materials' ? 'lpo-badge-count' : 'lpo-badge-count-inactive' }}">
                     {{ $this->counts['instructional_materials'] }}
@@ -90,7 +98,7 @@
                 wire:click="setTab('teaching_methods')"
                 class="lpo-tab-btn {{ $activeTab === 'teaching_methods' ? 'lpo-tab-active' : 'lpo-tab-inactive' }}"
             >
-                <x-heroicon-o-light-bulb class="w-4 h-4" />
+                <span class="lpo-icon-4"><x-heroicon-o-light-bulb /></span>
                 <span>Teaching Methods</span>
                 <span class="lpo-badge {{ $activeTab === 'teaching_methods' ? 'lpo-badge-count' : 'lpo-badge-count-inactive' }}">
                     {{ $this->counts['teaching_methods'] }}
@@ -104,7 +112,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div class="relative max-w-md w-full">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <x-heroicon-m-magnifying-glass class="w-4 h-4" />
+                        <span class="lpo-icon-4"><x-heroicon-m-magnifying-glass /></span>
                     </div>
                     <input
                         type="text"
@@ -118,7 +126,7 @@
                             wire:click="$set('search', '')"
                             class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                         >
-                            <x-heroicon-m-x-mark class="w-4 h-4" />
+                            <span class="lpo-icon-4"><x-heroicon-m-x-mark /></span>
                         </button>
                     @endif
                 </div>
@@ -133,7 +141,7 @@
                             wire:click="confirmBulkDelete"
                             class="lpo-btn lpo-btn-danger text-xs py-1.5 px-3"
                         >
-                            <x-heroicon-m-trash class="w-3.5 h-3.5" />
+                            <span class="lpo-icon-3half"><x-heroicon-m-trash /></span>
                             Delete Selected
                         </button>
                     </div>
@@ -177,7 +185,7 @@
                                 <td>
                                     @if($option->lesson_plans_count > 0)
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
-                                            <x-heroicon-m-document-text class="w-3 h-3" />
+                                            <span class="lpo-icon-3"><x-heroicon-m-document-text /></span>
                                             {{ $option->lesson_plans_count }} {{ \Illuminate\Support\Str::plural('plan', $option->lesson_plans_count) }}
                                         </span>
                                     @else
@@ -197,7 +205,7 @@
                                             title="Rename Option"
                                             class="lpo-icon-btn text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/50"
                                         >
-                                            <x-heroicon-m-pencil-square class="w-4 h-4" />
+                                            <span class="lpo-icon-4"><x-heroicon-m-pencil-square /></span>
                                         </button>
                                         <button
                                             type="button"
@@ -205,7 +213,7 @@
                                             title="Delete Option"
                                             class="lpo-icon-btn text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/50"
                                         >
-                                            <x-heroicon-m-trash class="w-4 h-4" />
+                                            <span class="lpo-icon-4"><x-heroicon-m-trash /></span>
                                         </button>
                                     </div>
                                 </td>
@@ -213,7 +221,7 @@
                         @empty
                             <tr>
                                 <td colspan="5" class="text-center py-10 text-gray-500 dark:text-gray-400">
-                                    <x-heroicon-o-folder-open class="w-10 h-10 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                                    <span class="lpo-icon-10" style="margin: 0 auto 0.5rem; color: inherit;"><x-heroicon-o-folder-open class="text-gray-300 dark:text-gray-600" /></span>
                                     <p class="font-medium text-sm">No {{ strtolower($this->getTabLabel()) }} found.</p>
                                     @if(!empty($search))
                                         <p class="text-xs mt-1">Try clearing your search term or add a new entry.</p>
@@ -245,7 +253,7 @@
                         Add New {{ $this->getTabSingular() }}
                     </h3>
                     <button type="button" wire:click="closeCreateModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                        <x-heroicon-m-x-mark class="w-5 h-5" />
+                        <span class="lpo-icon-5"><x-heroicon-m-x-mark /></span>
                     </button>
                 </div>
                 <div>
@@ -283,7 +291,7 @@
                         Edit {{ $this->getTabSingular() }}
                     </h3>
                     <button type="button" wire:click="closeEditModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                        <x-heroicon-m-x-mark class="w-5 h-5" />
+                        <span class="lpo-icon-5"><x-heroicon-m-x-mark /></span>
                     </button>
                 </div>
                 <div>
@@ -317,7 +325,7 @@
             <div class="lpo-modal-box space-y-4">
                 <div class="flex items-center gap-3">
                     <div class="p-2 rounded-full bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 shrink-0">
-                        <x-heroicon-o-exclamation-triangle class="w-6 h-6" />
+                        <span class="lpo-icon-6"><x-heroicon-o-exclamation-triangle /></span>
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-gray-900 dark:text-white">
@@ -360,7 +368,7 @@
             <div class="lpo-modal-box space-y-4">
                 <div class="flex items-center gap-3">
                     <div class="p-2 rounded-full bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 shrink-0">
-                        <x-heroicon-o-trash class="w-6 h-6" />
+                        <span class="lpo-icon-6"><x-heroicon-o-trash /></span>
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-gray-900 dark:text-white">
