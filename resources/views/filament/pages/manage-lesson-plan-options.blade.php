@@ -41,9 +41,12 @@
         .lpo-icon-5, .lpo-icon-5 svg { width: 1.25rem; height: 1.25rem; }
         .lpo-icon-6, .lpo-icon-6 svg { width: 1.5rem; height: 1.5rem; }
         .lpo-icon-10, .lpo-icon-10 svg { width: 2.5rem; height: 2.5rem; }
+        /* Catch-all: constrain any SVG on this page that isn't explicitly sized */
+        .lpo-page-wrap svg { max-width: 1.5rem; max-height: 1.5rem; }
+        .lpo-page-wrap .lpo-icon-10 svg { max-width: 2.5rem; max-height: 2.5rem; }
     </style>
 
-    <div class="space-y-6">
+    <div class="lpo-page-wrap space-y-6">
         <!-- ── Description Header Banner ───────────────────────────────────── -->
         <div class="lpo-card">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
