@@ -5,7 +5,6 @@ namespace App\Filament\Teacher\Pages;
 use App\Models\ClassTermApproval;
 use App\Models\Classroom;
 use App\Models\ClassTeacherAssignment;
-use App\Models\MidtermTermResult;
 use App\Models\Score;
 use App\Models\Session;
 use App\Models\Student;
@@ -154,12 +153,6 @@ class ProcessClassResults extends Page
             ->get()
             ->keyBy('student_id');
 
-        $midtermResults = MidtermTermResult::where('classroom_id', $this->classroom_id)
-            ->where('session_id', $this->session_id)
-            ->where('term_id', $this->term_id)
-            ->get()
-            ->keyBy('student_id');
-
         $enrolledIds = StudentEnrollment::where('classroom_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
             ->pluck('student_id');
@@ -171,7 +164,6 @@ class ProcessClassResults extends Page
 
         foreach ($enrolledIds as $studentId) {
             $tr = $termResults->get($studentId);
-            $mtr = $midtermResults->get($studentId);
             $timesPresent = $tr?->times_present;
 
             // Auto-calculate from Attendance records if unset
@@ -182,20 +174,10 @@ class ProcessClassResults extends Page
                 }
             }
 
-            $teacherComment = $tr?->class_teacher_comment ?? '';
-            $principalComment = $tr?->principal_comment ?? '';
-
-            if (empty($teacherComment) && ! empty($mtr?->teacher_comment)) {
-                $teacherComment = $mtr->teacher_comment;
-            }
-            if (empty($principalComment) && ! empty($mtr?->head_teacher_comment)) {
-                $principalComment = $mtr->head_teacher_comment;
-            }
-
             $this->remarks[$studentId] = [
                 'times_present'         => $timesPresent,
-                'class_teacher_comment' => $teacherComment,
-                'principal_comment'     => $principalComment,
+                'class_teacher_comment' => $tr?->class_teacher_comment ?? '',
+                'principal_comment'     => $tr?->principal_comment ?? '',
             ];
 
             $this->traits[$studentId] = [
@@ -419,17 +401,6 @@ class ProcessClassResults extends Page
             ->get()
             ->keyBy('student_id');
 
-        $hasFinalResults = $termResults->contains(fn ($tr) => $tr->grand_total !== null);
-
-        $midtermResults = collect();
-        if (! $hasFinalResults) {
-            $midtermResults = MidtermTermResult::where('classroom_id', $this->classroom_id)
-                ->where('session_id', $this->session_id)
-                ->where('term_id', $this->term_id)
-                ->get()
-                ->keyBy('student_id');
-        }
-
         $list = [];
         foreach ($enrollments as $enrollment) {
             $student = $enrollment->student;
@@ -438,53 +409,19 @@ class ProcessClassResults extends Page
             }
 
             $tr = $termResults->get($student->id);
-            $mtr = $midtermResults->get($student->id);
-
-            $isUsingMidterm = false;
-            $grandTotal = null;
-            $totalObtainable = null;
-            $average = null;
-            $position = null;
-            $departmentPosition = null;
-            $armPosition = null;
-            $classPopulation = null;
-            $departmentPopulation = null;
-            $armPopulation = null;
-            $subjectsCount = 0;
-            $grade = null;
-
-            if ($tr && $tr->grand_total !== null) {
-                $grandTotal           = (float) $tr->grand_total;
-                $average              = (float) $tr->average;
-                $position             = $tr->overall_position;
-                $departmentPosition   = $tr->department_position;
-                $armPosition          = $tr->arm_position;
-                $classPopulation      = $tr->class_population;
-                $departmentPopulation = $tr->department_population;
-                $armPopulation        = $tr->arm_population;
-                $subjectsCount        = $tr->subjects_count ?? 0;
-                $grade                = $tr->grade;
-            } elseif ($mtr && $mtr->total_obtained !== null) {
-                $isUsingMidterm  = true;
-                $grandTotal      = (float) $mtr->total_obtained;
-                $totalObtainable = (float) $mtr->total_obtainable;
-                $average         = (float) $mtr->percentage;
-                $subjectsCount   = $mtr->subjects_count ?? 0;
-                $grade           = $mtr->grade;
-            }
 
             // Determine effective position for display and sorting
             $effectivePosition = null;
-            if ($assignment?->department_id && $departmentPosition) {
-                $effectivePosition = $departmentPosition;
-            } elseif ($assignment?->class_arm_id && $armPosition) {
-                $effectivePosition = $armPosition;
-            } elseif ($position) {
-                $effectivePosition = $position;
-            } elseif ($departmentPosition) {
-                $effectivePosition = $departmentPosition;
-            } elseif ($armPosition) {
-                $effectivePosition = $armPosition;
+            if ($assignment?->department_id && $tr?->department_position) {
+                $effectivePosition = $tr->department_position;
+            } elseif ($assignment?->class_arm_id && $tr?->arm_position) {
+                $effectivePosition = $tr->arm_position;
+            } elseif ($tr?->overall_position) {
+                $effectivePosition = $tr->overall_position;
+            } elseif ($tr?->department_position) {
+                $effectivePosition = $tr->department_position;
+            } elseif ($tr?->arm_position) {
+                $effectivePosition = $tr->arm_position;
             }
 
             $list[] = [
@@ -495,126 +432,20 @@ class ProcessClassResults extends Page
                 'department'            => $enrollment->department?->name ?? null,
                 'arm_id'                => $enrollment->class_arm_id,
                 'arm'                   => $enrollment->classArm?->name ?? null,
-                'average'               => $average,
-                'position'              => $position,
+                'average'               => $tr ? (float) $tr->average : null,
+                'position'              => $tr?->overall_position,
                 'effective_position'    => $effectivePosition,
-                'class_population'      => $classPopulation,
-                'department_position'   => $departmentPosition,
-                'department_population' => $departmentPopulation,
-                'arm_position'          => $armPosition,
-                'arm_population'        => $armPopulation,
-                'grade'                 => $grade,
-                'grand_total'           => $grandTotal,
-                'total_obtainable'      => $totalObtainable,
-                'is_midterm'            => $isUsingMidterm,
-                'subjects_count'        => $subjectsCount,
-                'principal_comment'     => $tr?->principal_comment ?? $mtr?->head_teacher_comment ?? null,
+                'class_population'      => $tr?->class_population,
+                'department_position'   => $tr?->department_position,
+                'department_population' => $tr?->department_population,
+                'arm_position'          => $tr?->arm_position,
+                'arm_population'        => $tr?->arm_population,
+                'grade'                 => $tr?->grade,
+                'grand_total'           => $tr ? (float) $tr->grand_total : null,
+                'subjects_count'        => $tr?->subjects_count ?? 0,
+                'principal_comment'     => $tr?->principal_comment ?? null,
                 'is_finalized'          => (bool) ($tr?->is_finalized ?? false),
             ];
-        }
-
-        // Dynamically compute rankings if not pre-populated in TermResult
-        $needsRanking = collect($list)->contains(fn ($st) => empty($st['position']) && ($st['average'] !== null || $st['grand_total'] !== null));
-
-        if ($needsRanking) {
-            $toRank = collect($list)
-                ->filter(fn ($st) => $st['average'] !== null || $st['grand_total'] !== null)
-                ->sortByDesc(fn ($st) => $st['average'] ?? $st['grand_total'])
-                ->values();
-
-            $totalClassPop = $toRank->count();
-            $prevScore = null;
-            $currentRank = 0;
-            $actualPos = 0;
-            $cohortRanks = [];
-
-            foreach ($toRank as $item) {
-                $actualPos++;
-                $score = $item['average'] ?? $item['grand_total'];
-                if ($prevScore === null || (float) $score !== (float) $prevScore) {
-                    $currentRank = $actualPos;
-                }
-                $prevScore = $score;
-                $cohortRanks[$item['student_id']] = [
-                    'rank' => $currentRank,
-                    'population' => $totalClassPop,
-                ];
-            }
-
-            // Department rankings
-            $byDept = $toRank->filter(fn ($st) => ! empty($st['department_id']))->groupBy('department_id');
-            $deptRanks = [];
-            foreach ($byDept as $deptId => $deptItems) {
-                $prevDeptScore = null;
-                $currDeptRank = 0;
-                $actDeptPos = 0;
-                $deptPop = $deptItems->count();
-                foreach ($deptItems as $item) {
-                    $actDeptPos++;
-                    $score = $item['average'] ?? $item['grand_total'];
-                    if ($prevDeptScore === null || (float) $score !== (float) $prevDeptScore) {
-                        $currDeptRank = $actDeptPos;
-                    }
-                    $prevDeptScore = $score;
-                    $deptRanks[$item['student_id']] = [
-                        'rank' => $currDeptRank,
-                        'population' => $deptPop,
-                    ];
-                }
-            }
-
-            // Arm rankings
-            $byArm = $toRank->filter(fn ($st) => ! empty($st['arm_id']))->groupBy('arm_id');
-            $armRanks = [];
-            foreach ($byArm as $armId => $armItems) {
-                $prevArmScore = null;
-                $currArmRank = 0;
-                $actArmPos = 0;
-                $armPop = $armItems->count();
-                foreach ($armItems as $item) {
-                    $actArmPos++;
-                    $score = $item['average'] ?? $item['grand_total'];
-                    if ($prevArmScore === null || (float) $score !== (float) $prevArmScore) {
-                        $currArmRank = $actArmPos;
-                    }
-                    $prevArmScore = $score;
-                    $armRanks[$item['student_id']] = [
-                        'rank' => $currArmRank,
-                        'population' => $armPop,
-                    ];
-                }
-            }
-
-            // Assign computed positions back to the list
-            foreach ($list as &$st) {
-                $sid = $st['student_id'];
-                if (empty($st['position']) && isset($cohortRanks[$sid])) {
-                    $st['position'] = $cohortRanks[$sid]['rank'];
-                    $st['class_population'] = $cohortRanks[$sid]['population'];
-                }
-                if (empty($st['department_position']) && isset($deptRanks[$sid])) {
-                    $st['department_position'] = $deptRanks[$sid]['rank'];
-                    $st['department_population'] = $deptRanks[$sid]['population'];
-                }
-                if (empty($st['arm_position']) && isset($armRanks[$sid])) {
-                    $st['arm_position'] = $armRanks[$sid]['rank'];
-                    $st['arm_population'] = $armRanks[$sid]['population'];
-                }
-
-                // Resolve effective position
-                if ($assignment?->department_id && ! empty($st['department_position'])) {
-                    $st['effective_position'] = $st['department_position'];
-                } elseif ($assignment?->class_arm_id && ! empty($st['arm_position'])) {
-                    $st['effective_position'] = $st['arm_position'];
-                } elseif (! empty($st['position'])) {
-                    $st['effective_position'] = $st['position'];
-                } elseif (! empty($st['department_position'])) {
-                    $st['effective_position'] = $st['department_position'];
-                } elseif (! empty($st['arm_position'])) {
-                    $st['effective_position'] = $st['arm_position'];
-                }
-            }
-            unset($st);
         }
 
         // Apply search filter
@@ -676,19 +507,10 @@ class ProcessClassResults extends Page
             return false;
         }
 
-        $termFinalized = TermResult::where('classroom_id', $this->classroom_id)
+        return TermResult::where('classroom_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
             ->where('term_id', $this->term_id)
             ->where('is_finalized', true)
-            ->exists();
-
-        if ($termFinalized) {
-            return true;
-        }
-
-        return MidtermTermResult::where('classroom_id', $this->classroom_id)
-            ->where('session_id', $this->session_id)
-            ->where('term_id', $this->term_id)
             ->exists();
     }
 

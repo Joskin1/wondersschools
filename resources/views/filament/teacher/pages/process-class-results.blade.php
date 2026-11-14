@@ -477,17 +477,7 @@
 
                 @php
                     $principalTitle = \App\Models\Setting::where('key', 'rc_principal_title')->value('value') ?: 'Head Teacher';
-                    $hasMidtermScores = collect($students)->contains(fn ($s) => !empty($s['is_midterm']));
                 @endphp
-
-                @if($hasMidtermScores)
-                    <div style="margin: 0.75rem 1.5rem 0; padding: 0.6rem 1rem; border-radius: 0.5rem; background: #eef2ff; border: 1px solid #c7d2fe; display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #3730a3; font-weight: 700;">
-                        <svg style="width: 16px; height: 16px; flex-shrink: 0; color: #4f46e5;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>Displaying compiled <strong>Mid-Term</strong> scores, percentages, and rankings (Final end-of-term exam calculation is pending).</span>
-                    </div>
-                @endif
 
                 <div style="overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
@@ -568,16 +558,10 @@
                                             <div style="display: inline-flex; flex-direction: column; align-items: center;">
                                                 <span style="display: inline-flex; align-items: center; justify-content: center; padding: 0.2rem 0.55rem; border-radius: 0.375rem; background: #f1f5f9; color: #0f172a; font-weight: 900; font-size: 0.85rem;" class="dark:bg-slate-800 dark:text-slate-100">
                                                     {{ is_numeric($st['grand_total']) ? (float) $st['grand_total'] : $st['grand_total'] }}
-                                                    @if(!empty($st['total_obtainable']))
-                                                        <span style="font-size: 0.7rem; color: #64748b; font-weight: 600; margin-left: 2px;">/ {{ is_numeric($st['total_obtainable']) ? (float) $st['total_obtainable'] : $st['total_obtainable'] }}</span>
-                                                    @endif
                                                 </span>
                                                 @if(!empty($st['subjects_count']))
                                                     <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600; margin-top: 2px;">
                                                         {{ $st['subjects_count'] }} {{ \Illuminate\Support\Str::plural('subj', $st['subjects_count']) }}
-                                                        @if(!empty($st['is_midterm']))
-                                                            <span style="color: #6366f1; font-weight: 700;">(Mid-Term)</span>
-                                                        @endif
                                                     </span>
                                                 @endif
                                             </div>
