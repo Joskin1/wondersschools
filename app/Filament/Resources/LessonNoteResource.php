@@ -10,8 +10,10 @@ use App\Models\Session;
 use App\Jobs\LogLessonNoteAction;
 use App\Notifications\LessonNoteReviewed;
 use Filament\Schemas\Schema;
+use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\ViewField;
@@ -128,10 +130,23 @@ class LessonNoteResource extends Resource
 
                 // ── PART 2: LESSON PLAN ──────────────────────────────────────────
                 Section::make('Part 2 — Lesson Plan')
-                    ->description('Review the lesson plan against the lesson note before making a decision.')
+                    ->description('Review and adjust the paired lesson plan directly, or preview the printable document.')
                     ->schema([
-                        ViewField::make('lesson_plan_review')
-                            ->view('filament.components.lesson-plan-review')
+                        Tabs::make('Lesson Plan Views')
+                            ->tabs([
+                                Tabs\Tab::make('Editable Lesson Plan')
+                                    ->icon('heroicon-o-pencil-square')
+                                    ->schema([
+                                        EmbeddedSchema::make('planForm'),
+                                    ]),
+                                Tabs\Tab::make('Document Preview')
+                                    ->icon('heroicon-o-document-text')
+                                    ->schema([
+                                        ViewField::make('lesson_plan_review')
+                                            ->view('filament.components.lesson-plan-review')
+                                            ->columnSpanFull(),
+                                    ]),
+                            ])
                             ->columnSpanFull(),
                     ]),
             ]);

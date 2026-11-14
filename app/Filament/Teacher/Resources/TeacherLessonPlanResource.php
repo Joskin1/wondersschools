@@ -197,7 +197,7 @@ class TeacherLessonPlanResource extends Resource
                                     ->placeholder('e.g. Mathematics Textbook for JSS 2'),
                             ])
                             ->createOptionUsing(function (array $data) {
-                                return ReferenceMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
+                                return ReferenceMaterial::firstOrCreate(['name' => trim(\Illuminate\Support\Str::limit($data['name'], 252))])->id;
                             })
                             ->editOptionForm([
                                 TextInput::make('name')
@@ -205,6 +205,16 @@ class TeacherLessonPlanResource extends Resource
                                     ->required()
                                     ->maxLength(255),
                             ])
+                            ->hintAction(
+                                Action::make('manage_reference_materials')
+                                    ->label('Manage list')
+                                    ->icon('heroicon-m-cog-6-tooth')
+                                    ->color('primary')
+                                    ->tooltip('Manage saved reference materials (Admin)')
+                                    ->url(fn () => \App\Filament\Pages\ManageLessonPlanOptions::getUrl(['tab' => 'reference_materials']))
+                                    ->openUrlInNewTab()
+                                    ->visible(fn () => auth()->user()?->canAccessAdminPage('lesson_notes') ?? false)
+                            )
                             ->helperText('Select existing materials or type to create a new one.')
                             ->columnSpanFull(),
                     ]),
@@ -229,7 +239,7 @@ class TeacherLessonPlanResource extends Resource
                                     ->placeholder('e.g. Whiteboard, Projector, Charts'),
                             ])
                             ->createOptionUsing(function (array $data) {
-                                return InstructionalMaterial::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
+                                return InstructionalMaterial::firstOrCreate(['name' => trim(\Illuminate\Support\Str::limit($data['name'], 252))])->id;
                             })
                             ->editOptionForm([
                                 TextInput::make('name')
@@ -237,6 +247,16 @@ class TeacherLessonPlanResource extends Resource
                                     ->required()
                                     ->maxLength(255),
                             ])
+                            ->hintAction(
+                                Action::make('manage_instructional_materials')
+                                    ->label('Manage list')
+                                    ->icon('heroicon-m-cog-6-tooth')
+                                    ->color('primary')
+                                    ->tooltip('Manage saved instructional materials (Admin)')
+                                    ->url(fn () => \App\Filament\Pages\ManageLessonPlanOptions::getUrl(['tab' => 'instructional_materials']))
+                                    ->openUrlInNewTab()
+                                    ->visible(fn () => auth()->user()?->canAccessAdminPage('lesson_notes') ?? false)
+                            )
                             ->helperText('Select existing materials or type to create a new one.')
                             ->columnSpanFull(),
                     ]),
@@ -291,7 +311,7 @@ class TeacherLessonPlanResource extends Resource
                                     ->placeholder('e.g. Discussion Method, Group Work'),
                             ])
                             ->createOptionUsing(function (array $data) {
-                                return TeachingMethod::firstOrCreate(['name' => \Illuminate\Support\Str::limit($data['name'], 252)])->id;
+                                return TeachingMethod::firstOrCreate(['name' => trim(\Illuminate\Support\Str::limit($data['name'], 252))])->id;
                             })
                             ->editOptionForm([
                                 TextInput::make('name')
@@ -299,6 +319,16 @@ class TeacherLessonPlanResource extends Resource
                                     ->required()
                                     ->maxLength(255),
                             ])
+                            ->hintAction(
+                                Action::make('manage_teaching_methods')
+                                    ->label('Manage list')
+                                    ->icon('heroicon-m-cog-6-tooth')
+                                    ->color('primary')
+                                    ->tooltip('Manage saved teaching methods (Admin)')
+                                    ->url(fn () => \App\Filament\Pages\ManageLessonPlanOptions::getUrl(['tab' => 'teaching_methods']))
+                                    ->openUrlInNewTab()
+                                    ->visible(fn () => auth()->user()?->canAccessAdminPage('lesson_notes') ?? false)
+                            )
                             ->helperText('Select existing methods or create a new one.')
                             ->columnSpanFull(),
                     ]),
