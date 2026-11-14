@@ -47,11 +47,13 @@ class StudentPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Student/Resources'), for: 'App\\Filament\\Student\\Resources')
             ->discoverPages(in: app_path('Filament/Student/Pages'), for: 'App\\Filament\\Student\\Pages')
+            ->discoverWidgets(in: app_path('Filament/Student/Widgets'), for: 'App\\Filament\\Student\\Widgets')
             ->pages([
                 Dashboard::class,
             ])
             ->widgets([
                 AccountWidget::class,
+                \App\Filament\Student\Widgets\StudentRecentLessonNotesWidget::class,
             ])
             ->middleware([
                 InitializeTenancyByDomain::class,

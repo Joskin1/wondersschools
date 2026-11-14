@@ -151,3 +151,44 @@ it('hides approved notes from inactive sessions/terms', function () {
 
     expect($results)->toBeEmpty();
 });
+
+it('allows student to retrieve approved notes even when classroom_subject pivot table is empty', function () {
+    // Detach all subjects from classroom 1 to simulate production state
+    $this->classroom1->subjects()->detach();
+
+    // Create an approved note for classroom 1
+    $note = createTestNote(['status' => 'approved']);
+
+    // Authenticate as Student 1 (enrolled in classroom 1)
+    $this->actingAs($this->studentUser1);
+
+    $results = LessonNoteResource::getEloquentQuery()->get();
+
+    expect($results)->toHaveCount(1)
+        ->and($results->first()->id)->toBe($note->id);
+
+    // Verify policy allows view
+    expect($this->studentUser1->can('view', $note))->toBeTrue();
+});
+
+it('denies student viewing unapproved notes via policy', function () {
+    $pendingNote = createTestNote(['status' => 'pending']);
+    $rejectedNote = createTestNote(['status' => 'rejected', 'week_number' => 2]);
+
+    $this->actingAs($this->studentUser1);
+
+    expect($this->studentUser1->can('view', $pendingNote))->toBeFalse()
+        ->and($this->studentUser1->can('view', $rejectedNote))->toBeFalse();
+});
+
+it('denies student viewing approved notes of a different classroom via policy', function () {
+    $noteClassroom2 = createTestNote([
+        'classroom_id' => $this->classroom2->id,
+        'subject_id' => $this->subject2->id,
+        'status' => 'approved',
+    ]);
+
+    $this->actingAs($this->studentUser1);
+
+    expect($this->studentUser1->can('view', $noteClassroom2))->toBeFalse();
+});

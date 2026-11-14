@@ -73,7 +73,11 @@ class LessonNotePolicy
                 return false;
             }
 
-            return $enrollment->classroom->subjects()->where('subjects.id', $lessonNote->subject_id)->exists();
+            if ($enrollment->classroom && $enrollment->classroom->subjects()->exists()) {
+                return $enrollment->classroom->subjects()->where('subjects.id', $lessonNote->subject_id)->exists();
+            }
+
+            return true;
         }
 
         return false;

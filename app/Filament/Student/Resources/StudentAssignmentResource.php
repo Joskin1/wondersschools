@@ -34,13 +34,18 @@ class StudentAssignmentResource extends Resource
         }
 
         $classroomId = $enrollment->classroom_id;
-        $subjectIds = $enrollment->classroom->subjects()->pluck('subjects.id')->toArray();
 
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->where('classroom_id', $classroomId)
-            ->whereIn('subject_id', $subjectIds)
             ->where('is_active', true)
             ->active(); // Using the scopeActive for session/term
+
+        $classroomSubjectIds = $enrollment->classroom?->subjects()->pluck('subjects.id')->toArray() ?? [];
+        if (! empty($classroomSubjectIds)) {
+            $query->whereIn('subject_id', $classroomSubjectIds);
+        }
+
+        return $query;
     }
 
     public static function table(Table $table): Table
