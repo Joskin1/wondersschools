@@ -54,6 +54,11 @@ class ProcessClassResults extends Page
     public ?int $term_id = null;
     public ?int $classroom_id = null;
 
+    // ── Table Filtering & Sorting state ──────────────────────────────────────
+    public string $sortBy = 'name'; // 'name', 'position', 'mark_obtained', 'percentage', 'admission_number'
+    public string $sortDirection = 'asc'; // 'asc', 'desc'
+    public string $search = '';
+
     // ── Student Remarks & Attendance state ───────────────────────────────────
     /** @var array<int, array{times_present: int|string|null, class_teacher_comment: string}> */
     public array $remarks = [];
@@ -315,6 +320,30 @@ class ProcessClassResults extends Page
         return $list;
     }
 
+    public function setSort(string $column): void
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = in_array($column, ['mark_obtained', 'percentage']) ? 'desc' : 'asc';
+        }
+    }
+
+    public function toggleSortDirection(): void
+    {
+        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+    }
+
+    public function updatedSortBy(string $value): void
+    {
+        if (in_array($value, ['mark_obtained', 'percentage'])) {
+            $this->sortDirection = 'desc';
+        } else {
+            $this->sortDirection = 'asc';
+        }
+    }
+
     public function getStudentsListProperty(): array
     {
         if (! $this->session_id || ! $this->term_id || ! $this->classroom_id) {
@@ -340,7 +369,7 @@ class ProcessClassResults extends Page
             $query->where('class_arm_id', $assignment->class_arm_id);
         }
 
-        $enrollments = $query->get()->sortBy(fn ($e) => $e->student?->full_name ?? '');
+        $enrollments = $query->get();
 
         $termResults = TermResult::where('classroom_id', $this->classroom_id)
             ->where('session_id', $this->session_id)
@@ -357,6 +386,20 @@ class ProcessClassResults extends Page
 
             $tr = $termResults->get($student->id);
 
+            // Determine effective position for display and sorting
+            $effectivePosition = null;
+            if ($assignment?->department_id && $tr?->department_position) {
+                $effectivePosition = $tr->department_position;
+            } elseif ($assignment?->class_arm_id && $tr?->arm_position) {
+                $effectivePosition = $tr->arm_position;
+            } elseif ($tr?->overall_position) {
+                $effectivePosition = $tr->overall_position;
+            } elseif ($tr?->department_position) {
+                $effectivePosition = $tr->department_position;
+            } elseif ($tr?->arm_position) {
+                $effectivePosition = $tr->arm_position;
+            }
+
             $list[] = [
                 'student_id'            => $student->id,
                 'admission_number'      => $student->admission_number ?? '—',
@@ -365,6 +408,7 @@ class ProcessClassResults extends Page
                 'arm'                   => $enrollment->classArm?->name ?? null,
                 'average'               => $tr ? (float) $tr->average : null,
                 'position'              => $tr?->overall_position,
+                'effective_position'    => $effectivePosition,
                 'class_population'      => $tr?->class_population,
                 'department_position'   => $tr?->department_position,
                 'department_population' => $tr?->department_population,
@@ -372,10 +416,61 @@ class ProcessClassResults extends Page
                 'arm_population'        => $tr?->arm_population,
                 'grade'                 => $tr?->grade,
                 'grand_total'           => $tr ? (float) $tr->grand_total : null,
+                'subjects_count'        => $tr?->subjects_count ?? 0,
                 'principal_comment'     => $tr?->principal_comment ?? null,
                 'is_finalized'          => (bool) ($tr?->is_finalized ?? false),
             ];
         }
+
+        // Apply search filter
+        if (! empty(trim($this->search))) {
+            $searchLower = mb_strtolower(trim($this->search));
+            $list = array_values(array_filter($list, function ($item) use ($searchLower) {
+                return str_contains(mb_strtolower($item['full_name'] ?? ''), $searchLower)
+                    || str_contains(mb_strtolower($item['admission_number'] ?? ''), $searchLower);
+            }));
+        }
+
+        // Apply sorting
+        usort($list, function ($a, $b) {
+            $dir = $this->sortDirection === 'desc' ? -1 : 1;
+
+            switch ($this->sortBy) {
+                case 'position':
+                    $posA = $a['effective_position'] ?? $a['position'];
+                    $posB = $b['effective_position'] ?? $b['position'];
+                    if ($posA === null && $posB === null) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    if ($posA === null) return 1;
+                    if ($posB === null) return -1;
+                    if ($posA === $posB) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    return ($posA <=> $posB) * $dir;
+
+                case 'mark_obtained':
+                    $markA = $a['grand_total'];
+                    $markB = $b['grand_total'];
+                    if ($markA === null && $markB === null) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    if ($markA === null) return 1;
+                    if ($markB === null) return -1;
+                    if ($markA == $markB) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    return ($markA <=> $markB) * $dir;
+
+                case 'percentage':
+                    $pctA = $a['average'];
+                    $pctB = $b['average'];
+                    if ($pctA === null && $pctB === null) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    if ($pctA === null) return 1;
+                    if ($pctB === null) return -1;
+                    if ($pctA == $pctB) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    return ($pctA <=> $pctB) * $dir;
+
+                case 'admission_number':
+                    return strnatcasecmp((string) $a['admission_number'], (string) $b['admission_number']) * $dir;
+
+                case 'name':
+                default:
+                    return strnatcasecmp($a['full_name'], $b['full_name']) * $dir;
+            }
+        });
 
         return $list;
     }

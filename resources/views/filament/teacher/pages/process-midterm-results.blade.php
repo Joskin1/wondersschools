@@ -387,15 +387,108 @@
                     </div>
                 </div>
 
+                {{-- Filter & Sort Bar --}}
+                <div style="padding: 0.75rem 1.5rem; background: #ffffff; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.875rem;" class="dark:bg-slate-900">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; flex: 1;">
+                        {{-- Search Input --}}
+                        <div style="position: relative; min-width: 220px; max-width: 320px; flex: 1;">
+                            <div style="position: absolute; inset-y: 0; left: 0; padding-left: 0.75rem; display: flex; align-items: center; pointer-events: none; color: #94a3b8;">
+                                <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                wire:model.live.debounce.300ms="search"
+                                placeholder="Search student name or adm no..."
+                                class="ss-input"
+                                style="padding-left: 2.25rem; font-size: 0.8rem; height: 38px; width: 100%;"
+                            />
+                            @if(!empty($search))
+                                <button
+                                    type="button"
+                                    wire:click="$set('search', '')"
+                                    style="position: absolute; inset-y: 0; right: 0; padding-right: 0.75rem; display: flex; align-items: center; color: #94a3b8; cursor: pointer; border: none; background: transparent;"
+                                    title="Clear search"
+                                >
+                                    <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            @endif
+                        </div>
+
+                        {{-- Sort By Filter Dropdown --}}
+                        <div style="display: flex; align-items: center; gap: 0.375rem;">
+                            <label style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; white-space: nowrap;">Sort by:</label>
+                            <select wire:model.live="sortBy" class="ss-select" style="font-size: 0.8rem; height: 38px; min-width: 200px; font-weight: 700;">
+                                <option value="name">Student Name (A - Z)</option>
+                                <option value="mark_obtained">Mark Obtained (Highest - Lowest)</option>
+                                <option value="percentage">Percentage Overall (Highest - Lowest)</option>
+                                <option value="admission_number">Admission Number</option>
+                            </select>
+                        </div>
+
+                        {{-- Sort Direction Toggle Button --}}
+                        <button
+                            type="button"
+                            wire:click="toggleSortDirection"
+                            style="display: inline-flex; align-items: center; gap: 0.375rem; height: 38px; padding: 0 0.85rem; border-radius: 0.5rem; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: all 0.15s;"
+                            title="Toggle sort direction: {{ $sortDirection === 'asc' ? 'Ascending' : 'Descending' }}"
+                            class="dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                        >
+                            @if($sortDirection === 'asc')
+                                <svg style="width: 15px; height: 15px; color: #4f46e5;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
+                                </svg>
+                                <span>Ascending (▲)</span>
+                            @else
+                                <svg style="width: 15px; height: 15px; color: #4f46e5;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
+                                </svg>
+                                <span>Descending (▼)</span>
+                            @endif
+                        </button>
+                    </div>
+
+                    {{-- Students Count Pill --}}
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 0.75rem; font-weight: 800; padding: 0.35rem 0.75rem; border-radius: 9999px; background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; gap: 0.35rem;" class="dark:bg-slate-800 dark:text-slate-300">
+                            <span>{{ count($students) }} {{ \Illuminate\Support\Str::plural('Student', count($students)) }}</span>
+                        </span>
+                    </div>
+                </div>
+
                 <div style="overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem;">
                         <thead>
                             <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;" class="dark:bg-[#0b0f19] dark:border-[#1e293b]">
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase;">#</th>
-                                <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase;">Student</th>
+                                <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; cursor: pointer; user-select: none;" wire:click="setSort('name')" title="Click to sort by Student Name">
+                                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                        <span>Student</span>
+                                        @if($sortBy === 'name')
+                                            <span style="color: #4f46e5; font-size: 10px;">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                        @endif
+                                    </div>
+                                </th>
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: center;">Subjects</th>
-                                <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: right;">Obtained / Total</th>
-                                <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: center;">%</th>
+                                <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: right; cursor: pointer; user-select: none;" wire:click="setSort('mark_obtained')" title="Click to sort by Mark Obtained">
+                                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.25rem;">
+                                        <span>Obtained / Total</span>
+                                        @if($sortBy === 'mark_obtained')
+                                            <span style="color: #4f46e5; font-size: 10px;">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                        @endif
+                                    </div>
+                                </th>
+                                <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: center; cursor: pointer; user-select: none;" wire:click="setSort('percentage')" title="Click to sort by Percentage Overall">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                                        <span>%</span>
+                                        @if($sortBy === 'percentage')
+                                            <span style="color: #4f46e5; font-size: 10px;">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                        @endif
+                                    </div>
+                                </th>
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; text-align: center;">Grade</th>
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; width: 220px;">Teacher Comment</th>
                                 <th style="padding: 0.75rem 1rem; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; width: 220px;">Head Teacher Comment</th>
@@ -406,7 +499,7 @@
                         </thead>
                         <tbody>
                             @forelse($students as $index => $student)
-                                <tr style="border-bottom: 1px solid rgba(148,163,184,0.1);" class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                <tr wire:key="midterm-student-row-{{ $student['student_id'] }}" style="border-bottom: 1px solid rgba(148,163,184,0.1);" class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                     <td style="padding: 0.875rem 1rem; font-weight: 700; color: #94a3b8;">{{ $index + 1 }}</td>
                                     <td style="padding: 0.875rem 1rem;">
                                         <div style="font-weight: 800; color: #0f172a;" class="dark:text-white">{{ $student['full_name'] }}</div>
@@ -471,7 +564,11 @@
                             @empty
                                 <tr>
                                     <td colspan="{{ $this->canApprove ? 9 : 8 }}" style="padding: 2.5rem; text-align: center; color: #94a3b8;">
-                                        No students enrolled in this class.
+                                        @if(!empty($search))
+                                            No students match "{{ $search }}". <button type="button" wire:click="$set('search', '')" style="color: #4f46e5; font-weight: 700; text-decoration: underline; background: none; border: none; cursor: pointer;">Clear search</button>
+                                        @else
+                                            No students enrolled in this class.
+                                        @endif
                                     </td>
                                 </tr>
                             @endforelse

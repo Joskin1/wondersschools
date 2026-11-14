@@ -57,6 +57,11 @@ class ProcessMidtermResults extends Page
     public ?int $term_id = null;
     public ?int $classroom_id = null;
 
+    // ── Table Filtering & Sorting state ──────────────────────────────────────
+    public string $sortBy = 'name'; // 'name', 'mark_obtained', 'percentage', 'admission_number'
+    public string $sortDirection = 'asc'; // 'asc', 'desc'
+    public string $search = '';
+
     /** @var array<int, array{teacher_comment: string, head_teacher_comment: string}> */
     public array $comments = [];
 
@@ -317,7 +322,72 @@ class ProcessMidtermResults extends Page
             ];
         }
 
+        // Apply search filter
+        if (! empty(trim($this->search))) {
+            $searchLower = mb_strtolower(trim($this->search));
+            $list = array_values(array_filter($list, function ($item) use ($searchLower) {
+                return str_contains(mb_strtolower($item['full_name'] ?? ''), $searchLower)
+                    || str_contains(mb_strtolower($item['admission_number'] ?? ''), $searchLower);
+            }));
+        }
+
+        // Apply sorting
+        usort($list, function ($a, $b) {
+            $dir = $this->sortDirection === 'desc' ? -1 : 1;
+
+            switch ($this->sortBy) {
+                case 'mark_obtained':
+                    $markA = $a['total_obtained'];
+                    $markB = $b['total_obtained'];
+                    if ($markA === null && $markB === null) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    if ($markA === null) return 1;
+                    if ($markB === null) return -1;
+                    if ($markA == $markB) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    return ($markA <=> $markB) * $dir;
+
+                case 'percentage':
+                    $pctA = $a['percentage'];
+                    $pctB = $b['percentage'];
+                    if ($pctA === null && $pctB === null) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    if ($pctA === null) return 1;
+                    if ($pctB === null) return -1;
+                    if ($pctA == $pctB) return strnatcasecmp($a['full_name'], $b['full_name']);
+                    return ($pctA <=> $pctB) * $dir;
+
+                case 'admission_number':
+                    return strnatcasecmp((string) $a['admission_number'], (string) $b['admission_number']) * $dir;
+
+                case 'name':
+                default:
+                    return strnatcasecmp($a['full_name'], $b['full_name']) * $dir;
+            }
+        });
+
         return $list;
+    }
+
+    public function setSort(string $column): void
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = in_array($column, ['mark_obtained', 'percentage']) ? 'desc' : 'asc';
+        }
+    }
+
+    public function toggleSortDirection(): void
+    {
+        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+    }
+
+    public function updatedSortBy(string $value): void
+    {
+        if (in_array($value, ['mark_obtained', 'percentage'])) {
+            $this->sortDirection = 'desc';
+        } else {
+            $this->sortDirection = 'asc';
+        }
     }
 
     public function getMissingScoresBreakdownProperty(): array

@@ -722,3 +722,118 @@ describe('Student Portal & Report Card PDF Integration', function () {
     });
 
 });
+
+describe('Student Results Table Sorting & Filtering', function () {
+
+    it('renders Mark Obtained and Percentage Overall columns in the remarks table', function () {
+        $ctx = setupClassApprovalContext();
+
+        // Calculate results
+        app(ResultCalculationService::class)->calculateForSubject(
+            $ctx['classroom']->id,
+            $ctx['math']->id,
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+        app(ResultCalculationService::class)->calculateForClass(
+            $ctx['classroom']->id,
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+
+        $this->actingAs($ctx['admin']);
+
+        Livewire::test(ProcessClassResults::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id)
+            ->assertSee('Mark Obtained')
+            ->assertSee('Percentage Overall')
+            ->assertSee('Position')
+            ->assertSee('92%')
+            ->assertSee('85%');
+    });
+
+    it('sorts students by position and mark obtained correctly', function () {
+        $ctx = setupClassApprovalContext();
+
+        // Calculate results
+        app(ResultCalculationService::class)->calculateForSubject(
+            $ctx['classroom']->id,
+            $ctx['math']->id,
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+        app(ResultCalculationService::class)->calculateForClass(
+            $ctx['classroom']->id,
+            $ctx['session']->id,
+            $ctx['term']->id
+        );
+
+        $this->actingAs($ctx['admin']);
+
+        // Default sort is alphabetical by name: Chinedu Eze (85, pos 2) then Fatima Bello (92, pos 1)
+        $component = Livewire::test(ProcessClassResults::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id);
+
+        $defaultList = $component->get('studentsList');
+        expect($defaultList[0]['student_id'])->toBe($ctx['student1']->id)
+            ->and($defaultList[1]['student_id'])->toBe($ctx['student2']->id);
+
+        // Sort by position (1st to last): Fatima Bello (1st) should come first!
+        $component->set('sortBy', 'position')
+            ->set('sortDirection', 'asc');
+
+        $byPosList = $component->get('studentsList');
+        expect($byPosList[0]['student_id'])->toBe($ctx['student2']->id)
+            ->and($byPosList[0]['position'])->toBe(1)
+            ->and($byPosList[1]['student_id'])->toBe($ctx['student1']->id)
+            ->and($byPosList[1]['position'])->toBe(2);
+
+        // Sort by mark_obtained (highest to lowest): Fatima Bello (92) should come first!
+        $component->set('sortBy', 'mark_obtained')
+            ->set('sortDirection', 'desc');
+
+        $byMarkList = $component->get('studentsList');
+        expect($byMarkList[0]['student_id'])->toBe($ctx['student2']->id)
+            ->and((float) $byMarkList[0]['grand_total'])->toBe(92.0)
+            ->and($byMarkList[1]['student_id'])->toBe($ctx['student1']->id)
+            ->and((float) $byMarkList[1]['grand_total'])->toBe(85.0);
+
+        // Sort by percentage (lowest to highest): Chinedu Eze (85%) should come first!
+        $component->set('sortBy', 'percentage')
+            ->set('sortDirection', 'asc');
+
+        $byPctList = $component->get('studentsList');
+        expect($byPctList[0]['student_id'])->toBe($ctx['student1']->id)
+            ->and((float) $byPctList[0]['average'])->toBe(85.0)
+            ->and($byPctList[1]['student_id'])->toBe($ctx['student2']->id)
+            ->and((float) $byPctList[1]['average'])->toBe(92.0);
+    });
+
+    it('filters students by search query matching name or admission number', function () {
+        $ctx = setupClassApprovalContext();
+
+        $this->actingAs($ctx['admin']);
+
+        $component = Livewire::test(ProcessClassResults::class)
+            ->set('session_id', $ctx['session']->id)
+            ->set('term_id', $ctx['term']->id)
+            ->set('classroom_id', $ctx['classroom']->id);
+
+        // Search for "Fatima"
+        $component->set('search', 'Fatima');
+        $filtered = $component->get('studentsList');
+        expect($filtered)->toHaveCount(1)
+            ->and($filtered[0]['student_id'])->toBe($ctx['student2']->id);
+
+        // Search by admission number
+        $component->set('search', 'SS1-001');
+        $filteredAdm = $component->get('studentsList');
+        expect($filteredAdm)->toHaveCount(1)
+            ->and($filteredAdm[0]['student_id'])->toBe($ctx['student1']->id);
+    });
+
+});

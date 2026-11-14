@@ -399,95 +399,251 @@
                     Uploading &amp; parsing spreadsheet... Please wait.
                 </div>
 
+                {{-- Filter & Sort Bar --}}
+                <div style="padding: 0.875rem 1.5rem; background: #ffffff; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.875rem;" class="dark:bg-slate-900">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; flex: 1;">
+                        {{-- Search Input --}}
+                        <div style="position: relative; min-width: 220px; max-width: 320px; flex: 1;">
+                            <div style="position: absolute; inset-y: 0; left: 0; padding-left: 0.75rem; display: flex; align-items: center; pointer-events: none; color: #94a3b8;">
+                                <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                wire:model.live.debounce.300ms="search"
+                                placeholder="Search student name or adm no..."
+                                class="ss-input"
+                                style="padding-left: 2.25rem; font-size: 0.8rem; height: 38px; width: 100%;"
+                            />
+                            @if(!empty($search))
+                                <button
+                                    type="button"
+                                    wire:click="$set('search', '')"
+                                    style="position: absolute; inset-y: 0; right: 0; padding-right: 0.75rem; display: flex; align-items: center; color: #94a3b8; cursor: pointer; border: none; background: transparent;"
+                                    title="Clear search"
+                                >
+                                    <svg style="width: 14px; height: 14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            @endif
+                        </div>
+
+                        {{-- Sort By Filter Dropdown --}}
+                        <div style="display: flex; align-items: center; gap: 0.375rem;">
+                            <label style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; white-space: nowrap;">Sort by:</label>
+                            <select wire:model.live="sortBy" class="ss-select" style="font-size: 0.8rem; height: 38px; min-width: 200px; font-weight: 700;">
+                                <option value="name">Student Name (A - Z)</option>
+                                <option value="position">Position (1st - Last)</option>
+                                <option value="mark_obtained">Mark Obtained (Highest - Lowest)</option>
+                                <option value="percentage">Percentage Overall (Highest - Lowest)</option>
+                                <option value="admission_number">Admission Number</option>
+                            </select>
+                        </div>
+
+                        {{-- Sort Direction Toggle Button --}}
+                        <button
+                            type="button"
+                            wire:click="toggleSortDirection"
+                            style="display: inline-flex; align-items: center; gap: 0.375rem; height: 38px; padding: 0 0.85rem; border-radius: 0.5rem; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: all 0.15s;"
+                            title="Toggle sort direction: {{ $sortDirection === 'asc' ? 'Ascending' : 'Descending' }}"
+                            class="dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                        >
+                            @if($sortDirection === 'asc')
+                                <svg style="width: 15px; height: 15px; color: #4f46e5;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
+                                </svg>
+                                <span>Ascending (▲)</span>
+                            @else
+                                <svg style="width: 15px; height: 15px; color: #4f46e5;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
+                                </svg>
+                                <span>Descending (▼)</span>
+                            @endif
+                        </button>
+                    </div>
+
+                    {{-- Students Count Pill --}}
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 0.75rem; font-weight: 800; padding: 0.35rem 0.75rem; border-radius: 9999px; background: #f1f5f9; color: #475569; display: inline-flex; align-items: center; gap: 0.35rem;" class="dark:bg-slate-800 dark:text-slate-300">
+                            <svg style="width: 14px; height: 14px; color: #6366f1;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            <span>{{ count($students) }} {{ \Illuminate\Support\Str::plural('Student', count($students)) }}</span>
+                        </span>
+                    </div>
+                </div>
+
                 @php
                     $principalTitle = \App\Models\Setting::where('key', 'rc_principal_title')->value('value') ?: 'Head Teacher';
                 @endphp
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
-                    <thead>
-                        <tr style="text-align: left; border-bottom: 1px solid rgba(148,163,184,0.1); font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 800;">
-                            <th style="padding: 0.875rem 1rem; width: 60px;">S/N</th>
-                            <th style="padding: 0.875rem 1rem; width: 130px;">Adm No</th>
-                            <th style="padding: 0.875rem 1rem; width: 200px;">Student Name</th>
-                            <th style="padding: 0.875rem 1rem; width: 140px;">Division</th>
-                            <th style="padding: 0.875rem 1rem; text-align: center; width: 90px;">Average</th>
-                            <th style="padding: 0.875rem 1rem; text-align: center; width: 90px;">Position</th>
-                            <th style="padding: 0.875rem 1rem; width: 140px;">Times Present</th>
-                            <th style="padding: 0.875rem 1rem;">Class Teacher's Comment</th>
-                            <th style="padding: 0.875rem 1rem;">{{ $principalTitle }}'s Comment</th>
-                            @if($this->canApprove)
-                                <th style="padding: 0.875rem 1rem; text-align: center; width: 60px;">Print</th>
-                            @endif
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($students as $idx => $st)
-                            <tr style="border-bottom: 1px solid rgba(148,163,184,0.05);">
-                                <td style="padding: 0.875rem 1rem; color: #64748b;">{{ $idx + 1 }}</td>
-                                <td style="padding: 0.875rem 1rem; font-weight: 700; color: #475569;">{{ $st['admission_number'] }}</td>
-                                <td style="padding: 0.875rem 1rem; font-weight: 800;" class="dark:text-white">{{ $st['full_name'] }}</td>
-                                <td style="padding: 0.875rem 1rem;">
-                                    @if($st['department'])
-                                        <span style="display: inline-flex; padding: 0.2rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 700; background: #e0e7ff; color: #3730a3;">
-                                            Dept: {{ $st['department'] }}
-                                        </span>
-                                    @elseif($st['arm'])
-                                        <span style="display: inline-flex; padding: 0.2rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 700; background: #fef3c7; color: #92400e;">
-                                            Arm: {{ $st['arm'] }}
-                                        </span>
-                                    @else
-                                        <span style="color: #94a3b8;">—</span>
-                                    @endif
-                                </td>
-                                <td style="padding: 0.875rem 1rem; text-align: center; font-weight: 800; color: #4f46e5;">
-                                    {{ $st['average'] !== null ? (is_numeric($st['average']) ? (int) ceil((float) $st['average']) . '%' : $st['average'] . '%') : '—' }}
-                                </td>
-                                <td style="padding: 0.875rem 1rem; text-align: center; font-weight: 800;">
-                                    @if(!empty($st['department_position']))
-                                        <div style="font-size:0.85rem;font-weight:800;color:#1e293b;" class="dark:text-white">
-                                            {{ $st['department_position'] }}<span style="font-size:0.7rem;color:#64748b;font-weight:normal;">/{{ $st['department_population'] }}</span>
-                                        </div>
-                                        <div style="font-size:0.65rem;color:#94a3b8;font-weight:600;">Set: {{ $st['position'] }}/{{ $st['class_population'] }}</div>
-                                    @elseif(!empty($st['arm_position']))
-                                        <div style="font-size:0.85rem;font-weight:800;color:#1e293b;" class="dark:text-white">
-                                            {{ $st['arm_position'] }}<span style="font-size:0.7rem;color:#64748b;font-weight:normal;">/{{ $st['arm_population'] }}</span>
-                                        </div>
-                                        <div style="font-size:0.65rem;color:#94a3b8;font-weight:600;">Set: {{ $st['position'] }}/{{ $st['class_population'] }}</div>
-                                    @else
-                                        <div style="font-size:0.85rem;font-weight:800;">{{ $st['position'] ?? '—' }}</div>
-                                    @endif
-                                </td>
-                                <td style="padding: 0.5rem 1rem;">
-                                    <input type="number" wire:model.defer="remarks.{{ $st['student_id'] }}.times_present" placeholder="Days" min="0" class="ss-input" style="padding: 0.375rem 0.5rem; font-size: 0.8rem; text-align: center;" />
-                                </td>
-                                <td style="padding: 0.5rem 1rem;">
-                                    <input type="text" wire:model.defer="remarks.{{ $st['student_id'] }}.class_teacher_comment" placeholder="Enter remark (e.g. An attentive and hardworking student)" class="ss-input" style="padding: 0.375rem 0.5rem; font-size: 0.8rem;" />
-                                </td>
-                                <td style="padding: 0.5rem 1rem;">
-                                    @if($this->canApprove)
-                                        <input type="text" wire:model.defer="remarks.{{ $st['student_id'] }}.principal_comment" placeholder="{{ $principalTitle }} remark (auto-assigned by grade, editable)" class="ss-input" style="padding: 0.375rem 0.5rem; font-size: 0.8rem;" />
-                                    @else
-                                        <span style="font-size: 0.8rem; color: #475569; font-style: italic;">
-                                            {{ $st['principal_comment'] ?? 'Auto-assigned by grade' }}
-                                        </span>
-                                    @endif
-                                </td>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 1px solid rgba(148,163,184,0.1); font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 800; background: rgba(248,250,252,0.6);" class="dark:bg-slate-800/40">
+                                <th style="padding: 0.875rem 0.75rem; width: 45px; text-align: center;">S/N</th>
+                                <th style="padding: 0.875rem 0.85rem; width: 125px; cursor: pointer; user-select: none;" wire:click="setSort('admission_number')" title="Click to sort by Admission Number">
+                                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                        <span>Adm No</span>
+                                        @if($sortBy === 'admission_number')
+                                            <span style="color: #4f46e5; font-size: 10px;">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                        @endif
+                                    </div>
+                                </th>
+                                <th style="padding: 0.875rem 0.85rem; min-width: 190px; cursor: pointer; user-select: none;" wire:click="setSort('name')" title="Click to sort by Student Name">
+                                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                        <span>Student Name</span>
+                                        @if($sortBy === 'name')
+                                            <span style="color: #4f46e5; font-size: 10px;">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                        @endif
+                                    </div>
+                                </th>
+                                <th style="padding: 0.875rem 0.85rem; width: 110px;">Division</th>
+                                <th style="padding: 0.875rem 0.85rem; text-align: center; width: 115px; cursor: pointer; user-select: none;" wire:click="setSort('mark_obtained')" title="Click to sort by Mark Obtained">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                                        <span>Mark Obtained</span>
+                                        @if($sortBy === 'mark_obtained')
+                                            <span style="color: #4f46e5; font-size: 10px;">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                        @endif
+                                    </div>
+                                </th>
+                                <th style="padding: 0.875rem 0.85rem; text-align: center; width: 125px; cursor: pointer; user-select: none;" wire:click="setSort('percentage')" title="Click to sort by Percentage Overall">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                                        <span>Percentage Overall</span>
+                                        @if($sortBy === 'percentage')
+                                            <span style="color: #4f46e5; font-size: 10px;">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                        @endif
+                                    </div>
+                                </th>
+                                <th style="padding: 0.875rem 0.85rem; text-align: center; width: 95px; cursor: pointer; user-select: none;" wire:click="setSort('position')" title="Click to sort by Position">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                                        <span>Position</span>
+                                        @if($sortBy === 'position')
+                                            <span style="color: #4f46e5; font-size: 10px;">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                        @endif
+                                    </div>
+                                </th>
+                                <th style="padding: 0.875rem 0.85rem; width: 105px; text-align: center;">Times Present</th>
+                                <th style="padding: 0.875rem 0.85rem; min-width: 220px;">Class Teacher's Comment</th>
+                                <th style="padding: 0.875rem 0.85rem; min-width: 220px;">{{ $principalTitle }}'s Comment</th>
                                 @if($this->canApprove)
-                                    <td style="padding: 0.5rem 1rem; text-align: center;">
-                                        <a href="{{ route('admin.results.student-pdf', ['session_id' => $session_id, 'term_id' => $term_id, 'student_id' => $st['student_id']]) }}" target="_blank" title="Print Student Report Card" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 0.375rem; background: #fee2e2; color: #dc2626; text-decoration: none; transition: background 0.15s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
-                                            <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                        </a>
-                                    </td>
+                                    <th style="padding: 0.875rem 0.85rem; text-align: center; width: 55px;">Print</th>
                                 @endif
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="{{ $this->canApprove ? 10 : 9 }}" style="padding: 2rem; text-align: center; color: #94a3b8;">
-                                    No enrolled students found in this classroom for the selected session.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse($students as $idx => $st)
+                                <tr wire:key="student-row-{{ $st['student_id'] }}" style="border-bottom: 1px solid rgba(148,163,184,0.05);" class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                                    <td style="padding: 0.875rem 0.75rem; color: #64748b; text-align: center; font-weight: 700;">{{ $idx + 1 }}</td>
+                                    <td style="padding: 0.875rem 0.85rem; font-weight: 700; color: #475569; font-family: monospace;">{{ $st['admission_number'] }}</td>
+                                    <td style="padding: 0.875rem 0.85rem; font-weight: 800;" class="dark:text-white">{{ $st['full_name'] }}</td>
+                                    <td style="padding: 0.875rem 0.85rem;">
+                                        @if($st['department'])
+                                            <span style="display: inline-flex; padding: 0.2rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 700; background: #e0e7ff; color: #3730a3;">
+                                                Dept: {{ $st['department'] }}
+                                            </span>
+                                        @elseif($st['arm'])
+                                            <span style="display: inline-flex; padding: 0.2rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 700; background: #fef3c7; color: #92400e;">
+                                                Arm: {{ $st['arm'] }}
+                                            </span>
+                                        @else
+                                            <span style="color: #94a3b8;">—</span>
+                                        @endif
+                                    </td>
+                                    {{-- Mark Obtained --}}
+                                    <td style="padding: 0.875rem 0.85rem; text-align: center; font-weight: 800;">
+                                        @if($st['grand_total'] !== null)
+                                            <div style="display: inline-flex; flex-direction: column; align-items: center;">
+                                                <span style="display: inline-flex; align-items: center; justify-content: center; padding: 0.2rem 0.55rem; border-radius: 0.375rem; background: #f1f5f9; color: #0f172a; font-weight: 900; font-size: 0.85rem;" class="dark:bg-slate-800 dark:text-slate-100">
+                                                    {{ is_numeric($st['grand_total']) ? (float) $st['grand_total'] : $st['grand_total'] }}
+                                                </span>
+                                                @if(!empty($st['subjects_count']))
+                                                    <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600; margin-top: 2px;">
+                                                        {{ $st['subjects_count'] }} {{ \Illuminate\Support\Str::plural('subj', $st['subjects_count']) }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span style="color: #94a3b8;">—</span>
+                                        @endif
+                                    </td>
+                                    {{-- Percentage Overall --}}
+                                    <td style="padding: 0.875rem 0.85rem; text-align: center; font-weight: 800;">
+                                        @if($st['average'] !== null)
+                                            <span style="display: inline-flex; align-items: center; justify-content: center; padding: 0.2rem 0.55rem; border-radius: 0.375rem; background: #eef2ff; color: #4338ca; font-weight: 900; font-size: 0.85rem;" class="dark:bg-indigo-950/60 dark:text-indigo-300">
+                                                {{ is_numeric($st['average']) ? round((float) $st['average'], 1) . '%' : $st['average'] . '%' }}
+                                            </span>
+                                        @else
+                                            <span style="color: #94a3b8;">—</span>
+                                        @endif
+                                    </td>
+                                    {{-- Position --}}
+                                    <td style="padding: 0.875rem 0.85rem; text-align: center; font-weight: 800;">
+                                        @if(!empty($st['department_position']))
+                                            <div style="font-size:0.85rem;font-weight:800;color:#1e293b;" class="dark:text-white">
+                                                <span style="display: inline-flex; align-items: center; padding: 0.15rem 0.45rem; border-radius: 0.25rem; background: #ecfdf5; color: #065f46; font-weight: 900;">
+                                                    {{ $st['department_position'] }}
+                                                </span>
+                                                <span style="font-size:0.7rem;color:#64748b;font-weight:normal;">/{{ $st['department_population'] }}</span>
+                                            </div>
+                                            <div style="font-size:0.65rem;color:#94a3b8;font-weight:600;">Set: {{ $st['position'] }}/{{ $st['class_population'] }}</div>
+                                        @elseif(!empty($st['arm_position']))
+                                            <div style="font-size:0.85rem;font-weight:800;color:#1e293b;" class="dark:text-white">
+                                                <span style="display: inline-flex; align-items: center; padding: 0.15rem 0.45rem; border-radius: 0.25rem; background: #fef3c7; color: #92400e; font-weight: 900;">
+                                                    {{ $st['arm_position'] }}
+                                                </span>
+                                                <span style="font-size:0.7rem;color:#64748b;font-weight:normal;">/{{ $st['arm_population'] }}</span>
+                                            </div>
+                                            <div style="font-size:0.65rem;color:#94a3b8;font-weight:600;">Set: {{ $st['position'] }}/{{ $st['class_population'] }}</div>
+                                        @elseif(!empty($st['position']))
+                                            <span style="display: inline-flex; align-items: center; padding: 0.2rem 0.55rem; border-radius: 0.375rem; background: #e0f2fe; color: #0369a1; font-weight: 900; font-size: 0.85rem;">
+                                                {{ $st['position'] }}
+                                            </span>
+                                        @else
+                                            <span style="color: #94a3b8;">—</span>
+                                        @endif
+                                    </td>
+                                    {{-- Times Present --}}
+                                    <td style="padding: 0.5rem 0.85rem;">
+                                        <input type="number" wire:model.defer="remarks.{{ $st['student_id'] }}.times_present" placeholder="Days" min="0" class="ss-input" style="padding: 0.375rem 0.5rem; font-size: 0.8rem; text-align: center; width: 100%; min-width: 60px;" />
+                                    </td>
+                                    {{-- Class Teacher's Comment --}}
+                                    <td style="padding: 0.5rem 0.85rem;">
+                                        <input type="text" wire:model.defer="remarks.{{ $st['student_id'] }}.class_teacher_comment" placeholder="Enter remark (e.g. An attentive and hardworking student)" class="ss-input" style="padding: 0.375rem 0.5rem; font-size: 0.8rem; width: 100%;" />
+                                    </td>
+                                    {{-- Head Teacher's Comment --}}
+                                    <td style="padding: 0.5rem 0.85rem;">
+                                        @if($this->canApprove)
+                                            <input type="text" wire:model.defer="remarks.{{ $st['student_id'] }}.principal_comment" placeholder="{{ $principalTitle }} remark (auto-assigned by grade, editable)" class="ss-input" style="padding: 0.375rem 0.5rem; font-size: 0.8rem; width: 100%;" />
+                                        @else
+                                            <span style="font-size: 0.8rem; color: #475569; font-style: italic;">
+                                                {{ $st['principal_comment'] ?? 'Auto-assigned by grade' }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                    @if($this->canApprove)
+                                        <td style="padding: 0.5rem 0.85rem; text-align: center;">
+                                            <a href="{{ route('admin.results.student-pdf', ['session_id' => $session_id, 'term_id' => $term_id, 'student_id' => $st['student_id']]) }}" target="_blank" title="Print Student Report Card" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 0.375rem; background: #fee2e2; color: #dc2626; text-decoration: none; transition: background 0.15s;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">
+                                                <svg style="width: 15px; height: 15px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                            </a>
+                                        </td>
+                                    @endif
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="{{ $this->canApprove ? 11 : 10 }}" style="padding: 2.5rem; text-align: center; color: #94a3b8;">
+                                        @if(!empty($search))
+                                            No students match "{{ $search }}". <button type="button" wire:click="$set('search', '')" style="color: #4f46e5; font-weight: 700; text-decoration: underline; background: none; border: none; cursor: pointer;">Clear search</button>
+                                        @else
+                                            No enrolled students found in this classroom for the selected session.
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {{-- ══════════════════════════════════════════════════════════════════
