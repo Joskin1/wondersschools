@@ -13,6 +13,11 @@ class ListDepartments extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            DepartmentResource::makeAssignStudentsAction(
+                name: 'assign_students_to_department',
+                label: 'Assign Students to Department',
+            ),
+
             CreateAction::make(),
         ];
     }

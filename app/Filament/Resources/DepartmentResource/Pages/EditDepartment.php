@@ -13,6 +13,12 @@ class EditDepartment extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            DepartmentResource::makeAssignStudentsAction(
+                name: 'assign_students',
+                label: 'Assign Students',
+                resolvePresetDepartment: fn () => $this->record,
+            ),
+
             DeleteAction::make(),
         ];
     }
