@@ -33,16 +33,34 @@ class UserResource extends Resource
             ->components([
                 TextInput::make('name')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->autocomplete('off')
+                    ->extraInputAttributes([
+                        'autocomplete' => 'off',
+                        'data-lpignore' => 'true',
+                        'data-1p-ignore' => 'true',
+                    ]),
 
                 TextInput::make('email')
                     ->email()
                     ->required()
                     ->unique(ignoreRecord: true)
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->autocomplete('off')
+                    ->extraInputAttributes([
+                        'autocomplete' => 'off',
+                        'data-lpignore' => 'true',
+                        'data-1p-ignore' => 'true',
+                    ]),
 
                 TextInput::make('password')
                     ->password()
+                    ->autocomplete('new-password')
+                    ->extraInputAttributes([
+                        'autocomplete' => 'new-password',
+                        'data-lpignore' => 'true',
+                        'data-1p-ignore' => 'true',
+                    ])
                     ->required(fn (string $context): bool => $context === 'create')
                     ->dehydrated(fn ($state) => filled($state))
                     ->maxLength(255),

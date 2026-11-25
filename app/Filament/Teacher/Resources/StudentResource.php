@@ -87,22 +87,48 @@ class StudentResource extends Resource
                 TextInput::make('surname')
                     ->required()
                     ->maxLength(255)
-                    ->placeholder('e.g., Adeyemi'),
+                    ->placeholder('e.g., Adeyemi')
+                    ->autocomplete('off')
+                    ->extraInputAttributes([
+                        'autocomplete' => 'off',
+                        'data-lpignore' => 'true',
+                        'data-1p-ignore' => 'true',
+                    ]),
 
                 TextInput::make('first_name')
                     ->required()
                     ->maxLength(255)
-                    ->placeholder('e.g., Oluwadamilare'),
+                    ->placeholder('e.g., Oluwadamilare')
+                    ->autocomplete('off')
+                    ->extraInputAttributes([
+                        'autocomplete' => 'off',
+                        'data-lpignore' => 'true',
+                        'data-1p-ignore' => 'true',
+                    ]),
 
                 TextInput::make('other_name')
                     ->maxLength(255)
-                    ->placeholder('e.g., John (optional)'),
+                    ->placeholder('e.g., John (optional)')
+                    ->autocomplete('off')
+                    ->extraInputAttributes([
+                        'autocomplete' => 'off',
+                        'data-lpignore' => 'true',
+                        'data-1p-ignore' => 'true',
+                        'data-form-type' => 'other',
+                    ]),
 
                 TextInput::make('initial_password')
                     ->label('Initial Password')
                     ->password()
                     ->revealable()
                     ->minLength(8)
+                    ->autocomplete('new-password')
+                    ->extraInputAttributes([
+                        'autocomplete' => 'new-password',
+                        'data-lpignore' => 'true',
+                        'data-1p-ignore' => 'true',
+                        'data-form-type' => 'other',
+                    ])
                     ->dehydrated(fn ($state): bool => filled($state)),
 
                 Select::make('classroom_id')

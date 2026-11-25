@@ -267,4 +267,13 @@ describe('Admin Student Editing', function () {
         $student->delete();
         expect(StudentResource::canEdit($student->fresh()))->toBeFalse();
     });
+
+    it('configures autocomplete to prevent browser credential autofill', function () {
+        $response = $this->actingAs($this->admin)
+            ->get(StudentResource::getUrl('create'));
+
+        $response->assertSuccessful();
+        $response->assertSee('autocomplete="new-password"', false);
+        $response->assertSee('data-lpignore="true"', false);
+    });
 });
