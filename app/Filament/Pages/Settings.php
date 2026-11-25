@@ -75,6 +75,7 @@ class Settings extends Page
         'seo_description',
         'allow_manual_admission_number',
         'enable_class_arms',
+        'enable_departments',
         'use_midterm_results',
         'midterm_absent_policy',
         'result_decimal_places',
@@ -247,6 +248,10 @@ class Settings extends Page
             $data['enable_class_arms'] = filter_var($data['enable_class_arms'], FILTER_VALIDATE_BOOLEAN);
         }
 
+        if (isset($data['enable_departments'])) {
+            $data['enable_departments'] = filter_var($data['enable_departments'], FILTER_VALIDATE_BOOLEAN);
+        }
+
         if (isset($data['use_midterm_results'])) {
             $data['use_midterm_results'] = filter_var($data['use_midterm_results'], FILTER_VALIDATE_BOOLEAN);
         }
@@ -359,16 +364,22 @@ class Settings extends Page
                                     ]),
 
                                 Section::make('Academic & Classroom Structure')
-                                    ->description('Configure classroom organization, arm divisions, and class streaming.')
+                                    ->description('Configure classroom organization, arm divisions, and senior school departments.')
                                     ->headerActions([
                                         $this->makeSaveAction('Classroom Structure', [
                                             'enable_class_arms',
+                                            'enable_departments',
                                         ]),
                                     ])
                                     ->schema([
                                         Toggle::make('enable_class_arms')
                                             ->label('Enable Class Arms / Sections')
                                             ->helperText('When enabled, classes can have arms (e.g. JSS 1 Gold, JSS 1 Silver, SS 2A, SS 2B). When disabled, each class represents a single cohort without arms.')
+                                            ->default(false),
+
+                                        Toggle::make('enable_departments')
+                                            ->label('Enable Senior School Departments')
+                                            ->helperText('When enabled, the Departments menu appears under Academic Management so you can manage streams (e.g. Science, Commercial, Arts) and bulk-assign senior students.')
                                             ->default(false),
                                     ]),
                             ]),

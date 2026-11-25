@@ -206,6 +206,22 @@ describe('Department Bulk Student Assignment', function () {
             ->and($this->scienceEnrollment->fresh()->department_id)->toBe($this->science->id);
     });
 
+    it('allows enabling enable_departments from Settings page to show Departments navigation', function () {
+        (new \Database\Seeders\TenantFrontendContentSeeder())->run();
+        Setting::where('key', 'enable_departments')->delete();
+        \App\Services\FrontendLibrary::flush();
+
+        $this->actingAs($this->admin);
+        expect(DepartmentResource::canAccess())->toBeFalse();
+
+        Livewire::test(\App\Filament\Pages\Settings::class)
+            ->fillForm(['enable_departments' => true])
+            ->call('submit')
+            ->assertHasNoFormErrors();
+
+        expect(DepartmentResource::canAccess())->toBeTrue();
+    });
+
     it('enforces departments.update permission for bulk assignment and removal', function () {
         $viewOnlyAdmin = User::factory()->create([
             'role' => 'admin',
