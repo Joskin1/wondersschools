@@ -39,8 +39,15 @@ class CreateStudent extends CreateRecord
             $data['classroom_id'],
             $data['class_arm_id'],
             $data['department_id'],
-            $data['initial_password']
+            $data['initial_password'],
+            $data['is_portal_active']
         );
+
+        if (blank($data['admission_number'] ?? null)) {
+            unset($data['admission_number']);
+        } else {
+            $data['admission_number'] = trim((string) $data['admission_number']);
+        }
 
         $data['status'] = 'pending';
 

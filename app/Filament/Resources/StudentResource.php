@@ -4,16 +4,24 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentResource\Pages;
 use App\Models\ClassArm;
+use App\Models\Classroom;
+use App\Models\Department;
 use App\Models\Session;
 use App\Models\Student;
 use App\Services\FrontendLibrary;
 use Filament\Actions\Action;
-use Filament\Actions\ViewAction;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Actions\RestoreAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -23,6 +31,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use STS\FilamentImpersonate\Actions\Impersonate;
 
 class StudentResource extends Resource
@@ -46,82 +55,219 @@ class StudentResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('surname')
-                    ->required()
-                    ->maxLength(255)
-                    ->placeholder('e.g., Adeyemi'),
+                Section::make('Student Identity')
+                    ->icon('heroicon-o-identification')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('surname')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('e.g., Adeyemi')
+                            ->autocomplete('off')
+                            ->extraInputAttributes([
+                                'autocomplete' => 'off',
+                                'data-lpignore' => 'true',
+                                'data-1p-ignore' => 'true',
+                            ]),
 
-                TextInput::make('first_name')
-                    ->required()
-                    ->maxLength(255)
-                    ->placeholder('e.g., Oluwadamilare'),
+                        TextInput::make('first_name')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('e.g., Oluwadamilare')
+                            ->autocomplete('off')
+                            ->extraInputAttributes([
+                                'autocomplete' => 'off',
+                                'data-lpignore' => 'true',
+                                'data-1p-ignore' => 'true',
+                            ]),
 
-                TextInput::make('other_name')
-                    ->maxLength(255)
-                    ->placeholder('e.g., John (optional)'),
+                        TextInput::make('other_name')
+                            ->maxLength(255)
+                            ->placeholder('e.g., John (optional)')
+                            ->autocomplete('off')
+                            ->extraInputAttributes([
+                                'autocomplete' => 'off',
+                                'data-lpignore' => 'true',
+                                'data-1p-ignore' => 'true',
+                                'data-form-type' => 'other',
+                            ]),
 
-                TextInput::make('initial_password')
-                    ->label('Initial Password')
-                    ->password()
-                    ->revealable()
-                    ->minLength(8)
-                    ->dehydrated(fn ($state): bool => filled($state)),
+                        TextInput::make('admission_number')
+                            ->label('Admission Number')
+                            ->maxLength(50)
+                            ->unique(Student::class, 'admission_number', ignoreRecord: true)
+                            ->required(fn (string $operation): bool => $operation === 'edit')
+                            ->placeholder(fn (string $operation): string => $operation === 'create' ? 'Leave blank to auto-generate' : 'e.g., LRSC2026001')
+                            ->helperText(fn (string $operation): ?string => $operation === 'create' ? 'Optional. An admission number is generated automatically if left blank.' : null)
+                            ->autocomplete('off')
+                            ->extraInputAttributes([
+                                'autocomplete' => 'off',
+                                'data-lpignore' => 'true',
+                                'data-1p-ignore' => 'true',
+                            ]),
+                    ]),
 
-                Select::make('classroom_id')
-                    ->label('Classroom')
-                    ->required()
-                    ->options(fn () => \App\Models\Classroom::pluck('name', 'id'))
-                    ->searchable()
-                    ->preload()
-                    ->live()
-                    ->helperText('Select the classroom for this student.'),
+                Section::make('Portal Login Credentials')
+                    ->icon('heroicon-o-lock-closed')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('initial_password')
+                            ->label(fn (string $operation): string => $operation === 'edit' ? 'New Password' : 'Initial Password')
+                            ->password()
+                            ->revealable()
+                            ->minLength(8)
+                            ->autocomplete('new-password')
+                            ->extraInputAttributes([
+                                'autocomplete' => 'new-password',
+                                'data-lpignore' => 'true',
+                                'data-1p-ignore' => 'true',
+                                'data-form-type' => 'other',
+                            ])
+                            ->dehydrated(fn ($state): bool => filled($state))
+                            ->helperText(fn (string $operation): ?string => $operation === 'edit'
+                                ? 'Leave blank to keep the student\'s current password.'
+                                : 'Optional. Setting a password activates portal login immediately.'),
 
-                Select::make('class_arm_id')
-                    ->label('Class Arm / Stream')
-                    ->options(function (callable $get) {
-                        $classroomId = $get('classroom_id');
-                        if (! $classroomId) {
-                            return [];
-                        }
-                        return ClassArm::where('classroom_id', $classroomId)
-                            ->where('is_active', true)
-                            ->pluck('name', 'id');
-                    })
-                    ->searchable()
-                    ->preload()
-                    ->placeholder('Select arm (optional)')
-                    ->visible(fn () => FrontendLibrary::getBooleanSetting('enable_class_arms'))
-                    ->helperText('Select the specific arm or section for this student (optional).'),
+                        Toggle::make('is_portal_active')
+                            ->label('Portal Access Active')
+                            ->visibleOn('edit')
+                            ->helperText('Allow or restrict this student\'s access to the Student Portal.'),
+                    ]),
 
-                Select::make('department_id')
-                    ->label('Department')
-                    ->options(fn () => \App\Models\Department::active()->pluck('name', 'id'))
-                    ->searchable()
-                    ->preload()
-                    ->placeholder('Select department')
-                    ->visible(function (callable $get) {
-                        $classroomId = $get('classroom_id');
-                        if (! $classroomId) {
-                            return false;
-                        }
-                        return (bool) \App\Models\Classroom::where('id', $classroomId)->value('has_departments');
-                    })
-                    ->required(function (callable $get) {
-                        $classroomId = $get('classroom_id');
-                        if (! $classroomId) {
-                            return false;
-                        }
-                        return (bool) \App\Models\Classroom::where('id', $classroomId)->value('has_departments');
-                    })
-                    ->helperText('Select the academic department/stream for this senior school student.'),
+                Section::make('Academic Enrollment')
+                    ->icon('heroicon-o-academic-cap')
+                    ->columns(2)
+                    ->schema([
+                        Select::make('classroom_id')
+                            ->label('Classroom')
+                            ->required()
+                            ->options(fn () => Classroom::orderBy('class_order')->orderBy('name')->pluck('name', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function ($state, callable $set, callable $get): void {
+                                $armId = $get('class_arm_id');
+                                if ($armId && ! ClassArm::where('id', $armId)->where('classroom_id', $state)->exists()) {
+                                    $set('class_arm_id', null);
+                                }
+                                if (! $state || ! Classroom::where('id', $state)->value('has_departments')) {
+                                    $set('department_id', null);
+                                }
+                            })
+                            ->helperText('Select the classroom for this student.'),
 
-                Select::make('session_id')
-                    ->label('Academic Session')
-                    ->required()
-                    ->options(fn () => Session::pluck('name', 'id'))
-                    ->default(fn () => Session::where('is_active', true)->first()?->id)
-                    ->searchable()
-                    ->helperText('Select the academic session for enrollment.'),
+                        Select::make('class_arm_id')
+                            ->label('Class Arm / Stream')
+                            ->options(function (callable $get) {
+                                $classroomId = $get('classroom_id');
+                                if (! $classroomId) {
+                                    return [];
+                                }
+                                $currentArmId = $get('class_arm_id');
+
+                                return ClassArm::where('classroom_id', $classroomId)
+                                    ->where(function ($query) use ($currentArmId) {
+                                        $query->where('is_active', true);
+                                        if ($currentArmId) {
+                                            $query->orWhere('id', $currentArmId);
+                                        }
+                                    })
+                                    ->pluck('name', 'id');
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Select arm (optional)')
+                            ->visible(fn () => FrontendLibrary::getBooleanSetting('enable_class_arms'))
+                            ->helperText('Select the specific arm or section for this student (optional).'),
+
+                        Select::make('department_id')
+                            ->label('Department')
+                            ->options(function (callable $get) {
+                                $currentDepartmentId = $get('department_id');
+
+                                return Department::query()
+                                    ->where('is_active', true)
+                                    ->when($currentDepartmentId, fn ($q) => $q->orWhere('id', $currentDepartmentId))
+                                    ->pluck('name', 'id');
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Select department')
+                            ->visible(function (callable $get) {
+                                $classroomId = $get('classroom_id');
+                                if (! $classroomId) {
+                                    return false;
+                                }
+                                return (bool) Classroom::where('id', $classroomId)->value('has_departments');
+                            })
+                            ->required(function (callable $get) {
+                                $classroomId = $get('classroom_id');
+                                if (! $classroomId) {
+                                    return false;
+                                }
+                                return (bool) Classroom::where('id', $classroomId)->value('has_departments');
+                            })
+                            ->helperText('Select the academic department/stream for this senior school student.'),
+
+                        Select::make('session_id')
+                            ->label('Academic Session')
+                            ->required()
+                            ->options(fn () => Session::pluck('name', 'id'))
+                            ->default(fn () => Session::where('is_active', true)->first()?->id)
+                            ->searchable()
+                            ->helperText('Select the academic session for enrollment.'),
+                    ]),
+
+                Section::make('Personal & Profile Details')
+                    ->icon('heroicon-o-user')
+                    ->columns(2)
+                    ->schema([
+                        FileUpload::make('profile_picture')
+                            ->label('Profile Picture')
+                            ->image()
+                            ->directory('profile-pictures')
+                            ->disk(config('filesystems.upload_disk', 'public'))
+                            ->maxSize(2048),
+
+                        DatePicker::make('date_of_birth')
+                            ->label('Date of Birth')
+                            ->maxDate(now()->subDay()),
+
+                        Select::make('gender')
+                            ->options([
+                                'male' => 'Male',
+                                'female' => 'Female',
+                            ])
+                            ->placeholder('Select gender'),
+
+                        TextInput::make('previous_school')
+                            ->label('Previous School')
+                            ->maxLength(255),
+
+                        Textarea::make('address')
+                            ->label('Home Address')
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Parent / Guardian Information')
+                    ->icon('heroicon-o-users')
+                    ->columns(3)
+                    ->schema([
+                        TextInput::make('parent_name')
+                            ->label('Parent / Guardian Name')
+                            ->maxLength(255),
+
+                        TextInput::make('parent_phone')
+                            ->label('Parent / Guardian Phone')
+                            ->tel()
+                            ->maxLength(20),
+
+                        TextInput::make('parent_email')
+                            ->label('Parent / Guardian Email')
+                            ->email()
+                            ->maxLength(255),
+                    ]),
             ]);
     }
 
@@ -326,6 +472,8 @@ class StudentResource extends Resource
                     ->modalWidth('lg'),
 
                 ViewAction::make(),
+                EditAction::make()
+                    ->visible(fn (Student $record): bool => ! $record->trashed()),
                 Action::make('reset_biometrics')
                     ->label('Reset Biometrics')
                     ->icon('heroicon-o-arrow-path')
@@ -369,6 +517,7 @@ class StudentResource extends Resource
             'create' => Pages\CreateStudent::route('/create'),
             'import' => Pages\ImportStudents::route('/import'),
             'view' => Pages\ViewStudent::route('/{record}'),
+            'edit' => Pages\EditStudent::route('/{record}/edit'),
         ];
     }
 
@@ -376,6 +525,15 @@ class StudentResource extends Resource
     {
         return parent::getEloquentQuery()
             ->with(['enrollments.classroom', 'enrollments.session', 'user']);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        if (method_exists($record, 'trashed') && $record->trashed()) {
+            return false;
+        }
+
+        return parent::canEdit($record);
     }
 
     public static function canDelete($record): bool

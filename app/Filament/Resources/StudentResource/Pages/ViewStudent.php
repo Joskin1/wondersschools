@@ -7,6 +7,7 @@ namespace App\Filament\Resources\StudentResource\Pages;
 use App\Filament\Resources\StudentResource;
 use App\Models\Student;
 use Filament\Actions\Action;
+use Filament\Actions\EditAction;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
@@ -22,6 +23,9 @@ class ViewStudent extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            EditAction::make()
+                ->visible(fn (Student $record): bool => ! $record->trashed()),
+
             Action::make('copy_registration_link')
                 ->label('Copy Registration Link')
                 ->icon('heroicon-o-link')
@@ -105,6 +109,62 @@ class ViewStudent extends ViewRecord
                             TextEntry::make('current_department')
                                 ->label('Department')
                                 ->getStateUsing(fn (Student $student) => $student->currentEnrollment()?->department?->name ?? '—'),
+
+                            TextEntry::make('portal_status')
+                                ->label('Portal Status')
+                                ->badge()
+                                ->getStateUsing(function (Student $student): string {
+                                    if ($student->is_portal_active) {
+                                        return 'Active';
+                                    }
+                                    if ($student->isRegistrationCompleted()) {
+                                        return 'Awaiting Activation';
+                                    }
+
+                                    return 'Pending';
+                                })
+                                ->color(fn (string $state): string => match ($state) {
+                                    'Active' => 'success',
+                                    'Awaiting Activation' => 'warning',
+                                    default => 'gray',
+                                }),
+
+                            TextEntry::make('date_of_birth')
+                                ->label('Date of Birth')
+                                ->date('M d, Y')
+                                ->placeholder('—'),
+
+                            TextEntry::make('gender')
+                                ->label('Gender')
+                                ->formatStateUsing(fn (?string $state): string => $state ? ucfirst($state) : '—')
+                                ->placeholder('—'),
+
+                            TextEntry::make('previous_school')
+                                ->label('Previous School')
+                                ->placeholder('—'),
+
+                            TextEntry::make('address')
+                                ->label('Home Address')
+                                ->placeholder('—')
+                                ->columnSpan(2),
+                        ]),
+                    ]),
+
+                Section::make('Parent / Guardian Information')
+                    ->icon('heroicon-o-users')
+                    ->schema([
+                        Grid::make(3)->schema([
+                            TextEntry::make('parent_name')
+                                ->label('Parent / Guardian Name')
+                                ->placeholder('—'),
+
+                            TextEntry::make('parent_phone')
+                                ->label('Parent / Guardian Phone')
+                                ->placeholder('—'),
+
+                            TextEntry::make('parent_email')
+                                ->label('Parent / Guardian Email')
+                                ->placeholder('—'),
                         ]),
                     ]),
 
